@@ -1,0 +1,295 @@
+﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <ProjectGuid>{7940D652-8D55-48C7-BEE3-07394A5F7CA8}</ProjectGuid>
+        <MainSource>JED.DPR</MainSource>
+        <Base>True</Base>
+        <Config Condition="'$(Config)'==''">Debug</Config>
+        <TargetedPlatforms>1</TargetedPlatforms>
+        <AppType>Application</AppType>
+        <FrameworkType>VCL</FrameworkType>
+        <ProjectVersion>19.2</ProjectVersion>
+        <Platform Condition="'$(Platform)'==''">Win32</Platform>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Config)'=='Base' or '$(Base)'!=''">
+        <Base>true</Base>
+    </PropertyGroup>
+    <PropertyGroup Condition="('$(Platform)'=='Win32' and '$(Base)'=='true') or '$(Base_Win32)'!=''">
+        <Base_Win32>true</Base_Win32>
+        <CfgParent>Base</CfgParent>
+        <Base>true</Base>
+    </PropertyGroup>
+    <PropertyGroup Condition="('$(Platform)'=='Win64' and '$(Base)'=='true') or '$(Base_Win64)'!=''">
+        <Base_Win64>true</Base_Win64>
+        <CfgParent>Base</CfgParent>
+        <Base>true</Base>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Config)'=='Release' or '$(Cfg_1)'!=''">
+        <Cfg_1>true</Cfg_1>
+        <CfgParent>Base</CfgParent>
+        <Base>true</Base>
+    </PropertyGroup>
+    <PropertyGroup Condition="('$(Platform)'=='Win32' and '$(Cfg_1)'=='true') or '$(Cfg_1_Win32)'!=''">
+        <Cfg_1_Win32>true</Cfg_1_Win32>
+        <CfgParent>Cfg_1</CfgParent>
+        <Cfg_1>true</Cfg_1>
+        <Base>true</Base>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Config)'=='Debug' or '$(Cfg_2)'!=''">
+        <Cfg_2>true</Cfg_2>
+        <CfgParent>Base</CfgParent>
+        <Base>true</Base>
+    </PropertyGroup>
+    <PropertyGroup Condition="('$(Platform)'=='Win32' and '$(Cfg_2)'=='true') or '$(Cfg_2_Win32)'!=''">
+        <Cfg_2_Win32>true</Cfg_2_Win32>
+        <CfgParent>Cfg_2</CfgParent>
+        <Cfg_2>true</Cfg_2>
+        <Base>true</Base>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Base)'!=''">
+        <DCC_E>false</DCC_E>
+        <DCC_F>false</DCC_F>
+        <DCC_K>false</DCC_K>
+        <DCC_N>true</DCC_N>
+        <DCC_S>true</DCC_S>
+        <DCC_ImageBase>00400000</DCC_ImageBase>
+        <DCC_Alignment>1</DCC_Alignment>
+        <DCC_AssertionsAtRuntime>false</DCC_AssertionsAtRuntime>
+        <DCC_DebugInformation>1</DCC_DebugInformation>
+        <DCC_WriteableConstants>true</DCC_WriteableConstants>
+        <DCC_IntegerOverflowCheck>true</DCC_IntegerOverflowCheck>
+        <DCC_RangeChecking>true</DCC_RangeChecking>
+        <DCC_PentiumSafeDivide>true</DCC_PentiumSafeDivide>
+        <DCC_SymbolReferenceInfo>1</DCC_SymbolReferenceInfo>
+        <DCC_Hints>false</DCC_Hints>
+        <DCC_Warnings>false</DCC_Warnings>
+        <DCC_MapFile>3</DCC_MapFile>
+        <SanitizedProjectName>JED</SanitizedProjectName>
+        <DCC_Namespace>Vcl;Vcl.Imaging;Vcl.Touch;Vcl.Samples;Vcl.Shell;System;Xml;Data;Datasnap;Web;Soap;Winapi;System.Win;$(DCC_Namespace)</DCC_Namespace>
+        <VerInfo_Locale>8192</VerInfo_Locale>
+        <VerInfo_Keys>CompanyName=;FileDescription=;FileVersion=1.0.0.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProductName=;ProductVersion=1.0.0.0;Comments=;CFBundleName=</VerInfo_Keys>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Base_Win32)'!=''">
+        <DCC_Namespace>Data.Win;Datasnap.Win;Web.Win;Soap.Win;Xml.Win;Bde;$(DCC_Namespace)</DCC_Namespace>
+        <BT_BuildType>Debug</BT_BuildType>
+        <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
+        <VerInfo_Keys>CompanyName=;FileDescription=$(MSBuildProjectName);FileVersion=1.0.0.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProductName=$(MSBuildProjectName);ProductVersion=1.0.0.0;Comments=;ProgramID=com.embarcadero.$(MSBuildProjectName)</VerInfo_Keys>
+        <VerInfo_Locale>1033</VerInfo_Locale>
+        <Manifest_File>$(BDS)\bin\default_app.manifest</Manifest_File>
+        <Icon_MainIcon>JED_Icon.ico</Icon_MainIcon>
+        <AppEnableRuntimeThemes>true</AppEnableRuntimeThemes>
+        <UWP_DelphiLogo44>$(BDS)\bin\Artwork\Windows\UWP\delphi_UwpDefault_44.png</UWP_DelphiLogo44>
+        <UWP_DelphiLogo150>$(BDS)\bin\Artwork\Windows\UWP\delphi_UwpDefault_150.png</UWP_DelphiLogo150>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Base_Win64)'!=''">
+        <Icon_MainIcon>JED_Icon.ico</Icon_MainIcon>
+        <UWP_DelphiLogo44>$(BDS)\bin\Artwork\Windows\UWP\delphi_UwpDefault_44.png</UWP_DelphiLogo44>
+        <UWP_DelphiLogo150>$(BDS)\bin\Artwork\Windows\UWP\delphi_UwpDefault_150.png</UWP_DelphiLogo150>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Cfg_1)'!=''">
+        <DCC_Define>RELEASE;$(DCC_Define)</DCC_Define>
+        <DCC_DebugInformation>0</DCC_DebugInformation>
+        <DCC_LocalDebugSymbols>false</DCC_LocalDebugSymbols>
+        <DCC_SymbolReferenceInfo>0</DCC_SymbolReferenceInfo>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Cfg_1_Win32)'!=''">
+        <AppEnableRuntimeThemes>true</AppEnableRuntimeThemes>
+        <AppDPIAwarenessMode>PerMonitorV2</AppDPIAwarenessMode>
+        <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
+        <VerInfo_Locale>1033</VerInfo_Locale>
+        <VerInfo_Keys>CompanyName=;FileDescription=$(MSBuildProjectName);FileVersion=1.0.0.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProductName=$(MSBuildProjectName);ProductVersion=1.0.0.0;Comments=;ProgramID=com.embarcadero.$(MSBuildProjectName)</VerInfo_Keys>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Cfg_2)'!=''">
+        <DCC_Define>DEBUG;$(DCC_Define)</DCC_Define>
+        <DCC_Optimize>false</DCC_Optimize>
+        <DCC_GenerateStackFrames>true</DCC_GenerateStackFrames>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Cfg_2_Win32)'!=''">
+        <AppEnableRuntimeThemes>true</AppEnableRuntimeThemes>
+        <AppDPIAwarenessMode>PerMonitorV2</AppDPIAwarenessMode>
+        <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
+        <VerInfo_Locale>1033</VerInfo_Locale>
+        <VerInfo_Keys>CompanyName=;FileDescription=$(MSBuildProjectName);FileVersion=1.0.0.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProductName=$(MSBuildProjectName);ProductVersion=1.0.0.0;Comments=;ProgramID=com.embarcadero.$(MSBuildProjectName)</VerInfo_Keys>
+    </PropertyGroup>
+    <ItemGroup>
+        <DelphiCompile Include="$(MainSource)">
+            <MainSource>MainSource</MainSource>
+        </DelphiCompile>
+        <DCCReference Include="Jed_Main.pas">
+            <Form>JedMain</Form>
+        </DCCReference>
+        <DCCReference Include="tmp_load3do.pas"/>
+        <DCCReference Include="Render.pas"/>
+        <DCCReference Include="J_level.pas"/>
+        <DCCReference Include="OGL_render.pas"/>
+        <DCCReference Include="Files.pas"/>
+        <DCCReference Include="Tools.pas"/>
+        <DCCReference Include="GlobalVars.pas"/>
+        <DCCReference Include="Geometry.pas"/>
+        <DCCReference Include="ProgressDialog.pas">
+            <Form>Progress</Form>
+        </DCCReference>
+        <DCCReference Include="lev_utils.pas"/>
+        <DCCReference Include="Containers.pas"/>
+        <DCCReference Include="FileOperations.pas"/>
+        <DCCReference Include="FileDialogs.pas">
+            <Form>GetFileOpen</Form>
+        </DCCReference>
+        <DCCReference Include="Unit1.pas">
+            <Form>Form1</Form>
+        </DCCReference>
+        <DCCReference Include="values.pas"/>
+        <DCCReference Include="u_templates.pas"/>
+        <DCCReference Include="ListRes.pas"/>
+        <DCCReference Include="U_OPTIONS.PAS">
+            <Form>Options</Form>
+        </DCCReference>
+        <DCCReference Include="U_CogForm.pas">
+            <Form>CogForm</Form>
+        </DCCReference>
+        <DCCReference Include="D3D_PRender.pas"/>
+        <DCCReference Include="d3d\D3d.pas"/>
+        <DCCReference Include="d3d\D3dcaps.pas"/>
+        <DCCReference Include="d3d\D3drm.pas"/>
+        <DCCReference Include="d3d\D3drmdef.pas"/>
+        <DCCReference Include="d3d\D3drmobj.pas"/>
+        <DCCReference Include="d3d\D3dtypes.pas"/>
+        <DCCReference Include="d3d\Ddraw.pas"/>
+        <DCCReference Include="d3d\D3Drmwin.pas"/>
+        <DCCReference Include="Item_edit.pas">
+            <Form>ItemEdit</Form>
+        </DCCReference>
+        <DCCReference Include="FieldEdit.pas"/>
+        <DCCReference Include="misc_utils.pas"/>
+        <DCCReference Include="Cog_utils.pas"/>
+        <DCCReference Include="ResourcePicker.pas">
+            <Form>ResPicker</Form>
+        </DCCReference>
+        <DCCReference Include="Preview.pas"/>
+        <DCCReference Include="graph_files.pas"/>
+        <DCCReference Include="Images.pas"/>
+        <DCCReference Include="Cons_checker.pas">
+            <Form>Consistency</Form>
+        </DCCReference>
+        <DCCReference Include="FlagEditor.pas">
+            <Form>FlagEdit</Form>
+        </DCCReference>
+        <DCCReference Include="U_Tools.pas">
+            <Form>ToolForm</Form>
+        </DCCReference>
+        <DCCReference Include="Jed_about1.pas">
+            <Form>Jed_about</Form>
+        </DCCReference>
+        <DCCReference Include="U_tbar.pas">
+            <Form>Toolbar</Form>
+        </DCCReference>
+        <DCCReference Include="U_Preview.pas">
+            <Form>Preview3D</Form>
+        </DCCReference>
+        <DCCReference Include="U_msgForm.pas">
+            <Form>MsgForm</Form>
+        </DCCReference>
+        <DCCReference Include="U_SCFEdit.pas">
+            <Form>SCFieldPicker</Form>
+        </DCCReference>
+        <DCCReference Include="jdh_jdl.pas"/>
+        <DCCReference Include="Q_Utils.pas"/>
+        <DCCReference Include="Q_Sectors.pas">
+            <Form>FindSectors</Form>
+        </DCCReference>
+        <DCCReference Include="Q_surfs.pas">
+            <Form>FindSurfs</Form>
+        </DCCReference>
+        <DCCReference Include="Q_things.pas">
+            <Form>FindThings</Form>
+        </DCCReference>
+        <DCCReference Include="Prefab.pas"/>
+        <DCCReference Include="U_Medit.pas">
+            <Form>EpisodeEdit</Form>
+        </DCCReference>
+        <DCCReference Include="u_3dos.pas"/>
+        <DCCReference Include="U_lheader.pas">
+            <Form>LHEdit</Form>
+        </DCCReference>
+        <DCCReference Include="U_3doprev.pas">
+            <Form>Preview3DO</Form>
+        </DCCReference>
+        <DCCReference Include="u_StrEdit.pas">
+            <Form>StrEdit</Form>
+        </DCCReference>
+        <DCCReference Include="u_coggen.pas">
+            <Form>CogGen</Form>
+        </DCCReference>
+        <DCCReference Include="u_DFI.pas">
+            <Form>DFImport</Form>
+        </DCCReference>
+        <DCCReference Include="OGL_PRender.pas"/>
+        <DCCReference Include="sft_render.pas"/>
+        <DCCReference Include="u_tpledit.pas">
+            <Form>TplEdit</Form>
+        </DCCReference>
+        <DCCReference Include="sft_persp_render.pas"/>
+        <DCCReference Include="u_undo.pas"/>
+        <DCCReference Include="u_multisel.pas"/>
+        <DCCReference Include="GLunit.pas"/>
+        <DCCReference Include="JED_OLE.pas"/>
+        <DCCReference Include="u_copypaste.pas"/>
+        <DCCReference Include="u_errorform.pas">
+            <Form>ErrForm</Form>
+        </DCCReference>
+        <DCCReference Include="U_tplcreate.pas">
+            <Form>TPLCreator</Form>
+        </DCCReference>
+        <DCCReference Include="PRender.pas"/>
+        <DCCReference Include="d3d_NPRender.pas"/>
+        <DCCReference Include="d3d\DXTools.pas"/>
+        <DCCReference Include="d3d\DPlay.pas"/>
+        <DCCReference Include="d3d\DInput.pas"/>
+        <DCCReference Include="d3d\DSetup.pas"/>
+        <DCCReference Include="d3d\DSound.pas"/>
+        <DCCReference Include="JED_COM.pas"/>
+        <DCCReference Include="jed_plugins.pas"/>
+        <DCCReference Include="tbar_tools.pas"/>
+        <DCCReference Include="u_cscene.pas">
+            <Form>KeyForm</Form>
+        </DCCReference>
+        <DCCReference Include="u_pjkey.pas"/>
+        <DCCReference Include="u_pj3dos.pas"/>
+        <DCCReference Include="pjgeometry.pas"/>
+        <DCCReference Include="u_3doform.pas">
+            <Form>UrqForm</Form>
+        </DCCReference>
+        <BuildConfiguration Include="Debug">
+            <Key>Cfg_2</Key>
+            <CfgParent>Base</CfgParent>
+        </BuildConfiguration>
+        <BuildConfiguration Include="Base">
+            <Key>Base</Key>
+        </BuildConfiguration>
+        <BuildConfiguration Include="Release">
+            <Key>Cfg_1</Key>
+            <CfgParent>Base</CfgParent>
+        </BuildConfiguration>
+    </ItemGroup>
+    <ProjectExtensions>
+        <Borland.Personality>Delphi.Personality.12</Borland.Personality>
+        <Borland.ProjectType/>
+        <BorlandProject>
+            <Delphi.Personality>
+                <Source>
+                    <Source Name="MainSource">JED.DPR</Source>
+                </Source>
+                <Excluded_Packages>
+                    <Excluded_Packages Name="$(BDSBIN)\dcloffice2k270.bpl">Microsoft Office 2000 Sample Automation Server Wrapper Components</Excluded_Packages>
+                    <Excluded_Packages Name="$(BDSBIN)\dclofficexp270.bpl">Microsoft Office XP Sample Automation Server Wrapper Components</Excluded_Packages>
+                </Excluded_Packages>
+            </Delphi.Personality>
+            <Platforms>
+                <Platform value="Win32">True</Platform>
+                <Platform value="Win64">False</Platform>
+            </Platforms>
+        </BorlandProject>
+        <ProjectFileVersion>12</ProjectFileVersion>
+    </ProjectExtensions>
+    <Import Project="$(BDS)\Bin\CodeGear.Delphi.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Delphi.Targets')"/>
+    <Import Project="$(APPDATA)\Embarcadero\$(BDSAPPDATABASEDIR)\$(PRODUCTVERSION)\UserTools.proj" Condition="Exists('$(APPDATA)\Embarcadero\$(BDSAPPDATABASEDIR)\$(PRODUCTVERSION)\UserTools.proj')"/>
+</Project>
