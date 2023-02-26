@@ -1,7 +1,7 @@
 unit U_copypaste;
 
 interface
-uses J_Level, U_Multisel, Lev_Utils;
+uses J_Level, U_Multisel, Lev_Utils, values;
 
 Procedure CopySectors(Lev:TJKLevel;scsel:TSCMultiSel;Cur_SC:integer);
 Procedure CopyThings(Lev:TJKLevel;thsel:TTHMultiSel;Cur_TH:integer);
@@ -21,6 +21,7 @@ uses U_undo, Clipbrd, WIndows;
 var CF_JKSectors:Word;
     CF_JKThings:Word;
     CF_JKLights:Word;
+    at_frame:TAdjType;
 
 Function CanPasteSectors:Boolean;
 var Clp:TClipboard;
@@ -44,47 +45,48 @@ begin
 end;
 
 Procedure CopySectors(Lev:TJKLevel;scsel:TSCMultiSel;Cur_SC:integer);
-var i,j,sf,n,msize:integer;
-    sec:TJKSector;
-    surf:TJKSurface;
-    hg:integer;
-    pg:pointer;
-    clp:TClipboard;
-    rx,ry,rz:double;
-    pvx:^TVXRec;
+var i,j,sf,n,msize: integer;
+    sec: TJKSector;
+    surf: TJKSurface;
+    hg: integer;
+    pg: pointer;
+    clp: TClipboard;
+    rx,ry,rz: double;
+    pvx: ^TVXRec;
 
 begin
  n:=scsel.AddSC(Cur_SC);
 
- FindCenter(Lev.Sectors[Cur_SC],rx,ry,rz);
+ FindCenter(Lev.Sectors[Cur_SC], rx, ry, rz);
 
  {Calculate the size of memory to allocate}
- msize:=sizeof(longint);
+ msize := sizeof(longint);
  for i:=0 to scsel.count-1 do
  begin
-  inc(msize,GetSecRecSize);
+  inc(msize, GetSecRecSize);
   sec:=lev.Sectors[scsel.GetSC(i)];
 
-  inc(msize,SCVertSize(sec.vertices));
+  inc(msize, SCVertSize(sec.vertices));
 
   for sf:=0 to sec.surfaces.count-1 do
   begin
    surf:=sec.surfaces[sf];
-   inc(msize,GetSurfRecSize);
-   inc(msize,SFVertSize(surf.vertices));
+   inc(msize, GetSurfRecSize);
+   inc(msize, SFVertSize(surf.vertices));
   end;
  end;
 
- hg:=GlobalAlloc(GMEM_MOVEABLE or GMEM_SHARE,msize);
- pg:=GlobalLock(hg);
- Longint(pg^):=scsel.count; inc(pchar(pg),sizeof(Longint));
+ hg := GlobalAlloc(GMEM_MOVEABLE or GMEM_SHARE,msize);
+ pg := GlobalLock(hg);
+ Longint(pg^) := scsel.count;
+  inc(PAnsiChar(pg), sizeof(Longint));
 
 
  for i:=0 to scsel.count-1 do
  begin
   sec:=lev.Sectors[scsel.GetSC(i)];
   GetSec(sec,TSecRec(pg^));
-  inc(pchar(pg),GetSecRecSize);
+  inc(PAnsiChar(pg),GetSecRecSize);
 
   GetSCVertices(sec.vertices,pg);
 
@@ -97,24 +99,24 @@ begin
    inc(pvx);
   end;
 
-  inc(pchar(pg),SCVertSize(sec.vertices));
+  inc(PAnsiChar(pg),SCVertSize(sec.vertices));
 
   for sf:=0 to sec.surfaces.count-1 do
   begin
    surf:=sec.surfaces[sf];
 
    GetSurf(surf,TSurfRec(pg^));
-   inc(pchar(pg),GetSurfRecSize);
+   inc(PAnsiChar(pg), GetSurfRecSize);
 
    GetSFVertices(surf,pg);
-   inc(pchar(pg),SFVertSize(surf.vertices));
+   inc(PAnsiChar(pg), SFVertSize(surf.vertices));
   end;
  end;
 
  GlobalUnlock(hg);
  Clp:=Clipboard;
  Clp.Clear;
- Clp.SetAsHandle(CF_JKSectors,hg);
+ Clp.SetAsHandle(CF_JKSectors, hg);
 
  scsel.DeleteN(n);
 
@@ -135,13 +137,13 @@ begin
  Clp:=Clipboard;
  Clp.Open;
 try
- hg:=Clp.GetAsHandle(CF_JKSectors);
- if hg=0 then exit;
- pg:=GlobalLock(hg);
- n:=Longint(pg^); inc(pchar(pg),sizeof(longint));
+ hg := Clp.GetAsHandle(CF_JKSectors);
+ if hg = 0 then exit;
+ pg := GlobalLock(hg);
+ n  := Longint(pg^);
+ inc(PAnsiChar(pg),sizeof(longint));
 
  Result:=Lev.Sectors.count;
-
 
  for i:=0 to n-1 do
  begin
@@ -149,14 +151,14 @@ try
   Lev.Sectors.Add(sec);
 
   psrec:=pg;
-  inc(pchar(pg),GetSecRecSize);
+  inc(PAnsiChar(pg), GetSecRecSize);
 
   SetSec(sec,PSrec^);
 
   for j:=0 to PSrec^.nvxs-1 do sec.NewVertex;
 
-  SetSCVertices(sec.vertices,PSrec^.nvxs,pg);
-  inc(pchar(pg),SCVertSize(sec.vertices));
+  SetSCVertices(sec.vertices, PSrec^.nvxs, pg);
+  inc(PAnsiChar(pg), SCVertSize(sec.vertices));
 
   for j:=0 to Sec.vertices.count-1 do
   With sec.vertices[j] do
@@ -174,14 +176,14 @@ try
    sec.Surfaces.Add(surf);
 
    psfRec:=pg;
-   inc(pchar(pg),GetSurfRecSize);
+   inc(PAnsiChar(pg), GetSurfRecSize);
 
    SetSurf(surf,PSfRec^);
 
    for j:=0 to PSfRec^.Nvxs-1 do surf.AddVertex(nil);
 
    SetSFVertices(sec,surf,PSfRec^.nvxs,pg);
-   inc(pchar(pg),SFVertSize(surf.vertices));
+   inc(PAnsiChar(pg), SFVertSize(surf.vertices));
 
    surf.RecalcAll;
 
@@ -212,7 +214,8 @@ begin
 
  hg:=GlobalAlloc(GMEM_MOVEABLE or GMEM_SHARE,sizeof(integer)+ltsel.Count*GetLightRecSize);
  pg:=GlobalLock(hg);
- Integer(pg^):=ltsel.count; inc(pchar(pg),sizeof(Integer));
+ Integer(pg^) := ltsel.count;
+ inc(PAnsiChar(pg),sizeof(Integer));
 
  for i:=0 to ltsel.count-1 do
  begin
@@ -222,7 +225,7 @@ begin
   pl^.x:=pl^.x-rx;
   pl^.y:=pl^.y-ry;
   pl^.z:=pl^.z-rz;
-  inc(pchar(pg),GetLightRecSize);
+  inc(PAnsiChar(pg), GetLightRecSize);
  end;
 
  GlobalUnlock(hg);
@@ -248,7 +251,8 @@ try
  hg:=Clp.GetAsHandle(CF_JKLights);
  if hg=0 then exit;
  pg:=GlobalLock(hg);
- n:=Integer(pg^); inc(pchar(pg),sizeof(integer));
+ n:=Integer(pg^);
+ inc(PAnsiChar(pg), sizeof(integer));
 
  Result:=Lev.Lights.count;
 
@@ -256,7 +260,7 @@ try
  begin
   light:=lev.NewLight;
   SetLight(light,TLightRec(pg^));
-  inc(pchar(pg),GetLightRecSize);
+  inc(PAnsiChar(pg), GetLightRecSize);
 
   light.x:=light.x+atX;
   light.y:=light.y+atY;
@@ -279,7 +283,7 @@ var hg:integer;
     PT:PThingRec;
     x,y,z,pch,yaw,rol:double;
     size:integer;
-    po:Pchar;
+    po:PAnsiChar;
 begin
  n:=thsel.AddTH(Cur_TH);
 
@@ -315,7 +319,7 @@ try
  hg:=GlobalAlloc(GMEM_MOVEABLE or GMEM_SHARE,size);
  pg:=GlobalLock(hg);
  po:=pg;
- Integer(pg^):=thsel.count; inc(pchar(pg),sizeof(Integer));
+ Integer(pg^):=thsel.count; inc(PAnsiChar(pg),sizeof(Integer));
 
  for i:=0 to thsel.count-1 do
  begin
@@ -323,8 +327,8 @@ try
   pt:=pg;
 
 
-  size:=GetThing(thing,Pt);
-  inc(pchar(pg),size);
+  size := GetThing(thing, Pt);
+  inc(PAnsiChar(pg), size);
 
  { pt^.x:=pt^.x-rx;
   pt^.y:=pt^.y-ry;
@@ -369,20 +373,21 @@ var hg:integer;
     size:integer;
 begin
  Result:=-1;
- Clp:=Clipboard;
+ Clp := Clipboard;
  Clp.Open;
- hg:=Clp.GetAsHandle(CF_JKThings);
+ hg := Clp.GetAsHandle(CF_JKThings);
  if hg=0 then exit;
 try
- pg:=GlobalLock(hg);
- n:=Integer(pg^); inc(pchar(pg),sizeof(integer));
+ pg := GlobalLock(hg);
+ n := Integer(pg^);
+ inc(PAnsiChar(pg), sizeof(integer));
 
  Result:=Lev.Things.count;
 
  for i:=0 to n-1 do
  begin
   thing:=lev.NewThing;
-  inc(pchar(pg),SetThing(thing,PThingRec(pg)));
+  inc(PAnsiChar(pg), SetThing(thing, PThingRec(pg)));
 
   thing.x:=thing.x+atX;
   thing.y:=thing.y+atY;
@@ -392,8 +397,8 @@ try
   With thing.Vals[j] do
   if atype=at_frame then
   begin
-   GetFrame(x,y,z,pch,yaw,rol);
-   SetFrame(x+atX,y+atY,z+atZ,pch,yaw,rol);
+   GetFrame(x, y, z, pch, yaw, rol);
+   SetFrame(x + atX, y + atY, z + atZ, pch, yaw, rol);
   end;
 
   Lev.Things.Add(thing);

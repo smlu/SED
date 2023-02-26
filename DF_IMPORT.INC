@@ -22,10 +22,10 @@ begin
  for j:=0 to txvertices.count-1 do
  With txVertices[j] do
  begin
-  Intensity:=l/31;
-  r:=Intensity;
-  g:=Intensity;
-  b:=Intensity;
+  color.a:=l/31;
+  color.r:=color.a;
+  color.g:=color.a;
+  color.b:=color.a;
  end;
 end;
 

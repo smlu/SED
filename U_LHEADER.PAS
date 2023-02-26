@@ -48,18 +48,12 @@ type
     procedure BNCmpClick(Sender: TObject);
   private
     { Private declarations }
-    vGrav,
-    vSkyZ,
-    vSkyX,vSkyY,
-    vHorDist,vPar,vHorX,vHorY,
-    vMM1,vMM2,vMM3,vMM4,
-    vLOD1,vLOD2,vLOD3,vLOD4,
-    vGouraud,vPerp,vCMP,
-    vPPu:TValInput;
+    vGrav, vSkyZ, vSkyX, vSkyY, vHorDist, vPar, vHorX, vHorY, vMM1, vMM2, vMM3,
+      vMM4, vLOD1, vLOD2, vLOD3, vLOD4, vGouraud, vPerp, vCMP, vPPu: TValInput;
 
   public
     { Public declarations }
-   Function EditHeader:boolean;
+    Function EditHeader: boolean;
   end;
 
 var
@@ -73,81 +67,82 @@ uses ResourcePicker;
 
 procedure TLHEdit.FormCreate(Sender: TObject);
 begin
- vGrav:=TValInput.Create(EBGravity);
- vSkyZ:=TValInput.Create(EBSkyZ);
- vSkyX:=TValInput.Create(EBSkyOffsX);
- vSkyY:=TValInput.Create(EBSkyOffsY);
- vHorDist:=TValInput.Create(EBHorDist);
- vPar:=TValInput.Create(EBHorPPRev);
- vHorX:=TValInput.Create(EBHorSkyX);
- vHorY:=TValInput.Create(EBHorSkyY);
- vMM1:=TValInput.Create(EBMip1);
- vMM2:=TValInput.Create(EBMip2);
- vMM3:=TValInput.Create(EBMip3);
- vMM4:=TValInput.Create(EBMip4);
- vLOD1:=TValInput.Create(EBLOD1);
- vLOD2:=TValInput.Create(EBLOD2);
- vLOD3:=TValInput.Create(EBLOD3);
- vLOD4:=TValInput.Create(EBLOD4);
- vGouraud:=TValInput.Create(EBGouraud);
- vPerp:=TValInput.Create(EBPerspective);
- vCMP:=TValInput.Create(EBCMP);
- vppu:=TValInput.Create(EBPPU);
+  vGrav := TValInput.Create(EBGravity);
+  vSkyZ := TValInput.Create(EBSkyZ);
+  vSkyX := TValInput.Create(EBSkyOffsX);
+  vSkyY := TValInput.Create(EBSkyOffsY);
+  vHorDist := TValInput.Create(EBHorDist);
+  vPar := TValInput.Create(EBHorPPRev);
+  vHorX := TValInput.Create(EBHorSkyX);
+  vHorY := TValInput.Create(EBHorSkyY);
+  vMM1 := TValInput.Create(EBMip1);
+  vMM2 := TValInput.Create(EBMip2);
+  vMM3 := TValInput.Create(EBMip3);
+  vMM4 := TValInput.Create(EBMip4);
+  vLOD1 := TValInput.Create(EBLOD1);
+  vLOD2 := TValInput.Create(EBLOD2);
+  vLOD3 := TValInput.Create(EBLOD3);
+  vLOD4 := TValInput.Create(EBLOD4);
+  vGouraud := TValInput.Create(EBGouraud);
+  vPerp := TValInput.Create(EBPerspective);
+  vCMP := TValInput.Create(EBCMP);
+  vPPu := TValInput.Create(EBPPU);
 end;
 
 procedure TLHEdit.BNCmpClick(Sender: TObject);
 begin
- vCMP.SetAsString(ResPicker.PickCMP(vCMp.s));
+  vCMP.SetAsString(ResPicker.PickCMP(vCMP.s));
 end;
 
-Function TLHEdit.EditHeader:boolean;
+Function TLHEdit.EditHeader: boolean;
 begin
- Result:=false;
-With Level.Header do
-begin
- vGrav.SetAsFloat(Gravity);
- vSkyZ.SetAsFloat(CeilingSkyZ);
- vSkyX.SetAsFloat(CeilingSkyOffs[1]);
- vSkyY.SetAsFloat(CeilingSkyOffs[2]);
- vHorDist.SetAsFloat(HorDistance);
- vPar.SetAsFloat(HorPixelsPerRev);
- vHorX.SetAsFloat(HorSkyOffs[1]);
- vHorY.SetAsFloat(HorSkyOffs[2]);
- vMM1.SetAsFloat(MipMapDist[1]);
- vMM2.SetAsFloat(MipMapDist[2]);
- vMM3.SetAsFloat(MipMapDist[3]);
- vMM4.SetAsFloat(MipMapDist[4]);
- vLOD1.SetAsFloat(LODDist[1]);
- vLOD2.SetAsFloat(LODDist[2]);
- vLOD3.SetAsFloat(LODDist[3]);
- vLOD4.SetAsFloat(LODDist[4]);
- vGouraud.SetAsFloat(GouraudDist);
- vPerp.SetAsFloat(PerspDist);
- vppu.SetAsFloat(level.PPUnit);
- vCMP.SetAsString(Level.MasterCMP);
- if ShowModal<>MrOK then exit;
- Gravity:=vGrav.AsFloat;
- CeilingSkyZ:=vSkyZ.AsFloat;
- CeilingSkyOffs[1]:=vSkyX.AsFloat;
- CeilingSkyOffs[2]:=vSkyY.AsFloat;
- HorDistance:=vHorDist.AsFloat;
- HorPixelsPerRev:=vPar.AsFloat;
- HorSkyOffs[1]:=vHorX.AsFloat;
- HorSkyOffs[2]:=vHorY.AsFloat;
- MipMapDist[1]:=vMM1.AsFloat;
- MipMapDist[2]:=vMM2.AsFloat;
- MipMapDist[3]:=vMM3.AsFloat;
- MipMapDist[4]:=vMM4.AsFloat;
- LODDist[1]:=vLOD1.AsFloat;
- LODDist[2]:=vLOD2.AsFloat;
- LODDist[3]:=vLOD3.AsFloat;
- LODDist[4]:=vLOD4.AsFloat;
- GouraudDist:=vGouraud.AsFloat;
- Level.PPunit:=vPPu.AsFloat;
- PerspDist:=vPerp.AsFloat;
- Result:=CompareText(Level.MasterCMP,vCMP.s)<>0;
- Level.MasterCMP:=vCMP.s;
-end;
+  Result := false;
+  With Level.Header do
+  begin
+    vGrav.SetAsFloat(Gravity);
+    vSkyZ.SetAsFloat(CeilingSkyZ);
+    vSkyX.SetAsFloat(CeilingSkyOffs[1]);
+    vSkyY.SetAsFloat(CeilingSkyOffs[2]);
+    vHorDist.SetAsFloat(HorDistance);
+    vPar.SetAsFloat(HorPixelsPerRev);
+    vHorX.SetAsFloat(HorSkyOffs[1]);
+    vHorY.SetAsFloat(HorSkyOffs[2]);
+    vMM1.SetAsFloat(MipMapDist[1]);
+    vMM2.SetAsFloat(MipMapDist[2]);
+    vMM3.SetAsFloat(MipMapDist[3]);
+    vMM4.SetAsFloat(MipMapDist[4]);
+    vLOD1.SetAsFloat(LODDist[1]);
+    vLOD2.SetAsFloat(LODDist[2]);
+    vLOD3.SetAsFloat(LODDist[3]);
+    vLOD4.SetAsFloat(LODDist[4]);
+    vGouraud.SetAsFloat(GouraudDist);
+    vPerp.SetAsFloat(PerspDist);
+    vPPu.SetAsFloat(Level.PPUnit);
+    vCMP.SetAsString(Level.MasterCMP);
+    if ShowModal <> MrOK then
+      exit;
+    Gravity := vGrav.AsFloat;
+    CeilingSkyZ := vSkyZ.AsFloat;
+    CeilingSkyOffs[1] := vSkyX.AsFloat;
+    CeilingSkyOffs[2] := vSkyY.AsFloat;
+    HorDistance := vHorDist.AsFloat;
+    HorPixelsPerRev := vPar.AsFloat;
+    HorSkyOffs[1] := vHorX.AsFloat;
+    HorSkyOffs[2] := vHorY.AsFloat;
+    MipMapDist[1] := vMM1.AsFloat;
+    MipMapDist[2] := vMM2.AsFloat;
+    MipMapDist[3] := vMM3.AsFloat;
+    MipMapDist[4] := vMM4.AsFloat;
+    LODDist[1] := vLOD1.AsFloat;
+    LODDist[2] := vLOD2.AsFloat;
+    LODDist[3] := vLOD3.AsFloat;
+    LODDist[4] := vLOD4.AsFloat;
+    GouraudDist := vGouraud.AsFloat;
+    Level.PPUnit := vPPu.AsFloat;
+    PerspDist := vPerp.AsFloat;
+    Result := CompareText(Level.MasterCMP, vCMP.s) <> 0;
+    Level.MasterCMP := vCMP.s;
+  end;
 end;
 
 end.

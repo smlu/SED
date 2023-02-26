@@ -2,7 +2,7 @@ unit u_undo;
 
 interface
 
-uses J_Level, SysUtils, Classes, GlobalVars, values, u_3dos;
+uses J_Level, misc_utils, SysUtils, Classes, GlobalVars, values, u_3dos;
 
 {$A-}
 
@@ -29,8 +29,9 @@ Type
  TSFVX=record
   nvx:word;
   u,v:single;
-  intensity:single;
-  r,g,b:single;
+  color: TColorF;
+//  intensity:single;
+//  r,g,b:single;
  end;
 
  PSFVX=^TSFVX;
@@ -38,11 +39,11 @@ Type
  PSecRec=^TSecRec;
  TSecRec=record
   Flags:longint;
-  Ambient:single;
-  extra:single;
+  Ambient:TColorF;
+  ExtraLight:TColorF;
   ColorMap:array[0..31] of char;
   Tint:record r,g,b:single end;
-  Sound:array[0..47] of char;
+  Sound:array[0..63] of char;
   snd_vol:single;
   layer:SmallInt;
   nvxs,nsfs:integer;
@@ -50,16 +51,16 @@ Type
 
  PSurfRec=^TSurfRec;
 
- TSurfRec=record
-  AdjSC,AdjSF:SmallInt;
-  AdjoinFlags:Longint;
-  Material:array[0..47] of char;
-  SurfFlags,FaceFlags:Longint;
-  geo,light,tex:byte;
-  extraLight:single;
-  uscale,vscale:single;
-  nvxs:integer;
-  adjID:integer;
+ TSurfRec = record
+  AdjSC,AdjSF: SmallInt;
+  AdjoinFlags: Longint;
+  Material: array[0..63] of char;
+  SurfFlags, FaceFlags: Longint;
+  geo, light, tex: byte;
+  extraLight: TColorF;
+  uscale, vscale: single;
+  nvxs: integer;
+  adjID: integer;
  end;
 
 TLightRec=record
@@ -75,7 +76,7 @@ end;
 PThingRec=^TThingRec;
 TThingRec=record
  Sec:SmallInt;
- name:array[0..47] of char;
+ name:array[0..63] of char;
  X,Y,Z:double;
  PCH,YAW,ROL:Double;
  layer:SmallInt;
@@ -84,7 +85,7 @@ end;
 
 
 TCogRec=record
- name:array[0..47] of char;
+ name:array[0..63] of char;
  vals:array[0..255] of char;
  {vals:TCOGValues;}
 end;
@@ -97,12 +98,12 @@ TURQRec=record
  parent:integer;
 end;
 
-Procedure StartUndoRec(const name:string);
-Procedure SaveSecUndo(sec:TJKSector;change:integer;how:integer);
-Procedure SaveThingUndo(th:TJKThing;change:integer);
-Procedure SaveLightUndo(lt:TJedLight;change:integer);
-Procedure SaveCOGUndo(cog:TCOG);
-Procedure SaveNodeUndo(node:THnode;change:integer);
+Procedure StartUndoRec(const name: string);
+Procedure SaveSecUndo(sec: TJKSector; change: integer; how: integer);
+Procedure SaveThingUndo(th: TJKThing; change: integer);
+Procedure SaveLightUndo(lt: TJedLight; change: integer);
+Procedure SaveCOGUndo(cog: TCOG);
+Procedure SaveNodeUndo(node: THnode; change: integer);
 Procedure ClearNodesUndo;
 
 Procedure EndUndoRec;
@@ -110,43 +111,43 @@ Function GetUndoRecName:string;
 Procedure ApplyUndo;
 Procedure ClearUndoBuffer;
 
-Procedure GetLight(light:TJedLight;var lrec:TLightRec);
-Procedure SetLight(light:TJedLight;var lrec:TLightRec);
+Procedure GetLight(light: TJedLight; var lrec: TLightRec);
+Procedure SetLight(light: TJedLight; var lrec: TLightRec);
 Function GetLightRecSize:integer;
 
-Function GetThingRecSize(thing:TJKThing):integer;
-Function GetThing(thing:TJKThing;trec:PThingRec):integer;
-Function SetThing(thing:TJKThing;trec:PThingRec):integer;
+Function GetThingRecSize(thing: TJKThing): integer;
+Function GetThing(thing: TJKThing; trec: PThingRec): integer;
+Function SetThing(thing: TJKThing; trec: PThingRec): integer;
 
-Function GetThingValSize(thing:TJKThing):integer;
-Function getThingVals(thing:TJKThing;pvals:Pchar):integer;
-Function SetThingVals(thing:TJKThing;pvals:Pchar):integer;
+Function GetThingValSize(thing: TJKThing): integer;
+Function GetThingVals(thing: TJKThing; pvals: PChar): integer;
+Function SetThingVals(thing: TJKThing; pvals: PChar): integer;
 
-Function GetCOGRecRecSize:integer;
-Procedure GetCOG(cog:TCog;var crec:TCogRec);
-Procedure SetCOG(cog:TCog;var crec:TCogRec);
+Function GetCOGRecRecSize: integer;
+Procedure GetCOG(cog: TCog; var crec: TCogRec);
+Procedure SetCOG(cog: TCog; var crec: TCogRec);
 
 
-Function GetSecRecSize:Integer;
-Procedure GetSec(sec:TJKSector;var srec:TSecRec);
-Procedure SetSec(sec:TJKSector;var srec:TSecRec);
-Procedure GetSurf(surf:TJKSurface;var sfrec:TSurfRec);
-Function GetSurfRecSize:Integer;
-Procedure SetSurf(surf:TJKSurface;var sfrec:TSurfRec);
-Function SCVertSize(vs:TJKVertices):integer;
-Procedure GetSCVertices(vs:TJKVertices;vxrecs:PVXRec);
-Procedure SetSCVertices(vs:TJKVertices;nvxs:integer;vxrecs:PVXRec);
-Function SFVertSize(vs:TJKVertices):integer;
-Procedure GetSFVertices(surf:TJKSurface;pvxs:PSFVX);
-Procedure SetSFVertices(sec:TJKSector;surf:TJKSUrface;nvxs:integer;pvxs:PSFVX);
+Function GetSecRecSize: Integer;
+Procedure GetSec(sec: TJKSector; var srec: TSecRec);
+Procedure SetSec(sec: TJKSector; var srec: TSecRec);
+Procedure GetSurf(surf: TJKSurface; var sfrec: TSurfRec);
+Function GetSurfRecSize: Integer;
+Procedure SetSurf(surf: TJKSurface; var sfrec: TSurfRec);
+Function SCVertSize(vs: TJKVertices): integer;
+Procedure GetSCVertices(vs: TJKVertices; vxrecs: PVXRec);
+Procedure SetSCVertices(vs: TJKVertices; nvxs: integer; vxrecs: PVXRec);
+Function SFVertSize(vs: TJKVertices): integer;
+Procedure GetSFVertices(surf: TJKSurface; pvxs: PSFVX);
+Procedure SetSFVertices(sec: TJKSector; surf: TJKSUrface; nvxs: integer; pvxs: PSFVX);
 
 Function GetURQRecSize:integer;
-Procedure GetURQRec(node:THNode;var nrec:TURQRec);
-Procedure SetURQRec(node:THNode;var nrec:TURQRec);
+Procedure GetURQRec(node: THNode;var nrec: TURQRec);
+Procedure SetURQRec(node: THNode;var nrec: TURQRec);
 
 implementation
 
-uses Misc_utils,  Jed_main, lev_utils, u_3doform;
+uses Jed_main, lev_utils, u_3doform;
 
 Type
 
@@ -218,7 +219,11 @@ var
 
 Destructor TUndoChange.Destroy;
 begin
- if data<>nil then FreeMem(data);
+ if data<>nil then
+ begin
+  FreeMem(data);
+  data := nil;
+ end;
 end;
 
 
@@ -230,10 +235,19 @@ end;
 Destructor TObjList.Destroy;
 var i:integer;
 begin
- for i:=0 to count-1 do
-  GetObj(i).Free;
- ids.free;
- Inherited Destroy;
+
+  for i:=0 to count-1 do
+    begin
+      GetObj(i).Free;
+      //Delete(i);
+    end;
+  Clear;
+  if ids <> nil then
+    begin
+      ids.Free;
+      ids := nil;
+    end;
+  Inherited Destroy;
 end;
 
 Procedure TObjList.AddObject(obj:TObject; objid:integer);
@@ -284,9 +298,9 @@ end;
 
 
 
-Function GetSecRecSize:Integer;
+Function GetSecRecSize: Integer;
 begin
- result:=sizeof(TSecRec);
+ result := sizeof(TSecRec);
 end;
 
 Procedure GetSec(sec:TJKSector;var srec:TSecRec);
@@ -295,12 +309,12 @@ begin
  begin
   srec.flags:=Flags;
   srec.Ambient:=Ambient;
-  srec.extra:=extra;
-  StrLCopy(srec.ColorMap,pchar(Colormap),Sizeof(srec.colormap));
+  srec.ExtraLight:=ExtraLight;
+  StrLCopy(srec.ColorMap, PChar(Colormap), Length(srec.colormap) - 1);
   srec.tint.r:=Tint.dx;
   srec.tint.g:=Tint.dy;
   srec.tint.b:=Tint.dz;
-  StrLCopy(srec.Sound,Pchar(Sound),sizeof(srec.Sound));
+  StrLCopy(srec.Sound, PChar(Sound), Length(srec.Sound) - 1);
   srec.snd_vol:=snd_vol;
   srec.layer:=Layer;
   srec.nvxs:=Vertices.count;
@@ -314,7 +328,7 @@ begin
  begin
   Flags:=srec.flags;
   Ambient:=srec.Ambient;
-  extra:=srec.extra;
+  ExtraLight:=srec.ExtraLight;
   ColorMap:=srec.Colormap;
   Tint.dx:=srec.tint.r;
   Tint.dy:=srec.tint.g;
@@ -336,7 +350,7 @@ begin
   sfrec.adjID:=adjoin.sector.id;
  end;
  sfrec.AdjoinFlags:=AdjoinFlags;
- StrLCopy(sfrec.Material,pchar(Material),sizeof(sfrec.Material));
+ StrLCopy(sfrec.Material, PChar(Material), Length(sfrec.Material) - 1);
  sfrec.SurfFlags:=SurfFlags;
  sfrec.FaceFlags:=FaceFlags;
  sfrec.geo:=geo;
@@ -349,7 +363,7 @@ begin
 end;
 end;
 
-Function GetSurfRecSize:Integer;
+Function GetSurfRecSize: Integer;
 begin
  Result:=sizeof(TSurfRec);
 end;
@@ -402,9 +416,9 @@ begin
 end;
 
 
-Function SFVertSize(vs:TJKVertices):integer;
+Function SFVertSize(vs: TJKVertices):integer;
 begin
- result:=vs.count*sizeof(TSFVX);
+ result := vs.count * sizeof(TSFVX);
 end;
 
 Procedure GetSFVertices(surf:TJKSurface;pvxs:PSFVX);
@@ -416,10 +430,10 @@ begin
   pvxs^.nvx:=surf.vertices[i].num;
   pvxs^.u:=u;
   pvxs^.v:=v;
-  pvxs^.intensity:=Intensity;
-  pvxs^.r:=r;
-  pvxs^.g:=g;
-  pvxs^.b:=b;
+  pvxs^.color.a:=color.a;
+  pvxs^.color.r:=color.r;
+  pvxs^.color.g:=color.g;
+  pvxs^.color.b:=color.b;
   inc(pvxs);
  end;
 end;
@@ -433,10 +447,10 @@ begin
   surf.vertices[i]:=sec.Vertices[pvxs^.nvx];
   u:=pvxs^.u;
   v:=pvxs^.v;
-  Intensity:=pvxs^.intensity;
-  r:=pvxs^.r;
-  g:=pvxs^.g;
-  b:=pvxs^.b;
+  color.a:=pvxs^.color.a;
+  color.r:=pvxs^.color.r;
+  color.g:=pvxs^.color.g;
+  color.b:=pvxs^.color.b;
   inc(pvxs);
  end;
 end;
@@ -484,27 +498,27 @@ end;
 
 Function GetThingRecSize(thing:TJKThing):integer;
 begin
- Result:=Sizeof(TThingRec)+GetThingValSize(thing);
+ Result:=Sizeof(TThingRec) + GetThingValSize(thing);
 end;
 
-Function GetThing(thing:TJKThing;trec:PThingRec):integer;
+Function GetThing(thing: TJKThing; trec: PThingRec):integer;
 begin
- With thing do
- begin
-  if sec=nil then trec.Sec:=-1 else trec.sec:=Sec.num;
-  StrLCopy(trec.Name,pchar(Name),sizeof(trec.Name));
-  trec.X:=X;
-  trec.Y:=Y;
-  trec.Z:=Z;
-  trec.PCH:=PCH;
-  trec.YAW:=YAW;
-  trec.ROL:=ROL;
-  trec.layer:=layer;
- end;
- result:=sizeof(TThingRec)+GetThingVals(thing,trec.vals);
+  With thing do
+  begin
+    if sec = nil then trec.Sec := -1 else trec.sec := Sec.num;
+    StrLCopy(trec.Name, PChar(Name), Length(trec.Name) - 1);
+    trec.X:=X;
+    trec.Y:=Y;
+    trec.Z:=Z;
+    trec.PCH:=PCH;
+    trec.YAW:=YAW;
+    trec.ROL:=ROL;
+    trec.layer:=layer;
+  end;
+  Result := sizeof(TThingRec) + GetThingVals(thing, trec.vals);
 end;
 
-Function SetThing(thing:TJKThing;trec:PThingRec):integer;
+Function SetThing(thing: TJKThing; trec: PThingRec): integer;
 begin
  With thing do
  begin
@@ -518,67 +532,73 @@ begin
   ROL:=trec.ROL;
   layer:=trec.layer;
  end;
- result:=sizeof(TThingRec)+SetThingVals(thing,trec.vals);
+ result := sizeof(TThingRec) + SetThingVals(thing, trec.vals);
 end;
 
-Function GetThingValSize(thing:TJKThing):integer;
+Function GetThingValSize(thing: TJKThing): integer;
 var i:integer;
 begin
- result:=0;
- for i:=0 to thing.Vals.count-1 do
- with thing.vals[i] do
- begin
-  inc(result);
-  inc(result,length(name));
-  inc(result);
-  inc(result,length(AsString));
- end;
+  result:=0;
+  for i:=0 to thing.Vals.count-1 do
+  with thing.vals[i] do
+    begin
+      inc(result, sizeof(char)); // #32 - space char
+      inc(result, ByteLength(name));
+      inc(result, sizeof(char));  // =
+      inc(result, ByteLength(AsString));
+    end;
 end;
 
-Function getThingVals(thing:TJKThing;pvals:Pchar):integer;
+Function GetThingVals(thing: TJKThing; pvals: Pchar): integer;
 var st:string;
     i:integer;
 begin
   st:='';
-  for i:=0 to thing.vals.count-1 do
+  for i:=0 to thing.vals.count - 1 do
   With thing.vals[i] do
   begin
-   if st='' then st:=ConCat(name,'=',AsString) else
-                st:=ConCat(st,#32,name,'=',AsString);
+   if st = '' then st := ConCat(name, '=', AsString)
+   else st := ConCat(st, #32, name, '=', AsString);
   end;
-  StrCopy(pvals,pchar(st));
- result:=length(st);
+  StrCopy(pvals, pchar(st));
+  Result := ByteLength(st);
 end;
 
-Function SetThingVals(thing:TJKThing;pvals:Pchar):integer;
+Function SetThingVals(thing: TJKThing; pvals: PChar):integer;
 var
     n,p:integer;
-    v:TTPLValue;
+    v: TTPLValue;
     s,w:string;
 begin
-  s:=pvals;
-  result:=length(s);
-  p:=1;n:=0;
-  while p<=length(s) do
+  s := pvals;
+  result := ByteLength(s);
+  p:=1; n:=0;
+  while p <= Length(s) do
   begin
-   p:=GetWord(s,p,w);
-   if n<thing.Vals.count then v:=thing.vals[n] else
-   begin v:=TTPLValue.Create; thing.Vals.Add(v); end;
-   S2TPLVal(w,v);
-   inc(n);
+    p := GetWord(s, p, w);
+    if n < thing.Vals.count then
+      v := thing.vals[n]
+    else
+      begin
+        v := TTPLValue.Create;
+        thing.Vals.Add(v);
+      end;
+    S2TPLVal(w, v);
+    inc(n);
   end;
 
   for p:=thing.Vals.count-1 downto n do
-   begin
+  begin
     thing.Vals[p].Free;
     thing.Vals.Delete(p);
-   end;
+  end;
 end;
 
 
-Procedure ResolveThingRefs(thing:TJKThing;var trec:TThingRec);
+Procedure ResolveThingRefs(thing: TJKThing; var trec: TThingRec);
 begin
- if (trec.sec<0) or (trec.sec>=Level.Sectors.count) then Thing.sec:=nil
+ if (trec.sec < 0 ) or (trec.sec >= Level.Sectors.count) then
+  Thing.sec := nil
  else thing.Sec:=Level.Sectors[trec.sec];
 end;
 
@@ -591,14 +611,14 @@ Procedure GetCOG(cog:TCog;var crec:TCogRec);
 var s:string;
     i:integer;
 begin
- StrLCopy(crec.Name,pchar(cog.Name),sizeof(crec.Name));
+ StrLCopy(crec.Name, pchar(cog.Name), Length(crec.Name) - 1);
  s:='';
  for i:=0 to cog.vals.count-1 do
  begin
  end;
 end;
 
-Procedure SetCOG(cog:TCog;var crec:TCogRec);
+Procedure SetCOG(cog: TCog; var crec: TCogRec);
 begin
  cog.name:=crec.name;
 end;
@@ -610,7 +630,7 @@ end;
 
 Procedure GetURQRec(node:THNode;var nrec:TURQRec);
 begin
- StrLCopy(nrec.NodeName,pchar(node.NodeName),sizeof(nrec.NodeName));
+ StrLCopy(nrec.NodeName, PChar(node.NodeName), Length(nrec.NodeName) - 1);
  nrec.x:=node.x;
  nrec.y:=node.y;
  nrec.z:=node.z;
@@ -623,7 +643,7 @@ end;
 
 Procedure SetURQRec(node:THNode;var nrec:TURQRec);
 begin
- StrLCopy(nrec.NodeName,pchar(node.NodeName),sizeof(nrec.NodeName));
+ StrLCopy(nrec.NodeName, PChar(node.NodeName), Length(nrec.NodeName) - 1);
  node.x:=nrec.x;
  node.y:=nrec.y;
  node.z:=nrec.z;
@@ -642,7 +662,7 @@ begin
   exit;
  end;
 
- While UndoStack.Count>4 do
+ While UndoStack.Count>UndoStackSize do
  begin
   TUndoRec(UndoStack[0]).Free;
   UndoStack.Delete(0);
@@ -700,8 +720,8 @@ begin
   ch_added:;
   ch_deleted,ch_changed:
   begin
-   GetMem(Data,GetThingRecSize(TJKThing(obj)));
-   getThing(TJKThing(obj),PThingRec(data));
+   GetMem(Data, GetThingRecSize(TJKThing(obj)));
+   GetThing(TJKThing(obj), PThingRec(data));
   end;
  end;
 end;
@@ -713,56 +733,57 @@ var n:integer;
 begin
  n:=Level.GetThingByID(objid);
  case change of
-  ch_added: if n=-1 then exit else
+  ch_added: if n = -1 then exit else
             begin
-             tmpur:=CurUndoRec;
-             CurUndoRec:=nil;
+             tmpur := CurUndoRec;
+             CurUndoRec := nil;
              DeleteThing(Level,n);
-             CurUndoRec:=tmpur;
+             CurUndoRec := tmpur;
             end;
-  ch_deleted: begin
-               if n<>-1 then exit;
-               th:=Level.NewThing;
-               SetThing(th,PThingRec(data));
-               ResolveThingRefs(th,TThingRec(data^));
-               Level.Things.Add(th);
-               Level.RenumThings;
-               JedMain.ThingAdded(th);
-              end;
-  ch_changed: begin
-               if (n=-1) then exit;
-               th:=Level.Things[n];
-               SetThing(th,PThingRec(data));
-               ResolveThingRefs(th,TThingRec(data^));
-               JedMain.ThingChanged(th);
-              end;
+  ch_deleted:
+            begin
+             if n <> -1 then exit;
+             th := Level.NewThing;
+             SetThing(th, PThingRec(data));
+             ResolveThingRefs(th, TThingRec(data^));
+             Level.Things.Add(th);
+             Level.RenumThings;
+             JedMain.ThingAdded(th);
+            end;
+  ch_changed:
+            begin
+             if (n = -1) then exit;
+             th := Level.Things[n];
+             SetThing(th, PThingRec(data));
+             ResolveThingRefs(th, TThingRec(data^));
+             JedMain.ThingChanged(th);
+            end;
  end;
 end;
 
 Procedure TSecValUndo.SaveUndo(obj:TObject;ch:integer);
 var sec:TJKSector;
-    pd:pchar;
+    pd:PAnsiChar;
     i:integer;
 begin
- change:=ch;
- if (ch<>ch_changed) and (ch<>ch_deleted) then exit;
- sec:=TJKSector(obj);
- nsfs:=sec.surfaces.count;
- GetMem(Data,GetSecRecSize+GetSurfRecSize*nsfs);
- pd:=Data;
- GetSec(sec,PSecRec(pd)^);
- inc(pd,GetSecRecSize);
+ change := ch;
+ if (ch <> ch_changed) and (ch <> ch_deleted) then exit;
+ sec := TJKSector(obj);
+ nsfs := sec.surfaces.count;
+ GetMem(Data, GetSecRecSize + GetSurfRecSize * nsfs);
+ pd := Data;
+ GetSec(sec, PSecRec(pd)^);
+ inc(pd, GetSecRecSize);
  for i:=0 to sec.surfaces.count-1 do
  begin
-  GetSurf(sec.surfaces[i],PSurfRec(pd)^);
-  inc(pd,GetSurfRecSize);
+  GetSurf(sec.surfaces[i], PSurfRec(pd)^);
+  inc(pd, GetSurfRecSize);
  end;
-
 end;
 
 procedure TSecValUndo.Undo(objid:Integer);
 var sec:TJKSector;
-    pd:pchar;
+    pd:PAnsiChar;
     i,n:integer;
 
 Procedure ResolveRefs;
@@ -837,7 +858,7 @@ end;
 Procedure TSecGeoUndo.SaveUndo(obj:TObject;ch:integer);
 type
     pword=^word;
-var pd:pchar;
+var pd:PAnsiChar;
     size,i:integer;
     sec:TJKSector;
     surf:TJKSurface;
@@ -880,7 +901,7 @@ type
 var n:integer;
     sec:TJKSector;
     tmpur:TUndoRec;
-    pd:pchar;
+    pd:PAnsiChar;
 
 Procedure SetSector;
 var i,j,n:integer;

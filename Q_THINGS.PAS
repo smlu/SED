@@ -54,12 +54,12 @@ type
     procedure BNLayerClick(Sender: TObject);
   private
     { Private declarations }
-    fi:TThingFindInfo;
-    LastFound:Boolean;
+    fi: TThingFindInfo;
+    LastFound: Boolean;
   public
     { Public declarations }
-    Function Find:Boolean;
-    Function FindNext(curOB:Integer):Boolean;
+    Function Find: Boolean;
+    Function FindNext(curOB: Integer): Boolean;
   end;
 
 var
@@ -74,102 +74,104 @@ uses ResourcePicker, FlagEditor, Jed_main;
 procedure TFindThings.FormCreate(Sender: TObject);
 begin
 
- ClientWidth:=SBHelp.Left+CBNUM.Top+SBHelp.Width;
- ClientHeight:=SBHelp.Top+CBNUM.Top+SBHelp.Height;
+  ClientWidth := SBHelp.Left + CBNum.Top + SBHelp.Width;
+  ClientHeight := SBHelp.Top + CBNum.Top + SBHelp.Height;
 
-
- fi:=TThingFindInfo.Create;
- TQueryField.CreateInt(CBNum,EBNum,fi.Num);
- TQueryField.CreateStr(CBName,EBName,fi.Name);
- TQueryField.CreateDouble(CBPCH,EBPCH,fi.PCH);
- TQueryField.CreateDouble(CBYAW,EBYAW,fi.YAW);
- TQueryField.CreateDouble(CBROL,EBROL,fi.ROL);
- TQueryField.CreateDouble(CBX,EBX,fi.X);
- TQueryField.CreateDouble(CBY,EBY,fi.Y);
- TQueryField.CreateDouble(CBZ,EBZ,fi.Z);
- TQueryField.CreateInt(CBSec,EBSec,fi.Sec);
- TQueryField.CreateStr(CBLayer,EBLayer,fi.Layer);
+  fi := TThingFindInfo.Create;
+  TQueryField.CreateInt(CBNum, EBNum, fi.Num);
+  TQueryField.CreateStr(CBName, EBName, fi.Name);
+  TQueryField.CreateDouble(CBPCH, EBPCH, fi.PCH);
+  TQueryField.CreateDouble(CBYAW, EBYAW, fi.YAW);
+  TQueryField.CreateDouble(CBROL, EBROL, fi.ROL);
+  TQueryField.CreateDouble(CBX, EBX, fi.X);
+  TQueryField.CreateDouble(CBY, EBY, fi.Y);
+  TQueryField.CreateDouble(CBZ, EBZ, fi.Z);
+  TQueryField.CreateInt(CBSec, EBSec, fi.Sec);
+  TQueryField.CreateStr(CBLayer, EBLayer, fi.Layer);
 end;
 
 procedure TFindThings.BNNameClick(Sender: TObject);
 begin
- EBName.Text:=ResPicker.PickThing(EBName.Text);
+  EBName.Text := ResPicker.PickThing(EBName.Text);
 end;
 
 procedure TFindThings.BNLayerClick(Sender: TObject);
 begin
- EBLayer.Text:=ResPicker.PickLayer(EBLayer.Text);
+  EBLayer.Text := ResPicker.PickLayer(EBLayer.Text);
 end;
-
 
 Function TFindThings.Find;
-var Lev:TJKLevel;
-    nOb,o:Integer;
-    Ms:TTHMultiSel;
+var
+  Lev: TJKLevel;
+  nOb, o: Integer;
+  Ms: TTHMultiSel;
 begin
- Result:=false;
- Lev:=Level;
- {ms:=TMapWindow(MapWindow).OBMultiSel;}
- if ShowModal<>mrOK then exit;
+  Result := false;
+  Lev := Level;
+  { ms:=TMapWindow(MapWindow).OBMultiSel; }
+  if ShowModal <> mrOK then
+    exit;
 
- ms:=JedMain.thsel;
+  Ms := JedMain.thsel;
 
-if RBAdd.Checked then
-begin
- o:=FindNextThing(Lev,-1,fi);
- While o<>-1 do
- begin
-  Result:=true;
-  ms.AddTH(o);
-  o:=FindNextThing(Lev,o,fi);
- end;
+  if RBAdd.Checked then
+  begin
+    o := FindNextThing(Lev, -1, fi);
+    While o <> -1 do
+    begin
+      Result := true;
+      Ms.AddTH(o);
+      o := FindNextThing(Lev, o, fi);
+    end;
+  end;
+
+  if RBSubtract.Checked then
+  begin
+    o := FindNextThing(Lev, -1, fi);
+    While o <> -1 do
+    begin
+      Result := true;
+      nOb := Ms.FindTH(o);
+      if nOb <> -1 then
+        Ms.DeleteN(nOb);
+      o := FindNextThing(Lev, o, fi);
+    end;
+  end;
+
+  if RBFocus.Checked then
+  begin
+    o := FindNextThing(Lev, -1, fi);
+    if o <> -1 then
+    begin
+      JedMain.GotoTH(o);
+      Result := true;
+    end;
+  end;
+
+  if not Result then
+    ShowMessage('No hits!');
+
 end;
 
-if RBSubtract.Checked then
+Function TFindThings.FindNext(curOB: Integer): Boolean;
+var
+  o: Integer;
 begin
- o:=FindNextThing(Lev,-1,fi);
- While o<>-1 do
- begin
-  Result:=true;
-  nOb:=ms.FindTH(o);
-  if nOb<>-1 then ms.DeleteN(nOb);
-  o:=FindNextThing(Lev,o,fi);
- end;
+  o := FindNextThing(Level, curOB, fi);
+  if o <> -1 then
+  begin
+    JedMain.GotoTH(o);
+    Result := true;
+  end;
+  Result := o <> -1;
+  if not Result then
+    ShowMessage('No more hits!');
 end;
-
-if RBFocus.Checked then
-begin
- o:=FindNextThing(Lev,-1,fi);
- if o<>-1 then
- begin
-  JedMain.GotoTH(o);
-  Result:=true;
- end;
-end;
-
-if not Result then ShowMessage('No hits!');
-
-end;
-
-Function TFindThings.FindNext(curOB:Integer):Boolean;
-var o:Integer;
-begin
- o:=FindNextThing(Level,CurOB,fi);
-  if o<>-1 then
- begin
-  JedMain.GotoTH(o);
-  Result:=true;
- end;
-Result:=o<>-1;
-if not Result then ShowMessage('No more hits!');
-end;
-
 
 procedure TFindThings.SBHelpClick(Sender: TObject);
 begin
- Application.helpfile:=basedir+'jedhelp.hlp';
- Application.HelpContext(450);
+  Application.helpfile := basedir + 'jedhelp.hlp';
+  Application.HelpContext(450);
 end;
-
 
 end.

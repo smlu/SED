@@ -1,8 +1,8 @@
 unit JED_COM;
 
 interface
-uses Windows, OLE2, J_Level,ResourcePicker,jed_plugins,misc_utils,globalVars,
-     u_undo, Forms, sysUtils, classes, Render, ogl_render,sft_render;
+uses OLE2, Windows, J_Level,ResourcePicker,jed_plugins,misc_utils,globalVars,
+     u_undo, Forms, sysUtils, classes, Render, ogl_render,sft_render, Geometry, values, u_multisel, menus;
 
 type
 
@@ -874,20 +874,20 @@ Procedure TCOMLevel.SurfaceGetVertexLight(sc,sf,vx:integer;var white,r,g,b:singl
 var tv:TTXVertex;
 begin
  tv:=Level.Sectors[sc].surfaces[sf].txvertices[vx];
- white:=tv.intensity;
- r:=tv.r;
- g:=tv.g;
- b:=tv.g;
+ white:=tv.color.a;
+ r:=tv.color.r;
+ g:=tv.color.g;
+ b:=tv.color.g;
 end;
 
 Procedure TCOMLevel.SurfaceSetVertexLight(sc,sf,vx:integer;white,r,g,b:single);
 var tv:TTXVertex;
 begin
  tv:=Level.Sectors[sc].surfaces[sf].txvertices[vx];
- tv.intensity:=white;
- tv.r:=r;
- tv.g:=g;
- tv.b:=g;
+ tv.color.a:=white;
+ tv.color.r:=r;
+ tv.color.g:=g;
+ tv.color.b:=g;
 end;
 
 {things}

@@ -4,13 +4,13 @@ interface
 
 uses
   Windows, Messages, SysUtils, Classes, Graphics, Controls,
-   Forms, Dialogs, D3D_Prender, J_Level, Geometry, StdCtrls,
-   GlobalVars, Menus, OGL_Prender, Prender, Clipbrd,
-   d3d_NPrender, u_pj3dos;
+  Forms, Dialogs, D3D_Prender, J_Level, Geometry, StdCtrls,
+  GlobalVars, Menus, OGL_Prender, Prender, Clipbrd,
+  d3d_NPrender, u_pj3dos;
 
 type
-  TCamPos=record
-   x,y,z,pch,yaw:double;
+  TCamPos = record
+    x, y, z, pch, yaw: double;
   end;
 
   TPreview3D = class(TForm)
@@ -27,13 +27,12 @@ type
     ToggleFullyLit1: TMenuItem;
     procedure FormShow(Sender: TObject);
     procedure FormHide(Sender: TObject);
-    procedure FormKeyDown(Sender: TObject; var Key: Word;
-      Shift: TShiftState);
+    procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure FormPaint(Sender: TObject);
     procedure Close1Click(Sender: TObject);
     procedure Settings1Click(Sender: TObject);
     procedure FormMouseUp(Sender: TObject; Button: TMouseButton;
-      Shift: TShiftState; X, Y: Integer);
+      Shift: TShiftState; x, y: Integer);
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure FormDblClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
@@ -41,41 +40,42 @@ type
     procedure ToggleFullyLit1Click(Sender: TObject);
   private
     { Private declarations }
-   Render3D:TPreviewRender;
-   cwPlayer:integer;
+    Render3D: TPreviewRender;
+    cwPlayer: Integer;
 
-   scs:TStringList; {Lists of changed,added,deleted sectors and things}
-   ths:TStringList;
+    scs: TStringList; { Lists of changed,added,deleted sectors and things }
+    ths: TStringList;
 
-   Procedure WMEraseBkg(var msg:TMessage); message WM_ERASEBKGND;
-   procedure wmactivate(var message : tmessage); message wm_activate;
-   procedure wmpaint(var message : tmessage); message wm_paint;
-   Procedure SysAddSector(s:TJKSector);
-   Procedure SysAddThing(th:TJKThing);
-   Procedure SaveCamPos(var cpos:TCamPos);
-   Procedure RestoreCamPos(const cpos:TCamPos);
-   Procedure AddSecChange(sec:TJKSector;Change:Char);
-   Procedure AddThingChange(th:TJKThing;Change:Char);
-   Procedure ApplyChanges;
-   Procedure AddKBItem(mi:TMenuItem;const name:string;c:char;sc:TShiftState);
-   procedure KBCommandClick(Sender: TObject);
+    Procedure WMEraseBkg(var msg: TMessage); message WM_ERASEBKGND;
+    procedure wmactivate(var message: TMessage); message wm_activate;
+    procedure wmpaint(var message: TMessage); message wm_paint;
+    Procedure SysAddSector(s: TJKSector);
+    Procedure SysAddThing(th: TJKThing);
+    Procedure SaveCamPos(var cpos: TCamPos);
+    Procedure RestoreCamPos(const cpos: TCamPos);
+    Procedure AddSecChange(sec: TJKSector; Change: Char);
+    Procedure AddThingChange(th: TJKThing; Change: Char);
+    Procedure ApplyChanges;
+    Procedure AddKBItem(mi: TMenuItem; const name: string; c: Char;
+      sc: TShiftState);
+    procedure KBCommandClick(Sender: TObject);
   public
     { Public declarations }
-   Procedure UpdateSector(s:TJKSector);
-   Procedure AddSector(s:TJKSector);
-   Procedure DeleteSector(s:TJKSector);
+    Procedure UpdateSector(s: TJKSector);
+    Procedure AddSector(s: TJKSector);
+    Procedure DeleteSector(s: TJKSector);
 
-   Procedure UpdateThing(th:TJKthing);
-   Procedure SetThing3DO(th:TJKthing;a3do:TPJ3DO);
-   Procedure AddThing(th:TJKthing);
-   Procedure DeleteThing(th:TJKthing);
+    Procedure UpdateThing(th: TJKThing);
+    Procedure SetThing3DO(th: TJKThing; a3do: TPJ3DO);
+    Procedure AddThing(th: TJKThing);
+    Procedure DeleteThing(th: TJKThing);
 
-   Procedure ReloadLevel;
-   Procedure ShowPreview;
-   Function IsActive:boolean;
-   Procedure SetCam(x,y,z,pch,yaw:double);
-   Procedure GotoWPlayer(wPlayer:integer;step:integer);
-   Procedure GetCam(var x,y,z,pch,yaw:double);
+    Procedure ReloadLevel;
+    Procedure ShowPreview;
+    Function IsActive: boolean;
+    Procedure SetCam(x, y, z, pch, yaw: double);
+    Procedure GotoWPlayer(wPlayer: Integer; step: Integer);
+    Procedure GetCam(var x, y, z, pch, yaw: double);
   end;
 
 var
@@ -88,620 +88,762 @@ uses Jed_Main, U_Options, Misc_utils, Item_edit, U_tbar, ProgressDialog;
 {$R *.DFM}
 
 Procedure TPreview3D.ReloadLevel;
-var i:integer;
-    sec:TJKSector;
-    th:TJKThing;
+var
+  i: Integer;
+  sec: TJKSector;
+  th: TJKThing;
 begin
- if Render3D=nil then exit;
- scs.clear;
- ths.clear;
- Render3D.ClearThings;
- Render3D.ClearSectors;
- Render3D.SetGamma(P3DGamma);
+  if Render3D = nil then
+    exit;
+  scs.clear;
+  ths.clear;
+  Render3D.ClearThings;
+  Render3D.ClearSectors;
+  Render3D.SetGamma(P3DGamma);
 
- Progress.Reset(Level.Sectors.Count+Level.Things.Count);
+  Progress.Reset(Level.Sectors.Count + Level.Things.Count);
 
-Progress.Msg:='Loading sectors...';
+  Progress.msg := 'Loading sectors...';
 
- for i:=0 to Level.Sectors.Count-1 do
- begin
-  Progress.Step;
-  sec:=Level.Sectors[i];
-  if not P3DVisLayers then SysAddSector(sec)
-  else if ToolBar.IsLayerVisible(sec.Layer) then SysAddSector(sec);
- end;
-
- Progress.Msg:='Loading things...';
-
- for i:=0 to Level.Things.Count-1 do
- begin
-  Progress.Step;
-  th:=Level.Things[i];
-  if not P3DVisLayers then SysAddThing(th)
-  else if ToolBar.IsLayerVisible(th.Layer) then SysAddThing(th);
- end;
-
- Progress.Hide;
-
- Invalidate;
-end;
-
-Procedure TPreview3D.GotoWPlayer(wPlayer:integer;step:integer);
-var i:integer;
-    th:TJKThing;
-begin
- if wplayer>=Level.Things.count then wplayer:=0;
- if wplayer<0 then wplayer:=Level.Things.count-1;
- 
- for i:=0 to Level.Things.count-1 do
- begin
-  th:=Level.Things[wplayer];
-
-  if compareText(th.name,'walkplayer')=0 then
-  With th do
+  for i := 0 to Level.Sectors.Count - 1 do
   begin
-   Render3D.CamX:=x;
-   Render3D.CamY:=y;
-   Render3D.CamZ:=z;
-   Render3D.Pch:=-pch;
-   Render3D.Yaw:=-yaw;
-   cwplayer:=wplayer;
-   exit;
+    Progress.step;
+    sec := Level.Sectors[i];
+    if not P3DVisLayers then
+      SysAddSector(sec)
+    else if ToolBar.IsLayerVisible(sec.Layer) then
+      SysAddSector(sec);
   end;
 
-  inc(wplayer,step);
-  if wplayer>=Level.Things.count then wplayer:=0;
-  if wplayer<0 then wplayer:=Level.Things.count-1;
+  Progress.msg := 'Loading things...';
 
+  for i := 0 to Level.Things.Count - 1 do
+  begin
+    Progress.step;
+    th := Level.Things[i];
+    if not P3DVisLayers then
+      SysAddThing(th)
+    else if ToolBar.IsLayerVisible(th.Layer) then
+      SysAddThing(th);
+  end;
 
- end;
+  Progress.Hide;
+
+  Invalidate;
+end;
+
+Procedure TPreview3D.GotoWPlayer(wPlayer: Integer; step: Integer);
+var
+  i: Integer;
+  th: TJKThing;
+begin
+  if wPlayer >= Level.Things.Count then
+    wPlayer := 0;
+  if wPlayer < 0 then
+    wPlayer := Level.Things.Count - 1;
+
+  for i := 0 to Level.Things.Count - 1 do
+  begin
+    th := Level.Things[wPlayer];
+
+    if compareText(th.name, 'walkplayer') = 0 then
+      With th do
+      begin
+        Render3D.CamX := x;
+        Render3D.CamY := y;
+        Render3D.CamZ := z;
+        Render3D.pch := -pch;
+        Render3D.yaw := -yaw;
+        cwPlayer := wPlayer;
+        exit;
+      end;
+
+    inc(wPlayer, step);
+    if wPlayer >= Level.Things.Count then
+      wPlayer := 0;
+    if wPlayer < 0 then
+      wPlayer := Level.Things.Count - 1;
+
+  end;
 
 end;
 
 Procedure TPreview3D.ShowPreview;
 begin
- if visible then begin Invalidate; show; end else
- begin
-  SetP3DPos(self,P3DX,P3DY,P3DWinSize);
-  SetStayOnTop(self,P3DOnTop);
-  Show;
-  if Render3D=nil then begin hide; exit; end;
-  ReloadLevel;
-  GotoWPlayer(0,1);
- end;
+  if visible then
+  begin
+    Invalidate;
+    show;
+  end
+  else
+  begin
+    SetP3DPos(self, P3DX, P3DY, P3DWinSize);
+    SetStayOnTop(self, P3DOnTop);
+    show;
+    if Render3D = nil then
+    begin
+      Hide;
+      exit;
+    end;
+    ReloadLevel;
+    GotoWPlayer(0, 1);
+  end;
 end;
 
 procedure TPreview3D.FormShow(Sender: TObject);
 begin
   case P3DAPI of
-   P3D_OGL: Render3D:=TOGLPRenderer.Create(Self);
-   P3D_d3d5: Render3D:=TD3D5PRenderer.Create(Self);
-   {P3D_3dfx: Render3D:=T3DFXPRenderer.Create(Self);}
-  else Render3D:=TD3DRenderer.Create(Self);
+    P3D_OGL:
+      Render3D := TOGLPRenderer.Create(self);
+    P3D_d3d5:
+      Render3D := TD3D5PRenderer.Create(self);
+    { P3D_3dfx: Render3D:=T3DFXPRenderer.Create(Self); }
+  else
+    Render3D := TD3DRenderer.Create(self);
   end;
 
-Try
-  Render3D.Initialize;
-except
- on E:Exception do
-  begin
-   Render3D.Free;
-   Render3D:=nil;
-   PanMessage(mt_error,e.message);
+  Try
+    Render3D.Initialize;
+  except
+    on E: Exception do
+    begin
+      Render3D.Free;
+      Render3D := nil;
+      PanMessage(mt_error, E.message);
+    end;
   end;
-end;
 end;
 
 procedure TPreview3D.FormHide(Sender: TObject);
 begin
- if Render3D<>nil then Render3D.Free;
- Render3D:=nil;
- P3DX:=left; P3DY:=top;
+  if Render3D <> nil then
+    Render3D.Free;
+  Render3D := nil;
+  P3DX := left;
+  P3DY := top;
 end;
 
-Procedure TPreview3D.WMEraseBkg(var msg:TMessage);
+Procedure TPreview3D.WMEraseBkg(var msg: TMessage);
 begin
-  msg.Result:=0;
+  msg.Result := 0;
 end;
 
 procedure TPreview3D.FormKeyDown(Sender: TObject; var Key: Word;
   Shift: TShiftState);
 begin
- if Render3D=nil then exit;
- 
- With Render3D do
- case key of
-  VK_ADD: If P3DGamma<254.9 then
-          begin
-           P3DGamma:=P3DGamma+0.1;
-           if Render3D.SetGamma(P3DGamma)=1 then ReloadLevel;
-           Invalidate;
-          end;
-  VK_SUBTRACT: If P3DGamma>0.1 then
-          begin
-           P3DGamma:=P3DGamma-0.1;
-           if Render3D.SetGamma(P3DGamma)=1 then ReloadLevel;
-           Invalidate;
-          end;
-  VK_LEFT:  if shift=[ssShift] then JedMain.ShiftTexture(st_left)
-            else if shift=[ssCtrl] then JedMain.RotateTexture(st_left)
-            else if ssAlt in Shift then
-            begin
-             CamY:=CamY+sin(YAW/180*PI)*P3DStep;
-             CamX:=CamX-cos(YAW/180*PI)*P3DStep;
-            end else
-            begin
-             YAW:=YAW-10; if YAW<0 then YAW:=YAW+360;
-            end;
-  VK_RIGHT: if shift=[ssShift] then JedMain.ShiftTexture(st_right)
-            else if shift=[ssCtrl] then JedMain.RotateTexture(st_right)
-            else if ssAlt in Shift then
-            begin
-             CamY:=CamY-sin(YAW/180*PI)*P3DStep;
-             CamX:=CamX+cos(YAW/180*PI)*P3DStep;
-            end else
-            begin YAW:=YAW+10; if YAW>360 then YAW:=YAW-360; end;
-  VK_UP: if shift=[ssShift] then JedMain.ShiftTexture(st_up) else
-         if shift=[ssCtrl] then JedMain.RaiseObject(ro_up)
-         else
-         begin
-          CamX:=CamX+sin(YAW/180*PI)*P3DStep;
-          CamY:=CamY+cos(YAW/180*PI)*P3DStep;
-         end;
-  VK_DOWN: if shift=[ssShift] then JedMain.ShiftTexture(st_down) else
-           if shift=[ssCtrl] then JedMain.RaiseObject(ro_down)
-           else
-           begin
-            CamX:=CamX-sin(YAW/180*PI)*P3DStep;
-            CamY:=CamY-cos(YAW/180*PI)*P3DStep;
-           end;
-  VK_NEXT: if PCH>=-80 then PCH:=PCH-10;
-  VK_PRIOR: if PCH<=80 then PCH:=PCH+10;
-  VK_HOME: if Shift=[] then PCH:=0
-           else JedMain.StraightenTexture(ssCtrl in shift,ssShift in shift);
+  if Render3D = nil then
+    exit;
 
-  Ord('A'): if shift=[ssCtrl] then JedMain.FormKeyDown(nil,Key,[]) else
-            if (shift=[ssAlt]) or (shift=[ssShift]) then JedMain.FormKeyDown(nil,Key,shift)
-            else CamZ:=CamZ+P3DStep;
-  Ord('I'): if shift=[] then JedMain.AddThingAtSurf else
-            if shift=[ssShift] then JedMain.AddThingAtXYZPYR(CamX,CamY,CamZ,-PCH,360-YAW,0.0) else
-            JedMain.FormKeyDown(nil,Key,shift);
+  With Render3D do
+    case Key of
+      VK_ADD:
+        If P3DGamma < 254.9 then
+        begin
+          P3DGamma := P3DGamma + 0.1;
+          if Render3D.SetGamma(P3DGamma) = 1 then
+            ReloadLevel;
+          Invalidate;
+        end;
+      VK_SUBTRACT:
+        If P3DGamma > 0.1 then
+        begin
+          P3DGamma := P3DGamma - 0.1;
+          if Render3D.SetGamma(P3DGamma) = 1 then
+            ReloadLevel;
+          Invalidate;
+        end;
+      VK_LEFT:
+        if Shift = [ssShift] then
+          JedMain.ShiftTexture(st_left)
+        else if Shift = [ssCtrl] then
+          JedMain.RotateTexture(st_left)
+        else if ssAlt in Shift then
+        begin
+          CamY := CamY + sin(yaw / 180 * PI) * P3DStep;
+          CamX := CamX - cos(yaw / 180 * PI) * P3DStep;
+        end
+        else
+        begin
+          yaw := yaw - 10;
+          if yaw < 0 then
+            yaw := yaw + 360;
+        end;
+      VK_RIGHT:
+        if Shift = [ssShift] then
+          JedMain.ShiftTexture(st_right)
+        else if Shift = [ssCtrl] then
+          JedMain.RotateTexture(st_right)
+        else if ssAlt in Shift then
+        begin
+          CamY := CamY - sin(yaw / 180 * PI) * P3DStep;
+          CamX := CamX + cos(yaw / 180 * PI) * P3DStep;
+        end
+        else
+        begin
+          yaw := yaw + 10;
+          if yaw > 360 then
+            yaw := yaw - 360;
+        end;
+      VK_UP:
+        if Shift = [ssShift] then
+          JedMain.ShiftTexture(st_up)
+        else if Shift = [ssCtrl] then
+          JedMain.RaiseObject(ro_up)
+        else
+        begin
+          CamX := CamX + sin(yaw / 180 * PI) * P3DStep;
+          CamY := CamY + cos(yaw / 180 * PI) * P3DStep;
+        end;
+      VK_DOWN:
+        if Shift = [ssShift] then
+          JedMain.ShiftTexture(st_down)
+        else if Shift = [ssCtrl] then
+          JedMain.RaiseObject(ro_down)
+        else
+        begin
+          CamX := CamX - sin(yaw / 180 * PI) * P3DStep;
+          CamY := CamY - cos(yaw / 180 * PI) * P3DStep;
+        end;
+      VK_NEXT:
+        if pch >= -80 then
+          pch := pch - 10;
+      VK_PRIOR:
+        if pch <= 80 then
+          pch := pch + 10;
+      VK_HOME:
+        if Shift = [] then
+          pch := 0
+        else
+          JedMain.StraightenTexture(ssCtrl in Shift, ssShift in Shift);
 
-  Ord('Z'): CamZ:=CamZ-P3DStep;
-  Ord('N'): GotoWPlayer(cwPlayer+1,1);
-  Ord('P'): if Shift=[ssCtrl] then JedMain.FormKeyDown(nil,Key,shift) else GotoWPlayer(cwPlayer-1,-1);
-  {<}  188: if shift=[ssShift] then JedMain.ShiftTexture(st_up)
-            else if shift=[ssCtrl] then JedMain.RotateTexture(st_left)
-            else if shift=[ssAlt] then JedMain.ScaleTexture(st_down)
-            else JedMain.ShiftTexture(st_left);
-  {>}  190: if shift=[ssShift] then JedMain.ShiftTexture(st_down)
-            else if shift=[ssCtrl] then JedMain.RotateTexture(st_right)
-            else if shift=[ssAlt] then JedMain.ScaleTexture(st_up)
-            else JedMain.ShiftTexture(st_right);
-  {;}  186: JedMain.StartStitch;
-  VK_INSERT: if Shift=[ssCtrl] then JedMain.StartStitch
-             else JedMain.DoStitch;
-  {'}  222: JedMain.DoStitch;
-  {/}  191: JedMain.StraightenTexture(ssCtrl in shift,ssShift in shift);
+      Ord('A'):
+        if Shift = [ssCtrl] then
+          JedMain.FormKeyDown(nil, Key, [])
+        else if (Shift = [ssAlt]) or (Shift = [ssShift]) then
+          JedMain.FormKeyDown(nil, Key, Shift)
+        else
+          CamZ := CamZ + P3DStep;
+      Ord('I'):
+        if Shift = [] then
+          JedMain.AddThingAtSurf
+        else if Shift = [ssShift] then
+          JedMain.AddThingAtXYZPYR(CamX, CamY, CamZ, -pch, 360 - yaw, 0.0)
+        else
+          JedMain.FormKeyDown(nil, Key, Shift);
 
-  Ord('S'): if (shift=[ssShift]) or (shift=[]) then JedMain.FormKeyDown(nil,Key,shift);
-  VK_DELETE: if (shift=[ssAlt]) or (shift=[]) then JedMain.FormKeyDown(nil,Key,shift);
-  Ord('X'),219,221,VK_Return: if Shift=[] then JedMain.FormKeyDown(nil,Key,shift);
-  Ord('F'): if Shift=[] Then
-            begin
-             clipboard.AsText:=
-             Sprintf('(%.5f/%.5f/%.5f:%.5f/%.5f/%.5f)',
-             [CamX,CamY,CamZ,-PCH,360-YAW,0.0]);
-            end;
+      Ord('Z'):
+        CamZ := CamZ - P3DStep;
+      Ord('N'):
+        GotoWPlayer(cwPlayer + 1, 1);
+      Ord('P'):
+        if Shift = [ssCtrl] then
+          JedMain.FormKeyDown(nil, Key, Shift)
+        else
+          GotoWPlayer(cwPlayer - 1, -1);
+      { < } 188:
+        if Shift = [ssShift] then
+          JedMain.ShiftTexture(st_up)
+        else if Shift = [ssCtrl] then
+          JedMain.RotateTexture(st_left)
+        else if Shift = [ssAlt] then
+          JedMain.ScaleTexture(st_down)
+        else
+          JedMain.ShiftTexture(st_left);
+      { > } 190:
+        if Shift = [ssShift] then
+          JedMain.ShiftTexture(st_down)
+        else if Shift = [ssCtrl] then
+          JedMain.RotateTexture(st_right)
+        else if Shift = [ssAlt] then
+          JedMain.ScaleTexture(st_up)
+        else
+          JedMain.ShiftTexture(st_right);
+      { ; } 186:
+        JedMain.StartStitch;
+      VK_INSERT:
+        if Shift = [ssCtrl] then
+          JedMain.StartStitch
+        else
+          JedMain.DoStitch;
+      { ' } 222:
+        JedMain.DoStitch;
+      { / } 191:
+        JedMain.StraightenTexture(ssCtrl in Shift, ssShift in Shift);
 
-  else exit;
- end;
+      Ord('S'):
+        if (Shift = [ssShift]) or (Shift = []) then
+          JedMain.FormKeyDown(nil, Key, Shift);
+      VK_DELETE:
+        if (Shift = [ssAlt]) or (Shift = []) then
+          JedMain.FormKeyDown(nil, Key, Shift);
+      Ord('X'), 219, 221, VK_Return:
+        if Shift = [] then
+          JedMain.FormKeyDown(nil, Key, Shift);
+      Ord('F'):
+        if Shift = [] Then
+        begin
+          clipboard.AsText := Sprintf('(%.5f/%.5f/%.5f:%.5f/%.5f/%.5f)',
+            [CamX, CamY, CamZ, -pch, 360 - yaw, 0.0]);
+        end;
+
+    else
+      exit;
+    end;
   Invalidate;
 
 end;
 
-procedure TPreview3D.wmactivate(var message : tmessage);
+procedure TPreview3D.wmactivate(var message: TMessage);
 begin
- if Render3D<>nil then Render3D.HandleActivate(message);
- inherited;
+  if Render3D <> nil then
+    Render3D.HandleActivate(message);
+  inherited;
 end;
 
-procedure TPreview3D.wmpaint(var message : tmessage);
-var r : trect;
-    ps : tpaintstruct;
+procedure TPreview3D.wmpaint(var message: TMessage);
+var
+  r: trect;
+  ps: tpaintstruct;
 begin
- if render3D<>nil then
- begin
-  if getupdaterect(Handle,r,false) then begin
-   beginpaint(Handle,ps);
-   Render3D.HandlePaint(ps.hdc);
-   endpaint(Handle,ps);
+  if Render3D <> nil then
+  begin
+    if getupdaterect(Handle, r, false) then
+    begin
+      beginpaint(Handle, ps);
+      Render3D.HandlePaint(ps.hdc);
+      endpaint(Handle, ps);
+    end;
   end;
- end;
- inherited;
+  inherited;
 end;
 
-Procedure TPreview3D.DeleteSector(s:TJKSector);
+Procedure TPreview3D.DeleteSector(s: TJKSector);
 begin
- AddSecChange(s,'D');
- Invalidate;
+  AddSecChange(s, 'D');
+  Invalidate;
 end;
 
-Procedure TPreview3D.SysAddThing(th:TJKThing);
+Procedure TPreview3D.SysAddThing(th: TJKThing);
 begin
-if not P3DThings then exit;
-try
- LoadThing3DO(th,false);
- Render3D.AddThing(th);
-except
- on E:Exception do PanMessage(mt_warning,e.message);
-end;
+  if not P3DThings then
+    exit;
+  try
+    LoadThing3DO(th, false);
+    Render3D.AddThing(th);
+  except
+    on E: Exception do
+      PanMessage(mt_warning, E.message);
+  end;
 end;
 
-
-Procedure TPreview3D.AddSecChange(sec:TJKSector;Change:Char);
-var i:integer;
+Procedure TPreview3D.AddSecChange(sec: TJKSector; Change: Char);
+var
+  i: Integer;
 begin
- case change of
-  'A': scs.AddObject(Change,sec);
-  'C': begin
-        i:=scs.IndexOfObject(sec);
-        if (i<>-1) and (scs[i]='C') then exit;
-        scs.AddObject(change,sec);
-       end;
-  'D': begin
-        i:=scs.IndexOfObject(sec);
-        if i<>-1 then scs.delete(i);
-        scs.AddObject(change,sec);
-       end;
- end;
+  case Change of
+    'A':
+      scs.AddObject(Change, sec);
+    'C':
+      begin
+        i := scs.IndexOfObject(sec);
+        if (i <> -1) and (scs[i] = 'C') then
+          exit;
+        scs.AddObject(Change, sec);
+      end;
+    'D':
+      begin
+        i := scs.IndexOfObject(sec);
+        if i <> -1 then
+          scs.delete(i);
+        scs.AddObject(Change, sec);
+      end;
+  end;
 end;
 
-Procedure TPreview3D.AddThingChange(th:TJKThing;Change:Char);
-var i:integer;
+Procedure TPreview3D.AddThingChange(th: TJKThing; Change: Char);
+var
+  i: Integer;
 begin
-{ i:=ths.IndexOfObject(th);
- if i=-1 then ths.AddObject(Change,th) else
- ths[i]:=Change;}
+  { i:=ths.IndexOfObject(th);
+    if i=-1 then ths.AddObject(Change,th) else
+    ths[i]:=Change; }
 
- case change of
-  'A': ths.AddObject(Change,th);
-  'C': begin
-        i:=ths.IndexOfObject(th);
-        if (i<>-1) and (ths[i]='C') then exit;
-        ths.AddObject(change,th);
-       end;
-  'D': begin
-        i:=ths.IndexOfObject(th);
-        if i<>-1 then ths.delete(i);
-        ths.AddObject(change,th);
-       end;
+  case Change of
+    'A':
+      ths.AddObject(Change, th);
+    'C':
+      begin
+        i := ths.IndexOfObject(th);
+        if (i <> -1) and (ths[i] = 'C') then
+          exit;
+        ths.AddObject(Change, th);
+      end;
+    'D':
+      begin
+        i := ths.IndexOfObject(th);
+        if i <> -1 then
+          ths.delete(i);
+        ths.AddObject(Change, th);
+      end;
   end;
 end;
 
 Procedure TPreview3D.ApplyChanges;
-var i:integer;
-    sec:TJKSector;
-    th:TJKThing;
-    c:char;
+var
+  i: Integer;
+  sec: TJKSector;
+  th: TJKThing;
+  c: Char;
 begin
- if Render3D=nil then
- begin
+  if Render3D = nil then
+  begin
+    scs.clear;
+    ths.clear;
+    exit;
+  end;
+
+  for i := 0 to scs.Count - 1 do
+  begin
+    sec := TJKSector(scs.Objects[i]);
+    c := scs[i][1];
+    case c of
+      'A':
+        SysAddSector(sec);
+      'D':
+        Render3D.DeleteSector(sec);
+      'C':
+        Render3D.UpdateSector(sec);
+    end;
+  end;
+
   scs.clear;
+
+  for i := 0 to ths.Count - 1 do
+  begin
+    th := TJKThing(ths.Objects[i]);
+    c := ths[i][1];
+    case c of
+      'A':
+        SysAddThing(th);
+      'D':
+        Render3D.DeleteThing(th);
+      'C':
+        Render3D.UpdateThing(th);
+    end;
+  end;
   ths.clear;
-  exit;
- end;
+end;
 
- for i:=0 to scs.count-1 do
- begin
-  sec:=TJKSector(scs.Objects[i]);
-  c:=scs[i][1];
-  case c of
-   'A': SysAddSector(sec);
-   'D': Render3D.DeleteSector(sec);
-   'C': Render3D.UpdateSector(sec);
+Procedure TPreview3D.SetThing3DO(th: TJKThing; a3do: TPJ3DO);
+begin
+  if Render3D <> nil then
+    Render3D.SetThing3DO(th, a3do);
+end;
+
+Procedure TPreview3D.SysAddSector(s: TJKSector);
+begin
+  try
+    Render3D.AddSector(s);
+  except
+    on E: Exception do
+      PanMessage(mt_warning, E.message);
   end;
- end;
-
- scs.clear;
-
- for i:=0 to ths.count-1 do
- begin
-  th:=TJKThing(ths.Objects[i]);
-  c:=ths[i][1];
-  case c of
-   'A': SysAddThing(th);
-   'D': Render3D.DeleteThing(th);
-   'C': Render3D.UpdateThing(th);
-  end;
- end;
- ths.clear;
 end;
 
-Procedure TPreview3D.SetThing3DO(th:TJKthing;a3do:TPJ3DO);
+Procedure TPreview3D.UpdateSector(s: TJKSector);
 begin
- if Render3D<>nil then Render3D.SetThing3DO(th,a3do);
+  AddSecChange(s, 'C');
+  Invalidate;
 end;
 
-Procedure TPreview3D.SysAddSector(s:TJKSector);
+Procedure TPreview3D.AddSector(s: TJKSector);
 begin
-try
- Render3D.AddSector(s);
-except
- on E:Exception do PanMessage(mt_warning,e.message);
-end;
+  AddSecChange(s, 'A');
+  Invalidate;
 end;
 
-Procedure TPreview3D.UpdateSector(s:TJKSector);
+Procedure TPreview3D.UpdateThing(th: TJKThing);
 begin
- AddSecChange(s,'C');
- Invalidate;
+  AddThingChange(th, 'C');
+  Invalidate;
 end;
 
-Procedure TPreview3D.AddSector(s:TJKSector);
+Procedure TPreview3D.AddThing(th: TJKThing);
 begin
- AddSecChange(s,'A');
- Invalidate;
+  AddThingChange(th, 'A');
+  Invalidate;
 end;
 
-Procedure TPreview3D.UpdateThing(th:TJKthing);
+Procedure TPreview3D.DeleteThing(th: TJKThing);
 begin
- AddThingChange(th,'C');
- Invalidate;
-end;
-
-Procedure TPreview3D.AddThing(th:TJKthing);
-begin
- AddThingChange(th,'A');
- Invalidate;
-end;
-
-Procedure TPreview3D.DeleteThing(th:TJKthing);
-begin
- AddThingChange(th,'D');
- Invalidate;
+  AddThingChange(th, 'D');
+  Invalidate;
 end;
 
 procedure TPreview3D.FormPaint(Sender: TObject);
 begin
- ApplyChanges;
- Render3d.redraw;
+  ApplyChanges;
+  Render3D.redraw;
 end;
 
-Function TPreview3D.IsActive:boolean;
+Function TPreview3D.IsActive: boolean;
 begin
- Result:=Render3D<>nil;
+  Result := Render3D <> nil;
 end;
 
-Procedure TPreview3D.SetCam(x,y,z,pch,yaw:double);
+Procedure TPreview3D.SetCam(x, y, z, pch, yaw: double);
 begin
- if Render3D=nil then exit;
- Render3D.CamX:=x;
- Render3D.CamY:=Y;
- Render3D.CamZ:=Z;
- Render3D.PCH:=-pch;
- Render3D.YAW:=-yaw;
- Invalidate;
+  if Render3D = nil then
+    exit;
+  Render3D.CamX := x;
+  Render3D.CamY := y;
+  Render3D.CamZ := z;
+  Render3D.pch := -pch;
+  Render3D.yaw := -yaw;
+  Invalidate;
 end;
-
 
 procedure TPreview3D.Close1Click(Sender: TObject);
 begin
- Close;
+  Close;
 end;
 
-Procedure TPreview3D.SaveCamPos(var cpos:TCamPos);
+Procedure TPreview3D.SaveCamPos(var cpos: TCamPos);
 begin
- cpos.x:=render3D.CamX;
- cpos.y:=render3D.CamY;
- cpos.Z:=render3D.CamZ;
- cpos.pch:=render3D.PCH;
- cpos.yaw:=render3D.YAW;
+  cpos.x := Render3D.CamX;
+  cpos.y := Render3D.CamY;
+  cpos.z := Render3D.CamZ;
+  cpos.pch := Render3D.pch;
+  cpos.yaw := Render3D.yaw;
 end;
 
-Procedure TPreview3D.RestoreCamPos(const cpos:TCamPos);
+Procedure TPreview3D.RestoreCamPos(const cpos: TCamPos);
 begin
- render3D.CamX:=cpos.x;
- render3D.CamY:=cpos.Y;
- render3D.CamZ:=cpos.Z;
- render3D.PCH:=cpos.pch;
- render3D.YAW:=cpos.yaw;
+  Render3D.CamX := cpos.x;
+  Render3D.CamY := cpos.y;
+  Render3D.CamZ := cpos.z;
+  Render3D.pch := cpos.pch;
+  Render3D.yaw := cpos.yaw;
 end;
 
 procedure TPreview3D.Settings1Click(Sender: TObject);
-var cpos:TcamPos;
+var
+  cpos: TCamPos;
 begin
- With Options do
- begin
-  if not SetOptions(PPreview) then exit;
-  SaveCamPos(cpos);
-  Self.Hide;
-  ShowPreview;
-  RestoreCamPos(cpos);
- end;
+  With Options do
+  begin
+    if not SetOptions(PPreview) then
+      exit;
+    SaveCamPos(cpos);
+    self.Hide;
+    ShowPreview;
+    RestoreCamPos(cpos);
+  end;
 end;
 
 procedure TPreview3D.FormMouseUp(Sender: TObject; Button: TMouseButton;
-  Shift: TShiftState; X, Y: Integer);
+  Shift: TShiftState; x, y: Integer);
 var
-    i,f:integer;
+  i, f: Integer;
 begin
- if Render3D=nil then exit;
- With Render3D do
- Case PickAt(X,Y) of
-  pk_nothing: exit;
-  pk_surface:
-   begin
-    i:=Level.Sectors.IndexOf(selSC);
-    if i<>-1 then
-    begin
-     JedMain.SetMapMode(MM_SF);
-     JedMain.SetCurSF(i,SelSF);
-     if Shift=[ssShift] then JedMain.DO_MultiSelect
-     else JedMain.ClearMultiSelection;
-    end
-    else PanMessage(mt_warning,'3D preview is out of sync with the level! Reload it');
-   end;
-  pk_thing:
-   begin
-    i:=Level.Things.IndexOf(selTH);
-    if i<>-1 then
-    begin
-     JedMain.SetMapMode(MM_TH);
-     JedMain.SetCurTH(i);
-     if Shift=[ssShift] then JedMain.DO_MultiSelect;
-    end
-    else PanMessage(mt_warning,'3D preview is out of sync with the level! Reload it');
-   end;
- end;
+  if Render3D = nil then
+    exit;
+  With Render3D do
+    Case PickAt(x, y) of
+      pk_nothing:
+        exit;
+      pk_surface:
+        begin
+          i := Level.Sectors.IndexOf(selSC);
+          if i <> -1 then
+          begin
+            JedMain.SetMapMode(MM_SF);
+            JedMain.SetCurSF(i, SelSF);
+            if Shift = [ssShift] then
+              JedMain.DO_MultiSelect
+            else
+              JedMain.ClearMultiSelection;
+          end
+          else
+            PanMessage(mt_warning,
+              '3D preview is out of sync with the level! Reload it');
+        end;
+      pk_thing:
+        begin
+          i := Level.Things.IndexOf(selTH);
+          if i <> -1 then
+          begin
+            JedMain.SetMapMode(MM_TH);
+            JedMain.SetCurTH(i);
+            if Shift = [ssShift] then
+              JedMain.DO_MultiSelect;
+          end
+          else
+            PanMessage(mt_warning,
+              '3D preview is out of sync with the level! Reload it');
+        end;
+    end;
 end;
 
 procedure TPreview3D.FormClose(Sender: TObject; var Action: TCloseAction);
 begin
- P3dOnTop:=GetStayOnTop(self);
- GetP3DPos(self,P3DX,P3DY,P3DWinSize);
+  P3DOnTop := GetStayOnTop(self);
+  GetP3DPos(self, P3DX, P3DY, P3DWinSize);
 end;
 
 procedure TPreview3D.FormDblClick(Sender: TObject);
 begin
- case JedMain.Map_mode of
-  MM_SF: ItemEdit.DoPickTexture;
-  MM_TH: ItemEdit.DoPickThing;
- end;
+  case JedMain.Map_mode of
+    MM_SF:
+      ItemEdit.DoPickTexture;
+    MM_TH:
+      ItemEdit.DoPickThing;
+  end;
 end;
 
 procedure TPreview3D.FormCreate(Sender: TObject);
 begin
- scs:=TStringList.Create;
- ths:=TStringList.Create;
+  scs := TStringList.Create;
+  ths := TStringList.Create;
 
- AddKBItem(miControl,'Rotate right',char(VK_Right),[]);
- AddKBItem(miControl,'Rotate left',char(VK_Left),[]);
- AddKBItem(miControl,'Move forth',char(VK_Up),[]);
- AddKBItem(miControl,'Move back',char(VK_down),[]);
- AddKBItem(miControl,'Sidestep left',char(VK_Left),[ssAlt]);
- AddKBItem(miControl,'Sidestep right',char(VK_right),[ssAlt]);
+  AddKBItem(miControl, 'Rotate right', Char(VK_RIGHT), []);
+  AddKBItem(miControl, 'Rotate left', Char(VK_LEFT), []);
+  AddKBItem(miControl, 'Move forth', Char(VK_UP), []);
+  AddKBItem(miControl, 'Move back', Char(VK_DOWN), []);
+  AddKBItem(miControl, 'Sidestep left', Char(VK_LEFT), [ssAlt]);
+  AddKBItem(miControl, 'Sidestep right', Char(VK_RIGHT), [ssAlt]);
 
- AddKBItem(miControl,'Look up',char(VK_Next),[]);
- AddKBItem(miControl,'Look down',char(VK_Prior),[]);
- AddKBItem(miControl,'Move up','A',[]);
- AddKBItem(miControl,'Move down','Z',[]);
+  AddKBItem(miControl, 'Look up', Char(VK_NEXT), []);
+  AddKBItem(miControl, 'Look down', Char(VK_PRIOR), []);
+  AddKBItem(miControl, 'Move up', 'A', []);
+  AddKBItem(miControl, 'Move down', 'Z', []);
 
- AddKBItem(miControl,'Select surface/thing'#9'Click',#0,[]);
- AddKBItem(miControl,'Change texture/template'#9'Double-Click',#0,[]);
+  AddKBItem(miControl, 'Select surface/thing'#9'Click', #0, []);
+  AddKBItem(miControl, 'Change texture/template'#9'Double-Click', #0, []);
 
+  AddKBItem(miControl, 'Snap grid to item', 'S', [ssShift]);
+  AddKBItem(miControl, 'Snap grid to item', 'W', [ssShift]);
+  AddKBItem(miControl, 'Swap Grid axis', 'G', [ssShift]);
+  AddKBItem(miControl, 'Sector mode', 'S', []);
+  AddKBItem(miControl, 'Item Editor', Chr(VK_Return), []);
 
- AddKBItem(miControl,'Snap grid to item','S',[ssShift]);
- AddKBItem(miControl,'Snap grid to item','W',[ssShift]);
- AddKBItem(miControl,'Swap Grid axis','G',[ssShift]);
- AddKBItem(miControl,'Sector mode','S',[]);
- AddKBItem(miControl,'Item Editor',Chr(VK_return),[]);
+  AddKBItem(miControl, 'Next player start', 'N', []);
+  AddKBItem(miControl, 'Prev player start', 'P', []);
 
- AddKBItem(miControl,'Next player start','N',[]);
- AddKBItem(miControl,'Prev player start','P',[]);
+  AddKBItem(miTex, 'Scroll up', #188, [ssShift]);
+  AddKBItem(miTex, 'Scroll down', #190, [ssShift]);
 
- AddKBItem(MiTex,'Scroll up',#188,[ssShift]);
- AddKBItem(MiTex,'Scroll down',#190,[ssShift]);
+  AddKBItem(miTex, 'Scroll left', #188, []);
+  AddKBItem(miTex, 'Scroll right', #190, []);
 
- AddKBItem(MiTex,'Scroll left',#188,[]);
- AddKBItem(MiTex,'Scroll right',#190,[]);
+  AddKBItem(miTex, 'Start stitch', Char(VK_INSERT), [ssCtrl]);
+  AddKBItem(miTex, 'Start stitch', #186, []);
 
- AddKBItem(MiTex,'Start stitch',Char(VK_INSERT),[ssCtrl]);
- AddKBItem(MiTex,'Start stitch',#186,[]);
+  AddKBItem(miTex, 'Stitch', Char(VK_INSERT), [ssShift]);
+  AddKBItem(miTex, 'Stitch', #222, []);
 
- AddKBItem(MiTex,'Stitch',char(VK_INSERT),[ssShift]);
- AddKBItem(MiTex,'Stitch',#222,[]);
+  AddKBItem(miTex, 'Straighten Texture', Char(VK_HOME), [ssAlt]);
+  AddKBItem(miTex, 'Straighten Texture', #191, []);
+  AddKBItem(miTex, 'Scale texture down', #188, [ssAlt]);
+  AddKBItem(miTex, 'Scale texture Up', #190, [ssAlt]);
+  AddKBItem(miTex, 'Straighten/zero/rotate90 texture', #191, [ssShift, ssCtrl]);
+  AddKBItem(miTex, 'Straighten/zero/rotate90 texture', Char(VK_HOME),
+    [ssShift, ssCtrl]);
+  AddKBItem(miTex, 'Straighten/zero texture', #191, [ssCtrl]);
+  AddKBItem(miTex, 'Straighten/zero texture', Char(VK_HOME), [ssCtrl]);
+  AddKBItem(miTex, 'Rotate texture left', #188, [ssCtrl]);
+  AddKBItem(miTex, 'Rotate texture right', #190, [ssCtrl]);
 
- AddKBItem(MiTex,'Straighten Texture',char(VK_HOME),[ssAlt]);
- AddKBItem(MiTex,'Straighten Texture',#191,[]);
- AddKBItem(MiTex,'Scale texture down',#188,[ssAlt]);
- AddKBItem(MiTex,'Scale texture Up',#190,[ssAlt]);
- AddKBItem(MiTex,'Straighten/zero/rotate90 texture',#191,[ssShift,ssCtrl]);
- AddKBItem(MiTex,'Straighten/zero/rotate90 texture',Char(VK_HOME),[ssShift,ssCtrl]);
- AddKBItem(MiTex,'Straighten/zero texture',#191,[ssCtrl]);
- AddKBItem(MiTex,'Straighten/zero texture',Char(VK_HOME),[ssCtrl]);
- AddKBItem(MiTex,'Rotate texture left',#188,[ssCtrl]);
- AddKBItem(MiTex,'Rotate texture right',#190,[ssCtrl]);
+  AddKBItem(miEdit, 'Delete surface', Char(VK_DELETE), [ssAlt]);
+  AddKBItem(miEdit, 'Invert surface', 'I', [ssAlt]);
+  AddKBItem(miEdit, 'Planarize surface', 'P', [ssCtrl]);
 
- AddKBItem(miEdit,'Delete surface',Char(VK_DELETE),[ssAlt]);
- AddKBItem(miEdit,'Invert surface','I',[ssAlt]);
- AddKBItem(miEdit,'Planarize surface','P',[ssCtrl]);
+  AddKBItem(miEdit, 'Assign Thing to Sector', 'A', [ssShift]);
+  AddKBItem(miEdit, 'Unadjoin', 'A', [ssAlt]);
+  AddKBItem(miEdit, 'Adjoin', 'A', [ssCtrl]);
 
- AddKBItem(miEdit,'Assign Thing to Sector','A',[ssShift]);
- AddKBItem(miEdit,'Unadjoin','A',[ssAlt]);
- AddKBItem(miEdit,'Adjoin','A',[ssCtrl]);
+  AddKBItem(miEdit, 'Raise item', Char(VK_UP), [ssCtrl]);
+  AddKBItem(miEdit, 'Lower item', Char(VK_DOWN), [ssCtrl]);
+  AddKBItem(miEdit, 'Raise item', #219, []);
+  AddKBItem(miEdit, 'Lower item', #221, []);
 
- AddKBItem(miEdit,'Raise item',char(VK_UP),[ssCtrl]);
- AddKBItem(miEdit,'Lower item',char(VK_Down),[ssCtrl]);
- AddKBItem(miEdit,'Raise item',#219,[]);
- AddKBItem(miEdit,'Lower item',#221,[]);
-
- AddKBItem(miEdit,'Delete item',Char(VK_DELETE),[]);
- AddKBItem(miEdit,'Extrude surface','X',[]);
- AddKBItem(miEdit,'Copy camera as frame','F',[]);
- AddKBItem(miEdit,'Insert thing at surface','I',[]);
- AddKBItem(miEdit,'Insert thing at camera','I',[ssShift]);
-
+  AddKBItem(miEdit, 'Delete item', Char(VK_DELETE), []);
+  AddKBItem(miEdit, 'Extrude surface', 'X', []);
+  AddKBItem(miEdit, 'Copy camera as frame', 'F', []);
+  AddKBItem(miEdit, 'Insert thing at surface', 'I', []);
+  AddKBItem(miEdit, 'Insert thing at camera', 'I', [ssShift]);
 
 end;
 
 procedure TPreview3D.SetViewcamera1Click(Sender: TObject);
 begin
- With Render3D do JedMain.SetCam(CamX,CamY,CamZ,0,0,0);
+  With Render3D do
+    JedMain.SetCam(CamX, CamY, CamZ, 0, 0, 0);
 end;
 
-Procedure TPreview3D.AddKBItem(mi:TMenuItem;const name:string;c:char;sc:TShiftState);
-var nmi:TMenuItem;
-    ext:string;
+Procedure TPreview3D.AddKBItem(mi: TMenuItem; const name: string; c: Char;
+  sc: TShiftState);
+var
+  nmi: TMenuItem;
+  ext: string;
 begin
- nmi:=TMenuItem.Create(mi);
- nmi.OnClick:=KBCommandClick;
- case c of
-  #0: ext:='';
-  Char(VK_ADD):ext:=#9'+';
-  Char(VK_SUBTRACT):ext:=#9'-';
-  Char(VK_MULTIPLY):ext:=#9'*';
- else ext:=#9+ShortCutToText(ShortCut(ord(c),sc));
- end;
+  nmi := TMenuItem.Create(mi);
+  nmi.OnClick := KBCommandClick;
+  case c of
+    #0:
+      ext := '';
+    Char(VK_ADD):
+      ext := #9'+';
+    Char(VK_SUBTRACT):
+      ext := #9'-';
+    Char(VK_MULTIPLY):
+      ext := #9'*';
+  else
+    ext := #9 + ShortCutToText(ShortCut(Ord(c), sc));
+  end;
 
- nmi.Caption:=name+ext;
- nmi.Tag:=ShortCut(ord(c),sc);
- mi.Add(nmi);
+  nmi.Caption := name + ext;
+  nmi.Tag := ShortCut(Ord(c), sc);
+  mi.Add(nmi);
 end;
 
 procedure TPreview3D.KBCommandClick(Sender: TObject);
-var key:word;
-    sc:TShiftState;
+var
+  Key: Word;
+  sc: TShiftState;
 begin
- with (sender as TMenuItem) do
- begin
-  ShortCutToKey(Tag,key,sc);
-  FormKeyDown(Self, Key, sc);
- end;
+  with (Sender as TMenuItem) do
+  begin
+    ShortCutToKey(Tag, Key, sc);
+    FormKeyDown(self, Key, sc);
+  end;
 end;
-
-
 
 procedure TPreview3D.ToggleFullyLit1Click(Sender: TObject);
-var cpos:TcamPos;
+var
+  cpos: TCamPos;
 begin
- P3DFullLit:=not P3DFullLit;
- SaveCamPos(cpos);
- Self.Hide;
- ShowPreview;
- RestoreCamPos(cpos);
+  P3DFullLit := not P3DFullLit;
+  SaveCamPos(cpos);
+  self.Hide;
+  ShowPreview;
+  RestoreCamPos(cpos);
 end;
 
-Procedure TPreview3D.GetCam(var x,y,z,pch,yaw:double);
+Procedure TPreview3D.GetCam(var x, y, z, pch, yaw: double);
 begin
- x:=0; y:=0; z:=0; pch:=0; yaw:=0;
- if Render3D=nil then exit;
- x:=Render3D.CamX;
- y:=Render3D.CamY;
- z:=Render3D.CamZ;
- pch:=-Render3D.PCH;
- yaw:=-Render3D.YAW;
+  x := 0;
+  y := 0;
+  z := 0;
+  pch := 0;
+  yaw := 0;
+  if Render3D = nil then
+    exit;
+  x := Render3D.CamX;
+  y := Render3D.CamY;
+  z := Render3D.CamZ;
+  pch := -Render3D.pch;
+  yaw := -Render3D.yaw;
 end;
-
 
 end.

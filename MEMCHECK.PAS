@@ -7,7 +7,7 @@ Changes:
 We use the debug informations found in the executable if they are available
 Note: there were probably lots of changes between February and August, but we forgot to update this list
 *** 23 February 1998
-MemCheckLogFileName is an exported variable, so you can set it at run-time 
+MemCheckLogFileName is an exported variable, so you can set it at run-time
 *** 20 February 1998
 New option: CheckHeapStatus
 At the end of each call to the memory manager, we get the heap status
@@ -148,7 +148,7 @@ interface
 		ie, is the current memory manager memcheck's ?}
 
 	var
-		MemCheckLogFileName: string = 'c:\Temp\MemCheck.log';
+		MemCheckLogFileName: string = 'MemCheck.log';
 			{The file memcheck will log information to}
 
 		DeallocateFreedMemoryWhenBlockBiggerThan: {$IFDEF VER120}cardinal{$ELSE}Integer{$ENDIF} = 0;
@@ -161,7 +161,8 @@ implementation
 	uses
 		Windows,	{Windows has no finalization, so is OK to use with no care}
 		{$IFDEF VER120}Math,{$ENDIF}
-		SysUtils;	{Because of this uses, SysUtils must be finalized after MemCheck - Which is necessary anyway because SysUtils calls DoneExceptions in its finalization}
+		SysUtils,	{Because of this uses, SysUtils must be finalized after MemCheck - Which is necessary anyway because SysUtils calls DoneExceptions in its finalization}
+    IOUtils;
 
 	type
 		TKindOfMemory = (MClass, MUser, MReallocedUser);
@@ -181,7 +182,7 @@ implementation
 
 		WipeOutMemoryOnFreeMem = False;
 			{should we fill the memory zone with a char when freeing it ?}
-		CharToUseToWipeOut: char = chr($00);
+		CharToUseToWipeOut: AnsiChar = AnsiChar(chr($00));
 
 		CheckWipedBlocksOnTermination = True and WipeOutMemoryOnFreeMem and not(DanglingInterfacesVerified);
 			{When iterating on the blocks (in OutputAllocatedBlocks), we check for every block which has been deallocated that it is still
@@ -344,7 +345,7 @@ implementation
 		BlockDescription: array[TKindOfMemory] of String[10] = ('CLASS   ', 'USER    ', 'REALLOC ');
 
 	var
-		FreedInstance : PChar;
+		FreedInstance : PByte;
 		BadObjectVMT: TMyVMT;
 		BadInterfaceVMT : VMTTable;
 		GIndex : Integer;
@@ -485,6 +486,12 @@ implementation
 		Units: array of TUnitDebugInfos;
 		UnitsCount: integer;
 		{$ENDIF}
+
+
+  Function GetMemCheckLogFilePath: string;
+  begin
+    Result := TPath.Combine(TPath.GetTempPath(), MemCheckLogFileName);
+  end;
 
 	procedure UpdateLastHeapStatus;
 		begin
@@ -672,15 +679,15 @@ implementation
 			t: TMemoryBlocHeader;
 			i: integer;
 		begin
-			t:= PMemoryBlocHeader((PChar(Self) - SizeOf(TMemoryBlocHeader)))^;
+			t:= PMemoryBlocHeader((PByte(Self) - SizeOf(TMemoryBlocHeader)))^;
 
 			try
 				if GIndex = MaxNbSupportedVMTEntries then
-					Raise EBadInstance.Create('Call ' + T.VMT.ClassName + '.Destroy on a FREED instance') at PChar(pVMTTable(PChar(T.VMT)-4)^[0]) + 1
+					Raise EBadInstance.Create('Call ' + T.VMT.ClassName + '.Destroy on a FREED instance') at PByte(pVMTTable(PByte(T.VMT)-4)^[0]) + 1
 				else
 					Raise EBadInstance.Create('Call ' + T.VMT.ClassName + '.' +
 						'<'+IntToHex(Cardinal(pVMTTable(T.VMT)^[MaxNbSupportedVMTEntries-1-GIndex])-Displ, 8)+'>'
-						+' on a FREED instance') at PChar(pVMTTable(T.VMT)^[MaxNbSupportedVMTEntries-1-GIndex]) + 1;
+						+' on a FREED instance') at PByte(pVMTTable(T.VMT)^[MaxNbSupportedVMTEntries-1-GIndex]) + 1;
 			except
 				on EBadInstance do ;
 			end;
@@ -776,7 +783,7 @@ implementation
 				Count:= MaxDump;
 
 			Byte(s[0]):= count;
-			move((PChar(Block) + SizeOf(TMemoryBlocHeader))^, s[1], Count);
+			move((PByte(Block) + SizeOf(TMemoryBlocHeader))^, s[1], Count);
 
 			for i:= 1 to Length(s) do
 				if s[i] = #0 then s[i]:= '.' else
@@ -870,13 +877,13 @@ implementation
 
 	function LeakTrackingGetMem(Size: Integer): Pointer;
 		begin
-			if (EBP8_10 = PChar(@TObject.NewInstance)) {comming from TObject.NewInstance ?} then
+			if (EBP8_10 = PByte(@TObject.NewInstance)) {comming from TObject.NewInstance ?} then
 				begin
 					Result:= SysGetMem(Size + (SizeOf(TMemoryBlocHeader)));
 					if Result = Nil then
 						Raise OutOfMemory;
 					PMemoryBlocHeader(Result).KindOfBlock:= MClass;
-					if EBP36_12 = PChar(@TObject.Create) then
+					if EBP36_12 = PByte(@TObject.Create) then
 						begin
 							if StoredCallStackDepth > 0 then
 								FillCallStack(PMemoryBlocHeader(Result).CallerAddress, false);
@@ -910,7 +917,7 @@ implementation
 						if StoredCallStackDepth > 0 then
 							FillCallStack(PMemoryBlocHeader(Result).CallerAddress, false);
 						PMemoryBlocHeader(Result).CallerAddress[0]:= EBP8Caller;
-						PMemoryBlockFooter(PChar(Result) + SizeOf(TMemoryBlocHeader) + Size)^:= EndOfBlock;
+						PMemoryBlockFooter(PByte(Result) + SizeOf(TMemoryBlocHeader) + Size)^:= EndOfBlock;
 					end;
 
 			PMemoryBlocHeader(Result).PreceedingBlock:= LastBlock;
@@ -972,11 +979,11 @@ implementation
 		var
 			Block: PMemoryBlocHeader;
 		begin
-			if PCardinal(PChar(P)-4)^ = Magic then
+			if PCardinal(PByte(P)-4)^ = Magic then
 				begin
-					Block:= PMemoryBlocHeader(PChar(P) - SizeOf(TMemoryBlocHeader));
+					Block:= PMemoryBlocHeader(PByte(P) - SizeOf(TMemoryBlocHeader));
 					Result:= (Block.DestructionAdress <> Nil);
-					Result:= Result or (PMemoryBlockFooter(PChar(P) + Block.AllocatedSize)^ <> EndOfBlock)
+					Result:= Result or (PMemoryBlockFooter(PByte(P) + Block.AllocatedSize)^ <> EndOfBlock)
 				end
 			else
 				Result:= False
@@ -1023,9 +1030,9 @@ implementation
 		var
 			Block: PMemoryBlocHeader;
 		begin
-			Block:= PMemoryBlocHeader(PChar(P) - SizeOf(TMemoryBlocHeader));
+			Block:= PMemoryBlocHeader(PByte(P) - SizeOf(TMemoryBlocHeader));
 
-			Result:= Pointer(PChar(Block.CallerAddress[0]) - Displ)
+			Result:= Pointer(PByte(Block.CallerAddress[0]) - Displ)
 		end;
 
 	function FindMem(Base, ToFind : pointer; Nb : integer) : integer;
@@ -1067,10 +1074,10 @@ implementation
 			Block: PMemoryBlocHeader;
 			i: integer;
 		begin
-			if PCardinal(PChar(P)-4)^ = Magic then
+			if PCardinal(PByte(P)-4)^ = Magic then
 				{we recognize a block we marked}
 				begin
-					Block:= PMemoryBlocHeader(PChar(P) - SizeOf(TMemoryBlocHeader));
+					Block:= PMemoryBlocHeader(PByte(P) - SizeOf(TMemoryBlocHeader));
 
 					if CollectStatsAboutObjectAllocation and (Block.KindOfBlock = MClass) then
 						CollectNewInstanceOfClassForStats(TObject(P).ClassType);
@@ -1079,8 +1086,8 @@ implementation
 						begin
 							if (Block.KindOfBlock = MClass) and (TObject(P).InheritsFrom(IdentifyFieldsOfObjectsConformantTo)) then
 								for i:= 1 to (Block.AllocatedSize div 4) - 1 do
-									If (PInteger(PChar(P) + i * 4)^ > -MaxInt + SizeOf(TMemoryBlocHeader)) and CurrentlyAllocatedBlocksTree.Has(PInteger(PChar(P) + i * 4)^ - SizeOf(TMemoryBlocHeader)) then
-										AddFieldInfo(Pointer(PInteger(PChar(P) + i * 4)^ - SizeOf(TMemoryBlocHeader)), TObject(P).ClassType, i);
+									If (PInteger(PByte(P) + i * 4)^ > -MaxInt + SizeOf(TMemoryBlocHeader)) and CurrentlyAllocatedBlocksTree.Has(PInteger(PByte(P) + i * 4)^ - SizeOf(TMemoryBlocHeader)) then
+										AddFieldInfo(Pointer(PInteger(PByte(P) + i * 4)^ - SizeOf(TMemoryBlocHeader)), TObject(P).ClassType, i);
 
 							UnMemChk;
 							if Block.DestructionAdress = Nil then
@@ -1143,7 +1150,7 @@ implementation
 									if Block.KindOfBlock=MClass then
 										begin
 											Block.VMT:= TObject(P).ClassType;
-											FillChar((PChar(P) + 4)^, Block.AllocatedSize - 4, CharToUseToWipeOut);
+											FillChar((PByte(P) + 4)^, Block.AllocatedSize - 4, CharToUseToWipeOut);
 											PInteger(P)^:= Integer(FreedInstance);
 											if DanglingInterfacesVerified then
 												ReplaceInterfacesWithBadInterface(Block.VMT, TObject(P))
@@ -1170,7 +1177,7 @@ implementation
 
 	function LeakTrackingReallocMem(P: Pointer; Size: Integer): Pointer;
 		begin
-			if PCardinal(PChar(P)-4)^ = Magic then
+			if PCardinal(PByte(P)-4)^ = Magic then
 				begin
 					GetMem(Result, Size);
 					if StoredCallStackDepth > 0 then
@@ -1178,8 +1185,8 @@ implementation
 					LastBlock.CallerAddress[0]:= EBP12Caller; {12 because _ReallocMem push one more argument}
 					LastBlock.KindOfBlock:= MReallocedUser;
 
-					if {$IFDEF VER120}cardinal{$ELSE}Integer{$ENDIF}(Size) > PMemoryBlocHeader(PChar(P) - SizeOf(TMemoryBlocHeader)).AllocatedSize then
-						Move(P^, Result^, PMemoryBlocHeader(PChar(P) - SizeOf(TMemoryBlocHeader)).AllocatedSize)
+					if {$IFDEF VER120}cardinal{$ELSE}Integer{$ENDIF}(Size) > PMemoryBlocHeader(PByte(P) - SizeOf(TMemoryBlocHeader)).AllocatedSize then
+						Move(P^, Result^, PMemoryBlocHeader(PByte(P) - SizeOf(TMemoryBlocHeader)).AllocatedSize)
 					else
 						Move(P^, Result^, Size);
 						
@@ -1211,7 +1218,7 @@ implementation
 			MemCheckActive:= False;
 		end;
 
-	function IsMemFilledWithChar(P : Pointer; N : Integer; C : Char) : boolean;
+	function IsMemFilledWithChar(P : Pointer; N : Integer; C : AnsiChar) : boolean;
 		{is the memory at P made of C on N bytes ?}
 		asm
 		{     ->EAX     Pointer to memory }
@@ -1250,11 +1257,11 @@ implementation
 								{this is a leak}
 								begin
 									if Block.KindOfBlock = MClass then
-										S:= TObject(PChar(Block)+SizeOf(TMemoryBlocHeader)).ClassName
+										S:= TObject(PByte(Block)+SizeOf(TMemoryBlocHeader)).ClassName
 									else
 										S:= BlockDescription[Block.KindOfBlock];
 
-									if (BlocksToShow[Block.KindOfBlock]) and ((Block.KindOfBlock <> MClass) or (TObject(PChar(Block) + SizeOf(TMemoryBlocHeader)) is InstancesConformingToForReporting)) then
+									if (BlocksToShow[Block.KindOfBlock]) and ((Block.KindOfBlock <> MClass) or (TObject(PByte(Block) + SizeOf(TMemoryBlocHeader)) is InstancesConformingToForReporting)) then
 										try
 											raise EMemoryLeak.Create(S+' allocated at '+ IntToHex(Cardinal(Block.CallerAddress[0])-Displ, 8)) at Block.CallerAddress[0]
 										except
@@ -1274,7 +1281,7 @@ implementation
 								end	{Block.DestructionAdress = Nil}
 							else
 								{this is not a leak}
-								if CheckWipedBlocksOnTermination and (Block.AllocatedSize > 5) and (Block.AllocatedSize <= DoNotCheckWipedBlocksBiggerThan) and (not IsMemFilledWithChar(pchar(Block) + SizeOf(TMemoryBlocHeader) + 4, Block.AllocatedSize - 5, CharToUseToWipeOut)) then
+								if CheckWipedBlocksOnTermination and (Block.AllocatedSize > 5) and (Block.AllocatedSize <= DoNotCheckWipedBlocksBiggerThan) and (not IsMemFilledWithChar(PAnsiChar(Block) + SizeOf(TMemoryBlocHeader) + 4, Block.AllocatedSize - 5, CharToUseToWipeOut)) then
 									begin
 										try
 											raise EFreedBlockDamaged.Create('Destroyed block damaged - Block allocated at ' + IntToHex(Cardinal(Block.CallerAddress[0])-Displ,8) + ' - destroyed at ' + IntToHex(Cardinal(Block.DestructionAdress),8)) at Block.CallerAddress[0]
@@ -1360,7 +1367,7 @@ implementation
 			MemCheckUnitEntry, SysUtilsUnitEntry: Pointer;
 			CurrentEntry: pointer;
 		begin
-			InitContext:= PInitContext(PChar(@AllocMemSize)+31*4);
+			InitContext:= PInitContext(PByte(@AllocMemSize)+31*4);
 			Table:= InitContext.InitTable^.UnitInfo;
 			MemCheckFinalizationIndex:= -1;
 			SysUtilsFinalizationIndex:= -1;
@@ -1394,25 +1401,25 @@ implementation
 
 			{bring SysUtils to its new pos}
 			GetMem(SysUtilsUnitEntry, 8);
-			ReadProcessMemory(h, pointer(pchar(Table) + SysUtilsFinalizationIndex * sizeof(PackageUnitEntry)), SysUtilsUnitEntry, 8, BytesRead);
+			ReadProcessMemory(h, pointer(PByte(Table) + SysUtilsFinalizationIndex * sizeof(PackageUnitEntry)), SysUtilsUnitEntry, 8, BytesRead);
 				{for an obscure reason, we are not able to write into "table" directly - Using WriteProcessMemory works}
 			for i:= SysUtilsFinalizationIndex - 1 downto NewIndexOfSysUtilsFinalization do
 				begin
-					ReadProcessMemory(h, pointer(pchar(Table) + i * sizeof(PackageUnitEntry)), CurrentEntry, 8, BytesRead);
-					WriteProcessMemory(h, pointer(pchar(Table) + (i + 1) * sizeof(PackageUnitEntry)), CurrentEntry, 8, BytesRead);
+					ReadProcessMemory(h, pointer(PByte(Table) + i * sizeof(PackageUnitEntry)), CurrentEntry, 8, BytesRead);
+					WriteProcessMemory(h, pointer(PByte(Table) + (i + 1) * sizeof(PackageUnitEntry)), CurrentEntry, 8, BytesRead);
 				end;
-			WriteProcessMemory(h, pointer(pchar(Table) + NewIndexOfSysUtilsFinalization * sizeof(PackageUnitEntry)), SysUtilsUnitEntry, 8, BytesRead);
+			WriteProcessMemory(h, pointer(PByte(Table) + NewIndexOfSysUtilsFinalization * sizeof(PackageUnitEntry)), SysUtilsUnitEntry, 8, BytesRead);
 			FreeMem(SysUtilsUnitEntry);
 
 			{bring MemCheck to its new pos}
 			GetMem(MemCheckUnitEntry, 8);
-			ReadProcessMemory(h, pointer(pchar(Table) + MemCheckFinalizationIndex * sizeof(PackageUnitEntry)), MemCheckUnitEntry, 8, BytesRead);
+			ReadProcessMemory(h, pointer(PByte(Table) + MemCheckFinalizationIndex * sizeof(PackageUnitEntry)), MemCheckUnitEntry, 8, BytesRead);
 			for i:= MemCheckFinalizationIndex - 1 downto NewIndexOfMemcheckFinalization do
 				begin
-					ReadProcessMemory(h, pointer(pchar(Table) + i * sizeof(PackageUnitEntry)), CurrentEntry, 8, BytesRead);
-					WriteProcessMemory(h, pointer(pchar(Table) + (i + 1) * sizeof(PackageUnitEntry)), CurrentEntry, 8, BytesRead);
+					ReadProcessMemory(h, pointer(PByte(Table) + i * sizeof(PackageUnitEntry)), CurrentEntry, 8, BytesRead);
+					WriteProcessMemory(h, pointer(PByte(Table) + (i + 1) * sizeof(PackageUnitEntry)), CurrentEntry, 8, BytesRead);
 				end;
-			WriteProcessMemory(h, pointer(pchar(Table) + NewIndexOfMemcheckFinalization * sizeof(PackageUnitEntry)), MemCheckUnitEntry, 8, BytesRead);
+			WriteProcessMemory(h, pointer(PByte(Table) + NewIndexOfMemcheckFinalization * sizeof(PackageUnitEntry)), MemCheckUnitEntry, 8, BytesRead);
 			FreeMem(MemCheckUnitEntry);
 		end;
 
@@ -1834,7 +1841,7 @@ implementation
 		//Copyright (C) Tenth Planet Software Intl., Clive Turvey 1998. All rights reserved. - Reused & modified by SG with permission
 		var
 			AHeader : Packed record
-				Signature : Array[0..3] of Char;
+				Signature : Array[0..3] of AnsiChar;
 				AnInteger : Integer;
 			end;
 			k	: integer;
@@ -1978,13 +1985,13 @@ implementation
 					MemCheckInitialized:= True;
 					GIndex:= 0;
 					LastBlock:= Nil;
-					FreedInstance:= Pchar(ReleasedInstance)-52;
+					FreedInstance:= PByte(ReleasedInstance)-52;
 					Move(FreedInstance^, BadObjectVMT.A, 48);
-					FreedInstance:= PChar(@BadObjectVMT.B[1]);
+					FreedInstance:= PByte(@BadObjectVMT.B[1]);
 					for I:= 0 TO MaxNbSupportedVMTEntries do
 						begin
-							BadObjectVMT.B[I]:= PChar(@ReleasedInstance.Error)+6*I;
-							BadInterfaceVMT[I]:= PChar(@ReleasedInstance.InterfaceError);
+							BadObjectVMT.B[I]:= PByte(@ReleasedInstance.Error)+6*I;
+							BadInterfaceVMT[I]:= PByte(@ReleasedInstance.InterfaceError);
 						end;
 					if IdentifyObjectFields then
 						CurrentlyAllocatedBlocksTree:= TIntegerBinaryTree.Create;
@@ -2075,7 +2082,7 @@ implementation
 		begin
         	InitializeOnce;
 
-			AssignFile(OutputFile, MemCheckLogFileName + '.$$$');
+			AssignFile(OutputFile, GetMemCheckLogFilePath + '.$$$');
 			Rewrite(OutputFile);
 
 			ChronologicalLeaksCount:= 0;
@@ -2102,7 +2109,7 @@ implementation
 									BlockRepresentation:= BlockDescription[Block.KindOfBlock];
 
 									if Block.KindOfBlock = MClass then
-										BlockRepresentation:= BlockRepresentation + TObject(PChar(Block) + SizeOf(TMemoryBlocHeader)).ClassName + ', Size: ' + IntToStr(Block.AllocatedSize) + ', allocated at ' + IntToHex(Cardinal(Block.CallerAddress[0])-Displ,8) + ' ' + TextualDebugInfoForAddress(integer(Block.CallerAddress[0])) + #13#10
+										BlockRepresentation:= BlockRepresentation + TObject(PByte(Block) + SizeOf(TMemoryBlocHeader)).ClassName + ', Size: ' + IntToStr(Block.AllocatedSize) + ', allocated at ' + IntToHex(Cardinal(Block.CallerAddress[0])-Displ,8) + ' ' + TextualDebugInfoForAddress(integer(Block.CallerAddress[0])) + #13#10
 									else
 										BlockRepresentation:= BlockRepresentation + ', Size: ' + IntToStr(Block.AllocatedSize) + ', allocated at ' + IntToHex(Cardinal(Block.CallerAddress[0])-Displ,8) + ' ' + TextualDebugInfoForAddress(integer(Block.CallerAddress[0])) + #13#10 + MemoryBlockDump(Block) + #13#10;
 
@@ -2124,7 +2131,7 @@ implementation
 								end
 							else
 								{this is not a leak}
-								if CheckWipedBlocksOnTermination and (Block.AllocatedSize > 5) and (Block.AllocatedSize <= DoNotCheckWipedBlocksBiggerThan) and (not IsMemFilledWithChar(pchar(Block) + SizeOf(TMemoryBlocHeader) + 4, Block.AllocatedSize - 5, CharToUseToWipeOut)) then
+								if CheckWipedBlocksOnTermination and (Block.AllocatedSize > 5) and (Block.AllocatedSize <= DoNotCheckWipedBlocksBiggerThan) and (not IsMemFilledWithChar(PByte(Block) + SizeOf(TMemoryBlocHeader) + 4, Block.AllocatedSize - 5, CharToUseToWipeOut)) then
 									begin
 										Output('SEVERE ERROR: Destroyed block damaged - Block allocated at ' + IntToHex(Cardinal(Block.CallerAddress[0])-Displ,8) + ' - destroyed at ' + IntToHex(Cardinal(Block.DestructionAdress),8));
 										ShowOutput:= True;
@@ -2178,11 +2185,11 @@ implementation
 
 			{step 6: we save and show the output}
 			Close(OutputFile);
-			if FileExists(MemCheckLogFileName) then
-				DeleteFile(MemCheckLogFileName);
-			Rename(OutputFile, MemCheckLogFileName);
+			if FileExists(GetMemCheckLogFilePath) then
+				DeleteFile(GetMemCheckLogFilePath);
+			Rename(OutputFile, GetMemCheckLogFilePath);
 			if ShowOutput or (AllocatedBlocksCount > 0) or CollectStatsAboutObjectAllocation or ComputeMemoryUsageStats or KeepMaxMemoryUsage then
-				WinExec(PChar('notepad ' + MemCheckLogFileName), sw_Show);
+				WinExec(PAnsiChar('notepad ' + GetMemCheckLogFilePath), SW_SHOW);
 			FreeMem(AllocatedBlocksText);
 			FreeMem(AllocatedBlocksCounter);
 		end;
@@ -2287,8 +2294,8 @@ finalization
 			FreeMem(AllocatedObjectsClasses);
 			FreeMem(AllocatedInstances);
 			OutOfMemory.Destroy;
-			if FileExists(MemCheckLogFileName + '.$$$') then
-				DeleteFile(MemCheckLogFileName + '.$$$');
+			if FileExists(GetMemCheckLogFilePath + '.$$$') then
+				DeleteFile(GetMemCheckLogFilePath + '.$$$');
 		end;
 end.
 

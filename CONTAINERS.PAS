@@ -5,7 +5,7 @@ Uses Files, Classes, SysUtils;
 Type
 
 TGOBheader=packed record
-            magic:array[0..3] of char;
+            magic:array[0..3] of AnsiChar;
 	    index_ofs:longint;
 	   end;
 
@@ -14,13 +14,13 @@ TNEntries=longint;
 TGOBEntry=packed record
 	 offs:longint;
 	 size:longint;
-	 name:array[0..12] of char;
+	 name:array[0..12] of AnsiChar;
 	end;
 
 
  TLFDentry=packed record
-	 tag:array[0..3] of char;
-	 name:array[0..7] of char;
+	 tag:array[0..3] of AnsiChar;
+	 name:array[0..7] of AnsiChar;
 	 size:longint;
 	end;
 
@@ -62,7 +62,7 @@ end;
 {LAB Types declarations}
 
 Type
-TResType=array[0..3] of char;
+TResType=array[0..3] of AnsiChar;
 
 TLABDirectory=class(TContainerFile)
  Procedure Refresh;override;
@@ -70,7 +70,7 @@ TLABDirectory=class(TContainerFile)
 end;
 
  TLABHeader=packed record
-   Magic:array[0..3] of char; {'LABN'}
+   Magic:array[0..3] of AnsiChar; {'LABN'}
    Version:Longint; {65536}
    NFiles:Longint;
    NamePoolSize:Longint;
@@ -99,7 +99,7 @@ Function GetLABResType(const Name:String):TResType;
 
 Type
 Wad_index=packed record
- magic:array[0..3] of char;
+ magic:array[0..3] of AnsiChar;
  nentries:longint;
  pdirectory: longint;
 end;
@@ -111,14 +111,14 @@ end;
 
 {GOB2 declarations}
 TGOB2Header=record
- Magic:array[0..3] of char; {='GOB'#20}
+ Magic:array[0..3] of AnsiChar; {='GOB'#20}
  Long1,long2:longint; { $14, $C}
  NEntries:longint;
 end;
 
 TGOB2Entry=record
  Pos,size:longint;
- name:array[0..127] of char;
+ name:array[0..127] of AnsiChar;
 end;
 
 TGOB2Directory=class(TContainerFile)
@@ -245,8 +245,8 @@ end;}
 
 Procedure TFLDDirectory.Refresh;
 var Le:TLFDEntry;
-    N:array[0..12] of char;
-    E:array[0..5] of char;
+    N:array[0..12] of AnsiChar;
+    E:array[0..5] of AnsiChar;
     fi:TFInfo;
     f:TFile;
 begin
@@ -262,7 +262,7 @@ begin
   Fi.offs:=F.FPos;
   fi.size:=le.size;
   Fi.offs:=F.Fpos;
-  Files.AddObject(Concat(n,'.',e),fi);
+  Files.AddObject(string(n) + '.' + string(e),fi);
   F.Fseek(F.Fpos+le.size);
  end;
 Finally
@@ -278,7 +278,7 @@ end;
 Procedure TLFDCreator.PrepareHeader(newfiles:TStringList);
 var i:Integer;
     pe:^TLFDEntry;
-    name,ext:string;
+    name,ext:AnsiString;
 begin
  pes:=TList.Create;
  cf.FSeek(sizeof(TLFDEntry)*newfiles.count+sizeof(TLFDEntry));
@@ -289,8 +289,8 @@ begin
   ext:=ExtractExt(name);
   Delete(Ext,1,1);
   SetLength(Name,length(Name)-5);
-  StrMove(Pe^.Name,Pchar(Name),8);
-  StrMove(pe^.tag,Pchar(Ext),4);
+  StrMove(Pe^.Name,PAnsiChar(Name),8);
+  StrMove(pe^.tag,PAnsiChar(Ext),4);
   pe^.size:=0;
   pes.Add(pe);
  end;
@@ -363,7 +363,7 @@ Procedure TLABDirectory.Refresh;
 var f:TFile;
     Lh:TLabHeader;
     Le:TLabEntry;
-    PNpool:pchar;
+    PNpool:PAnsiChar;
     Fi:TLABFileInfo;
     i:integer;
     s:string;
@@ -399,10 +399,10 @@ end;
 
 Procedure TLABCreator.PrepareHeader(newfiles:TStringList);
 var i:integer;
-    buf:Array[0..255] of char;
+    buf:Array[0..255] of AnsiChar;
     len:Integer;
     ple:^TLabEntry;
-    aName:String;
+    aName:AnsiString;
 begin
  pes:=TList.Create;
  Lh.magic:='LABN';
@@ -485,7 +485,7 @@ Type
 
 TWEInfo=TFileInfo;
 
-c8=array[0..7] of char;
+c8=array[0..7] of AnsiChar;
 wad_entry=packed record
  pentry:longint;
  length:longint;
@@ -738,7 +738,7 @@ var f:TFile;
     Fi:TWEInfo;
     i:integer;
     s:string;
-    ename:array[0..8] of char;
+    ename:array[0..8] of AnsiChar;
 begin
  ClearIndex;
  f:=OpenFileRead(name,0);

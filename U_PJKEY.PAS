@@ -2,7 +2,7 @@ unit u_pjkey;
 
 interface
 
-uses classes, files, fileoperations, misc_utils, u_pj3dos;
+uses classes, files, fileoperations, misc_utils, u_pj3dos, sysutils;
 
 type
 

@@ -83,7 +83,7 @@ TPreviewRender=class
  Procedure SetViewPort(x,y,w,h:integer);virtual;abstract;
  Procedure Redraw;virtual;abstract;
  Procedure HandleActivate(const msg:TMessage);virtual;abstract;
- procedure HandlePaint(hdc:integer);virtual;abstract;
+ procedure HandlePaint(hdc:HDC);virtual;abstract;
  Function PickAt(X,Y:integer):TPickType;virtual;abstract;
  Function SetGamma(gamma:double):integer;virtual;abstract;
  Procedure SetViewToThing(th:TJKThing);virtual;abstract;
@@ -132,7 +132,7 @@ TNewPRenderer=class(TPreviewRender)
  { Optionally Destroy; redraw; and }
 
  Procedure HandleActivate(const msg:TMessage);override;
- procedure HandlePaint(hdc:integer);override;
+ procedure HandlePaint(hdc:HDC);override;
 
  Procedure ClearTXList;virtual;
  Procedure SetThing3DO(th:TJKThing;a3do:TPJ3DO);override;
@@ -351,14 +351,14 @@ var i:integer;
     bx1,by1,bz1,bx2,by2,bz2:double;
     m:T3DPMesh;
 
-Function IsInFront(const p,n:TVector;c:T3DPVertex;rad:single):integer;
-var d:double;
-begin
- result:=0;
- d:=Smult(c.x-p.x,c.y-p.y,c.z-p.z,n.dx,n.dy,n.dz);
- if d>rad then result:=1 else
- if d>-rad then result:=2 else result:=0;
-end;
+  Function IsInFront(const p,n:TVector;c:T3DPVertex;rad:single):integer;
+  var d:double;
+  begin
+   result:=0;
+   d:=Smult(c.x-p.x,c.y-p.y,c.z-p.z,n.dx,n.dy,n.dz);
+   if d>rad then result:=1 else
+   if d>-rad then result:=2 else result:=0;
+  end;
 
 begin
  DisableFPUExceptions;
@@ -409,7 +409,7 @@ begin
   Normalize(bn);
   SetVec(bp,ax1,ay1,az1);
 
-
+ // Draw meshes of sectors
  for i:=0 to sclist.count-1 do
  begin
   m:=sclist[i];
@@ -422,6 +422,7 @@ begin
   DrawMesh(m);
  end;
 
+ // Draw meshes of Things
  for i:=0 to thlist.count-1 do
  begin
   m:=thlist[i];
@@ -433,7 +434,6 @@ begin
      (isInFront(bp,bn,m.center,m.radius)=0) then continue;
   DrawMesh(m);
  end;
-
 
 end;
 
@@ -665,7 +665,7 @@ begin
   if s.Flags and SF_3DO<>0 then SetVec(surf.normal,-normal.dx,-normal.dy,-normal.dz);
 
   nvx:=Vertices.Count;
-  if nvx>24 then nvx:=24;
+  //if nvx>24 then nvx:=24;
 
   D3DID:=Result.surfs.count-1;
   ttx:=nil;
@@ -679,7 +679,7 @@ begin
   end;
 
  nvx:=Vertices.Count;
- if nvx>24 then nvx:=24;
+ //if nvx>24 then nvx:=24;
 
  for j:=0 to nvx-1 do
  begin
@@ -694,13 +694,13 @@ begin
   case s.level.mots and P3DColoredLights of
    true: begin
           elt:=s.extra+extralight;
-          vd.r:=L2B(r+elt);
-          vd.g:=L2B(g+elt);
-          vd.b:=L2B(b+elt);
+          vd.r:=L2B(color.r+elt);
+          vd.g:=L2B(color.g+elt);
+          vd.b:=L2B(color.b+elt);
          end;
    false: begin
 {          Try}
-           elt:=Intensity+s.extra+extralight;
+           elt:=color.a+s.extra+extralight;
            vd.r:=L2B(elt);
            vd.g:=vd.r; vd.b:=vd.r;
 {          except
@@ -722,7 +722,7 @@ Procedure TNewPRenderer.HandleActivate(const msg:TMessage);
 begin
 end;
 
-procedure TNewPRenderer.HandlePaint(hdc:integer);
+procedure TNewPRenderer.HandlePaint(hdc:HDC);
 begin
 end;
 
@@ -731,6 +731,7 @@ var
     surf:T3DPSurf;
     vd:TVXDets;
 begin
+ // Functions crates mesh for Things without 3DO models, e.g. ghost Thing
  Result:=T3DPMesh.Create;
  surf:=Result.AddSurf;
  SetVec(surf.normal,0,1,0);
@@ -793,63 +794,61 @@ begin
  With th do CreateRotMatrixs(mx,pch,yaw,rol);
 
  for i:=0 to th.a3DO.Meshes.count-1 do
- With th.a3Do.Meshes[i] do
- for k:=0 to faces.count-1 do
- With Faces[k] do
- begin
-  mat:=th.A3DO.GetMat(imat);
-  if (geo=0) or (Mat='') then continue;
+   With th.a3Do.Meshes[i] do
+   for k:=0 to faces.count-1 do
+   With Faces[k] do
+   begin
+    mat:=th.A3DO.GetMat(imat);
+    if (geo=0) or (Mat='') then continue;
 
-  surf:=Result.AddSurf;
-  CalcNormal;
-  surf.normal:=normal;
-  ttx:=nil;
+    surf:=Result.AddSurf;
+    CalcNormal;
+    surf.normal:=normal;
+    ttx:=nil;
 
-Try
- ttx:=GetTexture(Mat,thing_cmp);
- surf.tx:=ttx;
-{ if ttx<>nil then ttx.SetCurrent;}
-except
- on Exception do PanMessage(mt_warning,
-    Format('Cannot load %s for thing %d',[Mat,th.num]));
-end;
-
-
-{ pim:=ttx.Itexture.GetImage;
- if pim=nil then;}
-
- nvx:=Vertices.Count;
- if nvx>24 then nvx:=24;
-
- for j:=0 to nvx-1 do
- With TXVertices[j] do
- begin
-   vd:=Surf.AddVXD;
-
-   ax:=Vertices[j].x;
-   ay:=Vertices[j].y;
-   az:=Vertices[j].z;
-
-   MultVM3s(mx,ax,ay,az);
-
-   vd.x:=th.x+ax;
-   vd.y:=th.y+ay;
-   vd.z:=th.z+az;
+    Try
+     ttx:=GetTexture(Mat,thing_cmp);
+     surf.tx:=ttx;
+    { if ttx<>nil then ttx.SetCurrent;}
+    except
+     on Exception do PanMessage(mt_warning,
+        Format('Cannot load %s for thing %d',[Mat,th.num]));
+    end;
 
 
-   vd.r:=255; vd.g:=255; vd.b:=255;
+   { pim:=ttx.Itexture.GetImage;
+   if pim=nil then;}
 
-  if ttx<>nil then
-  begin
-   vd.u:=u/ttx.width;
-   vd.v:=v/ttx.height;
-  end;
+   nvx:=Vertices.Count;
+   //if nvx>24 then nvx:=24;
 
- { glVertex3f(th.x+ax,th.y+ay,th.z+az);}
+   for j:=0 to nvx-1 do
+     With TXVertices[j] do
+     begin
+       vd:=Surf.AddVXD;
 
- end;
+       ax:=Vertices[j].x;
+       ay:=Vertices[j].y;
+       az:=Vertices[j].z;
 
- end;
+       MultVM3s(mx,ax,ay,az);
+
+       vd.x:=th.x+ax;
+       vd.y:=th.y+ay;
+       vd.z:=th.z+az;
+
+       vd.r:=255; vd.g:=255; vd.b:=255;
+
+      if ttx<>nil then
+      begin
+       vd.u:=u/ttx.width;
+       vd.v:=v/ttx.height;
+      end;
+
+     { glVertex3f(th.x+ax,th.y+ay,th.z+az);}
+
+     end;
+   end;
 
  result.CalculateSphere;
 
@@ -876,60 +875,55 @@ begin
  for k:=0 to faces.count-1 do
  With Faces[k] do
  begin
-  mat:=A3DO.GetMat(imat);
-  if (geo=0) or (Mat='') then continue;
+    mat:=A3DO.GetMat(imat);
+    if (geo=0) or (Mat='') then continue;
 
-  surf:=Result.AddSurf;
-  CalcNormal;
-  surf.normal.dx:=normal.dx;
-  surf.normal.dy:=normal.dy;
-  surf.normal.dz:=normal.dz;
-  ttx:=nil;
+    surf:=Result.AddSurf;
+    CalcNormal;
+    surf.normal.dx:=normal.dx;
+    surf.normal.dy:=normal.dy;
+    surf.normal.dz:=normal.dz;
+    ttx:=nil;
 
-Try
- ttx:=GetTexture(Mat,thing_cmp);
- surf.tx:=ttx;
-{ if ttx<>nil then ttx.SetCurrent;}
-except
- on Exception do PanMessage(mt_warning,
-    Format('Cannot load %s for thing %d',[Mat,th.num]));
-end;
+    Try
+     ttx:=GetTexture(Mat,thing_cmp);
+     surf.tx:=ttx;
+    { if ttx<>nil then ttx.SetCurrent;}
+    except
+     on Exception do PanMessage(mt_warning,
+        Format('Cannot load %s for thing %d',[Mat,th.num]));
+    end;
 
+    { pim:=ttx.Itexture.GetImage;
+    if pim=nil then;}
 
-{ pim:=ttx.Itexture.GetImage;
- if pim=nil then;}
+    nvx:=Vertices.Count;
+     //if nvx>24 then nvx:=24;
 
- nvx:=Vertices.Count;
- if nvx>24 then nvx:=24;
+    for j:=0 to nvx-1 do
+    With TXVertices[j] do
+    begin
+      vd:=Surf.AddVXD;
 
- for j:=0 to nvx-1 do
- With TXVertices[j] do
- begin
-   vd:=Surf.AddVXD;
+      ax:=Vertices[j].tx;
+      ay:=Vertices[j].ty;
+      az:=Vertices[j].tz;
 
-   ax:=Vertices[j].tx;
-   ay:=Vertices[j].ty;
-   az:=Vertices[j].tz;
+      MultVM3s(mx,ax,ay,az);
 
-   MultVM3s(mx,ax,ay,az);
+      vd.x:=th.x+ax;
+      vd.y:=th.y+ay;
+      vd.z:=th.z+az;
+      vd.r:=255; vd.g:=255; vd.b:=255;
 
-   vd.x:=th.x+ax;
-   vd.y:=th.y+ay;
-   vd.z:=th.z+az;
+      if ttx<>nil then
+      begin
+       vd.u:=u/ttx.width;
+       vd.v:=v/ttx.height;
+      end;
 
-
-   vd.r:=255; vd.g:=255; vd.b:=255;
-
-  if ttx<>nil then
-  begin
-   vd.u:=u/ttx.width;
-   vd.v:=v/ttx.height;
-  end;
-
- { glVertex3f(th.x+ax,th.y+ay,th.z+az);}
-
- end;
-
+       { glVertex3f(th.x+ax,th.y+ay,th.z+az);}
+    end;
  end;
 
  result.CalculateSphere;
@@ -1058,7 +1052,5 @@ begin
  if (n<0) or (n>=count) then raise EListError.CreateFmt('Sector Index is out of bounds: %d',[n]);
  List[n]:=v;
 end;
-
-
 
 end.

@@ -2,8 +2,8 @@ unit JED_OLE;
 
 interface
 uses OleAuto, GlobalVars, J_Level, Classes, misc_utils,
-     lev_utils, Values, Windows, U_undo, U_templates,
-     Cons_Checker;
+     lev_utils, Values, Windows, u_multisel, U_undo, U_templates,
+     Cons_Checker, Geometry, Menus;
 
 type
   TOLELevel=class;
@@ -965,17 +965,17 @@ end;
 
 Function TOLESurface.GetVertexR(n:integer):Double;
 begin
- result:=surf.Txvertices[n].r;
+ result:=surf.Txvertices[n].color.r;
 end;
 
 Function TOLESurface.GetVertexG(n:integer):Double;
 begin
- result:=surf.Txvertices[n].g;
+ result:=surf.Txvertices[n].color.g;
 end;
 
 Function TOLESurface.GetVertexB(n:integer):Double;
 begin
- result:=surf.Txvertices[n].b;
+ result:=surf.Txvertices[n].color.b;
 end;
 
 
@@ -1127,32 +1127,32 @@ Function TOLESurface.GetVertexLight(n:integer):double;
 var tv:TTXVertex;
 begin
  tv:=surf.TXVertices[n];
- Result:=tv.Intensity;
+ Result:=tv.color.a;
 end;
 
 Procedure TOLESurface.SetVertexLight(n:integer;light:double);
 var tv:TTXVertex;
 begin
  tv:=surf.TXVertices[n];
- tv.Intensity:=light;
+ tv.color.a:=light;
 end;
 
 Procedure TOLESurface.GetVertexRGB(n:integer;var r,g,b:double);
 var tv:TTXVertex;
 begin
  tv:=surf.TXVertices[n];
- r:=tv.r;
- g:=tv.g;
- b:=tv.b;
+ r:=tv.color.r;
+ g:=tv.color.g;
+ b:=tv.color.b;
 end;
 
 Procedure TOLESurface.SetVertexRGB(n:integer;r,g,b:double);
 var tv:TTXVertex;
 begin
  tv:=surf.TXVertices[n];
- tv.r:=r;
- tv.g:=g;
- tv.b:=b;
+ tv.color.r:=r;
+ tv.color.g:=g;
+ tv.color.b:=b;
 end;
 
 Function TOLESurface.IsConvex:Wordbool;

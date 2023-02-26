@@ -3,11 +3,14 @@ unit d3d_NPRender;
 {$O-}
 
 interface
-uses Windows, glunit, Prender, Classes, J_Level, Forms,
+uses Ole2, Windows, glunit, Prender, Classes, J_Level, Forms,
      Messages, files, FileOperations, graph_files,
      lev_utils, sysUtils, misc_utils, GlobalVars, geometry,
      D3DRMObj, D3DTypes, D3DRMDef, DDraw, D3D, D3Drm, dxtools,
-     D3DrmWin, D3Dcaps, graphics;
+     D3DrmWin, D3Dcaps, graphics, images;
+
+const
+  maxVerts = 64;
 
 type
 
@@ -42,7 +45,7 @@ TD3DTexture=class(T3DPTexture)
  itx:IDirect3DTexture2;
  itxs:IDirectDrawSurface;
  dxr:TD3D5PRenderer;
- htx:integer;
+ htx:TD3DTextureHandle;
  Constructor CreateFromMat(const Mat:string;const pal:TCMPPal;const cmp:TCMPTable;adxr:TD3D5PRenderer;gamma:double);
  Procedure SetCurrent;{override;}
  Destructor Destroy;override;
@@ -108,8 +111,8 @@ begin
 
  ramp:=pdd^.dcmColorModel=D3DCOLOR_MONO;
 
- if Ramp then Raise
- Exception.Create('Ramp device cannot be used with D3D IM renderer');
+ if Ramp then
+  Raise Exception.Create('Ramp device cannot be used with D3D IM renderer');
 
  if (DirectDrawCreate(NIL,idd,NIL)<>DD_OK) then exit;
 
@@ -126,8 +129,6 @@ begin
 
  {Create Windowed }
  GetClientRect(whandle,rc);
-
-
 
  {Create front buffer}
  FillChar(ddsd,sizeof(ddsd),0);
@@ -344,7 +345,7 @@ Procedure TD3D5PRenderer.DrawMesh(m:T3DPMesh);
 var i,j:integer;
     surf:T3DPSurf;
     vxd:TVXdets;
-    d3dvx:array[0..23] of TD3DLVERTEX;
+    d3dvx:array[0..maxVerts -1] of TD3DLVERTEX;
     res,n:integer;
 begin
  if m=nil then exit;
@@ -353,7 +354,7 @@ begin
   surf:=m.GetSurf(i);
   TD3Dtexture(surf.tx).SetCurrent;
   n:=surf.vxds.count;
-  if n>24 then n:=24;
+  if n>maxVerts then n:=maxVerts;
 
   for j:=0 to n-1 do
   With d3dvx[j] do
@@ -507,13 +508,13 @@ end;
 Constructor TD3DTexture.CreateFromMat(const Mat:string;const pal:TCMPPal;const cmp:TCMPTable;adxr:TD3D5PRenderer;gamma:double);
 var
     i,j:integer;
-    pb:pchar;
+    pb:PAnsiChar;
     mf:TMat;
     f:TFile;
-    pl,pline:pchar;
+    pl,pline:PAnsiChar;
     res, n:integer;
 {    bits:Pchar;}
-    c:char;
+    c:AnsiChar;
     w:word;
     usepalette:boolean;
  var ddsd:TDDSURFACEDESC;
@@ -528,7 +529,7 @@ begin
 
   for j:=0 to width-1 do
   begin
-   (pl+j)^:=Chr(cmp[ord((pl+j)^)]);
+   (pl+j)^:=AnsiChar(Chr(cmp[ord((pl+j)^)]));
   end;
   Move(pl^,pb^,width);
   inc(pb,ddsd.lPitch);

@@ -61,12 +61,12 @@ type
     procedure SBHelpClick(Sender: TObject);
   private
     { Private declarations }
-    fi:TSectorFindInfo;
+    fi: TSectorFindInfo;
   public
     { Public declarations }
-    MapWindow:TForm;
-    Function Find:Boolean;
-    Function FindNext(curSC:integer):boolean;
+    MapWindow: TForm;
+    Function Find: Boolean;
+    Function FindNext(curSC: integer): Boolean;
   end;
 
 var
@@ -80,114 +80,123 @@ uses ResourcePicker, FlagEditor, Jed_Main;
 
 procedure TFindSectors.FormCreate(Sender: TObject);
 begin
- ClientWidth:=SBHelp.Left+CBNUM.Top+SBHelp.Width;
- ClientHeight:=SBHelp.Top+CBNUM.Top+SBHelp.Height;
+  ClientWidth := SBHelp.Left + CBNum.Top + SBHelp.Width;
+  ClientHeight := SBHelp.Top + CBNum.Top + SBHelp.Height;
 
- fi:=TSectorFindInfo.Create;
- TQueryField.CreateInt(CBNum,EBNum,fi.Num);
- TQueryField.CreateInt(CBNSurf,EBNSurf,fi.NSurfs);
- TQueryField.CreateFlags(CBFlags,EBFlags,fi.Flags);
+  fi := TSectorFindInfo.Create;
+  TQueryField.CreateInt(CBNum, EBNum, fi.Num);
+  TQueryField.CreateInt(CBNsurf, EBNSurf, fi.NSurfs);
+  TQueryField.CreateFlags(CBFlags, EBFlags, fi.Flags);
 
- TQueryField.CreateDouble(CBExtraL,EBExtraL,fi.Extra_L);
- TQueryField.CreateStr(CBCmap,EBCmap,fi.ColorMap);
+  TQueryField.CreateDouble(CBExtraL, EBExtraL, fi.Extra_L);
+  TQueryField.CreateStr(CBCMap, EBCMap, fi.ColorMap);
 
- TQueryField.CreateDouble(CBTint_R,EBTint_R,fi.tint_r);
- TQueryField.CreateDouble(CBTint_G,EBTint_G,fi.tint_g);
- TQueryField.CreateDouble(CBTint_B,EBTint_B,fi.tint_b);
+  TQueryField.CreateDouble(CBTint_R, EBTint_R, fi.tint_r);
+  TQueryField.CreateDouble(CBTint_G, EBTint_G, fi.tint_g);
+  TQueryField.CreateDouble(CBTint_b, EBTint_B, fi.tint_b);
 
- TQueryField.CreateStr(CBSound,EBSound,fi.Sound);
- TQueryField.CreateDouble(CBVol,EBVol,fi.sound_vol);
+  TQueryField.CreateStr(CBSound, EBSound, fi.Sound);
+  TQueryField.CreateDouble(CBVol, EBVol, fi.sound_vol);
 
- TQueryField.CreateStr(CBLayer,EBLayer,fi.Layer);
+  TQueryField.CreateStr(CBLayer, EBLayer, fi.Layer);
 
 end;
 
 procedure TFindSectors.BNCMapClick(Sender: TObject);
 begin
- EBCMap.Text:=ResPicker.PickCMP(EBCMap.Text);
+  EBCMap.Text := ResPicker.PickCMP(EBCMap.Text);
 end;
 
 procedure TFindSectors.BNSoundClick(Sender: TObject);
 begin
- EBSound.Text:=ResPicker.PickSecSound(EBSound.Text);
+  EBSound.Text := ResPicker.PickSecSound(EBSound.Text);
 end;
 
 procedure TFindSectors.BNLayerClick(Sender: TObject);
 begin
- EBLayer.Text:=ResPicker.PickLayer(EBLayer.Text);
+  EBLayer.Text := ResPicker.PickLayer(EBLayer.Text);
 end;
 
 procedure TFindSectors.BNFlagsClick(Sender: TObject);
-var F:Longint;
+var
+  F: Longint;
 begin
- ValDword(EBFlags.Text,f);
- f:=FlagEdit.EditSectorFlags(f);
- EBFlags.Text:=DwordToStr(f);
+  ValDword(EBFlags.Text, F);
+  F := FlagEdit.EditSectorFlags(F);
+  EBFlags.Text := DwordToStr(F);
 end;
 
 Function TFindSectors.Find;
-var Lev:TJKLevel;
-    nSc,s:Integer;
-    Ms:TSCMultiSel;
+var
+  Lev: TJKLevel;
+  nSc, s: integer;
+  Ms: TSCMultiSel;
 begin
- Result:=false;
+  Result := false;
 
- Lev:=Level;
- if ShowModal<>mrOK then exit;
+  Lev := Level;
+  if ShowModal <> mrOK then
+    exit;
 
- ms:=JedMain.scsel;
+  Ms := JedMain.scsel;
 
-if RBAdd.Checked then
-begin
- s:=FindNextSector(Lev,-1,fi);
- While s<>-1 do
- begin
-  ms.AddSC(s);
-  s:=FindNextSector(Lev,s,fi);
-  Result:=true;
- end;
+  if RBAdd.Checked then
+  begin
+    s := FindNextSector(Lev, -1, fi);
+    While s <> -1 do
+    begin
+      Ms.AddSC(s);
+      s := FindNextSector(Lev, s, fi);
+      Result := true;
+    end;
+  end;
+
+  if RBSubtract.Checked then
+  begin
+    s := FindNextSector(Lev, -1, fi);
+    While s <> -1 do
+    begin
+      nSc := Ms.FindSC(s);
+      if nSc <> -1 then
+        Ms.DeleteN(nSc);
+      s := FindNextSector(Lev, s, fi);
+      Result := true;
+    end;
+  end;
+
+  if RBFocus.Checked then
+  begin
+    s := FindNextSector(Lev, -1, fi);
+    if s <> -1 then
+    begin
+      JedMain.GotoSC(s);
+      Result := true;
+    end;
+  end;
+
+  if not Result then
+    ShowMessage('No hits!');
 end;
 
-if RBSubtract.Checked then
+Function TFindSectors.FindNext(curSC: integer): Boolean;
+var
+  s: integer;
 begin
- s:=FindNextSector(Lev,-1,fi);
- While s<>-1 do
- begin
-  nSc:=ms.FindSC(s);
-  if nSc<>-1 then ms.DeleteN(nSc);
-  s:=FindNextSector(Lev,s,fi);
-  Result:=true;
- end;
+  s := FindNextSector(Level, curSC, fi);
+  if s <> -1 then
+  begin
+    JedMain.GotoSC(s);
+    Result := true;
+  end;
+  Result := s <> -1;
+  if not Result then
+    ShowMessage('No more hits!');
 end;
-
-if RBFocus.Checked then
-begin
- s:=FindNextSector(Lev,-1,fi);
- if s<>-1 then
- begin JedMain.GotoSC(s); Result:=true; end;
-end;
-
-if not Result then ShowMessage('No hits!');
-end;
-
-Function TFindSectors.FindNext(curSC:Integer):Boolean;
-var s:Integer;
-begin
- s:=FindNextSector(Level,CurSC,fi);
-  if s<>-1 then
- begin
-  JedMain.GotoSC(s);
-  Result:=true;
- end;
-Result:=s<>-1;
-if not Result then ShowMessage('No more hits!');
-end;
-
 
 procedure TFindSectors.SBHelpClick(Sender: TObject);
 begin
- Application.helpfile:=basedir+'jedhelp.hlp';
- Application.HelpContext(450);
+  Application.helpfile := basedir + 'jedhelp.hlp';
+  Application.HelpContext(450);
 end;
 
 end.

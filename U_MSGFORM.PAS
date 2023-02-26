@@ -19,33 +19,35 @@ type
     { Private declarations }
   public
     { Public declarations }
-   Procedure AddMessage(const msg:String);
+    Procedure AddMessage(const msg: String);
   end;
 
 var
   MsgForm: TMsgForm;
 
 implementation
+
 uses GlobalVars;
 {$R *.DFM}
 
-Procedure TMsgForm.AddMessage(const msg:String);
-var n:Integer;
+Procedure TMsgForm.AddMessage(const msg: String);
+var
+  n: Integer;
 begin
- n:=Msgs.Lines.Count;
- if n>=MaxMsgs then Msgs.Lines.Delete(n-1);
- Msgs.Lines.Insert(0,msg);
+  n := msgs.Lines.Count;
+  if n >= MaxMsgs then
+    msgs.Lines.Delete(n - 1);
+  msgs.Lines.Insert(0, msg);
 end;
-
 
 procedure TMsgForm.Clear1Click(Sender: TObject);
 begin
- Msgs.Lines.Clear;
+  msgs.Lines.Clear;
 end;
 
 procedure TMsgForm.Close1Click(Sender: TObject);
 begin
- Hide;
+  Hide;
 end;
 
 end.

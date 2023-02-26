@@ -1,497 +1,583 @@
 unit FieldEdit;
 
 interface
+
 uses Grids, Classes, StdCtrls;
 
-{TFieldEdit pseudo control
- For Sector/Wall/Vertex/Object editors
+{ TFieldEdit pseudo control
+  For Sector/Wall/Vertex/Object editors
 }
 
 type
 
-TVarType=(vtString,vtDouble,vtInteger,vtDword);
+  TVarType = (vtString, vtDouble, vtInteger, vtDword);
 
-TFieldInfo=class
-Private
- Grid:TStringGrid;
- row:Integer;
- olds:string;
- Function GetS:String;
- Procedure SetS(const s:String);
- Procedure BadValueMsg;
-Public
- id:Integer;
- changed:boolean;
- vtype:TVarType;
- Constructor Create(aGrid:TStringGrid;arow:integer);
- Property s:String read GetS write SetS;
- Procedure ReadString(var st:String);
- Procedure ReadInteger(var i:Integer);
- Procedure Read0to31(var b:Byte);
- Procedure ReadDword(var d:longint);
- Procedure ReadDouble(var d:Double);
-end;
+  TFieldInfo = class
+  Private
+    Grid: TStringGrid;
+    row: Integer;
+    olds: string;
+    Function GetS: String;
+    Procedure SetS(const s: String);
+    Procedure BadValueMsg;
+  Public
+    id: Integer;
+    changed: boolean;
+    vtype: TVarType;
+    Constructor Create(aGrid: TStringGrid; arow: Integer);
+    Property s: String read GetS write SetS;
+    Procedure ReadString(var st: String);
+    Procedure ReadInteger(var i: Integer);
+    Procedure Read0to31(var b: Byte);
+    Procedure ReadDword(var d: longint);
+    Procedure ReadDouble(var d: Double);
+  end;
 
-TFEHandler=Procedure(Fi:TFieldInfo) of object;
-TFEChangeHandler=Function(Fi:TFieldInfo):boolean of object;
-TDoneEdit=procedure of object;
+  TFEHandler = Procedure(Fi: TFieldInfo) of object;
+  TFEChangeHandler = Function(Fi: TFieldInfo): boolean of object;
+  TDoneEdit = procedure of object;
 
-TFieldEdit=class
- Private
-  grid:TStringGrid;
-  fl:TList;
-  oldRow:integer;
+  TFieldEdit = class
+  Private
+    Grid: TStringGrid;
+    fl: TList;
+    oldRow: Integer;
 
-  Function GetField(n:Integer):TFieldInfo;
-  Function GetCurField:TFieldInfo;
-  Procedure Changed(row:integer);
-  Procedure CallDoneEdit;
- Public
-  FieldCount:Integer;
-  ONDblClick:TFEHandler;
-  ONChange:TFEChangeHandler;
-  OnDoneEdit:TDoneEdit;
-  Constructor Create(aGrid:TStringGrid);
-  Destructor Destroy;override;
-  Procedure Clear;
-  Procedure DeactivateHandler;
-  Property CurrentField:TFieldInfo read GetCurField;
-  Property Fields[n:integer]:TFieldInfo read GetField;
-  procedure SelectHandler(Sender: TObject; Col, Row: Longint; var CanSelect: Boolean);
-  procedure DblClickHandler(Sender: TObject);
-  procedure SetTextHandler(Sender: TObject; ACol, ARow: Longint; const Text: string);
-  function AddField(const Name:String;ID:Integer;vartype:TVarType):TFieldInfo;
-  Procedure AddFieldInt(const Name:string;ID,V:Integer);
-  Procedure AddFieldHex(const Name:string;ID:Integer;V:longint);
-  Procedure AddFieldFloat(const Name:string;ID:Integer;v:double);
-  Procedure AddFieldStr(const Name:string;ID:Integer;const v:string);
-  Function GetFieldByID(ID:Integer):TFieldInfo;
-  procedure KeyDown(Sender: TObject; var Key: Word;Shift: TShiftState);
-  Procedure DoneAdding;
-end;
+    Function GetField(n: Integer): TFieldInfo;
+    Function GetCurField: TFieldInfo;
+    Procedure changed(row: Integer);
+    Procedure CallDoneEdit;
+  Public
+    FieldCount: Integer;
+    ONDblClick: TFEHandler;
+    ONChange: TFEChangeHandler;
+    OnDoneEdit: TDoneEdit;
+    Constructor Create(aGrid: TStringGrid);
+    Destructor Destroy; override;
+    Procedure Clear;
+    Procedure DeactivateHandler;
+    Property CurrentField: TFieldInfo read GetCurField;
+    Property Fields[n: Integer]: TFieldInfo read GetField;
+    procedure SelectHandler(Sender: TObject; Col, row: longint;
+      var CanSelect: boolean);
+    procedure DblClickHandler(Sender: TObject);
+    procedure SetTextHandler(Sender: TObject; ACol, arow: longint;
+      const Text: string);
+    function AddField(const Name: String; id: Integer; vartype: TVarType)
+      : TFieldInfo;
+    Procedure AddFieldInt(const Name: string; id, V: Integer);
+    Procedure AddFieldHex(const Name: string; id: Integer; V: longint);
+    Procedure AddFieldFloat(const Name: string; id: Integer; V: Double);
+    Procedure AddFieldStr(const Name: string; id: Integer; const V: string);
+    Function GetFieldByID(id: Integer): TFieldInfo;
+    procedure KeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+    Procedure DoneAdding;
+  end;
 
+  TVIChange = function(const s: string): boolean of object;
 
-TVIChange=function (const s:string):boolean of object;
+  TValInput = class
+    eb: TEdit;
+    cb: TComboBox;
+    olds: string;
+    ONChange: TVIChange;
+    changed: boolean;
+    Constructor Create(aEb: TEdit);
+    Constructor CreateFromCB(aCB: TComboBox);
+    procedure ChangeHandler(Sender: TObject);
+    Procedure SetAsInt(i: Integer);
+    Function GetS: String;
+    Procedure SetAsFloat(d: Double);
+    Procedure SetAsString(s: string);
+    Property s: string read GetS;
+    Function AsInt: Integer;
+    Function AsFloat: Double;
+  Private
+    Procedure SetS(const s: string);
+    Function IntChange(const s: string): boolean;
+    Function FloatChange(const s: string): boolean;
+  end;
 
-TValInput=class
- eb:TEdit;
- cb:TComboBox;
- OldS:string;
- OnChange:TVIChange;
- changed:boolean;
- Constructor Create(aEb:TEdit);
- Constructor CreateFromCB(aCB:TComboBox);
- procedure ChangeHandler(Sender: TObject);
- Procedure SetAsInt(i:integer);
- Function GetS:String;
- Procedure SetAsFloat(d:double);
- Procedure SetAsString(s:string);
- Property S:string read GetS;
- Function AsInt:Integer;
- Function AsFloat:Double;
-Private
- Procedure SetS(const s:string);
- Function IntChange(const s:string):boolean;
- Function FloatChange(const s:string):boolean;
-end;
-
-Function feValDouble(const s:string;var d:double):boolean;
-Function feValInt(const s:string;var i:Integer):boolean;
+Function feValDouble(const s: string; var d: Double): boolean;
+Function feValInt(const s: string; var i: Integer): boolean;
 
 implementation
+
 uses Misc_Utils, SysUtils, Windows, Messages, Forms;
 
-Constructor TFieldInfo.Create(aGrid:TStringGrid;arow:integer);
+Constructor TFieldInfo.Create(aGrid: TStringGrid; arow: Integer);
 begin
- Grid:=aGrid;
- Row:=arow;
+  Grid := aGrid;
+  row := arow;
 end;
 
-Function TFieldInfo.GetS:String;
+Function TFieldInfo.GetS: String;
 begin
- Result:=Grid.Cells[1,row];
+  Result := Grid.Cells[1, row];
 end;
 
-Procedure TFieldInfo.SetS(const s:String);
+Procedure TFieldInfo.SetS(const s: String);
 begin
- Changed:=true;
- Grid.Cells[1,row]:=s;
- {if Grid.Cells[1,row]=olds then}
+  changed := true;
+  Grid.Cells[1, row] := s;
+  { if Grid.Cells[1,row]=olds then }
 end;
 
 Procedure TFieldInfo.BadValueMsg;
 begin
- MsgBox(s+' is not a valid value for '+Grid.Cells[0,row],
-             'Field Editor',mb_ok);
+  MsgBox(s + ' is not a valid value for ' + Grid.Cells[0, row],
+    'Field Editor', mb_ok);
 end;
 
-Procedure TFieldInfo.ReadString(var st:String);
+Procedure TFieldInfo.ReadString(var st: String);
 begin
- st:=s;
+  st := s;
 end;
 
-Procedure TFieldInfo.ReadInteger(var i:Integer);
-var v,a:Integer;
+Procedure TFieldInfo.ReadInteger(var i: Integer);
+var
+  V, a: Integer;
 begin
- Val(s,v,a);
- if a=0 then i:=v
- else BadValueMsg;
+  Val(s, V, a);
+  if a = 0 then
+    i := V
+  else
+    BadValueMsg;
 end;
 
-Procedure TFieldInfo.Read0to31(var b:Byte);
-var v,a:Integer;
+Procedure TFieldInfo.Read0to31(var b: Byte);
+var
+  V, a: Integer;
 begin
- Val(s,v,a);
- if (a=0) and (v>=-31) and (v<=31) then b:=v
- else BadValueMsg;
+  Val(s, V, a);
+  if (a = 0) and (V >= -31) and (V <= 31) then
+    b := V
+  else
+    BadValueMsg;
 end;
 
-Procedure TFieldInfo.ReadDword(var d:longint);
+Procedure TFieldInfo.ReadDword(var d: longint);
 begin
- Try
-  d:=StrToDword(s);
- except
-  On EConvertError do BadValueMsg;
- end;
+  Try
+    d := StrToDword(s);
+  except
+    On EConvertError do
+      BadValueMsg;
+  end;
 end;
 
-Procedure TFieldInfo.ReadDouble(var d:Double);
-var a:Integer;
-    v:Double;
+Procedure TFieldInfo.ReadDouble(var d: Double);
+var
+  a: Integer;
+  V: Double;
 begin
- Val(s,v,a);
- if a=0 then d:=v
- else BadValueMsg;
+  Val(s, V, a);
+  if a = 0 then
+    d := V
+  else
+    BadValueMsg;
 end;
 
-Constructor TFieldEdit.Create(aGrid:TStringGrid);
+Constructor TFieldEdit.Create(aGrid: TStringGrid);
 begin
- grid:=aGrid;
- fl:=TList.Create;
- Grid.OnDblclick:=DblClickHandler;
- Grid.OnSelectCell:=SelectHandler;
- Grid.OnSetEditText:=SetTextHandler;
- Grid.OnKeyDown:=KeyDown;
+  Grid := aGrid;
+  fl := TList.Create;
+  Grid.ONDblClick := DblClickHandler;
+  Grid.OnSelectCell := SelectHandler;
+  Grid.OnSetEditText := SetTextHandler;
+  Grid.OnKeyDown := KeyDown;
 end;
 
 Destructor TFieldEdit.Destroy;
 begin
- Grid.OnDblclick:=nil;
- Grid.OnSelectCell:=nil;
- Clear;
- FL.Free;
+  Grid.ONDblClick := nil;
+  Grid.OnSelectCell := nil;
+  Clear;
+  fl.Free;
 end;
 
 Procedure TFieldEdit.Clear;
-var i:integer;
+var
+  i: Integer;
 begin
- For i:=0 to FieldCount-1 do
- begin
-  Grid.Cells[0,i]:='';
-  Grid.Cells[1,i]:='';
-  Fields[i].Free;
- end;
- FL.Clear;
- FieldCount:=0;
- OldRow:=0;
+  For i := 0 to FieldCount - 1 do
+  begin
+    Grid.Cells[0, i] := '';
+    Grid.Cells[1, i] := '';
+    Fields[i].Free;
+  end;
+  fl.Clear;
+  FieldCount := 0;
+  oldRow := 0;
 end;
 
-Function TFieldEdit.GetField(n:Integer):TFieldInfo;
+Function TFieldEdit.GetField(n: Integer): TFieldInfo;
 begin
- Result:=TFieldInfo(FL.List[n]);
+  Result := TFieldInfo(fl.List[n]);
 end;
 
-Function TFieldEdit.GetFieldByID(ID:Integer):TFieldInfo;
-var i:Integer;
+Function TFieldEdit.GetFieldByID(id: Integer): TFieldInfo;
+var
+  i: Integer;
 begin
- Result:=nil;
- for i:=0 to FieldCount-1 do
- if Fields[i].ID=ID then begin Result:=Fields[i]; exit; end;
+  Result := nil;
+  for i := 0 to FieldCount - 1 do
+    if Fields[i].id = id then
+    begin
+      Result := Fields[i];
+      exit;
+    end;
 end;
 
-Function TFieldEdit.GetCurField:TFieldInfo;
+Function TFieldEdit.GetCurField: TFieldInfo;
 begin
- if Grid.Row<>-1 then Result:=TFieldInfo(FL.List[Grid.Row]) else Result:=nil;
+  if Grid.row <> -1 then
+    Result := TFieldInfo(fl.List[Grid.row])
+  else
+    Result := nil;
 end;
 
-procedure TFieldEdit.SelectHandler(Sender: TObject; Col, Row: Longint; var CanSelect: Boolean);
-var fi:TFieldInfo;
+procedure TFieldEdit.SelectHandler(Sender: TObject; Col, row: longint;
+  var CanSelect: boolean);
+var
+  Fi: TFieldInfo;
 begin
- if (col<>1) or (row>=FieldCount) then CanSelect:=false
- else
- begin
-  fi:=Fields[Row];
-  if fi=nil then CanSelect:=false
-  else if fi.id=-1 then CanSelect:=false
-  else CanSelect:=true;
-  fi:=Fields[OldRow];
-  if fi.s<>fi.olds then Changed(oldRow);
-  oldRow:=row;
- end;
+  if (Col <> 1) or (row >= FieldCount) then
+    CanSelect := false
+  else
+  begin
+    Fi := Fields[row];
+    if Fi = nil then
+      CanSelect := false
+    else if Fi.id = -1 then
+      CanSelect := false
+    else
+      CanSelect := true;
+    Fi := Fields[oldRow];
+    if Fi.s <> Fi.olds then
+      changed(oldRow);
+    oldRow := row;
+  end;
 end;
 
 procedure TFieldEdit.DblClickHandler(Sender: TObject);
-var fi:TFieldInfo;
+var
+  Fi: TFieldInfo;
 begin
- With Grid do
- begin
-  if (col<>1) or (row>=FieldCount) then exit;
-  fi:=Fields[row];
- end;
-  if (fi<>nil) and (Assigned(OnDblClick)) then OnDblClick(fi);
+  With Grid do
+  begin
+    if (Col <> 1) or (row >= FieldCount) then
+      exit;
+    Fi := Fields[row];
+  end;
+  if (Fi <> nil) and (Assigned(ONDblClick)) then
+    ONDblClick(Fi);
 end;
 
-Function IsValid(const s:string;vt:TVarType):Boolean;
-var a:Integer;
-    i:Integer;
-    d:Double;
+Function IsValid(const s: string; vt: TVarType): boolean;
+var
+  a: Integer;
+  i: Integer;
+  d: Double;
 begin
- a:=-1;
- Case vt of
-  vtString: a:=0;
-  vtInteger: Val(s,i,a);
-  vtDouble: Val(s,d,a);
-  vtDword: begin
-            a:=0;
-            Try
-            i:=StrToDword(s);
-            except
-             On EConvertError do a:=-1;
-            end;
-           end;
- end;
- Result:=a=0;
+  a := -1;
+  Case vt of
+    vtString:
+      a := 0;
+    vtInteger:
+      Val(s, i, a);
+    vtDouble:
+      Val(s, d, a);
+    vtDword:
+      begin
+        a := 0;
+        Try
+          i := StrToDword(s);
+        except
+          On EConvertError do
+            a := -1;
+        end;
+      end;
+  end;
+  Result := a = 0;
 end;
 
-procedure TFieldEdit.SetTextHandler(Sender: TObject; ACol, ARow: Longint; const Text: string);
-var Fi:TFieldInfo; s:string;
+procedure TFieldEdit.SetTextHandler(Sender: TObject; ACol, arow: longint;
+  const Text: string);
+var
+  Fi: TFieldInfo;
+  s: string;
 begin
-{ if (ACol<>1) or (Arow>=FieldCount) then exit;
- fi:=Fields[aRow];
- if fi<>nil then
- begin
-  s:=fi.olds;
-  if Assigned(OnChange) then
-   if not OnChange(fi) then begin if fi.s<>s then fi.s:=s; end
-  else fi.changed:=true;
- end;}
+  { if (ACol<>1) or (Arow>=FieldCount) then exit;
+    fi:=Fields[aRow];
+    if fi<>nil then
+    begin
+    s:=fi.olds;
+    if Assigned(OnChange) then
+    if not OnChange(fi) then begin if fi.s<>s then fi.s:=s; end
+    else fi.changed:=true;
+    end; }
 
 end;
 
 Procedure TFieldEdit.DoneAdding;
 begin
- Grid.Enabled:=false;
- Grid.Enabled:=true;
+  Grid.Enabled := false;
+  Grid.Enabled := true;
 end;
 
-
-function TFieldEdit.AddField(const Name:String;ID:Integer;vartype:TVarType):TFieldInfo;
-var fi:TFieldInfo;
+function TFieldEdit.AddField(const Name: String; id: Integer; vartype: TVarType)
+  : TFieldInfo;
+var
+  Fi: TFieldInfo;
 begin
- fi:=TFieldInfo.Create(Grid,FieldCount);
- fi.id:=ID;
- fi.vtype:=varType;
- Grid.Cells[0,FieldCount]:=Name;
- FL.Add(fi);
- Inc(FieldCount);
- Grid.RowCount:=FieldCount;
- {Grid.row:=0; Grid.col:=1;}
- result:=fi;
+  Fi := TFieldInfo.Create(Grid, FieldCount);
+  Fi.id := id;
+  Fi.vtype := vartype;
+  Grid.Cells[0, FieldCount] := Name;
+  fl.Add(Fi);
+  Inc(FieldCount);
+  Grid.RowCount := FieldCount;
+  { Grid.row:=0; Grid.col:=1; }
+  Result := Fi;
 end;
 
-Procedure TFieldEdit.AddFieldHex(const Name:string;ID:Integer;V:longint);
+Procedure TFieldEdit.AddFieldHex(const Name: string; id: Integer; V: longint);
 begin
- With AddField(Name,ID,vtInteger) do
- begin
-  olds:=Format('%x',[v]);
-  s:=olds;
- end;
+  With AddField(Name, id, vtInteger) do
+  begin
+    olds := Format('%x', [V]);
+    s := olds;
+  end;
 end;
 
-Procedure TFieldEdit.AddFieldInt(const Name:string;ID,V:Integer);
+Procedure TFieldEdit.AddFieldInt(const Name: string; id, V: Integer);
 begin
- With AddField(Name,ID,vtInteger) do
- begin
-  olds:=IntToStr(v);
-  s:=olds;
- end;
+  With AddField(Name, id, vtInteger) do
+  begin
+    olds := IntToStr(V);
+    s := olds;
+  end;
 end;
 
-Procedure TFieldEdit.AddFieldFloat(const Name:string;ID:Integer;v:double);
+Procedure TFieldEdit.AddFieldFloat(const Name: string; id: Integer; V: Double);
 begin
- With AddField(Name,ID,vtInteger) do
- begin
-  olds:=DoubleToStr(v);
-  s:=olds;
- end;
+  With AddField(Name, id, vtInteger) do
+  begin
+    olds := DoubleToStr(V);
+    s := olds;
+  end;
 end;
 
-Procedure TFieldEdit.AddFieldStr(const Name:string;ID:Integer;const v:string);
+Procedure TFieldEdit.AddFieldStr(const Name: string; id: Integer;
+  const V: string);
 begin
- With AddField(Name,ID,vtInteger) do
- begin
-  olds:=v;
-  s:=olds;
- end;
+  With AddField(Name, id, vtInteger) do
+  begin
+    olds := V;
+    s := olds;
+  end;
 end;
 
 Procedure TFieldEdit.DeactivateHandler;
 begin
- if Grid.Row>=FieldCount then exit;
- With Fields[Grid.Row] do
- begin
-  if s<>olds then Self.Changed(Grid.Row);
- end;
+  if Grid.row >= FieldCount then
+    exit;
+  With Fields[Grid.row] do
+  begin
+    if s <> olds then
+      Self.changed(Grid.row);
+  end;
 end;
 
-Procedure TFieldEdit.Changed(row:integer);
-var fi:TFieldInfo;
+Procedure TFieldEdit.changed(row: Integer);
+var
+  Fi: TFieldInfo;
 begin
- if not Assigned(OnChange) then exit;
- if row>=FieldCount then exit;
- fi:=Fields[row];
- if not OnChange(fi) then fi.s:=fi.olds else
- begin
-  fi.changed:=true;
-  fi.olds:=fi.s;
- end;
+  if not Assigned(ONChange) then
+    exit;
+  if row >= FieldCount then
+    exit;
+  Fi := Fields[row];
+  if not ONChange(Fi) then
+    Fi.s := Fi.olds
+  else
+  begin
+    Fi.changed := true;
+    Fi.olds := Fi.s;
+  end;
 end;
 
 Procedure TFieldEdit.CallDoneEdit;
 begin
- if Assigned(OnDoneEdit) then
-  OnDoneEdit;
+  if Assigned(OnDoneEdit) then
+    OnDoneEdit;
 end;
 
-
-procedure TFieldEdit.KeyDown(Sender: TObject; var Key: Word;Shift: TShiftState);
-var fi:TFieldInfo;
+procedure TFieldEdit.KeyDown(Sender: TObject; var Key: Word;
+  Shift: TShiftState);
+var
+  Fi: TFieldInfo;
 begin
- if shift<>[] then exit;
- if Grid.Row>=FieldCount then exit;
- fi:=Fields[Grid.Row];
- Case Key of
-  VK_Escape: begin fi.s:=fi.Olds; CallDoneEdit; end;
-  VK_Return: begin Changed(Grid.Row); CallDoneEdit; end;
-  VK_F10: if (fi<>nil) and (Assigned(OnDblClick)) then OnDblClick(fi);
- end;
+  if Shift <> [] then
+    exit;
+  if Grid.row >= FieldCount then
+    exit;
+  Fi := Fields[Grid.row];
+  Case Key of
+    VK_Escape:
+      begin
+        Fi.s := Fi.olds;
+        CallDoneEdit;
+      end;
+    VK_Return:
+      begin
+        changed(Grid.row);
+        CallDoneEdit;
+      end;
+    VK_F10:
+      if (Fi <> nil) and (Assigned(ONDblClick)) then
+        ONDblClick(Fi);
+  end;
 end;
 
-Constructor TVAlInput.Create(aEb:TEdit);
+Constructor TValInput.Create(aEb: TEdit);
 begin
- eb:=aEb;
- eb.OnChange:=ChangeHandler;
- olds:=eb.text;
+  eb := aEb;
+  eb.ONChange := ChangeHandler;
+  olds := eb.Text;
 end;
 
-Constructor TVAlInput.CreateFromCB(aCB:TComboBox);
+Constructor TValInput.CreateFromCB(aCB: TComboBox);
 begin
- cb:=aCB;
- cb.OnChange:=ChangeHandler;
- olds:=cb.Text;
+  cb := aCB;
+  cb.ONChange := ChangeHandler;
+  olds := cb.Text;
 end;
 
-
-Procedure TVAlInput.SetS(const s:string);
+Procedure TValInput.SetS(const s: string);
 begin
- if eb<>nil then
- begin
-  eb.Onchange:=nil;
-  olds:=s;
-  eb.text:=s;
-  eb.OnChange:=ChangeHandler;
-  exit;
- end;
-  cb.Onchange:=nil;
-  olds:=s;
-  cb.text:=s;
-  cb.OnChange:=ChangeHandler;
+  if eb <> nil then
+  begin
+    eb.ONChange := nil;
+    olds := s;
+    eb.Text := s;
+    eb.ONChange := ChangeHandler;
+    exit;
+  end;
+  cb.ONChange := nil;
+  olds := s;
+  cb.Text := s;
+  cb.ONChange := ChangeHandler;
 end;
 
-procedure TVAlInput.ChangeHandler(Sender: TObject);
+procedure TValInput.ChangeHandler(Sender: TObject);
 begin
- changed:=true;
- if not Assigned(OnChange) then exit;
- if eb<>nil then
- begin
-  if OnChange(eb.Text) then olds:=eb.text
-  else SetS(olds);
-  exit;
- end;
-  if OnChange(cb.Text) then olds:=cb.text
-  else SetS(olds);
+  changed := true;
+  if not Assigned(ONChange) then
+    exit;
+  if eb <> nil then
+  begin
+    if ONChange(eb.Text) then
+      olds := eb.Text
+    else
+      SetS(olds);
+    exit;
+  end;
+  if ONChange(cb.Text) then
+    olds := cb.Text
+  else
+    SetS(olds);
 end;
 
-Procedure TVAlInput.SetAsInt(i:integer);
+Procedure TValInput.SetAsInt(i: Integer);
 begin
- SetS(IntToStr(i));
- OnChange:=IntChange;
- changed:=false;
+  SetS(IntToStr(i));
+  ONChange := IntChange;
+  changed := false;
 end;
 
-Procedure TVAlInput.SetAsFloat(d:double);
+Procedure TValInput.SetAsFloat(d: Double);
 begin
- SetS(DoubleToStr(d));
- OnChange:=FloatChange;
- changed:=false;
+  SetS(DoubleToStr(d));
+  ONChange := FloatChange;
+  changed := false;
 end;
 
-Procedure TVAlInput.SetAsString(s:string);
+Procedure TValInput.SetAsString(s: string);
 begin
- SetS(s);
- OnChange:=nil;
- changed:=false;
+  SetS(s);
+  ONChange := nil;
+  changed := false;
 end;
 
-Function TVAlInput.IntChange(const s:string):boolean;
-var i:integer;
-    w:string;
+Function TValInput.IntChange(const s: string): boolean;
+var
+  i: Integer;
+  w: string;
 begin
- getWord(s,1,w);
- Result:=feValInt(w,i);
+  getWord(s, 1, w);
+  Result := feValInt(w, i);
 end;
 
-Function TVAlInput.GetS:String;
+Function TValInput.GetS: String;
 begin
- if eb<>nil then Result:=eb.text
- else Result:=cb.text;
+  if eb <> nil then
+    Result := eb.Text
+  else
+    Result := cb.Text;
 end;
 
-Function TVAlInput.AsInt:Integer;
-var w:string;
+Function TValInput.AsInt: Integer;
+var
+  w: string;
 begin
- getWord(s,1,w);
- if not feValInt(w,Result) then Result:=0;
+  getWord(s, 1, w);
+  if not feValInt(w, Result) then
+    Result := 0;
 end;
 
-Function TVAlInput.AsFloat:Double;
+Function TValInput.AsFloat: Double;
 begin
- if not feValDouble(s,Result) then Result:=0;
+  if not feValDouble(s, Result) then
+    Result := 0;
 end;
 
-Function feValDouble(const s:string;var d:double):boolean;
-var st:string;
+Function feValDouble(const s: string; var d: Double): boolean;
+var
+  st: string;
 begin
- st:=s;
- if s='-' then begin result:=true; d:=0; exit; end;
- if (st<>'') and (st[length(st)]='.') then SetLength(st,length(st)-1);
- result:=ValDouble(st,d);
+  st := s;
+  if s = '-' then
+  begin
+    Result := true;
+    d := 0;
+    exit;
+  end;
+  if (st <> '') and (st[length(st)] = '.') then
+    SetLength(st, length(st) - 1);
+  Result := ValDouble(st, d);
 end;
 
-Function feValInt(const s:string;var i:Integer):boolean;
-var st:string;
+Function feValInt(const s: string; var i: Integer): boolean;
+var
+  st: string;
 begin
- st:=s;
- if s='-' then begin result:=true; i:=0; exit; end;
- result:=ValInt(st,i);
+  st := s;
+  if s = '-' then
+  begin
+    Result := true;
+    i := 0;
+    exit;
+  end;
+  Result := ValInt(st, i);
 end;
 
-
-Function TVAlInput.FloatChange(const s:string):boolean;
-var d:double;
+Function TValInput.FloatChange(const s: string): boolean;
+var
+  d: Double;
 begin
- Result:=feValDouble(s,d);
+  Result := feValDouble(s, d);
 end;
-
 
 end.

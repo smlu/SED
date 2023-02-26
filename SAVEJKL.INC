@@ -597,8 +597,8 @@ Progress.Msg:='Writing texture vertices';
   for v:=0 to Vertices.Count-1 do
   With TXVertices[v] do
   begin
-   if mots then st:=Concat(st,Sprintf(' %.4f %.4f %.4f %.4f',[Intensity,r,g,b]))
-   else st:=Concat(st,Sprintf(' %.4f',[Intensity]));
+   if mots then st:=Concat(st,Sprintf(' %.4f %.4f %.4f %.4f',[color.a,color.r,color.g,color.b]))
+   else st:=Concat(st,Sprintf(' %.4f',[color.a]));
   end;
 
   WriteS(st);

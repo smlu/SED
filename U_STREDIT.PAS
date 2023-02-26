@@ -4,7 +4,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
-  StdCtrls, ExtCtrls,  U_medit;
+  StdCtrls, ExtCtrls, U_medit;
 
 type
   TStrEdit = class(TForm)
@@ -21,9 +21,9 @@ type
     procedure BNAddClick(Sender: TObject);
   private
     { Private declarations }
-    cstrs:TCogStrings;
+    cstrs: TCogStrings;
   public
-   Procedure EditStrings(strs:TCogStrings);
+    Procedure EditStrings(strs: TCogStrings);
     { Public declarations }
   end;
 
@@ -34,58 +34,62 @@ implementation
 
 {$R *.DFM}
 
-
-Procedure TStrEdit.EditStrings(strs:TCogStrings);
-var i:integer;
+Procedure TStrEdit.EditStrings(strs: TCogStrings);
+var
+  i: integer;
 begin
- LBStrs.Items.Clear;
- for i:=0 to strs.strings.count-1 do
-  LBStrs.Items.Add(strs.Keys[i]+': '+strs.strings[i]);
- LBStrs.ItemIndex:=0;
- cstrs:=strs;
- ShowModal;
+  LBStrs.Items.Clear;
+  for i := 0 to strs.strings.count - 1 do
+    LBStrs.Items.Add(strs.Keys[i] + ': ' + strs.strings[i]);
+  LBStrs.ItemIndex := 0;
+  cstrs := strs;
+  ShowModal;
 end;
 
 procedure TStrEdit.LBStrsClick(Sender: TObject);
-var i:integer;
+var
+  i: integer;
 begin
- i:=LBStrs.ItemIndex;
- if i<0 then exit;
- EBKey.Text:=cstrs.Keys[i];
- EBStr.Text:=cstrs.Strings[i];
+  i := LBStrs.ItemIndex;
+  if i < 0 then
+    exit;
+  EBKey.Text := cstrs.Keys[i];
+  EBStr.Text := cstrs.strings[i];
 end;
 
 procedure TStrEdit.BNDeleteClick(Sender: TObject);
-var i:integer;
+var
+  i: integer;
 begin
- for i:=LBStrs.Items.count-1 downto 0 do
- if LBStrs.Selected[i] then
- begin
-  LBStrs.Items.Delete(i);
-  cstrs.Keys.Delete(i);
-  cstrs.Strings.Delete(i);
- end;
+  for i := LBStrs.Items.count - 1 downto 0 do
+    if LBStrs.Selected[i] then
+    begin
+      LBStrs.Items.Delete(i);
+      cstrs.Keys.Delete(i);
+      cstrs.strings.Delete(i);
+    end;
 end;
 
 procedure TStrEdit.BNAddClick(Sender: TObject);
-var i:integer;
-    s:string;
+var
+  i: integer;
+  s: string;
 begin
- s:=EBKey.Text;
- i:=cstrs.Keys.IndexOf(s);
- if i<>-1 then
- begin
-  cstrs.Strings[i]:=EBStr.Text;
-  LBStrs.Items[i]:=cstrs.Keys[i]+': '+cstrs.strings[i];
- end
- else
- begin
-  cstrs.AddString(EBKey.Text,EBStr.Text);
-  i:=cstrs.Keys.IndexOf(s);
-  LBStrs.Items.Insert(i,cstrs.Keys[i]+': '+cstrs.strings[i]);
- end;
- LBStrs.ItemIndex:=i;
- LBStrs.Selected[i]:=true;
+  s := EBKey.Text;
+  i := cstrs.Keys.IndexOf(s);
+  if i <> -1 then
+  begin
+    cstrs.strings[i] := EBStr.Text;
+    LBStrs.Items[i] := cstrs.Keys[i] + ': ' + cstrs.strings[i];
+  end
+  else
+  begin
+    cstrs.AddString(EBKey.Text, EBStr.Text);
+    i := cstrs.Keys.IndexOf(s);
+    LBStrs.Items.Insert(i, cstrs.Keys[i] + ': ' + cstrs.strings[i]);
+  end;
+  LBStrs.ItemIndex := i;
+  LBStrs.Selected[i] := true;
 end;
 
 end.

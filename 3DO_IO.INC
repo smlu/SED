@@ -99,7 +99,7 @@ begin
 end;
 
 Procedure LoadGeometry;
-var i,j,k,n,p,pc:integer;
+var i,j,k,m,n,p,pc:integer;
     nvx,vx,tvx:integer;
     txvx:TTempTXVertex;
 
@@ -249,8 +249,8 @@ begin
    end;
   end;
 end;
-  for i:=0 to GTXVXList.Count-1 do
-  TTempTXVertex(GTXVXList[i]).Free;
+  for m:=0 to GTXVXList.Count-1 do
+  TTempTXVertex(GTXVXList[m]).Free;
   GTXVXList.Clear;
 end;
 GTXVXList.Free;
@@ -334,7 +334,7 @@ end;
 var i,j:integer;
 begin {CreateFrom3DO begin}
  CreateNew;
- DecimalSeparator:='.';
+ FormatSettings.DecimalSeparator:='.';
 
  if ExtractFilePath(name)<>'' then t:=TTextFile.CreateRead(OpenFileRead(name,0)) else
  t:=TTextFile.CreateRead(OpenGameFile(name));

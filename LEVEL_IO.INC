@@ -18,8 +18,8 @@ TMatDims=class
 end;
 
 TVXIntensity=class
- intensity,
- r,g,b:single;
+ r,g,b,
+ a: single; // a - alpha or light intensity
 end;
 
 TTempSurf=class
@@ -259,7 +259,7 @@ end;
    begin
     vxInt:=TVXIntensity.Create;
     TSurf.Intensities.Add(vxInt);
-    vxInt.Intensity:=il[j*4];
+    vxInt.a:=il[j*4];
     vxInt.r:=il[j*4+1];
     vxInt.g:=il[j*4+2];
     vxInt.b:=il[j*4+3];
@@ -271,10 +271,10 @@ end;
    begin
     vxInt:=TVXIntensity.Create;
     TSurf.Intensities.Add(vxInt);
-    vxInt.Intensity:=il[j];
-    vxInt.r:=vxInt.Intensity;
-    vxInt.g:=vxInt.Intensity;
-    vxInt.b:=vxInt.Intensity;
+    vxInt.a:=il[j];
+    vxInt.r:=vxInt.r;
+    vxInt.g:=vxInt.g;
+    vxInt.b:=vxInt.b;
    end;
   end;
  end;
@@ -399,10 +399,10 @@ Try
       u:=txvx.u;
       v:=txvx.v;
       vxInt:=TVXIntensity(tSurf.Intensities[j]);
-      intensity:=vxInt.intensity;
-      r:=vxInt.r;
-      g:=vxInt.g;
-      b:=vxInt.b;
+      color.a:=vxInt.a;
+      color.r:=vxInt.r;
+      color.g:=vxInt.g;
+      color.b:=vxInt.b;
      end;
 
    end;
@@ -591,7 +591,7 @@ var i,j:integer;
     tmpsurf:TJKSurface;
 begin {LoadFromJKL begin}
  ppos:=0;
- DecimalSeparator:='.';
+ FormatSettings.DecimalSeparator:='.';
  mats:=TStringList.Create;
  cmps:=TStringList.Create;
  t:=TTextFile.CreateRead(OpenFileRead(f,0));
@@ -658,7 +658,7 @@ GAdjoins.Free;
   begin
    tmpsurf:=Surfaces[j];
    tmpsurf.Recalc;
-   if IsTXFlipped(tmpsurf) then tmpsurf.surfFlags:=tmpsurf.surfFlags or SFF_Flip
+   if IsTXFlipped(tmpsurf) then tmpsurf.surfFlags:=longint(tmpsurf.surfFlags or SFF_Flip)
    else tmpsurf.surfFlags:=tmpsurf.surfFlags and (not SFF_Flip);
 
   end;
@@ -704,7 +704,7 @@ begin
  RenumSecs;
  for i:=0 to Sectors.Count-1 do Sectors[i].Renumber;
  
- DecimalSeparator:='.';
+ FormatSettings.DecimalSeparator:='.';
  Assign(t,f);Rewrite(t);
  WriteS('JED '+JedVerNum);
 
@@ -771,12 +771,12 @@ Try
    With TXVertices[vx] do
    begin
      st:=Concat(st,Sprintf(' %d %.2f %.2f %.4f',
-     [vertices[vx].num,u,v,intensity]));
+     [vertices[vx].num,u,v,color.a]));
    end;
    for vx:=0 to vertices.count-1 do
    With TXVertices[vx] do
    begin
-     st:=Concat(st,Sprintf(' %.4f %.4f %.4f',[r,g,b]));
+     st:=Concat(st,Sprintf(' %.4f %.4f %.4f',[color.r,color.g,color.b]));
    end;
    Writeln(t,st);
   end;
@@ -977,7 +977,7 @@ end;
       p:=GetWord(st,p,w);
       ValSingle(w,v);
       p:=GetWord(st,p,w);
-      ValSingle(w,Intensity);
+      ValSingle(w,color.a);
      end;
     end;
     {Load RGB}
@@ -986,11 +986,11 @@ end;
     begin
      p:=GetWord(st,p,w);
      if w='' then break;
-     ValSingle(w,r);
+     ValSingle(w,color.r);
      p:=GetWord(st,p,w);
-     ValSingle(w,g);
+     ValSingle(w,color.g);
      p:=GetWord(st,p,w);
-     ValSingle(w,b);
+     ValSingle(w,color.b);
     end;
 
    end;
@@ -1135,7 +1135,7 @@ end;
 var tmpsurf:TJKSurface;
 
 begin
- DecimalSeparator:='.';
+ FormatSettings.DecimalSeparator:='.';
  t:=TTextFile.CreateRead(OpenFileRead(f,0));
  Clear;
  {ReadS(St);}

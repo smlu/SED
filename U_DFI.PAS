@@ -18,7 +18,7 @@ type
     { Private declarations }
   public
     { Public declarations }
-    vScale:TValInput;
+    vScale: TValInput;
   end;
 
 var
@@ -30,10 +30,10 @@ implementation
 
 procedure TDFImport.FormCreate(Sender: TObject);
 begin
- ClientWidth:=RGTX.Left+BNCancel.Left+BNCancel.Width;
- ClientHeight:=RGTX.Left+BNCancel.top+BNCancel.Height;
- vScale:=TValInput.Create(EBScale);
- vScale.SetAsFloat(40);
+  ClientWidth := RGTX.Left + BNCancel.Left + BNCancel.Width;
+  ClientHeight := RGTX.Left + BNCancel.top + BNCancel.Height;
+  vScale := TValInput.Create(EBScale);
+  vScale.SetAsFloat(40);
 end;
 
 end.

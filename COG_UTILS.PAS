@@ -1,8 +1,8 @@
 unit Cog_utils;
 
 interface
-uses Values;
 
+uses Values;
 
 implementation
 

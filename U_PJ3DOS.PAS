@@ -1,7 +1,7 @@
 unit u_pj3dos;
 
 interface
-uses pjgeometry, SysUtils, misc_utils, GlobalVars;
+uses pjgeometry, SysUtils, misc_utils, GlobalVars, classes;
 
 Type
 

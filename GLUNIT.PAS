@@ -1032,7 +1032,7 @@ wglCreateContext: function (DC: HDC): HGLRC; stdcall;
 wglDeleteContext: function (p1: HGLRC): BOOL; stdcall;
 wglGetCurrentContext: function : HGLRC; stdcall;
 wglMakeCurrent: function (DC: HDC; p2: HGLRC): BOOL; stdcall;
-wglGetProcAddress: function (ProcName: PChar): Pointer;  stdcall;
+wglGetProcAddress: function (ProcName: PAnsiChar): Pointer;  stdcall;
 
 
 
