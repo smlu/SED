@@ -1569,7 +1569,7 @@ implementation
 					try
 						SetLength(LogFileName, FileNameBufSize);
 						GetModuleFileName(0, PChar(LogFileName), FileNameBufSize);
-						LogFileName:= copy(LogFileName, 1, pos('.', LogFileName)) + 'log';
+						LogFileName:= Copy(LogFileName, 1, Pos('.', LogFileName)) + 'log';
 
 						AssignFile(SevereExceptionsLogFile, LogFileName);
 

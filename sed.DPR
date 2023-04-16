@@ -1,7 +1,8 @@
-program Jed;
+program Sed;
 
 uses
   Forms,
+  Classes,
   Jed_Main in 'Jed_Main.pas' {JedMain} ,
   tmp_load3do in 'tmp_load3do.pas',
   Render in 'Render.pas',
@@ -25,12 +26,12 @@ uses
   D3D_PRender in 'D3D_PRender.pas',
   d3d in 'd3d\D3d.pas',
   d3dcaps in 'd3d\D3dcaps.pas',
-  d3drm in 'd3d\D3drm.pas',
-  d3drmdef in 'd3d\D3drmdef.pas',
-  d3drmobj in 'd3d\D3drmobj.pas',
+//  d3drm in 'd3d\D3drm.pas',
+//  d3drmdef in 'd3d\D3drmdef.pas',
+//  d3drmobj in 'd3d\D3drmobj.pas',
   d3dtypes in 'd3d\D3dtypes.pas',
   ddraw in 'd3d\Ddraw.pas',
-  d3drmwin in 'd3d\D3Drmwin.pas',
+  //d3drmwin in 'd3d\D3Drmwin.pas',
   Item_edit in 'Item_edit.pas' {ItemEdit} ,
   FieldEdit in 'FieldEdit.pas',
   misc_utils in 'misc_utils.pas',
@@ -88,6 +89,7 @@ uses
   u_3doform in 'u_3doform.pas' {UrqForm};
 
 {$R *.RES}
+{$R SEDstatic.res}
 {$R Ver_info.res}
 
 begin
@@ -97,13 +99,13 @@ begin
   Application.CreateForm(TProgress, Progress);
   Application.CreateForm(TMsgForm, MsgForm);
   Application.CreateForm(TGetFileOpen, GetFileOpen);
+  Application.CreateForm(TToolForm, ToolForm);
   Application.CreateForm(TOptions, Options);
   Application.CreateForm(TCogForm, CogForm);
   Application.CreateForm(TItemEdit, ItemEdit);
   Application.CreateForm(TResPicker, ResPicker);
   Application.CreateForm(TConsistency, Consistency);
   Application.CreateForm(TFlagEdit, FlagEdit);
-  Application.CreateForm(TToolForm, ToolForm);
   Application.CreateForm(TJed_about, Jed_about);
   Application.CreateForm(TToolbar, Toolbar);
   Application.CreateForm(TPreview3D, Preview3D);
@@ -121,6 +123,7 @@ begin
   Application.CreateForm(TTPLCreator, TPLCreator);
   Application.CreateForm(TKeyForm, KeyForm);
   Application.CreateForm(TUrqForm, UrqForm);
+  Application.ShowHint := True;
   Application.Run;
 
 end.

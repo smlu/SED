@@ -3,18 +3,22 @@ unit Item_edit;
 interface
 
 uses
-  Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
-  ExtCtrls, Grids, J_Level, FieldEdit, Geometry, misc_utils, StdCtrls, Clipbrd,
+  Windows, Geometry, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
+  ExtCtrls, Grids, J_Level, FieldEdit, misc_utils, StdCtrls, Clipbrd,
   Values, u_multisel, u_undo;
 
 Const
-  ID_FLAGS = 0;
-  ID_AMBIENT = 1;
-  ID_EXTRA_L = 2;
-  ID_COLORMAP = 3;
-  ID_TINT = 4;
-  ID_Sound = 5;
-  ID_Snd_vol = 6;
+  ID_SEC_FLAGS               = 0;
+  ID_SEC_AMBIENT             = 1;
+  ID_SEC_EXTRA_LIGHT         = 2;
+  ID_SEC_POINT_LIGHT_COLOR   = 3;
+  ID_SEC_POINT_LIGHT_POS     = 4;
+  ID_SEC_POINT_LIGHT_FALLOFF = 5;
+  ID_SEC_COLORMAP            = 6;
+  ID_SEC_TINT                = 7;
+  ID_SEC_SOUND               = 8;
+  ID_SEC_SOUND_VOLUME        = 9;
+  ID_SEC_THRUST              = 10;
 
   ID_AdjFlags = 0;
   ID_Material = 1;
@@ -23,28 +27,29 @@ Const
   ID_geo = 4;
   ID_lightmode = 5;
   ID_tex = 6;
-  ID_SF_extra = 7;
+  ID_SF_EXTRA_LIGHT = 7;
   ID_Adjoin = 8;
   ID_UScale = 9;
   ID_VScale = 10;
   ID_Layer = 15;
 
-  ID_Sec = 0;
-  ID_name = 1;
-  ID_X = 2;
-  ID_Y = 3;
-  ID_Z = 4;
-  ID_PCH = 5;
-  ID_YAW = 6;
-  ID_ROL = 7;
-  ID_TH_Last = 20;
+  ID_SECTOR     = 0;
+  ID_NAME       = 1;
+  ID_X          = 2;
+  ID_Y          = 3;
+  ID_Z          = 4;
+  ID_VERT_COLOR = 5;
+  ID_PCH        = 6;
+  ID_YAW        = 7;
+  ID_ROL        = 8;
+  ID_TH_Last    = 20;
 
-  ID_INTENSITY = 0;
-  ID_RANGE = 1;
-  ID_RGBRange = 10;
-  ID_RGBIntensity = 11;
-  ID_RGB = 12;
-  ID_LFlags = 14;
+  ID_INTENSITY     = 0;
+  ID_RANGE         = 1;
+  ID_RGBRange      = 10;
+  ID_RGB_INTENSITY = 11;
+  ID_RGB           = 12;
+  ID_LIGHT_FLAGS   = 14;
 
   Thing_fields = 9;
 
@@ -86,8 +91,10 @@ type
     cedge: integer;
     Procedure ResetEdit;
     Procedure WMNCDblClck(var msg: TMessage); message WM_NCLBUTTONDBLCLK;
+    Function DoPickColor(initColor: TColorF): TColorF;
   public
     { Public declarations }
+    Procedure UpdateSectorField(id: Integer);
     Procedure LoadSector(sec: TJKSector);
     Procedure LoadSurface(surf: TJKSurface);
     Procedure LoadThing(thing: TJKThing);
@@ -105,6 +112,7 @@ type
     Function ThingChange(Fi: TFieldInfo): boolean;
     Function FrameChange(Fi: TFieldInfo): boolean;
     Function VertexChange(Fi: TFieldInfo): boolean;
+    Procedure VertexDblClk(Fi: TFieldInfo);
     Procedure ThingDblClk(Fi: TFieldInfo);
     Procedure LightDblClk(Fi: TFieldInfo);
     Function LightChange(Fi: TFieldInfo): boolean;
@@ -150,6 +158,16 @@ begin
     JedMain.SetFocus;
 end;
 
+Procedure TItemEdit.UpdateSectorField(id: Integer);
+begin
+  case id of
+    ID_SEC_FLAGS :
+    begin
+      var fe := fe.Fields[ID_SEC_FLAGS];
+      fe.s := Format('0x%x', [Cur_Sec.flags]);
+    end;
+  end;
+end;
 Procedure TItemEdit.LoadSector(sec: TJKSector);
 var
   i: integer;
@@ -162,15 +180,37 @@ begin
     [sec.surfaces.count, sec.vertices.count]);
   With sec do
   begin
-    fe.AddFieldHex('+FLAGS', ID_FLAGS, Flags);
-    { fe.AddFieldFloat('AMBIENT',ID_AMBIENT,Ambient); }
-    fe.AddFieldFloat('EXTRA LIGHT', ID_EXTRA_L, Extra);
-    fe.AddFieldStr('+COLORMAP', ID_COLORMAP, Colormap);
-    fe.AddFieldStr('+TINT', ID_TINT, Sprintf('%.3f %.3f %.3f',
-      [Tint.DX, Tint.Dy, Tint.Dz]));
-    fe.AddFieldStr('+SOUND', ID_Sound, Sound);
-    fe.AddFieldFloat('VOLUME', ID_Snd_vol, Snd_Vol);
-    fe.AddFieldStr('+LAYER', ID_Layer, Level.GetLayerName(Layer));
+    fe.AddFieldHex('+Flags', ID_SEC_FLAGS, Flags);
+
+    if CurrentProject = IJIM then
+      begin
+        fe.AddFieldColor('+Ambient', ID_SEC_AMBIENT, Ambient, (*withAlpha=*) false);
+        fe.AddFieldColor('+Extra Light', ID_SEC_EXTRA_LIGHT, ExtraLight, (*withAlpha=*) false);
+        fe.AddFieldColor('+Avg. Light Intensity', ID_SEC_POINT_LIGHT_COLOR, PointLight.Color, (*withAlpha=*) false);
+        fe.AddFieldStr('Avg. Light Position', ID_SEC_POINT_LIGHT_POS,
+          Sprintf('%1.6f %1.6f %1.6f', [PointLight.Position.x, PointLight.Position.y, PointLight.Position.z]));
+        fe.AddFieldStr('Avg. Light Falloff', ID_SEC_POINT_LIGHT_FALLOFF,
+          Sprintf('%1.6f %1.6f', [PointLight.Falloff.x, PointLight.Falloff.y]));
+      end
+    else
+      begin
+        fe.AddFieldFloat('Ambient', ID_SEC_AMBIENT, RgbToIntensity(Ambient));
+        fe.AddFieldFloat('Extra Light', ID_SEC_EXTRA_LIGHT, RgbToIntensity(ExtraLight));
+        fe.AddFieldStr('+Colormap', ID_SEC_COLORMAP, Colormap);
+      end;
+
+    fe.AddFieldColor('+Tint', ID_SEC_TINT, Tint, (*withAlpha=*) false);
+
+    fe.AddFieldStr('+Sound', ID_SEC_SOUND, Sound);
+    fe.AddFieldFloat('Volume', ID_SEC_SOUND_VOLUME, Snd_Vol);
+    if CurrentProject = IJIM then
+      fe.AddFieldStr('Thrust', ID_SEC_THRUST,
+        Sprintf('%1.6f %1.6f %1.6f', [Thrust.x, Thrust.y, Thrust.z]));
+
+    fe.AddFieldStr('+Layer', ID_Layer, Level.GetLayerName(Layer));
+
+    // TODO: add field for IM point light
+
   end;
   if not Visible then
     Show;
@@ -180,12 +220,28 @@ begin
   fe.ONChange := SectorChange;
 end;
 
+
+Procedure SectorSurfacesSetSurfFlags(sec: TJKSector; flags: longint);
+begin
+  for var i := 0 to sec.surfaces.count - 1 do
+    with sec.surfaces[i] do
+      BitSet(SurfFlags, flags);
+end;
+
+Procedure SectorSurfacesClearSurfFlags(sec: TJKSector; flags: longint);
+begin
+  for var i := 0 to sec.surfaces.count - 1 do
+    with sec.surfaces[i] do
+      BitClear(SurfFlags, flags);
+end;
+
 Function ValSecField(const s: string; sec: TJKSector; id: integer): boolean;
 var
   f: longint;
   d: double;
   Tint: TVector;
   i: integer;
+  c: TColorF;
 begin
   Result := false;
   if sec = nil then
@@ -194,48 +250,104 @@ begin
   SaveSecUndo(sec, ch_changed, sc_val);
 
   case id of
-    ID_FLAGS:
+    ID_SEC_FLAGS:
       begin
         Result := ValHex(s, f);
         if Result then
-          sec.Flags := f;
+          begin
+            if (((sec.Flags xor f) and SECF_Underwater) <> 0 ) then
+              begin
+                if (f and SECF_Underwater) <> 0 then
+                  SectorSurfacesSetSurfFlags(sec, SF_Water)
+                else
+                   SectorSurfacesClearSurfFlags(sec, SF_Water);
+              end;
+
+            if CurrentProject = TProjectType.IJIM then
+              if (((sec.Flags xor f) and SECF_IJIM_Aetherim) <> 0 ) then
+                begin
+                  if (f and SECF_IJIM_Aetherim) <> 0 then
+                    SectorSurfacesSetSurfFlags(sec, SF_IJIM_Aetherim)
+                  else
+                     SectorSurfacesClearSurfFlags(sec, SF_IJIM_Aetherim);
+                end;
+
+            sec.flags := f;
+          end;
       end;
-    { ID_AMBIENT:begin
-      Result:=ValDouble(fi.s,d);
-      if Result then Cur_sec.ambient:=d;
-      exit;
-      end; }
-    ID_EXTRA_L:
+    ID_SEC_AMBIENT:
+    begin
       begin
-        Result := ValDouble(s, d);
+        if CurrentProject = TProjectType.IJIM then
+          Result := ValColor(s, c)
+        else
+          begin
+            Result := ValDouble(s, d);
+            c := MakeColor(d, d, d, d);
+          end;
         if Result then
-          sec.Extra := d;
+          sec.Ambient := c;
       end;
-    ID_COLORMAP:
+    end;
+    ID_SEC_EXTRA_LIGHT:
+      begin
+        if CurrentProject = TProjectType.IJIM then
+          Result := ValColor(s, c)
+        else
+          begin
+            Result := ValDouble(s, d);
+            c := MakeColor(d, d, d, d);
+          end;
+        if Result then
+          sec.ExtraLight := c;
+      end;
+    ID_SEC_POINT_LIGHT_COLOR:
+      begin
+        Result := ValColor(s, c);
+        if Result then
+          sec.PointLight.Color := c;
+      end;
+    ID_SEC_POINT_LIGHT_POS:
+      Result := SScanf(s, '%f %f %f', [@sec.PointLight.Position.x, @sec.PointLight.Position.y, @sec.PointLight.Position.z]);
+    ID_SEC_POINT_LIGHT_FALLOFF:
+      Result := SScanf(s, '%f %f', [@sec.PointLight.Falloff.x, @sec.PointLight.Falloff.y]);
+    ID_SEC_COLORMAP:
       Begin
         Result := true;
         sec.Colormap := s;
       end;
-    ID_TINT:
+    ID_SEC_TINT:
       begin
-        With Tint do
-          Result := SScanf(s, '%f %f %f', [@DX, @Dy, @Dz]);
+        Result   := ValColor(s, c);
         if Result then
-          sec.Tint := Tint;
-        exit;
+          sec.Tint := c;
       end;
-    ID_Sound:
+    ID_SEC_SOUND:
       begin
         Result := true;
         sec.Sound := s;
         exit;
       end;
-    ID_Snd_vol:
+    ID_SEC_SOUND_VOLUME:
       begin
         Result := ValDouble(s, d);
         if Result then
           sec.Snd_Vol := d;
         exit;
+      end;
+    ID_SEC_THRUST:
+      begin
+        Result := SScanf(s, '%f %f %f', [@sec.Thrust.x, @sec.Thrust.y, @sec.Thrust.z]);
+
+        // Update flags
+        var flags := sec.flags;
+        if sec.Thrust.IsZero() then
+          BitClear(sec.flags, SECF_IJIM_UseThrust)
+        else
+          BitSet(sec.flags, SECF_IJIM_UseThrust);
+
+        if (sec.flags <> flags) then
+          ItemEdit.UpdateSectorField(ID_SEC_FLAGS);
       end;
     ID_Layer:
       begin
@@ -266,40 +378,87 @@ end;
 Procedure TItemEdit.SectorDblClk(Fi: TFieldInfo);
 var
   f: longint;
-  Tint: TVector;
+  c: TColorF;
+  changed: Boolean;
 begin
   Case Fi.id of
-    ID_FLAGS:
+    ID_SEC_FLAGS:
       begin
         ValHex(Fi.s, f);
-        f := FlagEdit.EditSectorFlags(f);
-        Fi.s := Format('%x', [f]);
+        var newf: longint := FlagEdit.EditSectorFlags(f);
+        changed := f <> newf;
+        Fi.s := Format('0x%x', [newf]);
       end;
-    ID_AMBIENT:
-      ;
-    ID_EXTRA_L:
-      ;
-    ID_COLORMAP:
-      Fi.s := ResPicker.PickCMP(Fi.s);
-    ID_Sound:
-      Fi.s := ResPicker.PickSecSound(Fi.s);
-    ID_TINT:
+    ID_SEC_AMBIENT:
       begin
-        With Tint do
-          SScanf(Fi.s, '%f %f %f', [@DX, @Dy, @Dz]);
-        With Tint do
-          ColorDlg.Color := RGB(Round(DX * 255), Round(Dy * 255),
-            Round(Dz * 255));
-        if ColorDlg.Execute then
+        if CurrentProject = IJIM then
         begin
-          f := ColorDlg.Color;
-          Fi.s := Sprintf('%.3f %.3f %.3f',
-            [GetRValue(f) / 255, GetGValue(f) / 255, GetBValue(f) / 255]);
+          ValColor(Fi.s, c);
+          c := DoPickColor(c);
+          var s := ColorToStr(c, (*withAlpha=*)false);
+          changed := s <> Fi.s;
+          Fi.s := s;
         end;
       end;
+    ID_SEC_EXTRA_LIGHT:
+      begin
+        if CurrentProject = IJIM then
+        begin
+          ValColor(Fi.s, c);
+          c := DoPickColor(c);
+          var s := ColorToStr(c, (*withAlpha=*)false);
+          changed := s <> Fi.s;
+          Fi.s := s;
+        end;
+      end;
+    ID_SEC_POINT_LIGHT_COLOR:
+      begin
+        ValColor(Fi.s, c);
+        c := DoPickColor(c);
+        var s := ColorToStr(c, (*withAlpha=*)false);
+        changed := s <> Fi.s;
+        Fi.s := s;
+      end;
+    ID_SEC_COLORMAP:
+      begin
+        var s := ResPicker.PickCMP(Fi.s);
+        changed := s <> Fi.s;
+        Fi.s := s;
+      end;
+    ID_SEC_SOUND:
+      begin
+        var s := ResPicker.PickSecSound(Fi.s);
+        changed := s <> Fi.s;
+        Fi.s := s;
+      end;
+    ID_SEC_TINT:
+      begin
+        ValColor(Fi.s, c);
+        c := DoPickColor(c);
+        var s := ColorToStr(c, (*withAlpha=*)false);
+        changed := s <> Fi.s;
+        Fi.s := s;
+//        With c do
+//          SScanf(Fi.s, '%f %f %f', [@r, @g, @b]);
+//        With Tint do
+//          ColorDlg.Color := RGB(Round(r * 255), Round(g * 255),
+//            Round(b * 255));
+//        if ColorDlg.Execute then
+//        begin
+//          f := ColorDlg.Color;
+//          Fi.s := Sprintf('%.3f %.3f %.3f',
+//            [GetRValue(f) / 255, GetGValue(f) / 255, GetBValue(f) / 255]);
+//        end;
+      end;
     ID_Layer:
-      Fi.s := ResPicker.PickLayer(Fi.s);
+      begin
+        var s := ResPicker.PickLayer(Fi.s);
+        changed := s <> Fi.s;
+        Fi.s := s;
+      end;
   end;
+  if changed then
+    SectorChange(Fi);
 end;
 
 Procedure TItemEdit.LoadSurface(surf: TJKSurface);
@@ -314,23 +473,33 @@ begin
 
   With surf do
   begin
-    fe.AddFieldStr('+MATERIAL', ID_Material, Material);
-    fe.AddFieldFloat('U scale', ID_UScale, uscale);
-    fe.AddFieldFloat('V scale', ID_VScale, vscale);
-    fe.AddFieldInt('+GEO', ID_geo, geo);
-    fe.AddFieldInt('+TEX', ID_tex, tex);
-    fe.AddFieldInt('+LIGHT MODE', ID_lightmode, Light);
+    fe.AddFieldHex('+Surface Flags', ID_SurfFlags, SurfFlags);
+    fe.AddFieldHex('+Face Flags', ID_FaceFlags, FaceFlags);
+
+    fe.AddFieldStr('+Material', ID_Material, Material);
+
+    fe.AddFieldInt('+Gometry', ID_geo, geo);
+    fe.AddFieldInt('+Lighting', ID_lightmode, Light);
+    if CurrentProject <> IJIM then
+      fe.AddFieldInt('+Texture', ID_tex, tex);
+
     if Adjoin = nil then
       ast := '-1'
     else
       ast := Format('%d %d', [Adjoin.Sector.Num, Adjoin.Num]);
-    fe.AddFieldStr('ADJOIN', ID_Adjoin, ast);
-    fe.AddFieldHex('+ADJOIN FLAGS', ID_AdjFlags, AdjoinFlags);
-    fe.AddFieldHex('+SURF FLAGS', ID_SurfFlags, SurfFlags);
-    fe.AddFieldHex('+FACE FLAGS', ID_FaceFlags, FaceFlags);
+    fe.AddFieldStr('Adjoin', ID_Adjoin, ast);
+    fe.AddFieldHex('+Adjoin Flags', ID_AdjFlags, AdjoinFlags);
+
     { fe.AddFieldInt('LIGHT',ID_light,Light); }
-    fe.AddFieldFloat('EXTRA LIGHT', ID_SF_extra, extraLight);
+    if CurrentProject = IJIM then
+      fe.AddFieldColor('+Extra Light', ID_SF_EXTRA_LIGHT, ExtraLight, (*withAlpha=*)true)
+    else
+      fe.AddFieldFloat('Extra Light', ID_SF_EXTRA_LIGHT, RgbaToIntensity(ExtraLight));
+
+    fe.AddFieldFloat('U Scale', ID_UScale, uscale);
+    fe.AddFieldFloat('V Scale', ID_VScale, vscale);
   end;
+
   if not Visible then
     Show;
   fe.DoneAdding;
@@ -346,6 +515,7 @@ var
   f: longint;
   d: double;
   sl: single;
+  c: TColorF;
 begin
   Result := false;
   if surf = nil then
@@ -387,27 +557,38 @@ begin
       ID_SurfFlags:
         begin
           Result := ValHex(s, f);
-          i := Ord((f and SFF_Flip) <> (SurfFlags and SFF_Flip));
-
           if Result then
-          begin
             SurfFlags := f;
-            if i > 0 then
-              RecalcAll;
-          end;
-
         end;
       ID_FaceFlags:
         begin
           Result := ValHex(s, f);
+          f := f and not FF_DoubleSided; // Remove 0x01 flag
+          i := Ord((f and FF_SF_FLIP) <> (FaceFlags and FF_SF_FLIP));
+
           if Result then
+          begin
             FaceFlags := f;
+            if i > 0 then
+              RecalcAll;
+          end;
         end;
-      ID_SF_extra:
+      ID_SF_EXTRA_LIGHT:
+//        begin
+//          Result := ValDouble(s, d);
+//          if Result then
+//            ExtraLight := d;
+//        end;
         begin
-          Result := ValDouble(s, d);
+          if CurrentProject = IJIM then
+            Result := ValColor(s, c)
+          else
+            begin
+              Result := ValDouble(s, d);
+              c := MakeColor(d, d, d, d);
+            end;
           if Result then
-            extraLight := d;
+            ExtraLight := c;
         end;
       ID_UScale:
         begin
@@ -482,6 +663,7 @@ end;
 Procedure TItemEdit.SurfaceDblClk(Fi: TFieldInfo);
 var
   f: longint;
+  c: TColorF;
 begin
   case Fi.id of
     ID_Material:
@@ -515,23 +697,33 @@ begin
       begin
         ValHex(Fi.s, f);
         f := FlagEdit.EditAdjoinFlags(f);
-        Fi.s := Format('%x', [f]);
+        Fi.s := Format('0x%x', [f]);
       end;
     ID_SurfFlags:
       begin
         ValHex(Fi.s, f);
         f := FlagEdit.EditSurfaceFlags(f);
-        Fi.s := Format('%x', [f]);
+        Fi.s := Format('0x%x', [f]);
       end;
     ID_FaceFlags:
       begin
         ValHex(Fi.s, f);
         f := FlagEdit.EditFaceFlags(f);
-        Fi.s := Format('%x', [f]);
+        f := f and not FF_DoubleSided; // Remove 0x01 flag
+        Fi.s := Format('0x%x', [f]);
       end;
-    { ID_SF_extra: extraLight }
+    ID_SF_EXTRA_LIGHT:
+      begin
+        if CurrentProject = IJIM then
+        begin
+          ValColor(Fi.s, c);
+          c := DoPickColor(c);
+          Fi.s := ColorToStr(c, (*withAlpha=*)true);
+        end;
+      end;
 
   end;
+  SurfaceChange(Fi);
 end;
 
 Procedure TItemEdit.LoadFrame(th, fr: integer);
@@ -570,12 +762,12 @@ begin
   Cur_Frame := Level.Things[th].Vals[fr];
   Cur_Frame.GetFrame(x, y, z, pch, yaw, rol);
 
-  fe.AddFieldFloat('X', ID_X, x);
-  fe.AddFieldFloat('Y', ID_Y, y);
-  fe.AddFieldFloat('Z', ID_Z, z);
-  fe.AddFieldFloat('PCH', ID_PCH, pch);
-  fe.AddFieldFloat('YAW', ID_YAW, yaw);
-  fe.AddFieldFloat('ROL', ID_ROL, rol);
+  fe.AddFieldFloat('x', ID_X, x);
+  fe.AddFieldFloat('y', ID_Y, y);
+  fe.AddFieldFloat('z', ID_Z, z);
+  fe.AddFieldFloat('Pitch', ID_PCH, pch);
+  fe.AddFieldFloat('Yaw', ID_YAW, yaw);
+  fe.AddFieldFloat('Roll', ID_ROL, rol);
   fe.DoneAdding;
 
   if not Visible then
@@ -604,19 +796,18 @@ begin
   Cur_Thing := thing;
   With thing do
   begin
-
-    fe.AddFieldStr('+NAME', ID_name, Name);
+    fe.AddFieldStr('+Name', ID_NAME, Name);
     if sec = nil then
-      fe.AddFieldInt('SECTOR', ID_Sec, -1)
+      fe.AddFieldInt('Sector', ID_SECTOR, -1)
     else
-      fe.AddFieldInt('SECTOR', ID_Sec, sec.Num);
-    fe.AddFieldFloat('X', ID_X, x);
-    fe.AddFieldFloat('Y', ID_Y, y);
-    fe.AddFieldFloat('Z', ID_Z, z);
-    fe.AddFieldFloat('PCH', ID_PCH, pch);
-    fe.AddFieldFloat('YAW', ID_YAW, yaw);
-    fe.AddFieldFloat('ROL', ID_ROL, rol);
-    fe.AddFieldStr('+LAYER', ID_Layer, Level.GetLayerName(Layer));
+      fe.AddFieldInt('Sector', ID_SECTOR, sec.Num);
+    fe.AddFieldFloat('x', ID_X, x);
+    fe.AddFieldFloat('y', ID_Y, y);
+    fe.AddFieldFloat('z', ID_Z, z);
+    fe.AddFieldFloat('Pitch', ID_PCH, pch);
+    fe.AddFieldFloat('Yaw', ID_YAW, yaw);
+    fe.AddFieldFloat('Roll', ID_ROL, rol);
+    fe.AddFieldStr('+Layer', ID_Layer, Level.GetLayerName(Layer));
 
     for i := 0 to Vals.count - 1 do
       With Vals[i] do
@@ -651,8 +842,10 @@ begin
       v := nil;
       continue;
     end;
+
     if cn = n then
       break;
+
     inc(cn);
     v := nil;
   end;
@@ -683,12 +876,12 @@ begin
 
   With Cur_Thing do
     case i of
-      ID_name:
+      ID_NAME:
         begin
           Result := true;
-          Name := s;
+          name := s;
         end;
-      ID_Sec:
+      ID_SECTOR:
         begin
           Result := ValInt(s, i);
           if not Result then
@@ -783,7 +976,7 @@ begin
   end
   else { thing value }
   begin
-    { Find which number of the value it is. I.e. - for multiple values
+    { Find which number of the value it is. i.e. - for multiple values
       with the same name, like "frame" }
     fname := Cur_Thing.Vals[Fi.id - ID_TH_Last].name;
     n := 0;
@@ -813,10 +1006,16 @@ var
 begin
   if Cur_Thing = nil then
     exit;
+
+  var bChanged := False;
   With Cur_Thing do
     case Fi.id of
-      ID_name:
-        Fi.s := ResPicker.PickThing(Fi.s);
+      ID_NAME:
+        begin
+          var tmpl := ResPicker.PickThing(Fi.s);
+          bChanged := CompareText(Fi.s, tmpl) <> 0;
+          Fi.s := tmpl;
+        end;
       ID_TH_Last .. ID_TH_Last + 100:
         begin
           i := Fi.id - ID_TH_Last;
@@ -825,12 +1024,15 @@ begin
           if CompareText(Vals[i].name, 'thingflags') <> 0 then
             exit;
           ValHex(Fi.s, f);
-          f := FlagEdit.EditThingFlags(f);
-          Fi.s := Format('0x%x', [f]);
+          var nf := FlagEdit.EditThingFlags(f);
+          bChanged := f <> nf;
+          Fi.s := Format('0x%x', [nf]);
         end;
       ID_Layer:
         Fi.s := ResPicker.PickLayer(Fi.s);
     end;
+  if bChanged then
+    ThingChange(Fi);
 end;
 
 Function ValFRField(const s: string; Cur_Frame: TTPlValue; id: integer)
@@ -913,15 +1115,24 @@ begin
   Cur_VX := vx;
   With vx do
   begin
-    fe.AddFieldFloat('X', ID_X, x);
-    fe.AddFieldFloat('Y', ID_Y, y);
-    fe.AddFieldFloat('Z', ID_Z, z);
+    fe.AddFieldFloat('x', ID_X, x);
+    fe.AddFieldFloat('y', ID_Y, y);
+    fe.AddFieldFloat('z', ID_Z, z);
+
+// Vert colors editing doesn't work correct yet for seector surfaces that share same vertices
+// and only UV for 1 vertice can be selected. Needs fixing to be able to select vertex per face.
+//    var uv := GetUV();
+//    if (CurrentProject = MOTS) or (CurrentProject = IJIM) then
+//      fe.AddFieldColor('+COLOR', ID_VERT_COLOR, uv.color, (*withAlpha=*)false)
+//    else
+//      fe.AddFieldFloat('COLOR', ID_VERT_COLOR, RgbaToIntensity(uv.color));
+
   end;
   if not Visible then
     Show;
   fe.DoneAdding;
-  fe.OnDblClick := nil;
-  fe.ONChange := VertexChange;
+  fe.OnDblClick := VertexDblClk;
+  fe.ONChange   := VertexChange;
 end;
 
 Procedure TItemEdit.LoadExtra(ex: integer);
@@ -935,17 +1146,17 @@ begin
   o := JedMain.ExtraObjs[ex];
   if o is TExtraVertex then
   begin
-    fe.AddFieldStr('Name', ID_name, TExtraVertex(o).name);
-    fe.AddFieldFloat('X', ID_X, TExtraVertex(o).x);
-    fe.AddFieldFloat('Y', ID_Y, TExtraVertex(o).y);
-    fe.AddFieldFloat('Z', ID_Y, TExtraVertex(o).z);
+    fe.AddFieldStr('Name', ID_NAME, TExtraVertex(o).name);
+    fe.AddFieldFloat('x', ID_X, TExtraVertex(o).x);
+    fe.AddFieldFloat('y', ID_Y, TExtraVertex(o).y);
+    fe.AddFieldFloat('z', ID_Y, TExtraVertex(o).z);
     fe.ONChange := ExtraChange;
   end;
 
   if o is TExtraLine then
-    fe.AddFieldStr('Name', ID_name, TExtraLine(o).name);
+    fe.AddFieldStr('Name', ID_NAME, TExtraLine(o).name);
   if o is TExtraPolygon then
-    fe.AddFieldStr('Name', ID_name, TExtraPolygon(o).name);
+    fe.AddFieldStr('Name', ID_NAME, TExtraPolygon(o).name);
 
   if not Visible then
     Show;
@@ -958,6 +1169,7 @@ Function ValExtraVertex(const s: string; Cur_VX: TExtraVertex;
 var
   d: double;
   i: integer;
+  c: TColorF;
 begin
   Result := false;
   if Cur_VX = nil then
@@ -1008,6 +1220,7 @@ Function ValVertField(const s: string; Cur_VX: TJKVertex; id: integer): boolean;
 var
   d: double;
   i: integer;
+  c: TColorF;
 begin
   Result := false;
   if Cur_VX = nil then
@@ -1034,11 +1247,50 @@ begin
             exit;
           z := d;
         end;
+      ID_VERT_COLOR:
+        begin
+          if CurrentProject <> TProjectType.JKDF2 then
+            Result := ValColor(s, c)
+          else
+            begin
+              Result := ValDouble(s, d);
+              c := MakeColor(d, d, d, d);
+            end;
+
+          if not Result then exit;
+          GetUV().color := c;
+        end;
     end;
+
   Result := true;
   for i := 0 to Cur_VX.Sector.surfaces.count - 1 do
     Cur_VX.Sector.surfaces[i].RecalcAll;
   JedMain.SectorChanged(Cur_VX.Sector);
+end;
+
+
+Procedure TItemEdit.VertexDblClk(Fi: TFieldInfo);
+var
+  f: longint;
+  c: TColorF;
+begin
+  var changed := False;
+  case Fi.id of
+    ID_VERT_COLOR:
+      begin
+        if CurrentProject <> JKDF2 then
+          begin
+            ValColor(Fi.s, c);
+            c := DoPickColor(c);
+            var s:= ColorToStr(c, (*withAlpha=*)false);
+            changed := s <> Fi.s;
+            Fi.s := s;
+          end;
+      end;
+  end;
+
+  if changed then
+    VertexChange(Fi);
 end;
 
 Function TItemEdit.VertexChange(Fi: TFieldInfo): boolean;
@@ -1049,7 +1301,7 @@ var
 begin
   { JedMain.SaveSelVertUndo('Change vertices',ch_changed); }
 
-  StartUndoRec('Change vertices');
+  StartUndoRec('Change vertex');
 
   Result := ValVertField(Fi.s, Cur_VX, Fi.id);
   if not Result then
@@ -1074,18 +1326,18 @@ begin
 
     fe.AddFieldFloat('Intensity', ID_INTENSITY, Intensity);
     fe.AddFieldFloat('Range', ID_RANGE, Range);
-    fe.AddFieldFloat('X', ID_X, x);
-    fe.AddFieldFloat('Y', ID_Y, y);
-    fe.AddFieldFloat('Z', ID_Z, z);
-    fe.AddFieldHex('+Flags', ID_LFlags, Flags);
+    fe.AddFieldFloat('x', ID_X, x);
+    fe.AddFieldFloat('y', ID_Y, y);
+    fe.AddFieldFloat('z', ID_Z, z);
+    fe.AddFieldHex('+Flags', ID_LIGHT_FLAGS, Flags);
 
-    if IsMots then
+    if CurrentProject <> JKDF2 then
     begin
-      fe.AddFieldStr('+RGB', ID_RGB, Sprintf('%.3f %.3f %.3f', [r, g, b]));
+      fe.AddFieldStr('+RGB', ID_RGB, Sprintf('%1.3f %1.3f %1.3f', [r, g, b]));
       { fe.AddFieldFloat('RGBRange',ID_RGBRANGE,RGBRange); }
-      fe.AddFieldFloat('RGBIntensity', ID_RGBIntensity, RGBIntensity);
+      fe.AddFieldFloat('RGBIntensity', ID_RGB_INTENSITY, RGBIntensity);
     end;
-    fe.AddFieldStr('+LAYER', ID_Layer, Level.GetLayerName(Layer));
+    fe.AddFieldStr('+Layer', ID_Layer, Level.GetLayerName(Layer));
 
   end;
   if not Visible then
@@ -1107,11 +1359,11 @@ begin
     case Fi.id of
       ID_Layer:
         Fi.s := ResPicker.PickLayer(Fi.s);
-      ID_LFlags:
+      ID_LIGHT_FLAGS:
         begin
           ValHex(Fi.s, fl);
           fl := FlagEdit.EditLightFlags(fl);
-          Fi.s := Format('%x', [fl]);
+          Fi.s := Format('0x%x', [fl]);
         end;
       ID_RGB:
         begin
@@ -1120,7 +1372,7 @@ begin
           if ColorDlg.Execute then
           begin
             f := ColorDlg.Color;
-            Fi.s := Sprintf('%.3f %.3f %.3f',
+            Fi.s := Sprintf('%1.3f %1.3f %1.3f',
               [GetRValue(f) / 255, GetGValue(f) / 255, GetBValue(f) / 255]);
           end;
         end;
@@ -1174,7 +1426,7 @@ begin
             exit;
           Range := d;
         end;
-      ID_LFlags:
+      ID_LIGHT_FLAGS:
         begin
           if not ValHex(s, f) then
             exit;
@@ -1191,7 +1443,7 @@ begin
           b := ab;
         end;
       { ID_RGBRange: begin if not ValDouble(fi.s,d) then exit; RGBRange:=d; end; }
-      ID_RGBIntensity:
+      ID_RGB_INTENSITY:
         begin
           if not ValDouble(s, d) then
             exit;
@@ -1252,7 +1504,7 @@ var
 begin
   if Cur_Thing = nil then
     exit;
-  s := 'THINGFLAGS';
+  s := 'thingflags';
   if not InputQuery('Value name', 'Enter value name', s) then
     exit;
 
@@ -1273,9 +1525,9 @@ begin
       v.Assign(cv);
       v.Val(cv.AsString);
     end;
-    v.name := s;
+    v.name  := s;
     v.atype := GetTplType(v.name);
-    v.vtype := GetTPLVType(v.name);
+    v.vtype := GetTplVType(v.name);
     th.Vals.Add(v);
   end;
 
@@ -1385,7 +1637,7 @@ begin
   end;
 
   clp := clipboard;
-  clp.AsText := Sprintf('(%.5f/%.5f/%.5f:%.5f/%.5f/%.5f)',
+  clp.AsText := Sprintf('(%1.5f/%1.5f/%1.5f:%1.5f/%1.5f/%1.5f)',
     [tx, ty, tz, tpch, tyaw, trol]);
 end;
 
@@ -1497,7 +1749,7 @@ begin
   for i := 0 to fe.FieldCount - 1 do
   begin
     Fi := fe.Fields[i];
-    if Fi.id = ID_name then
+    if Fi.id = ID_NAME then
     begin
       ThingDblClk(Fi);
       fe.DeactivateHandler;
@@ -1537,6 +1789,28 @@ begin
     ClientHeight := 0;
   end;
   msg.Result := 0;
+end;
+
+Function TItemEdit.DoPickColor(initColor: TColorF): TColorF;
+  var f: TColor;
+  c: TColorF;
+begin
+  Result := initColor;
+  initColor.Clamp; // make sure all coloe components has valid ranges 0.0 - 1.0
+  ColorDlg.Color := RGB(
+    Round(initColor.r * 255),
+    Round(initColor.g * 255),
+    Round(initColor.b * 255));
+  if ColorDlg.Execute(self.Handle) then
+  begin
+    f := ColorDlg.Color;
+    if f = -1 then f :=0;
+    Result:= MakeColor(
+      GetRValue(f) / 255,
+      GetGValue(f) / 255,
+      GetBValue(f) / 255,
+      Result.a);
+  end;
 end;
 
 procedure TItemEdit.CBOnTopClick(Sender: TObject);

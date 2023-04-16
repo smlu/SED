@@ -1,7 +1,7 @@
 unit jed_plugins;
 
 interface
-
+  uses GlobalVars, misc_utils, J_Level;
 const
    CloseEnough=10e-5;
    {Get/SetLevelHeader flags}
@@ -18,7 +18,8 @@ const
    lh_GouraudDist=$400;
    lh_ppu=$800;
    lh_MasterCMP=$1000;
-   lh_all=$1FFF;
+   lh_Fog=$2000;
+   lh_all=$2FFF;
 
    {Get/SetSector flags}
    s_flags=1;
@@ -156,7 +157,7 @@ js_JEDDir=2;
 js_CDDir=3;
 js_GameDir=4;
 js_LevelFile=5;
-js_jedregkey=6;
+js_jedregkey=6; // deprecated, use js_confile
 js_LECLogo=7;
 js_recent1=8;
 js_recent2=9;
@@ -168,6 +169,7 @@ js_spgob=14;
 js_mp1gob=15;
 js_mp2gob=16;
 js_mp3gob=17;
+js_confile=18;
 
 {GetJEDWindow constants}
 jw_Main=0;
@@ -248,16 +250,16 @@ end;
   PerspDist, GouraudDist:double;
   PixelPerUnit:double;
   MasterCMP:pchar;
+  {SED 0.1.0}
+  Fog: TFog;
  end;
 
  TJEDSectorRec=record
   Flags:longint;
-  Ambient:double;
-  extra:double;
+  Ambient:TColorF;
+  ExtraLight:TColorF;
   ColorMap:pchar;
-  Tint_r,
-  Tint_g,
-  Tint_b:single;
+  Tint:TColorF;
   Sound:pchar;
   snd_vol:double;
   layer:longint;
@@ -269,7 +271,7 @@ end;
   SurfFlags,FaceFlags:Longint;
   Material:PChar;
   geo,light,tex:longint;
-  ExtraLight:double;
+  ExtraLight:TColorF;
   uscale,vscale:single;
  end;
 
@@ -487,7 +489,7 @@ end;
   Procedure GetCurFR(var th,fr:integer);virtual;stdcall;abstract;
   Procedure SetCurFR(th,fr:integer);virtual;stdcall;abstract;
 
-  Procedure NewLevel(mots:boolean);virtual;stdcall;abstract;
+  Procedure NewLevel(kind:TProjectType);virtual;stdcall;abstract; // SED 0.1.0
   Procedure LoadLevel(name:pchar);virtual;stdcall;abstract;
 
   {Different level editing functions}
@@ -595,8 +597,10 @@ end;
   Function GetConsErrorCog(n:integer):integer;virtual;stdcall;abstract;
   Function IsPreviewActive:boolean;virtual;stdcall;abstract;
   Function GetJEDString(what:integer):pchar;virtual;stdcall;abstract;
-  Function GetIsMOTS:boolean;virtual;stdcall;abstract;
-  Procedure SetIsMOTS(mots:boolean);virtual;stdcall;abstract;
+  Function GetIsMOTS:boolean;virtual;stdcall;abstract;     // deprecated
+  Procedure SetIsMOTS(mots:boolean);virtual;stdcall;abstract;  // deprecated
+  Function GetProjectType:TProjectType;virtual;stdcall;abstract;   // SED 0.1.0
+  Procedure SetProjectType(kind:TProjectType);virtual;stdcall;abstract;  // SED 0.1.0
 
   {0.93}
   Function GetJedWindow(whichone:integer):integer;virtual;stdcall;abstract;

@@ -116,7 +116,7 @@ begin
  begin
   tpl:=templates[i];
   EBDesc.Text:=tpl.Desc;
-  With tpl.Bbox do EBBBox.Text:=Sprintf('%f %f %f %f %f %f',
+  With tpl.Bbox do EBBBox.Text:=Sprintf('%1f %1f %1f %1f %1f %1f',
    [x1,y1,z1,x2,y2,z2]);
 
   for i:=0 to tpl.Vals.Count-1 do
@@ -157,7 +157,7 @@ begin
  if a3Do<>nil then
  begin
   a3DO.GetBBox(bbox);
-  With Bbox do EBBBox.Text:=Sprintf('%f %f %f %f %f %f',
+  With Bbox do EBBBox.Text:=Sprintf('%1f %1f %1f %1f %1f %1f',
    [x1,y1,z1,x2,y2,z2]);
   SetField('size',DoubleToStr(a3DO.FindRadius));
   SetField('movesize',DoubleToStr(a3DO.FindRadius));
@@ -240,7 +240,15 @@ begin
   if not SScanf(EBBBox.Text,'%l %l %l %l %l %l',[@x1,@y1,@z1,@x2,@y2,@z2])
    then FillChar(tpl.Bbox,sizeof(tpl.BBox),0);
 
-  if IsMots then t:='mots.tpl' else t:='master.tpl';
+  case CurrentProject of
+    TProjectType.JKDF2:
+      t:='master.tpl';
+    TProjectType.MOTS:
+      t:='mots.tpl';
+    else // IJIM
+      t:='ijim.tpl';
+  end;
+
   Templates.SaveToFile(ProjectDir+t);
 
   for i:=0 to Level.Things.Count-1 do

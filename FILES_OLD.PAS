@@ -59,7 +59,7 @@ end;
 TTextFile=Class
  f:TFile;
  bpos,bsize:word;
- buffer:array[0..txt_bufsize] of char;
+ buffer:array[0..txt_bufsize] of AnsiChar;
  Constructor CreateRead(bf:TFile);
  Constructor CreateWrite(bf:TFile);
  Procedure Readln(var s:String);
@@ -198,7 +198,7 @@ end;
 
 Procedure TTextFile.Readln(var s:String);
 var ps,pend:Pchar;
-    tmp:array[0..txt_maxlinesize-1] of char;
+    tmp:array[0..txt_maxlinesize-1] of AnsiChar;
     ssize:word;
     l:word;
 begin
@@ -237,7 +237,7 @@ end;
 
 Procedure TTextFile.Writeln(s:String);
 const
-     eol:array[0..0] of char=#10;
+     eol:array[0..0] of AnsiChar=#10;
 begin
  f.FWrite(s[1],length(s));
  f.FWrite(eol,sizeof(eol));

@@ -2,7 +2,7 @@ unit GlobalVars;
 
 interface
 
-uses SysUtils, Forms, graphics;
+uses SysUtils, Forms, graphics, Classes;
 
 Type
   Float = double;
@@ -15,7 +15,6 @@ Type
 
   TWinPos = record
     X, Y, w, h: integer;
-
   end;
 
   TJedColor = record
@@ -28,10 +27,14 @@ Type
         (i: integer);
   end;
 
+  TProjectType = (JKDF2 = 0, MOTS, IJIM);
+
 Const
+  IJIMDefaultExe = 'Indy3D.exe';
+  StaticResIdxMask = $8000;
   MaxMsgs = 500;
-  JedVerNum = '0.951';
-  JedVersion: string = JedVerNum + ' beta';
+  SedVerNum = '0.1.0';
+  SedVersion: string = SedVerNum;
   LECLogo: String = '................................'#13#10 +
     '................@...@...@...@...'#13#10 +
     '.............@...@..@..@...@....'#13#10 +
@@ -67,6 +70,47 @@ Const
     '@.copyright.(c).1997.lucasarts.@'#13#10 +
     '@@@@@@..entertainment.co..@@@@@@';
 
+  LECLogoIJIM: String =
+    '................................'#13#10 +
+    '................@...@...@...@...'#13#10 +
+    '.............@...@..@..@...@....'#13#10 +
+    '................@.@.@.@.@.@.....'#13#10 +
+    '@@@@@@@@......@...........@.....'#13#10 +
+    '@@@@@@@@....@@......@@@....@....'#13#10 +
+    '@@.....@.....@......@@@.....@@..'#13#10 +
+    '@@.@@@@@......@.....@@@......@@.'#13#10 +
+    '@@@@@@@@.......@....@@.....@@...'#13#10 +
+    '@@@@@@@@.........@@@@@@@@@@.....'#13#10 +
+    '@@@@@@@@..........@@@@@@........'#13#10 +
+    '@@.....@..........@@@@@.........'#13#10 +
+    '@@.@@@@@.........@@@@@@.........'#13#10 +
+    '@@.....@.........@@@@@@.........'#13#10 +
+    '@@@@@@@@.........@@@@@@.........'#13#10 +
+    '@@@@@@@@.........@@@@@@@........'#13#10 +
+    '@@@...@@.........@@@@@@@........'#13#10 +
+    '@@.@@@.@.........@.....@........'#13#10 +
+    '@@..@..@........@.......@.......'#13#10 +
+    '@@@@@@@@........@.......@.......'#13#10 +
+    '@@@@@@@@.......@........@.......'#13#10 +
+    '@@..@@@@.......@........@.......'#13#10 +
+    '@@@@..@@......@.........@.......'#13#10 +
+    '@@@@.@.@......@.........@.......'#13#10 +
+    '@@....@@........................'#13#10 +
+    '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@'#13#10 +
+    '@@@@@@@@@@@@@.@@@@@@@@@@@@@@@@@@'#13#10 +
+    '@@.@@..@@@@@..@@@@@@@@@@.@@@@@@@'#13#10 +
+    '@@.@.@.@@@@.@.@@@.@..@@...@@@..@'#13#10 +
+    '@@..@@@@@@....@@@..@@@@@.@@@@.@@'#13#10 +
+    '@@@@@@@@...@@.@@@.@@@@@..@@...@@'#13#10 +
+    '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@'#13#10 +
+    '@.(c).lucasarts.entertainment..@'#13#10 +
+    '@.........company.llc..........@'#13#10 +
+    '@....(c).lucasfilm.ltd.&.tm....@'#13#10 +
+    '@.....all.rights.reserved......@'#13#10 +
+    '@...used.under.authorization...@'#13#10 +
+    '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@';
+
+
   EpisodeJKTpl: String = '"New Level"'#13#10 +
     '# Title must be first line.  A translated version is looked up in jkStrings.uni'#13#10
     + '# Please use TABs for alignment!'#13#10 + #13#10 +
@@ -78,17 +122,18 @@ Const
     '10:      1     1        LEVEL    %s   0           0           -1    -1    # Level 1: NewLevel'#13#10
     + #13#10 + 'end';
 
-  RegBase = '\Software\Code Alliance\Jed';
+  //RegBase = '\Software\Code Alliance\Jed';
 
-  m_320x240 = 0;
-  m_400x300 = 1;
-  m_512x384 = 2;
-  m_640x480 = 3;
-  m_800x600 = 4;
-  m_1024x768 = 5;
+  m_800x600   = 0;
+  m_1024x768  = 1;
+  m_1280x960  = 2;
+  m_1440x900  = 3;
+  m_1600x1024 = 4;
+  m_1920x1200 = 5;
 
-  MR_old = 1; { MapRot consts }
-  MR_New = 0;
+  MR_old  = 1; { MapRot consts }
+  MR_New  = 0;
+  DataDir = 'data';
 
 Var
   BaseDir: String;
@@ -97,22 +142,26 @@ Var
   JKDir, MOTSDir: String;
   JKCDDir: String = 'D:\GAMEDATA\';
   MOTSCDDir: String = 'D:\GAMEDATA\';
+  IJIMDir: String;
+  IJIMExe: String;
 
   GameDir: String;
 
-  IsMots: boolean;
+  //IsMots: boolean;
 
-  D3DDevice: String = 'RGB Emulation';
+  CurrentProject: TProjectType;
+
+  D3DDevice: String = 'Direct3D HAL';
 
   P3DAPI: integer = 0;
   P3DOnTop: boolean;
-  P3DFullLit: boolean;
+  P3DFullLit: boolean = false;
   P3DColoredLights: boolean = true;
   P3DX, P3DY: integer;
   P3DWinSize: integer = 0;
   P3DGamma: double = 1;
   P3DVisLayers: boolean = false;
-  P3DThings: boolean = false;
+  P3DThings: boolean = true;
 
   WireframeAPI: integer = 0;
   WF_DoubleBuf: boolean = true;
@@ -146,9 +195,10 @@ Var
   DefTXScaleStep: double = 2;
   DefPerpStep: double = 0.02;
   DefP3DStep: double = 0.1;
-  DefThingView: integer = 1; { View as Boxes }
+  DefThingView: integer = 2; { View as wireframes }
   DefMselMode: integer = 0; { Toggle }
 
+  DefSnapToGrid: boolean = false;
   DefGridStep: double = 0.2;
   DefGridLine: double = 1;
   DefGridDot: double = 0.2;
@@ -158,14 +208,24 @@ Var
 
   NewOnFloor: boolean = false;
   UndoEnabled: boolean = true;
+  UndoStackSize: UInt32 = 1024;
+  UndoMaxStackSize: UInt32 = 1024;
   MoveFrames: boolean = true;
   GOBSmart: boolean = false;
   CheckOverlaps: boolean = false;
   NewLightCalc: boolean = true;
   ConfirmRevert: boolean = false;
+  SaveEditorLights: boolean = true;
+  SaveEditorLayers: boolean = true;
 
   Recent1, Recent2, Recent3, Recent4: string;
 
+  clP3DBack: TJedColor = (r: 69; g: 69; b: 69);
+  clP3DSel: TJedColor = (r: 255; g: 255; b: 0);
+  clP3DMultiSel: TJedColor = (r: 0; g: 255; b: 255);
+  clP3DSolidFloor: TJedColor = (r: 255; g: 0; b: 0);
+  clP3DSolidSurface: TJedColor = (r: 128; g: 0; b: 128);
+  clP3DSpecialSurface: TJedColor = (r: 0; g: 255; b: 0);
   clMapBack: TJedColor = (r: 0; g: 0; b: 0);
   clMapGeo: TJedColor = (r: 255; g: 255; b: 255);
   clMapGeoBack: TJedColor = (r: 127; g: 127; b: 127);
@@ -184,6 +244,7 @@ Var
   clGridY: TJedColor = (r: 0; g: 0; b: 255);
   clExtra: TJedColor = (r: 0; g: 255; b: 128);
 
+Function GetConfigFilePath: string;
 Procedure GetWinPos(f: TForm; var p: TWinPos);
 Procedure SetWinPos(f: TForm; var p: TWinPos);
 Procedure SetWinPosOnly(f: TForm; var p: TWinPos);
@@ -194,16 +255,30 @@ Procedure GetP3DPos(f: TForm; var X, Y, mode: integer);
 Function GetStayOnTop(f: TForm): boolean;
 Procedure SetStayOnTop(f: TForm; ontop: boolean);
 
+Function DefaultPixelPerUnit: double;
 Function PixelPerUnit: double;
 
 implementation
 
 uses J_Level;
 
+Function GetConfigFilePath: string;
+begin
+   Result := 'sed.ini';
+end;
+
+Function DefaultPixelPerUnit: double;
+begin
+//   if CurrentProject = TProjectType.IJIM then
+//      result := 320 // This is hack because IM UVs are based on texture size
+//    else
+      result := 320;
+end;
+
 Function PixelPerUnit: double;
 begin
   if Level = nil then
-    result := 320
+    result := DefaultPixelPerUnit
   else
     result := Level.ppunit;
 end;
@@ -216,26 +291,6 @@ begin
     f.top := Y;
 
   case mode of
-    m_320x240:
-      begin
-        f.clientwidth := 320;
-        f.clientheight := 240;
-      end;
-    m_400x300:
-      begin
-        f.clientwidth := 400;
-        f.clientheight := 300;
-      end;
-    m_512x384:
-      begin
-        f.clientwidth := 512;
-        f.clientheight := 384;
-      end;
-    m_640x480:
-      begin
-        f.clientwidth := 640;
-        f.clientheight := 480;
-      end;
     m_800x600:
       begin
         f.clientwidth := 800;
@@ -245,6 +300,26 @@ begin
       begin
         f.clientwidth := 1024;
         f.clientheight := 768;
+      end;
+    m_1280x960:
+      begin
+        f.clientwidth := 1280;
+        f.clientheight := 960;
+      end;
+    m_1440x900:
+      begin
+        f.clientwidth := 1440;
+        f.clientheight := 900;
+      end;
+     m_1600x1024:
+      begin
+        f.clientwidth := 1600;
+        f.clientheight := 1024;
+      end;
+     m_1920x1200:
+      begin
+        f.clientwidth := 1920;
+        f.clientheight := 1200;
       end;
   end;
 end;
@@ -256,18 +331,19 @@ begin
   X := f.left;
   Y := f.top;
   w := f.clientwidth;
-  if w < 360 then
-    mode := m_320x240
-  else if w < 458 then
-    mode := m_400x300
-  else if w < 576 then
-    mode := m_512x384
-  else if w < 720 then
-    mode := m_640x480
-  else if w < 912 then
+
+  if w < 1024 then
     mode := m_800x600
+  else if w < 1280 then
+    mode := m_1024x768
+  else if w < 1440 then
+    mode := m_1280x960
+  else if w < 1600 then
+    mode := m_1440x900
+  else if w < 1920 then
+    mode := m_1600x1024
   else
-    mode := m_1024x768;
+    mode := m_1920x1200
 end;
 
 Function GetStayOnTop(f: TForm): boolean;
@@ -319,9 +395,10 @@ begin
 end;
 
 Initialization
-
 begin
   BaseDir := ExtractFilePath(Paramstr(0));
+
+  FormatSettings := TFormatSettings.Invariant;
   FormatSettings.DecimalSeparator := '.';
 end;
 

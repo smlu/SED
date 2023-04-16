@@ -11,18 +11,25 @@ Const
   cc_Fix = 0;
   cc_NeverFix = 1;
   cc_Ask = 2;
+  df_MaxSurfVerts = 24;
+  ijim_MaxSurfVerts = 64;
 
-Const
-  et_none = 0;
-  et_sector = 1;
-  et_surface = 2;
-  et_thing = 3;
-  et_cog = 4;
+//Const
+//  et_none = 0;
+//  et_sector = 1;
+//  et_surface = 2;
+//  et_thing = 3;
+//  et_cog = 4;
+
 
 type
+  ItemType = (itNone = 0, itSector = 1, itSurface = 2, itThing = 3, itCog = 4);
+  ErrorType = (etNormal = 0, etError = 1, etWarning = 2);
+
   TConsistencyError = class
-    etype: Integer;
-    itm: TObject;
+    itype: ItemType;
+    item: TObject;
+    etype: ErrorType;
   end;
 
   TConsistency = class(TForm)
@@ -41,11 +48,16 @@ type
     procedure BNOptionsClick(Sender: TObject);
     procedure SBHelpClick(Sender: TObject);
     procedure BNCheckResClick(Sender: TObject);
+    procedure ErrorsDrawItem(Control: TWinControl; Index: Integer; Rect: TRect;
+      State: TOwnerDrawState);
   private
     { Private declarations }
     Procedure ClearErrors;
+    Procedure AddItem(Const Text: String; itm: TObject; et: ErrorType);
+    Procedure AddNormal(Const Text: String; itm: TObject);
     Procedure AddError(Const Text: String; itm: TObject);
-    Function FixError(const Text: String; itm: TObject): Boolean;
+    Procedure AddWarning(Const Text: String; itm: TObject);
+    //Function FixError(const Text: String; itm: TObject): Boolean;
   public
     { Public declarations }
     Procedure Check;
@@ -69,6 +81,52 @@ begin
   BNGoto.Click;
 end;
 
+function GetBrushColor(brush:TBrush; ce: TConsistencyError; State: TOwnerDrawState): TColor;
+begin
+  Result := brush.Color;
+  if (ce = nil) or (odSelected in State) then
+    exit;
+  Case ce.etype of
+      etError:
+        Result := clRed;
+      etWarning:
+        Result := clYellow;
+    End;
+end;
+
+function GetFontColor(font:TFont; ce: TConsistencyError; State: TOwnerDrawState): TColor;
+begin
+  Result := font.Color;
+  if (ce = nil) or (odSelected in State) then
+    exit;
+  Case ce.etype of
+      etError:
+        Result := clWhite;
+      etWarning:
+        Result := clBlack;
+    End;
+end;
+
+procedure TConsistency.ErrorsDrawItem(Control: TWinControl; Index: Integer;
+  Rect: TRect; State: TOwnerDrawState);
+begin
+  var lbox := Control as TListBox;
+  with lbox.Canvas do begin
+    var ce := TConsistencyError( lbox.Items.Objects[Index] );
+
+    var bcolor_old := Brush.Color;
+    Brush.Color := GetBrushColor(Brush, ce, State);
+    FillRect(Rect);
+
+    var fcolor_old := Font.Color;
+    Font.Color := GetFontColor(Font, ce, State);
+    TextOut(Rect.Left, Rect.Top, lbox.Items[Index]);
+
+    Font.Color  := fcolor_old;
+    Brush.Color := bcolor_old;
+  end;
+end;
+
 procedure TConsistency.BNCloseClick(Sender: TObject);
 begin
   Close;
@@ -83,50 +141,67 @@ begin
   Errors.Items.Clear;
 end;
 
+Procedure TConsistency.AddNormal(Const Text: String; itm: TObject);
+begin
+  AddItem(Text, itm, etNormal);
+end;
+
 Procedure TConsistency.AddError(Const Text: String; itm: TObject);
+begin
+  AddItem(Text, itm, etError);
+end;
+
+Procedure TConsistency.AddWarning(Const Text: String; itm: TObject);
+begin
+  AddItem(Text, itm, etWarning);
+end;
+
+Procedure TConsistency.AddItem(Const Text: String; itm: TObject; et: ErrorType);
 var
   ce: TConsistencyError;
   ni: Integer;
 begin
   ce := TConsistencyError.Create;
+  ce.etype := et;
   if itm = nil then
-    ce.etype := et_none
+    ce.itype := itNone
   else if itm is TJKSector then
-    ce.etype := et_sector
+    ce.itype := itSector
   else if itm is TJKSurface then
-    ce.etype := et_surface
+    ce.itype := itSurface
   else if itm is TJKThing then
-    ce.etype := et_thing
+    ce.itype := itThing
   else if itm is TCog then
-    ce.etype := et_cog
+    ce.itype := itCog
   else
     exit;
 
-  ce.itm := itm;
+  ce.item := itm;
 
-  Case ce.etype of
-    et_sector:
+  Case ce.itype of
+    itSector:
       begin
         ni := (itm as TJKSector).num;
-        Errors.Items.AddObject(Format('%s; sector %d', [Text, ni]), ce);
+        Errors.AddItem(Format('%s: sector %d', [Text, ni]), ce);
       end;
-    et_surface:
+    itSurface:
       With (itm as TJKSurface) do
       begin
-        Errors.Items.AddObject(Format('%s; surface %d,%d', [Text, sector.num,
+        Errors.AddItem(Format('%s: surface %d,%d', [Text, sector.num,
           num]), ce);
       end;
-    et_thing:
+    itThing:
       begin
         ni := (itm as TJKThing).num;
-        Errors.Items.AddObject(Format('%s; thing %d', [Text, ni]), ce);
+        //Errors.Items.AddObject(Format('%s; thing %d', [Text, ni]), ce);
+        Errors.AddItem(Format('%s: thing %d', [Text, ni]), ce);
       end;
-    et_cog:
+    itCog:
       begin
         ni := Level.Cogs.IndexOf(itm);
-        Errors.Items.AddObject(Format('%s; Cog %d', [Text, ni]), ce);
+        Errors.AddItem(Format('%s: Cog %d', [Text, ni]), ce);
       end;
-    et_none:
+    itNone:
       begin
         ni := -1;
         ce.Free;
@@ -136,21 +211,21 @@ begin
   end;
 end;
 
-Function TConsistency.FixError(const Text: String; itm: TObject): Boolean;
-begin
-  Case cc_FixErrors of
-    cc_Fix:
-      Result := true;
-    cc_NeverFix:
-      Result := false;
-    cc_Ask:
-      Result := MsgBox(Text + ' Fix?', 'Fix confirmation', MB_YesNo) = IDYes;
-  end;
-  if Result then
-    AddError(Text + '(Fixed)', itm)
-  else
-    AddError(Text, itm);
-end;
+//Function TConsistency.FixError(const Text: String; itm: TObject): Boolean;
+//begin
+//  Case cc_FixErrors of
+//    cc_Fix:
+//      Result := true;
+//    cc_NeverFix:
+//      Result := false;
+//    cc_Ask:
+//      Result := MsgBox(Text + ' Fix?', 'Fix confirmation', MB_YesNo) = IDYes;
+//  end;
+//  if Result then
+//    AddError(Text + '(Fixed)', itm)
+//  else
+//    AddError(Text, itm);
+//end;
 
 Procedure TConsistency.Check;
 type
@@ -173,10 +248,14 @@ begin { Check }
   { if Not Visible then } Show;
   ClearErrors;
 
+  var maxSurfVerts := df_MaxSurfVerts;
+  if level.kind = IJIM then
+    maxSurfVerts := ijim_MaxSurfVerts;
+
   For i := 0 to Level.Sectors.Count - 1 do
   begin
     sec := Level.Sectors[i];
-    if Trim(sec.colormap) = '' then
+    if (level.kind <> IJIM) and (Trim(sec.colormap) = '') then
       AddError('No colormap set for sector!', sec);
 
     if sec.surfaces.Count < 4 then
@@ -190,7 +269,7 @@ begin { Check }
       continue;
     end;
 
-    if (sec.flags and SF_3DO) = 0 then
+    if (sec.flags and SECF_3DO) = 0 then
       if not IsSectorConvex(sec) then
         AddError('Sector is not convex', sec);
 
@@ -199,20 +278,23 @@ begin { Check }
       { Surface consistency }
       surf := sec.surfaces[j];
       if (surf.adjoin = nil) and (surf.FaceFlags and FF_Transluent <> 0) then
-        AddError('Incorrect flags on solid surface', surf);
+        AddWarning('Incorrect face flags on solid surface', surf);
 
-      if surf.vertices.Count > 24 then
-        AddError('More than 24 vertices in a surface', surf);
+      if ((surf.SurfFlags and SF_Floor) <> 0) and ((surf.SurfFlags and SF_Collision) = 0)  then
+        AddWarning('Missing collision flag on floor surface', surf);
+
+      if surf.vertices.Count > maxSurfVerts then
+        AddWarning(Format('More than %d vertices in a surface', [maxSurfVerts]), surf);
       if surf.vertices.Count < 3 then
         AddError('Less than 3 vertices in a surface!', surf);
       if not IsClose(vlen(surf.normal), 1) then
-        AddError('Incorrect normal - surface must be invalid!', surf);
+        AddWarning('Incorrect normal - surface must be invalid!', surf);
       if surf.adjoin <> nil then
       begin
         if surf.adjoin.adjoin <> surf then
           AddError('Invalid reverse adjoin', surf);
         if not Do_Surf_Overlap(surf, surf.adjoin) then
-          AddError('Adjoined surfaces don''t overlap', surf);
+          AddWarning('Adjoined surfaces don''t overlap', surf);
       end;
 
       for v := 0 to surf.vertices.Count - 1 do
@@ -224,13 +306,13 @@ begin { Check }
           if Abs(normal.dx * vx.x + normal.dy * vx.y + normal.dz * vx.z - d) > 0.001
           then
           begin
-            AddError('The face is not planar', surf);
+            AddNormal('The face is not planar', surf);
             break;
           end;
         end;
       end;
       if not IsSurfConvex(surf) then
-        AddError('The face is not convex', surf);
+        AddNormal('The face is not convex', surf);
 
     end;
   end;
@@ -267,8 +349,8 @@ begin { Check }
 
           if DoSectorsOverlap(sec, sec1) then
           begin
-            AddError(Format('Sectors %d and %d overlap', [i, j]), sec);
-            AddError(Format('Sectors %d and %d overlap', [i, j]),
+            AddNormal(Format('Sectors %d and %d overlap', [i, j]), sec);
+            AddNormal(Format('Sectors %d and %d overlap', [i, j]),
               Level.Sectors[j]);
           end;
 
@@ -324,7 +406,7 @@ begin { Check }
                   if ext = '.3do' then
                     continue;
               end;
-              AddError('Incorrect file name for parameter ' + Name, cog);
+              AddWarning('Incorrect file name for parameter ' + Name, cog);
             end;
           ct_msg:
             ;
@@ -400,28 +482,27 @@ begin
   Wavs := CreateList;
   Cogs := CreateList;
 
-  if Level.MasterCMP <> '' then
+  if (Level.kind <> IJIM) and (Level.MasterCMP <> '') then
     if NoFile(Level.MasterCMP, cmps) then
       AddError('Level''s Master CMP is not found', nil);
 
   try
-
     for i := 0 to Level.Sectors.Count - 1 do
-    begin
-      sec := Level.Sectors[i];
-      if NoFile(sec.colormap, cmps) then
-        AddError('Colormap not found', sec);
-      if sec.sound <> '' then
-        if NoFile(sec.sound, Wavs) then
-          AddError('Sound not found', sec);
-      for j := 0 to sec.surfaces.Count - 1 do
       begin
-        surf := sec.surfaces[j];
-        if surf.Material <> '' then
-          if NoFile(surf.Material, Mats) then
-            AddError('Material not found', surf);
+        sec := Level.Sectors[i];
+        if (Level.kind <> IJIM) and NoFile(sec.colormap, cmps) then
+          AddError('Colormap not found', sec);
+        if sec.sound <> '' then
+          if NoFile(sec.sound, Wavs) then
+            AddError('Sound not found', sec);
+        for j := 0 to sec.surfaces.Count - 1 do
+        begin
+          surf := sec.surfaces[j];
+          if surf.Material <> '' then
+            if NoFile(surf.Material, Mats) then
+              AddError('Material not found', surf);
+        end;
       end;
-    end;
 
     For i := 0 to Level.Things.Count - 1 do
     begin
@@ -437,15 +518,15 @@ begin
         AddError('Cog not found', cg);
     end;
 
-    if IsMots then
+    if CurrentProject = MOTS then
     begin
       if cmps.Count > 1 then
-        AddError('Warning! More than 1 CMP used in the level', nil);
+        AddWarning('Warning! More than 1 CMP used in the level', nil);
     end
-    else
+    else if CurrentProject = JKDF2 then
     begin
       if cmps.Count > 3 then
-        AddError('Warning! More than 3 CMP used in the level', nil);
+        AddWarning('Warning! More than 3 CMP used in the level', nil);
     end;
   finally
     cmps.Free;
@@ -477,10 +558,10 @@ begin
   ce := TConsistencyError(Errors.Items.Objects[Index]);
   if ce = nil then
     exit;
-  Case ce.etype of
-    et_sector:
+  Case ce.itype of
+    itSector:
       begin
-        sc := Level.Sectors.IndexOf(ce.itm);
+        sc := Level.Sectors.IndexOf(ce.item);
         if sc = -1 then
         begin
           MsgBox('Sector not found', 'Error', mb_OK);
@@ -488,13 +569,13 @@ begin
         end;
         JedMain.GotoSC(sc);
       end;
-    et_surface:
+    itSurface:
       begin
         for i := 0 to Level.Sectors.Count - 1 do
           With Level.Sectors[i] do
           begin
             sc := i;
-            sf := surfaces.IndexOf(ce.itm);
+            sf := surfaces.IndexOf(ce.item);
             if sf <> -1 then
               break;
           end;
@@ -505,9 +586,9 @@ begin
         end;
         JedMain.GotoSF(sc, sf);
       end;
-    et_thing:
+    itThing:
       begin
-        th := Level.Things.IndexOf(ce.itm);
+        th := Level.Things.IndexOf(ce.item);
         if th = -1 then
         begin
           MsgBox('Thing not found', 'Error', mb_OK);
@@ -515,9 +596,9 @@ begin
         end;
         JedMain.GotoTH(th);
       end;
-    et_cog:
+    itCog:
       begin
-        th := Level.Cogs.IndexOf(ce.itm);
+        th := Level.Cogs.IndexOf(ce.item);
         if th = -1 then
         begin
           MsgBox('Cog not found', 'Error', mb_OK);
@@ -553,8 +634,8 @@ end;
 
 procedure TConsistency.SBHelpClick(Sender: TObject);
 begin
-  Application.HelpFile := basedir + 'jedhelp.hlp';
-  Application.HelpContext(440);
+  //Application.HelpFile := basedir + 'jedhelp.hlp';
+  //Application.HelpContext(440);
 end;
 
 Function TConsistency.NErrors: Integer;

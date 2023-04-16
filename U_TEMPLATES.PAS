@@ -12,9 +12,13 @@ type
     desc: string;
     bbox: TThingBox;
     Constructor Create;
+    Procedure Assign(const tpl: TTemplate);
+    Function Clone: TTemplate;
     Destructor Destroy; override;
     Function GetAsString: string;
     Function ValsAsString: String;
+  private
+    Procedure ClearVals;
   end;
 
   TTemplates = class(TList)
@@ -25,7 +29,9 @@ type
     Procedure Clear;
     Procedure LoadFromFile(const fname: string);
     Procedure SaveToFile(const fname: string);
+    Function AddOrUpdate(const t: TTemplate; update: Boolean = True): integer;
     Function AddFromString(const s: string): integer;
+    Procedure Merge(const tlist: TTemplates);
     function GetAsString(n: integer): String;
     Function IndexOfName(const Name: string): integer;
     Function GetTPLField(const tpl, field: string): TTPLValue;
@@ -49,12 +55,33 @@ begin
   vals := TTPLValues.Create;
 end;
 
-Destructor TTemplate.Destroy;
-var
-  i: integer;
+Procedure TTemplate.Assign(const tpl: TTemplate);
 begin
-  for i := 0 to vals.Count - 1 do
-    vals[i].Free;
+  ClearVals;
+  self.Name   := tpl.Name;
+  self.parent := tpl.parent;
+  desc        := tpl.desc;
+  CopyMemory(@self.bbox, @tpl.bbox, sizeof(self.bbox));
+
+  for var v in tpl.vals do
+    vals.Add(TTplValue(v).Clone);
+end;
+
+Function TTemplate.Clone: TTemplate;
+begin
+  Result := TTemplate.Create;
+  Result.Assign(self);
+end;
+
+Procedure TTemplate.ClearVals;
+begin
+  for var i := 0 to vals.Count - 1 do
+    TTplValue(vals[i]).Free;
+end;
+
+Destructor TTemplate.Destroy;
+begin
+  ClearVals;
   vals.Free;
 end;
 
@@ -103,8 +130,8 @@ var
   i: integer;
 begin
   names.Clear;
-  for i := 0 to Templates.Count - 1 do
-    Templates[i].Free;
+  for i := 0 to Count - 1 do
+    TTemplate(self[i]).Free;
   Inherited Clear;
 end;
 
@@ -137,6 +164,22 @@ begin
   tpl.Free;
 end;
 
+Function TTemplates.AddOrUpdate(const t: TTemplate; update: Boolean): integer;
+begin
+  Result := IndexOfName(t.Name);
+  if (Result <> -1) then
+    begin
+      if not update then exit;
+      TTemplate(self[Result]).Free;
+      self[Result] := t;
+    end
+  else
+    begin
+      Result := inherited Add(t);
+      names.AddObject(t.Name, TObject(Result));
+    end;
+end;
+
 Function TTemplates.AddFromString(const s: string): integer;
 var
   p, peq: integer;
@@ -153,9 +196,9 @@ begin
   tpl := TTemplate.Create;
   tpl.Name := w;
 
-  Result := Add(tpl);
+  Result := AddOrUpdate(tpl);
 
-  names.AddObject(w, TObject(Result));
+  //names.AddObject(w, TObject(Result));
 
   p := GetWord(s, p, w);
   tpl.parent := w;
@@ -168,17 +211,32 @@ begin
     peq := Pos('=', w);
     if peq = 0 then
       continue;
+
     vl := TTPLValue.Create;
     tpl.vals.Add(vl);
     vl.Name := Copy(w, 1, peq - 1);
-    vl.vtype := GetTPLVType(vl.Name);
-    vl.atype := GetTPLType(vl.Name);
-    vl.s := Copy(w, peq + 1, length(w) - peq);
+    vl.vtype := GetTplVType(vl.Name);
+    vl.atype := GetTplType(vl.Name);
+
+    var vs := Copy(w, peq + 1, length(w) - peq);
+    if not vl.Val(vs) then
+      begin
+        PanMessageFmt(mt_warning,'Template ''%s'' parameter ''%s'' has invalid value: %s', [tpl.Name, vl.Name, vs]);
+        // TODO: should assign string?
+      end;
   end;
   tpl.bbox := cbox;
   tpl.desc := cdesc;
   FillChar(cbox, sizeof(cbox), 0);
   cdesc := '';
+end;
+
+Procedure TTemplates.Merge(const tlist: TTemplates);
+begin
+  for var t in tlist do
+    begin
+      self.AddOrUpdate(TTemplate(t).Clone, (*replace=*)true);
+    end;
 end;
 
 Procedure TTemplates.LoadFromFile(const fname: string);
@@ -194,7 +252,7 @@ begin
     on Exception do
     begin
       MsgBox('Cannot open master template - ' + fname, 'Error', mb_ok);
-      Application.Terminate;
+      //Application.Terminate; // TODO: verify if this is safe
       exit;
     end;
   end;
@@ -221,8 +279,8 @@ begin
         AddFromString(s);
     end;
   finally
-    for i := 0 to Templates.Count - 1 do
-      with Templates[i] do
+    for i := 0 to Count - 1 do
+      with self[i] do
       begin
         { GetTPLField }
       end;
@@ -250,7 +308,7 @@ begin
       begin
         Writeln(t, '# DESC: ', desc);
         With bbox do
-          Writeln(t, SPrintf('# BBOX: %.6f %.6f %.6f %.6f %.6f %.6f',
+          Writeln(t, SPrintf('# BBOX: %1.6f %1.6f %1.6f %1.6f %1.6f %1.6f',
             [x1, y1, z1, x2, y2, z2]));
         Writeln(t, Self.GetAsString(i));
       end;
@@ -276,7 +334,7 @@ begin
   n := 0;
   Repeat
     inc(n);
-    if n >= 100 then
+    if n >= 1000 then
       exit;
     i := IndexOfName(ctpl);
     if i = -1 then
@@ -300,7 +358,7 @@ Initialization
 begin
   InitValues;
   Templates := TTemplates.Create;
-  { templates.LoadFromFile(BaseDir+'jeddata\master.tpl'); }
+  { templates.LoadFromFile(BaseDir+'dataDir + '\' + master.tpl'); }
 end;
 
 Finalization

@@ -156,7 +156,7 @@ js_JEDDir=2;
 js_CDDir=3;
 js_GameDir=4;
 js_LevelFile=5;
-js_jedregkey=6;
+js_jedregkey=6; // deprecated, use js_confile
 js_LECLogo=7;
 js_recent1=8;
 js_recent2=9;
@@ -168,6 +168,7 @@ js_spgob=14;
 js_mp1gob=15;
 js_mp2gob=16;
 js_mp3gob=17;
+js_confile=18;
 
 
 type

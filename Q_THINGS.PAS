@@ -170,8 +170,8 @@ end;
 
 procedure TFindThings.SBHelpClick(Sender: TObject);
 begin
-  Application.helpfile := basedir + 'jedhelp.hlp';
-  Application.HelpContext(450);
+  //Application.helpfile := basedir + 'jedhelp.hlp';
+  //Application.HelpContext(450);
 end;
 
 end.

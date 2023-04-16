@@ -99,9 +99,10 @@ begin
   if not FileExists(name) then
     exit;
   cext := ExtractExt(Name);
-  Insert('~', cext, 2);
-  if length(cext) > 4 then
-    setLength(cext, 4);
+  cext := cext + '.bak';
+//  Insert('~', cext, 2);
+//  if length(cext) > 4 then
+//    setLength(cext, 4);
   Result := ChangeFileExt(Name, cext);
   if FileExists(Result) then
     DeleteFile(Result);
@@ -318,7 +319,7 @@ Type
 Function WhatContainer(path: String): ct_type;
 var
   ext: String;
-  buf: array [1 .. 4] of char;
+  buf: array [1 .. 4] of AnsiChar;
   f: TFile;
 begin
   Result := ct_unknown;
@@ -485,11 +486,25 @@ var
     end;
   end;
 
-  Function TryFile(const name: string): TFile;
+  Function FindFileInProjectDir(const name: string): TFile;
+  var dir : string;
   begin
     Result := nil;
-    if FileExists(ProjectDir + Name) then
-      Result := OpenFileRead(ProjectDir + Name, 0);
+    var fp := ProjectDir + name;
+    if FileExists(fp) then
+      Result := OpenFileRead(fp, 0);
+
+    if Result = nil then
+    begin
+      case CurrentProject of
+         JKDF2: dir := JKDir;
+         MOTS: dir  := MOTSDir;
+         IJIM: dir  := IJIMDir;
+      end;
+      fp := dir + name;
+      if FileExists(fp) then
+        Result := OpenFileRead(fp, 0);
+    end;
   end;
 
 begin
@@ -503,13 +518,14 @@ begin
 
   if ext = '.WAV' then
   begin
-    Result := TryFile('sound\' + Name);
+    Result := FindFileInProjectDir('sound\' + Name);
     if Result <> nil then
       exit;
-    Result := TryFile('voice\' + Name);
+
+    Result := FindFileInProjectDir('voice\' + Name);
     if Result <> nil then
       exit;
-    Result := TryFile('voiceuu\' + Name);
+    Result := FindFileInProjectDir('voiceuu\' + Name);
     if Result <> nil then
       exit;
 
@@ -523,7 +539,7 @@ begin
       Result := OpenFileRead(Res1_Gob + '>voice\' + name, 0);
       exit;
     end;
-    if IsMots then
+    if CurrentProject = MOTS then
       if IsInGob(Res2_Gob, 'voiceuu\' + Name) then
       begin
         Result := OpenFileRead(Res2_Gob + '>voiceuu\' + name, 0);
@@ -534,10 +550,10 @@ begin
 
   if (ext = '.MAT') then
   begin
-    Result := TryFile('mat\' + Name);
+    Result := FindFileInProjectDir('mat\' + Name);
     if Result <> nil then
       exit;
-    Result := TryFile('3do\mat\' + Name);
+    Result := FindFileInProjectDir('3do\mat\' + Name);
     if Result <> nil then
       exit;
 
@@ -555,7 +571,7 @@ begin
 
   if (ext = '.DAT') then
   begin
-    Result := TryFile('misc\' + Name);
+    Result := FindFileInProjectDir('misc\' + Name);
     if Result <> nil then
       exit;
     if IsInGob(Res2_Gob, 'misc\' + Name) then
@@ -567,7 +583,7 @@ begin
 
   if (ext = '.3DO') then
   begin
-    Result := TryFile('3do\' + Name);
+    Result := FindFileInProjectDir('3do\' + Name);
     if Result <> nil then
       exit;
     if IsInGob(Res2_Gob, '3do\' + Name) then
@@ -579,7 +595,7 @@ begin
 
   if (ext = '.KEY') then
   begin
-    Result := TryFile('\3do\key\' + Name);
+    Result := FindFileInProjectDir('\3do\key\' + Name);
     if Result <> nil then
       exit;
     if IsInGob(Res2_Gob, '3do\key\' + Name) then
@@ -591,7 +607,7 @@ begin
 
   if (ext = '.AI') or (ext = '.AI0') or (ext = '.AI2') then
   begin
-    Result := TryFile('misc\ai\' + Name);
+    Result := FindFileInProjectDir('misc\ai\' + Name);
     if Result <> nil then
       exit;
     if IsInGob(Res2_Gob, 'misc\ai\' + Name) then
@@ -603,7 +619,7 @@ begin
 
   if (ext = '.CMP') then
   begin
-    Result := TryFile('misc\cmp\' + Name);
+    Result := FindFileInProjectDir('misc\cmp\' + Name);
     if Result <> nil then
       exit;
     if IsInGob(Res2_Gob, 'misc\cmp\' + Name) then
@@ -615,7 +631,7 @@ begin
 
   if (ext = '.PAR') then
   begin
-    Result := TryFile('misc\par' + Name);
+    Result := FindFileInProjectDir('misc\par' + Name);
     if Result <> nil then
       exit;
     if IsInGob(Res2_Gob, 'misc\par\' + Name) then
@@ -627,7 +643,7 @@ begin
 
   if (ext = '.PER') then
   begin
-    Result := TryFile('misc\per\' + Name);
+    Result := FindFileInProjectDir('misc\per\' + Name);
     if Result <> nil then
       exit;
     if IsInGob(Res2_Gob, 'misc\per\' + Name) then
@@ -639,7 +655,7 @@ begin
 
   if (ext = '.PUP') then
   begin
-    Result := TryFile('misc\pup\' + Name);
+    Result := FindFileInProjectDir('misc\pup\' + Name);
     if Result <> nil then
       exit;
     if IsInGob(Res2_Gob, 'misc\pup\' + Name) then
@@ -651,7 +667,7 @@ begin
 
   if (ext = '.SND') then
   begin
-    Result := TryFile('misc\snd\' + Name);
+    Result := FindFileInProjectDir('misc\snd\' + Name);
     if Result <> nil then
       exit;
     if IsInGob(Res2_Gob, 'misc\snd\' + Name) then
@@ -663,7 +679,7 @@ begin
 
   if (ext = '.SPR') then
   begin
-    Result := TryFile('misc\spr\' + Name);
+    Result := FindFileInProjectDir('misc\spr\' + Name);
     if Result <> nil then
       exit;
     if IsInGob(Res2_Gob, 'misc\spr\' + Name) then
@@ -675,7 +691,7 @@ begin
 
   if (ext = '.COG') then
   begin
-    Result := TryFile('cog\' + Name);
+    Result := FindFileInProjectDir('cog\' + Name);
     if Result <> nil then
       exit;
 

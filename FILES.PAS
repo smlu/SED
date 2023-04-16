@@ -118,8 +118,8 @@ Type
     F: TFile;
     pbuf: PByte;
     spos: longint;
-    bpos, bsize: word;
-    bcapacity: word;
+    bpos, bsize: integer;
+    bcapacity: integer;
     fmode: (f_read, f_write);
     Constructor CreateRead(bf: TFile);
     Constructor CreateWrite(bf: TFile);
@@ -132,14 +132,14 @@ Type
     Procedure Fseek(Pos: longint); override;
     Destructor FClose; override;
   Private
-    Procedure InitBuffer(size: word);
+    Procedure InitBuffer(size: integer);
     Procedure ReadBuffer;
     Procedure WriteBuffer;
   end;
 
   TTextFile = Class
     F: TFile;
-    bpos, bsize: word;
+    bpos, bsize: integer;
     buffer: array [0 .. txt_bufsize] of AnsiChar;
     curline: Integer;
     Function GetFullName: String;
@@ -349,8 +349,8 @@ Procedure TTextFile.Readln(var s: String);
 var
   ps, pend: PAnsiChar;
   tmp: array [0 .. txt_maxlinesize - 1] of AnsiChar;
-  ssize: word;
-  l: word;
+  ssize: integer;
+  len: integer;
 begin
   s := '';
   if bpos = bsize then
@@ -368,10 +368,14 @@ begin
     if ssize > txt_maxlinesize then
       ssize := txt_maxlinesize; { Limit string size to 255 chars }
     s := StrLCopy(tmp, ps, ssize);
-    l := Length(s);
-    if l <> 0 then
-      if s[l] = #13 then
-        SetLength(s, l - 1);
+    len := Length(s);
+    if len <> 0 then
+      while (s.length > 0) and (s[len] in [#10, #13]) do
+        begin
+          len := len-1;
+          SetLength(s, len);
+        end;
+
     Inc(bpos, ssize);
     SeekEoln;
   end
@@ -393,21 +397,21 @@ begin
       ssize := txt_maxlinesize - Length(s);
     s := ConCat(s, StrLCopy(tmp, buffer, ssize));
     Inc(bpos, ssize);
-    l := Length(s);
-    if l <> 0 then
-      if s[l] = #10 then
-        SetLength(s, l - 1);
-    l := Length(s);
-    if l <> 0 then
-      if s[l] = #13 then
-        SetLength(s, l - 1);
+    len := Length(s);
+    if len <> 0 then
+      if s[len] = #10 then
+        SetLength(s, len - 1);
+    len := Length(s);
+    if len <> 0 then
+      if s[len] = #13 then
+        SetLength(s, len - 1);
     SeekEoln;
   end;
 end;
 
 Procedure TTextFile.Writeln;
 const
-  eol: array [0 .. 0] of char = #10;
+  eol: array [0 .. 0] of AnsiChar = #10;
 begin
   F.Fwrite(s[1], Length(s));
   F.Fwrite(eol, sizeof(eol));
@@ -476,7 +480,7 @@ end;
 
 { TBufFile methods }
 
-Procedure TBufFile.InitBuffer(size: word);
+Procedure TBufFile.InitBuffer(size: integer);
 begin
   bcapacity := size;
   GetMem(pbuf, bcapacity);

@@ -48,8 +48,10 @@ type
     Label11: TLabel;
     CBGridMove: TComboBox;
     BNDelShape: TButton;
+
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
+    procedure EnableSnapToGrid(enable: boolean);
     procedure CBGridClick(Sender: TObject);
     procedure CBGridStepChange(Sender: TObject);
     procedure CBLayersChange(Sender: TObject);
@@ -125,7 +127,7 @@ begin
     TBarPos.h := mw;
   SetWinPos(Self, TBarPos);
   CBOnTop.Checked := TbOnTop;
-  LoadPrefabs(BaseDir + 'JedData\shapes.tpl');
+  LoadPrefabs(BaseDir + DataDir + '\shapes.tpl');
   UpdatePrefabs;
 end;
 
@@ -160,6 +162,7 @@ begin
   else
     CBShapes.ItemIndex := i;
 
+  EnableSnapToGrid(DefSnapToGrid);
   SetCB(CBGridStep, DefGridStep);
   SetCB(CBGridLine, DefGridLine);
   SetCB(CBGridDot, DefGridDot);
@@ -178,10 +181,16 @@ begin
   TbOnTop := FormStyle = fsStayOnTop;
 end;
 
+procedure TToolbar.EnableSnapToGrid(enable: boolean);
+begin
+  JedMain.SnapToGrid := enable;
+  CBGridStep.Enabled := JedMain.SnapToGrid;
+  CBGrid.Checked     := enable;
+end;
+
 procedure TToolbar.CBGridClick(Sender: TObject);
 begin
-  JedMain.SnapToGrid := CBGrid.Checked;
-  CBGridStep.Enabled := JedMain.SnapToGrid;
+  EnableSnapToGrid(CBGrid.Checked);
 end;
 
 procedure TToolbar.CBLayersChange(Sender: TObject);
@@ -553,7 +562,7 @@ end;
 
 procedure TToolbar.CBGridLineChange(Sender: TObject);
 begin
-  CBValDouble(CBGridLine, JedMain.Renderer.GridLine, 0.1, 10);
+  CBValDouble(CBGridLine, JedMain.Renderer.GridLine, 0.01, 10);
   JedMain.Invalidate;
 end;
 
@@ -565,7 +574,7 @@ end;
 
 procedure TToolbar.CBGridDotChange(Sender: TObject);
 begin
-  CBValDouble(CBGridDot, JedMain.Renderer.GridDot, 0.05, 10);
+  CBValDouble(CBGridDot, JedMain.Renderer.GridDot, 0.005, 10);
   JedMain.Invalidate;
 end;
 
@@ -680,13 +689,14 @@ begin
   DefThingView := JedMain.Thing_view;
   DefMselMode := JedMain.Msel_mode;
 
+  DefSnapToGrid := JedMain.SnapToGrid;
   DefGridStep := JedMain.Renderer.GridStep;
   DefGridLine := JedMain.Renderer.GridLine;
   DefGridDot := JedMain.Renderer.GridDot;
   DefGridSize := GridSize;
   DefShape := CBShapes.Text;
 
-  WriteRegistry(true);
+  WriteConfigFile(true);
 end;
 
 procedure TToolbar.BNDelShapeClick(Sender: TObject);
@@ -703,7 +713,7 @@ begin
     'Confirmation', MB_YESNO) <> idYes then
     exit;
   DeletePrefab(n);
-  SavePrefabs(BaseDir + 'JedData\shapes.tpl');
+  SavePrefabs(BaseDir + DataDir + '\shapes.tpl');
   UpdatePrefabs;
 
   if CBShapes.Items.count > n then

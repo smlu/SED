@@ -4,7 +4,7 @@ interface
 
 uses
   MMSystem, Classes, ExtCtrls, StdCtrls, Files, FileOperations, graph_files,
-  Windows, Graphics, SysUtils, Misc_utils;
+  Windows, Graphics, SysUtils, Misc_utils, GlobalVars, pngimage, Images;
 
 type
   TPreviewThread = class(TThread)
@@ -94,7 +94,11 @@ begin
   SBMat.OnChange := SBChange;
   LB.Caption := Format('Width %d height %d%s',
     [bm.Width, bm.Height, bmcomment]);
-  Im.Picture.Bitmap := bm;
+  //Im.Proportional := true;
+
+  Im.Picture.Assign(bm);
+  IM.Refresh;
+  IM.Repaint;
   bm.Free;
 end;
 
@@ -131,9 +135,10 @@ begin
   SBMat.Position := 0;
   SBMat.OnChange := SBChange;
 
-  SetCmp('dflt.cmp');
+  if GlobalVars.CurrentProject <> IJIM then
+    SetCmp('dflt.cmp');
   Inherited Create(false);
-  FreeOnTerminate := true;
+  FreeOnTerminate := False;
   OnTerminate := TerminateProc;
 end;
 
@@ -205,7 +210,7 @@ begin
         bm := mat.LoadBitmap(-1, -1);
         if mat.isAnimated then
           bmcomment := ', Multiple';
-        nCells := mat.mh.NumOfTextures;
+        nCells := mat.celCount;
         mat.Free;
 
         SynChronize(ShowMAT);

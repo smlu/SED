@@ -2,7 +2,7 @@ unit ListRes;
 
 interface
 
-uses Values, Classes;
+uses Values, Classes, StrUtils;
 
 type
 
@@ -351,11 +351,17 @@ begin
       begin
         t.Readln(s);
         RemoveComment(s);
+        s:= s.Trim;
         p := GetWord(s, 1, w);
         if w = '' then
           continue;
-        GetWord(s, p, w);
-        mats.Add(w);
+        //GetWord(s, p, w);
+        var tokens :=SplitString(s, ':');
+        var matofs := Length(tokens);
+        if matofs < 1 then
+          raise Exception.CreateFMT('Invalid entry ''%s'' in 3DO MATERIALS section', [s]);
+        matofs := matofs -1;
+        mats.Add(tokens[matofs].Trim);
         inc(nm);
       end;
     end;

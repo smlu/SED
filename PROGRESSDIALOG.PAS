@@ -4,7 +4,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
-  StdCtrls, ComCtrls;
+  StdCtrls, ComCtrls, Math;
 
 Const
   PD_TooLong = 2000; { the number of Msec after which
@@ -70,7 +70,7 @@ begin
   ProgressBar.Position := 0;
   if steps <= 5000 then
   begin
-    ProgressBar.Max := steps - 1;
+    ProgressBar.Max := Math.Max(steps - 1, 0);
     LargeMax := false;
   end
   else

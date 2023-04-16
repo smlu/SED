@@ -2,7 +2,7 @@ unit Q_Utils;
 
 interface
 
-uses J_Level, SysUtils, StdCtrls, Misc_Utils, Windows;
+uses Geometry, J_Level, SysUtils, StdCtrls, Misc_Utils, Windows;
 
 Type
   TCompAction = (ca_None, ca_Equal, ca_NotEqual, ca_Above, ca_Below, ca_In,
@@ -28,15 +28,18 @@ Type
     act: TCompAction;
   end;
 
+  TQColor = record
+    V: TColorF;
+    act: TCompAction;
+  end;
+
   TSectorFindInfo = class
     num: TQInt;
     NSurfs: TQInt;
     Flags: TQFlags;
-    extra_l: TQDouble;
+    extra_l: TQColor;
     ColorMap: TQString;
-    tint_r: TQDouble;
-    tint_g: TQDouble;
-    tint_b: TQDouble;
+    tint: TQColor;
     sound: TQString;
     sound_vol: TQDouble;
     Layer: TQString;
@@ -51,7 +54,7 @@ Type
     SurfFlags: TQFlags;
     FaceFlags: TQFlags;
     geo, light, tex: TQInt;
-    extra_l: TQDouble;
+    extra_l: TQColor;
     Layer: TQString;
   end;
 
@@ -75,6 +78,7 @@ Type
     Constructor CreateInt(aCB: TComboBox; aEB: TEdit; var I: TQInt);
     Constructor CreateDouble(aCB: TComboBox; aEB: TEdit; var D: TQDouble);
     Constructor CreateFlags(aCB: TComboBox; aEB: TEdit; var F: TQFlags);
+    Constructor CreateColor(aCB: TComboBox; aEB: TEdit; var c: TQColor);
     procedure EBChangeHandler(Sender: TObject);
     Procedure CBChangeHandler(Sender: TObject);
   end;
@@ -83,6 +87,7 @@ Function TestStr(const s1, s2: String; action: TCompAction): Boolean;
 Function TestDouble(d1, d2: Double; action: TCompAction): Boolean;
 Function TestFlags(f1, f2: Longint; action: TCompAction): Boolean;
 Function TestInt(const f1, f2: Integer; action: TCompAction): Boolean;
+Function TestColor(c1, c2: TColorF; action: TCompAction): Boolean;
 
 Function SectorMatches(S: TJKSector; fi: TSectorFindInfo): Boolean;
 Function SurfMatches(W: TJKSurface; fi: TSurfFindInfo): Boolean;
@@ -105,6 +110,7 @@ const
   vtDouble = 3;
   vtFlags = 4;
   vtHex = 5;
+  vtColor = 6;
 
 Constructor TQueryField.Create(aCB: TComboBox; aEB: TEdit);
 begin
@@ -150,6 +156,14 @@ begin
   vType := vtFlags;
 end;
 
+Constructor TQueryField.CreateColor(aCB: TComboBox; aEB: TEdit; var c: TQColor);
+begin
+  Create(aCB, aEB);
+  P := @c;
+  vType := vtColor;
+end;
+
+
 procedure TQueryField.EBChangeHandler(Sender: TObject);
 var
   S: String;
@@ -157,6 +171,7 @@ var
   L: Longint;
   I: Integer;
   D: Double;
+  C: TColorF;
 begin
   S := EB.Text;
   If CB.ItemIndex <= 0 then
@@ -184,7 +199,7 @@ begin
           V := D
         else
         begin
-          EB.Text := FloatToStr(V);
+          EB.Text := FloatToStr(V, TFormatSettings.Invariant);
           MsgBox(S + ' is not a valid double', 'Error', mb_ok);
         end;
     vtFlags:
@@ -204,6 +219,15 @@ begin
         begin
           MsgBox(S + ' is not a valid hex', 'Error', mb_ok);
           EB.Text := Format('%x', [V]);
+        end;
+    vtColor:
+      With TQColor(P^) do
+        if feValColor(S, C) then
+          V := C
+        else
+        begin
+          EB.Text := ColorToStr(V);
+          MsgBox(S + ' is not a valid color', 'Error', mb_ok);
         end;
   end;
 end;
@@ -244,6 +268,8 @@ begin
       TQDouble(P^).act := act;
     vtFlags:
       TQFlags(P^).act := act;
+    vtColor:
+      TQColor(P^).act := act;
   end;
 end;
 
@@ -267,13 +293,17 @@ begin
   Result := TestDouble(D, qi.V, qi.act);
 end;
 
+Function QTestColor(const qi: TQColor; c: TColorF): Boolean;
+begin
+  Result := TestColor(c, qi.V, qi.act);
+end;
+
 Function SectorMatches(S: TJKSector; fi: TSectorFindInfo): Boolean;
 begin
   With fi do
     Result := QTestInt(num, S.num) and QTestInt(NSurfs, S.surfaces.count) and
-      QTestFlags(Flags, S.Flags) and QTestDouble(extra_l, S.extra) and
-      QTestStr(ColorMap, S.ColorMap) and QTestDouble(tint_r, S.tint.dx) and
-      QTestDouble(tint_g, S.tint.dy) and QTestDouble(tint_b, S.tint.dz) and
+      QTestFlags(Flags, S.Flags) and QTestColor(extra_l, S.ExtraLight) and
+      QTestStr(ColorMap, S.ColorMap) and QTestColor(tint, S.Tint) and
       QTestStr(sound, S.sound) and QTestDouble(sound_vol, S.snd_vol) and
       QTestStr(Layer, S.Level.GetLayerName(S.Layer));
 end;
@@ -304,7 +334,7 @@ begin
       QTestFlags(AdjoinFlags, W.AdjoinFlags) and
       QTestFlags(SurfFlags, W.SurfFlags) and QTestFlags(FaceFlags, W.FaceFlags)
       and QTestInt(geo, W.geo) and QTestInt(light, W.light) and
-      QTestInt(tex, W.tex) and QTestDouble(extra_l, W.extralight) and
+      QTestInt(tex, W.tex) and QTestColor(extra_l, W.ExtraLight) and
       QTestStr(Layer, W.sector.Level.GetLayerName(W.sector.Layer));
 
 end;
@@ -464,6 +494,16 @@ begin
   else
     Result := false;
   end;
+end;
+
+Function TestColor(c1, c2: TColorF; action: TCompAction): Boolean;
+ var rt,gt,bt,at : Boolean;
+begin
+  rt := TestDouble(c1.r, c2.r, action);
+  gt := TestDouble(c1.g, c2.g, action);
+  bt := TestDouble(c1.b, c2.b, action);
+  at := TestDouble(c1.a, c2.a, action);
+  Result := rt and gt and bt and at;
 end;
 
 end.

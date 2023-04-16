@@ -6,7 +6,7 @@ uses
   Windows, Messages, SysUtils, Classes, Graphics, Controls,
   Forms, Dialogs, D3D_Prender, J_Level, Geometry, StdCtrls,
   GlobalVars, Menus, OGL_Prender, Prender, Clipbrd,
-  d3d_NPrender, u_pj3dos;
+  d3d_NPrender, u_pj3dos,u_templates;
 
 type
   TCamPos = record
@@ -20,28 +20,58 @@ type
     Settings1: TMenuItem;
     Commands1: TMenuItem;
     SetViewcamera1: TMenuItem;
-    Keyboard1: TMenuItem;
     miControl: TMenuItem;
     miEdit: TMenuItem;
     miTex: TMenuItem;
-    ToggleFullyLit1: TMenuItem;
+    MenuRenderFullyLit: TMenuItem;
+    Reload: TMenuItem;
+    MenuRenderFog: TMenuItem;
+    MenuHighlightFloor: TMenuItem;
+    MenuHighlightSolidSurface: TMenuItem;
+    MenuHighlightSpecialSurfaces: TMenuItem;
+    N1: TMenuItem;
+    SetCameraToItem1: TMenuItem;
+    N2: TMenuItem;
+    N3: TMenuItem;
+    MenuHighlightSelection: TMenuItem;
+    MenuNoClipSelectionOutline: TMenuItem;
+    MenuSetThingToCamera: TMenuItem;
+
     procedure FormShow(Sender: TObject);
     procedure FormHide(Sender: TObject);
     procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure FormPaint(Sender: TObject);
     procedure Close1Click(Sender: TObject);
     procedure Settings1Click(Sender: TObject);
+    procedure FormMouseMove(Sender: TObject; Shift: TShiftState; x, y: Integer);
+    procedure FormMouseDown(Sender: TObject; Button: TMouseButton;
+      Shift: TShiftState; x, y: Integer);
     procedure FormMouseUp(Sender: TObject; Button: TMouseButton;
       Shift: TShiftState; x, y: Integer);
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure FormDblClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure SetViewcamera1Click(Sender: TObject);
-    procedure ToggleFullyLit1Click(Sender: TObject);
+    procedure MenuRenderFullyLitClick(Sender: TObject);
+    procedure FormMouseWheel(Sender: TObject; Shift: TShiftState;
+      WheelDelta: Integer; MousePos: TPoint; var Handled: Boolean);
+    procedure ReloadClick(Sender: TObject);
+    procedure MenuHighlightFloorClick(Sender: TObject);
+    procedure MenuRenderFogClick(Sender: TObject);
+    procedure MenuHighlightSolidSurfaceClick(Sender: TObject);
+    procedure MenuHighlightSpecialSurfacesClick(Sender: TObject);
+    procedure SetCameraToItem1Click(Sender: TObject);
+    procedure MenuHighlightSelectionClick(Sender: TObject);
+    procedure MenuNoClipSelectionOutlineClick(Sender: TObject);
+    procedure MenuSetThingToCameraClick(Sender: TObject);
+    procedure Commands1Click(Sender: TObject);
   private
     { Private declarations }
     Render3D: TPreviewRender;
     cwPlayer: Integer;
+    //renderFog: Boolean;
+    viewMode: Boolean;
+    mousePos: TPoint;
 
     scs: TStringList; { Lists of changed,added,deleted sectors and things }
     ths: TStringList;
@@ -59,6 +89,22 @@ type
     Procedure AddKBItem(mi: TMenuItem; const name: string; c: Char;
       sc: TShiftState);
     procedure KBCommandClick(Sender: TObject);
+
+    Procedure MoveCameraForward;
+    Procedure MoveCameraBackward;
+    Procedure MoveCameraLeft;
+    Procedure MoveCameraRight;
+    Procedure MoveCameraUp;
+    Procedure MoveCameraDown;
+
+    Procedure TranslateSelectedThings(dx, dy, dz: double; localForward: boolean = true);
+    Procedure MoveThingForward;
+    Procedure MoveThingBackward;
+    Procedure MoveThingLeft;
+    Procedure MoveThingRight;
+    Procedure MoveThingUp;
+    Procedure MoveThingDown;
+
   public
     { Public declarations }
     Procedure UpdateSector(s: TJKSector);
@@ -70,11 +116,14 @@ type
     Procedure AddThing(th: TJKThing);
     Procedure DeleteThing(th: TJKThing);
 
+    Procedure Reset; // removes all meshes
     Procedure ReloadLevel;
+    Procedure EnableFogRendering(enable: boolean);
+    Procedure UpdateFog;
     Procedure ShowPreview;
     Function IsActive: boolean;
     Procedure SetCam(x, y, z, pch, yaw: double);
-    Procedure GotoWPlayer(wPlayer: Integer; step: Integer);
+    Procedure GoToPlayer(wPlayer: Integer; step: Integer);
     Procedure GetCam(var x, y, z, pch, yaw: double);
   end;
 
@@ -83,9 +132,32 @@ var
 
 implementation
 
-uses Jed_Main, U_Options, Misc_utils, Item_edit, U_tbar, ProgressDialog;
+uses Jed_Main, U_Options, Misc_utils, Item_edit, U_tbar, ProgressDialog, lev_utils, u_undo;
 
 {$R *.DFM}
+
+Procedure TPreview3D.Reset;
+begin
+  MenuRenderFog.Visible := (CurrentProject = TProjectType.IJIM);
+  if Render3D = nil then
+    exit;
+  scs.clear;
+  ths.clear;
+  Render3D.ClearThings;
+  Render3D.ClearSectors;
+  Render3D.SetGamma(P3DGamma);
+  Render3D.highlightSelection      := MenuHighlightSelection.Checked;
+  Render3D.noClipSelectionOutline  := MenuNoClipSelectionOutline.Checked;
+  Render3D.highlightSolidSurface   := MenuHighlightSolidSurface.Checked;
+  Render3D.highlightSolidFloor     := MenuHighlightFloor.Checked;
+  Render3D.highlightSpecialSurface := MenuHighlightSpecialSurfaces.Checked;
+  UpdateFog;
+end;
+
+procedure TPreview3D.ReloadClick(Sender: TObject);
+begin
+   ReloadLevel;
+end;
 
 Procedure TPreview3D.ReloadLevel;
 var
@@ -95,11 +167,8 @@ var
 begin
   if Render3D = nil then
     exit;
-  scs.clear;
-  ths.clear;
-  Render3D.ClearThings;
-  Render3D.ClearSectors;
-  Render3D.SetGamma(P3DGamma);
+
+  Reset;
 
   Progress.Reset(Level.Sectors.Count + Level.Things.Count);
 
@@ -132,7 +201,33 @@ begin
   Invalidate;
 end;
 
-Procedure TPreview3D.GotoWPlayer(wPlayer: Integer; step: Integer);
+Procedure TPreview3D.EnableFogRendering(enable: boolean);
+begin
+  MenuRenderFog.Checked := enable;
+
+  if Render3D = nil then
+    exit;
+
+  UpdateFog();
+  Render3D.Redraw;
+end;
+
+Procedure TPreview3D.UpdateFog;
+begin
+  if Render3D = nil then
+    exit;
+  if (CurrentProject = TProjectType.IJIM) and MenuRenderFog.Checked and Render3D.IsFogSupported() then
+    begin
+      Render3D.EnableFog(Level.header.Fog.Enabled);
+      Render3D.SetFog(Level.header.Fog.Color, level.header.Fog.FogStart, level.header.fog.FogEnd, (*density=*)1.0)
+    end
+  else
+    begin
+      Render3D.EnableFog(false);
+    end;
+end;
+
+Procedure TPreview3D.GoToPlayer(wPlayer: Integer; step: Integer);
 var
   i: Integer;
   th: TJKThing;
@@ -145,15 +240,13 @@ begin
   for i := 0 to Level.Things.Count - 1 do
   begin
     th := Level.Things[wPlayer];
-
-    if compareText(th.name, 'walkplayer') = 0 then
+    var ttype := Templates.GetTPLField(th.name, 'type');
+    if (ttype <> nil) and (CompareText(ttype.AsString, 'player') = 0) then
+    //if (compareText(th.name, 'walkplayer') = 0) or (compareText(th.name, 'shirtplayer') = 0) then
       With th do
       begin
-        Render3D.CamX := x;
-        Render3D.CamY := y;
-        Render3D.CamZ := z;
-        Render3D.pch := -pch;
-        Render3D.yaw := -yaw;
+        Render3D.SetViewToThing(th, (*zoomOut=*)0.135, (*pitch=*)17);
+        //Render3D.CamZ := Render3D.CamZ + 0.05;
         cwPlayer := wPlayer;
         exit;
       end;
@@ -163,47 +256,53 @@ begin
       wPlayer := 0;
     if wPlayer < 0 then
       wPlayer := Level.Things.Count - 1;
-
   end;
 
 end;
+
 
 Procedure TPreview3D.ShowPreview;
 begin
   if visible then
-  begin
-    Invalidate;
-    show;
-  end
-  else
-  begin
-    SetP3DPos(self, P3DX, P3DY, P3DWinSize);
-    SetStayOnTop(self, P3DOnTop);
-    show;
-    if Render3D = nil then
     begin
-      Hide;
-      exit;
+      Invalidate;
+      show;
+    end
+  else
+    begin
+      SetP3DPos(self, P3DX, P3DY, P3DWinSize);
+      SetStayOnTop(self, P3DOnTop);
+      show;
+      if Render3D = nil then
+      begin
+        Hide;
+        exit;
+      end;
+      ReloadLevel;
+      GoToPlayer(0, 1);
     end;
-    ReloadLevel;
-    GotoWPlayer(0, 1);
-  end;
 end;
 
 procedure TPreview3D.FormShow(Sender: TObject);
 begin
+  PixelsPerInch := Screen.PixelsPerInch;
+  Scaled := True;
   case P3DAPI of
     P3D_OGL:
       Render3D := TOGLPRenderer.Create(self);
-    P3D_d3d5:
-      Render3D := TD3D5PRenderer.Create(self);
-    { P3D_3dfx: Render3D:=T3DFXPRenderer.Create(Self); }
   else
-    Render3D := TD3DRenderer.Create(self);
+    Render3D := TD3D5PRenderer.Create(self);
+    //Render3D := TD3DRenderer.Create(self);
   end;
 
   Try
     Render3D.Initialize;
+    Render3D.SetClearColor(MakeColor(clP3DBack));
+    Render3D.selectionColor               := MakeColor(clP3DSel);
+    Render3D.multipleSelectionColor       := MakeColor(clP3DMultiSel);
+    Render3D.floorHighlightColor          := MakeColor(clP3DSolidFloor);
+    Render3D.solidSurfaceHighlightColor   := MakeColor(clP3DSolidSurface);
+    Render3D.specialSurfaceHighlightColor := MakeColor(clP3DSpecialSurface);
   except
     on E: Exception do
     begin
@@ -259,8 +358,7 @@ begin
           JedMain.RotateTexture(st_left)
         else if ssAlt in Shift then
         begin
-          CamY := CamY + sin(yaw / 180 * PI) * P3DStep;
-          CamX := CamX - cos(yaw / 180 * PI) * P3DStep;
+          self.MoveCameraLeft;
         end
         else
         begin
@@ -275,8 +373,7 @@ begin
           JedMain.RotateTexture(st_right)
         else if ssAlt in Shift then
         begin
-          CamY := CamY - sin(yaw / 180 * PI) * P3DStep;
-          CamX := CamX + cos(yaw / 180 * PI) * P3DStep;
+          self.MoveCameraRight;
         end
         else
         begin
@@ -291,8 +388,7 @@ begin
           JedMain.RaiseObject(ro_up)
         else
         begin
-          CamX := CamX + sin(yaw / 180 * PI) * P3DStep;
-          CamY := CamY + cos(yaw / 180 * PI) * P3DStep;
+          self.MoveCameraForward;
         end;
       VK_DOWN:
         if Shift = [ssShift] then
@@ -301,15 +397,20 @@ begin
           JedMain.RaiseObject(ro_down)
         else
         begin
-          CamX := CamX - sin(yaw / 180 * PI) * P3DStep;
-          CamY := CamY - cos(yaw / 180 * PI) * P3DStep;
+          self.MoveCameraBackward;
         end;
       VK_NEXT:
-        if pch >= -80 then
-          pch := pch - 10;
-      VK_PRIOR:
-        if pch <= 80 then
+        begin
           pch := pch + 10;
+          if pch > 90 then
+            pch := 90;
+        end;
+      VK_PRIOR:
+        begin
+          pch := pch - 10;
+          if pch < -90 then
+            pch := -90;
+        end;
       VK_HOME:
         if Shift = [] then
           pch := 0
@@ -317,12 +418,25 @@ begin
           JedMain.StraightenTexture(ssCtrl in Shift, ssShift in Shift);
 
       Ord('A'):
-        if Shift = [ssCtrl] then
-          JedMain.FormKeyDown(nil, Key, [])
-        else if (Shift = [ssAlt]) or (Shift = [ssShift]) then
+        if viewMode then
+          self.MoveCameraLeft
+        else if Shift = [ssShift] then
+          self.MoveThingLeft
+        else if (Shift = [ssAlt]) then
           JedMain.FormKeyDown(nil, Key, Shift)
         else
-          CamZ := CamZ + P3DStep;
+          self.MoveCameraUp;
+
+      Ord('D'):
+        if viewMode then
+          self.MoveCameraRight
+        else if Shift = [ssShift] then
+          self.MoveThingRight;
+      Ord('E'):
+        if viewMode then
+          self.MoveCameraUp
+        else if Shift = [ssShift] then
+          self.MoveThingUp;
       Ord('I'):
         if Shift = [] then
           JedMain.AddThingAtSurf
@@ -332,14 +446,14 @@ begin
           JedMain.FormKeyDown(nil, Key, Shift);
 
       Ord('Z'):
-        CamZ := CamZ - P3DStep;
+        self.MoveCameraDown;
       Ord('N'):
-        GotoWPlayer(cwPlayer + 1, 1);
+        GoToPlayer(cwPlayer + 1, 1);
       Ord('P'):
         if Shift = [ssCtrl] then
           JedMain.FormKeyDown(nil, Key, Shift)
         else
-          GotoWPlayer(cwPlayer - 1, -1);
+          GoToPlayer(cwPlayer - 1, -1);
       { < } 188:
         if Shift = [ssShift] then
           JedMain.ShiftTexture(st_up)
@@ -370,9 +484,30 @@ begin
       { / } 191:
         JedMain.StraightenTexture(ssCtrl in Shift, ssShift in Shift);
 
+      Ord('Q'):
+        if viewMode then
+          self.MoveCameraDown
+        else if Shift = [ssShift] then
+          self.MoveThingDown;
+
       Ord('S'):
-        if (Shift = [ssShift]) or (Shift = []) then
+        if viewMode then
+          self.MoveCameraBackward
+        else if Shift = [ssShift] then
+          self.MoveThingBackward
+        else if (Shift = [ssShift]) or (Shift = []) then
           JedMain.FormKeyDown(nil, Key, Shift);
+
+      Ord('T'):
+        if (Shift = []) then // allow only setting map mode to thing
+          JedMain.FormKeyDown(nil, Key, Shift);
+
+      Ord('W'):
+        if viewMode then
+          self.MoveCameraForward
+        else if Shift = [ssShift] then
+          self.MoveThingForward;
+
       VK_DELETE:
         if (Shift = [ssAlt]) or (Shift = []) then
           JedMain.FormKeyDown(nil, Key, Shift);
@@ -382,7 +517,7 @@ begin
       Ord('F'):
         if Shift = [] Then
         begin
-          clipboard.AsText := Sprintf('(%.5f/%.5f/%.5f:%.5f/%.5f/%.5f)',
+          clipboard.AsText := Sprintf('(%1.5f/%1.5f/%1.5f:%1.5f/%1.5f/%1.5f)',
             [CamX, CamY, CamZ, -pch, 360 - yaw, 0.0]);
         end;
 
@@ -603,9 +738,71 @@ begin
   Invalidate;
 end;
 
+procedure TPreview3D.SetCameraToItem1Click(Sender: TObject);
+var
+    cx, cy, cz, cpch, cyaw, a: double;
+begin
+    cpch := 0;
+    cyaw := 0;
+    case JedMain.Map_mode of
+        MM_SC:
+            FindCenter(Level.Sectors[JedMain.Cur_SC], cx, cy, cz);
+        { MM_VX: with Level.Sectors[Cur_SC].Vertices[Cur_VX] do begin cx:=x; cy:=y; cz:=z; end; }
+        MM_TH:
+            with Level.Things[JedMain.Cur_TH] do
+            begin
+                cx := X;
+                cy := Y;
+                cz := z;
+                cpch := pch;
+                cyaw := yaw;
+            end;
+        MM_LT:
+            with Level.Lights[JedMain.Cur_LT] do
+            begin
+                cx := X;
+                cy := Y;
+                cz := z;
+            end;
+        MM_FR:
+            if JedMain.Cur_FR = -1 then
+                with Level.Lights[JedMain.Cur_LT] do
+                begin
+                    cx := X;
+                    cy := Y;
+                    cz := z;
+                end
+            else
+                Level.Things[JedMain.Cur_TH].Vals[JedMain.Cur_FR].GetFrame(cx, cy, cz,
+                  cpch, cyaw, a);
+    end;
+    SetCam(cx, cy, cz, cpch, cyaw);
+end;
+
+procedure TPreview3D.MenuSetThingToCameraClick(Sender: TObject);
+begin
+   case JedMain.Map_mode of
+      MM_TH:
+        begin
+          var curth := level.Things[JedMain.Cur_TH];
+          var dx := Render3D.CamX - curth.X;
+          var dy := Render3D.CamY - curth.Y;
+          var dz := Render3D.CamZ - curth.Z;
+          TranslateSelectedThings(dx, dy, dz, {localForward=}false);
+        end;
+   end;
+end;
+
 procedure TPreview3D.Close1Click(Sender: TObject);
 begin
   Close;
+end;
+
+procedure TPreview3D.Commands1Click(Sender: TObject);
+begin
+    MenuSetThingToCamera.Enabled := false;
+    if JedMain.Map_mode = MM_TH then
+      MenuSetThingToCamera.Enabled := true;
 end;
 
 Procedure TPreview3D.SaveCamPos(var cpos: TCamPos);
@@ -641,48 +838,124 @@ begin
   end;
 end;
 
+procedure TPreview3D.FormMouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
+begin
+
+   if viewMode then     
+      begin
+        if Render3D = nil then
+          exit;
+        With Render3D do
+          begin
+            var dx := x - mousePos.x;
+            yaw := yaw + dx;
+            if yaw > 360 then
+              yaw := yaw - 360
+            else if yaw < 0 then
+                yaw := yaw + 360;
+
+            var dy := y - mousePos.y;
+            pch := pch + dy;
+            if pch > 90 then
+               pch := 90
+            else if pch < -90 then
+               pch := -90;
+
+            Invalidate;
+          end;
+      end;
+//      else if (ssLeft in Shift) and (ssCtrl in Shift) then
+//        JedMain.FormMouseMove(Sender, Shift, X, Y);
+
+
+   mousePos.x := x;
+   mousePos.y := y;
+end;
+
+procedure TPreview3D.FormMouseDown(Sender: TObject; Button: TMouseButton;
+  Shift: TShiftState; x, y: Integer);
+begin
+  mousePos.x := x;
+  mousePos.y := y;
+  case Button of
+    mbLeft: ;
+    mbMiddle: ;
+    mbRight:
+       begin
+          viewMode := True;
+          Screen.Cursor := crEye;
+       end;
+  end;
+end;
+
 procedure TPreview3D.FormMouseUp(Sender: TObject; Button: TMouseButton;
   Shift: TShiftState; x, y: Integer);
 var
   i, f: Integer;
 begin
-  if Render3D = nil then
-    exit;
-  With Render3D do
-    Case PickAt(x, y) of
-      pk_nothing:
-        exit;
-      pk_surface:
-        begin
-          i := Level.Sectors.IndexOf(selSC);
-          if i <> -1 then
-          begin
-            JedMain.SetMapMode(MM_SF);
-            JedMain.SetCurSF(i, SelSF);
-            if Shift = [ssShift] then
-              JedMain.DO_MultiSelect
-            else
-              JedMain.ClearMultiSelection;
-          end
-          else
-            PanMessage(mt_warning,
-              '3D preview is out of sync with the level! Reload it');
-        end;
-      pk_thing:
-        begin
-          i := Level.Things.IndexOf(selTH);
-          if i <> -1 then
-          begin
-            JedMain.SetMapMode(MM_TH);
-            JedMain.SetCurTH(i);
-            if Shift = [ssShift] then
-              JedMain.DO_MultiSelect;
-          end
-          else
-            PanMessage(mt_warning,
-              '3D preview is out of sync with the level! Reload it');
-        end;
-    end;
+  case Button of
+    mbLeft:
+      begin
+        if Render3D = nil then
+          exit;
+        With Render3D do
+          Case PickAt(x, y) of
+            pk_nothing:
+              exit;
+            pk_surface:
+              begin
+                i := Level.Sectors.IndexOf(selSC);
+                if i <> -1 then
+                begin
+                  JedMain.SetMapMode(MM_SF);
+                  JedMain.SetCurSF(i, SelSF);
+                  if Shift = [ssShift] then
+                    JedMain.DO_MultiSelect
+                  else
+                    JedMain.ClearMultiSelection;
+                end
+                else
+                  PanMessage(mt_warning,
+                    '3D preview is out of sync with the level! Reload it');
+              end;
+            pk_thing:
+              begin
+                i := Level.Things.IndexOf(selTH);
+                if i <> -1 then
+                begin
+                  JedMain.SetMapMode(MM_TH);
+                  JedMain.SetCurTH(i);
+                  if Shift = [ssShift] then
+                    JedMain.DO_MultiSelect;
+                end
+                else
+                  PanMessage(mt_warning,
+                    '3D preview is out of sync with the level! Reload it');
+              end;
+          end;
+      end; // mbLeft
+    mbRight:
+      begin
+        if viewMode then Screen.Cursor := crDefault;
+        viewMode := False;
+      end;
+  end;
+end;
+
+procedure TPreview3D.FormMouseWheel(Sender: TObject; Shift: TShiftState;
+  WheelDelta: Integer; MousePos: TPoint; var Handled: Boolean);
+begin
+    if viewMode then
+      begin
+        if WheelDelta > 0 then
+          P3DStep := P3DStep + 0.005
+        else if WheelDelta < 0 then
+          P3DStep := P3DStep - 0.005;
+        P3DStep := ClampD(P3DStep, 0.001, 0.2);
+        Handled := true;
+      end
+    else if Shift <> [] then  // prevents map zoom
+      JedMain.FormMouseWheel(Sender, Shift, WheelDelta, MousePos, Handled);
 end;
 
 procedure TPreview3D.FormClose(Sender: TObject; var Action: TCloseAction);
@@ -706,6 +979,8 @@ begin
   scs := TStringList.Create;
   ths := TStringList.Create;
 
+  AddKBItem(miControl, 'View mode'#9'Right Mouse Button + W/A/S/D', #0, []);
+  AddKBItem(miControl, 'Rotate right', Char(VK_RIGHT), []);
   AddKBItem(miControl, 'Rotate right', Char(VK_RIGHT), []);
   AddKBItem(miControl, 'Rotate left', Char(VK_LEFT), []);
   AddKBItem(miControl, 'Move forth', Char(VK_UP), []);
@@ -758,9 +1033,19 @@ begin
   AddKBItem(miEdit, 'Invert surface', 'I', [ssAlt]);
   AddKBItem(miEdit, 'Planarize surface', 'P', [ssCtrl]);
 
-  AddKBItem(miEdit, 'Assign Thing to Sector', 'A', [ssShift]);
+
   AddKBItem(miEdit, 'Unadjoin', 'A', [ssAlt]);
   AddKBItem(miEdit, 'Adjoin', 'A', [ssCtrl]);
+
+  AddKBItem(miEdit, 'Move Thing left', 'A', [ssShift]);
+  AddKBItem(miEdit, 'Move Thing right', 'D', [ssShift]);
+  AddKBItem(miEdit, 'Move Thing forward', 'W', [ssShift]);
+  AddKBItem(miEdit, 'Move Thing backward', 'B', [ssShift]);
+  AddKBItem(miEdit, 'Move Thing up', 'E', [ssShift]);
+  AddKBItem(miEdit, 'Move Thing down', 'Q', [ssShift]);
+  AddKBItem(miEdit, 'Rotate Thing Pitch'#9'Ctrl+Shift+Mouse Wheel', #0, []);
+  AddKBItem(miEdit, 'Rotate Thing Yaw'#9'Ctrl+Mouse Wheel', #0, []);
+  AddKBItem(miEdit, 'Rotate Thing Roll'#9'Ctrl+Alt+Mouse Wheel', #0, []);
 
   AddKBItem(miEdit, 'Raise item', Char(VK_UP), [ssCtrl]);
   AddKBItem(miEdit, 'Lower item', Char(VK_DOWN), [ssCtrl]);
@@ -819,7 +1104,144 @@ begin
   end;
 end;
 
-procedure TPreview3D.ToggleFullyLit1Click(Sender: TObject);
+Procedure TPreview3D.MoveCameraForward;
+begin
+  if Render3D <> nil then
+    Render3D.MoveCameraForward(P3DStep);
+end;
+
+procedure TPreview3D.MenuHighlightFloorClick(Sender: TObject);
+begin
+  if Render3D <> nil then
+    begin
+      Render3D.highlightSolidFloor := MenuHighlightFloor.Checked;
+      Render3D.Redraw;
+    end;
+end;
+
+procedure TPreview3D.MenuHighlightSelectionClick(Sender: TObject);
+begin
+ MenuNoClipSelectionOutline.Enabled := MenuHighlightSelection.Checked;
+ if Render3D <> nil then
+    begin
+      Render3D.highlightSelection := MenuHighlightSelection.Checked;
+      Render3D.Redraw;
+    end;
+end;
+
+procedure TPreview3D.MenuNoClipSelectionOutlineClick(Sender: TObject);
+begin
+  if Render3D <> nil then
+    begin
+      Render3D.noClipSelectionOutline := MenuNoClipSelectionOutline.Checked;
+      Render3D.Redraw;
+    end;
+end;
+
+procedure TPreview3D.MenuHighlightSolidSurfaceClick(Sender: TObject);
+begin
+  if Render3D <> nil then
+    begin
+      Render3D.highlightSolidSurface := MenuHighlightSolidSurface.Checked;
+      Render3D.Redraw;
+    end;
+end;
+
+procedure TPreview3D.MenuHighlightSpecialSurfacesClick(Sender: TObject);
+begin
+
+  if Render3D <> nil then
+    begin
+      Render3D.highlightSpecialSurface := MenuHighlightSpecialSurfaces.Checked;
+      Render3D.Redraw;
+    end;
+end;
+
+Procedure TPreview3D.MoveCameraBackward;
+begin
+  if Render3D <> nil then
+    Render3D.MoveCameraBackward(P3DStep);
+end;
+
+Procedure TPreview3D.MoveCameraLeft;
+begin
+  if Render3D <> nil then
+    Render3D.MoveCameraLeft(P3DStep);
+end;
+
+Procedure TPreview3D.MoveCameraRight;
+begin
+  if Render3D <> nil then
+    Render3D.MoveCameraRight(P3DStep);
+end;
+
+Procedure TPreview3D.MoveCameraUp;
+begin
+  if Render3D <> nil then
+    Render3D.CamZ := Render3D.CamZ + P3DStep;
+end;
+
+Procedure TPreview3D.MoveCameraDown;
+begin
+  if Render3D <> nil then
+    Render3D.CamZ := Render3D.CamZ - P3DStep;
+end;
+
+Procedure TPreview3D.TranslateSelectedThings(dx, dy, dz: double; localForward: boolean );
+  var d: TVector;
+begin
+  // Function translates selected thing(s) in the direction of current selected thing
+  if JedMain.Map_mode = MM_TH then
+    begin
+      StartUndoRec('Translate thing(s)');
+      d.dx := dx;
+      d.dy := dy;
+      d.dz := dz;
+      if localForward then
+        with Level.Things[JedMain.Cur_TH] do
+          RotateVector(d, 0, yaw, 0);
+
+      TranslateThings(level, JedMain.thsel, JedMain.Cur_TH, d.dx, d.dy, d.dz, MoveFrames);
+    end;
+end;
+
+Procedure TPreview3D.MoveThingForward;
+begin
+  TranslateSelectedThings(0, PerpStep, 0);
+end;
+
+Procedure TPreview3D.MoveThingBackward;
+begin
+  TranslateSelectedThings(0, -PerpStep, 0);
+end;
+
+Procedure TPreview3D.MoveThingLeft;
+begin
+  TranslateSelectedThings(-PerpStep, 0, 0);
+end;
+
+Procedure TPreview3D.MoveThingRight;
+begin
+  TranslateSelectedThings(PerpStep, 0, 0);
+end;
+
+Procedure TPreview3D.MoveThingUp;
+begin
+  TranslateSelectedThings(0, 0, PerpStep);
+end;
+
+Procedure TPreview3D.MoveThingDown;
+begin
+  TranslateSelectedThings(0, 0, -PerpStep);
+end;
+
+procedure TPreview3D.MenuRenderFogClick(Sender: TObject);
+begin
+  UpdateFog();
+  Render3D.Redraw;
+end;
+
+procedure TPreview3D.MenuRenderFullyLitClick(Sender: TObject);
 var
   cpos: TCamPos;
 begin

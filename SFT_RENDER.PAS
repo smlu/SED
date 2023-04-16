@@ -14,7 +14,7 @@ Const
 
 Type
   TSFTRenderer = class(TRenderer)
-    wnd: integer;
+    wnd: HWND;
     // hdc:HDC;
     Dc: TCanvas;
     { mode:TRenderStyle; }
@@ -67,7 +67,7 @@ Type
       : boolean; override;
     Procedure SetPointSize(size: double); override;
     Procedure ProjectPoint(x, y, Z: double; Var WinX, WinY: integer); override;
-    Procedure UnProjectPoint(WinX, WinY: integer; WinZ: double;
+    Procedure UnProjectPoint(WinX, WinY: double; WinZ: double;
       var x, y, Z: double); override;
     Function HandleWMQueryPal: integer; override;
     Function HandleWMChangePal: integer; override;
@@ -548,7 +548,7 @@ begin
   UnProjectPoint(x, y, 0, pkX1, pkY1, pkZ1);
   UnProjectPoint(x, y, 1, pkX2, pkY2, pkZ2);
 
-  SetVec(pkv, pkX2 - pkX1, pkY2 - pkY1, pkZ2 - pkZ1);
+  pkv.SetCoords(pkX2 - pkX1, pkY2 - pkY1, pkZ2 - pkZ1);
   Normalize(pkv);
 
   UnProjectPoint(x + 2, y + 2, 0, ax, ay, az);
@@ -710,7 +710,7 @@ begin
   end;
 end;
 
-Procedure TSFTRenderer.UnProjectPoint(WinX, WinY: integer; WinZ: double;
+Procedure TSFTRenderer.UnProjectPoint(WinX, WinY: double; WinZ: double;
   var x, y, Z: double);
 var
   vx, vy, vz: single;

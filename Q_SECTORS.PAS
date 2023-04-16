@@ -30,14 +30,8 @@ type
     EBCMap: TEdit;
     BNCMap: TButton;
     Label8: TLabel;
-    CBTint_R: TComboBox;
-    EBTint_R: TEdit;
-    Label9: TLabel;
-    CBTint_G: TComboBox;
-    EBTint_G: TEdit;
-    Label10: TLabel;
-    CBTint_b: TComboBox;
-    EBTint_B: TEdit;
+    CBTint: TComboBox;
+    EBTint: TEdit;
     CBSound: TComboBox;
     BNSound: TButton;
     EBSound: TEdit;
@@ -80,20 +74,18 @@ uses ResourcePicker, FlagEditor, Jed_Main;
 
 procedure TFindSectors.FormCreate(Sender: TObject);
 begin
-  ClientWidth := SBHelp.Left + CBNum.Top + SBHelp.Width;
-  ClientHeight := SBHelp.Top + CBNum.Top + SBHelp.Height;
+  ClientWidth  := SBHelp.Left + CBNum.Top + SBHelp.Width;
+  ClientHeight := CBNum.Top + BNFind.Top + BNFind.Height;
 
   fi := TSectorFindInfo.Create;
   TQueryField.CreateInt(CBNum, EBNum, fi.Num);
   TQueryField.CreateInt(CBNsurf, EBNSurf, fi.NSurfs);
   TQueryField.CreateFlags(CBFlags, EBFlags, fi.Flags);
 
-  TQueryField.CreateDouble(CBExtraL, EBExtraL, fi.Extra_L);
+  TQueryField.CreateColor(CBExtraL, EBExtraL, fi.extra_L);
   TQueryField.CreateStr(CBCMap, EBCMap, fi.ColorMap);
 
-  TQueryField.CreateDouble(CBTint_R, EBTint_R, fi.tint_r);
-  TQueryField.CreateDouble(CBTint_G, EBTint_G, fi.tint_g);
-  TQueryField.CreateDouble(CBTint_b, EBTint_B, fi.tint_b);
+  TQueryField.CreateColor(CBTint, EBTint, fi.tint);
 
   TQueryField.CreateStr(CBSound, EBSound, fi.Sound);
   TQueryField.CreateDouble(CBVol, EBVol, fi.sound_vol);
@@ -195,8 +187,8 @@ end;
 
 procedure TFindSectors.SBHelpClick(Sender: TObject);
 begin
-  Application.helpfile := basedir + 'jedhelp.hlp';
-  Application.HelpContext(450);
+  //Application.helpfile := basedir + 'jedhelp.hlp';
+  //Application.HelpContext(450);
 end;
 
 end.

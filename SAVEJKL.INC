@@ -27,13 +27,13 @@ Function CompareTXVX(v1,v2:TTXVertex):integer;
 var d:double;
 begin
  d:=V1.u-V2.u;
- if Abs(d)>0.01 then
+ if Abs(d)>0.00000000 then
  begin
   if d>0 then Result:=1 else Result:=-1;
   exit;
  end;
  d:=V1.v-V2.v;
- if Abs(d)>0.01 then
+ if Abs(d)>0.00000000 then
  begin
   if d>0 then Result:=1 else Result:=-1;
   exit;
@@ -119,11 +119,11 @@ begin
  Writeln(t,s);
 end;
 
-Procedure WriteListSection(const Name,cntName:String;ls:TStringList);
+Procedure WriteListSection(const Name,cntName: String; ls:TStringList; const bufferSize: Integer);
 var i:integer;
 begin
  WriteS(Name);
- WriteFmt('%s %d',[CntName,ls.count]);
+ WriteFmt('%s %d',[CntName, bufferSize]);
  For i:=0 to ls.count-1 do WriteFmt('%d: %s',[i,ls[i]]);
  WriteS('end');
  WriteS('');
@@ -135,16 +135,23 @@ With Header do
 begin
  WriteS('SECTION: HEADER');
  WriteFmt('Version %d',[version]);
- WriteFmt('World Gravity %.6f',[Gravity]);
- WriteFmt('Ceiling Sky Z %.6f',[CeilingSkyZ]);
- WriteFmt('Horizon Distance %.6f',[HorDistance]);
+ WriteFmt('World Gravity %.8f',[Gravity]);
+ WriteFmt('Ceiling Sky Z %.8f',[CeilingSkyZ]);
+ WriteFmt('Horizon Distance %.8f',[HorDistance]);
  WriteFmt('Horizon Pixels per Rev %.6f',[HorPixelsPerRev]);
- WriteFmt('Horizon Sky Offset %.6f %.6f',[HorSkyOffs[1],HorSkyOffs[2]]);
- WriteFmt('Ceiling Sky Offset %.6f %.6f',[CeilingSkyOffs[1],CeilingSkyOffs[2]]);
- WriteFmt('MipMap Distances %.6f %.6f %.6f %.6f',[MipMapDist[1],MipMapDist[2],MipMapDist[3],MipMapDist[4]]);
+ WriteFmt('Horizon Sky Offset %.8f %.8f',[HorSkyOffs[1],HorSkyOffs[2]]);
+ WriteFmt('Ceiling Sky Offset %.8f %.8f',[CeilingSkyOffs[1],CeilingSkyOffs[2]]);
+ if kind <> TProjectType.IJIM then
+  WriteFmt('MipMap Distances %.6f %.6f %.6f %.6f',[MipMapDist[1],MipMapDist[2],MipMapDist[3],MipMapDist[4]]);
  WriteFmt('LOD Distances %.6f %.6f %.6f %.6f',[LODDist[1],LODDist[2],LODDist[3],LODDist[4]]);
- WriteFmt('Perspective distance %.6f',[PerspDist]);
- WriteFmt('Gouraud distance %.6f',[GouraudDist]);
+ if kind = TProjectType.IJIM then
+  WriteFmt('Fog %d %.8f %.8f %.8f %.8f %.8f %.8f',
+    [byte(Fog.Enabled), Fog.color.r, Fog.color.g, Fog.color.b, Fog.color.a, Fog.FogStart, Fog.FogEnd])
+ else
+  begin
+   WriteFmt('Perspective distance %.6f',[PerspDist]);
+   WriteFmt('Gouraud distance %.6f',[GouraudDist]);
+  end;
  WriteS('');
 end;
 end;
@@ -156,7 +163,8 @@ begin
  Result:=ls.Add(s);
 end;
 
-Procedure CompileLists;
+// Function for compiling lists of used game assets
+Procedure CompileLists(levelKind: TProjectType);
 var
  newTpls,
  newCogs,
@@ -167,7 +175,7 @@ Procedure AddFromTemplate(const Name:string);
 var n,i:integer;tpl:TTemplate;
 begin
  if UsedTpls.IndexOf(name)<>-1 then exit;
- n:=Templates.IndexOfName(name);
+ n:=u_templates.Templates.IndexOfName(name);
  if n=-1 then exit;
  With u_templates.Templates[n] do
  for i:=0 to vals.count-1 do
@@ -281,22 +289,15 @@ begin  {CompileLists}
  tcogs:=TStringList.Create;  tcogs.Sorted:=true;
  ttpls:=TStringList.Create;  ttpls.Sorted:=true;
 
- Ttpls.Add('+twinkle');
- Ttpls.Add('+sspks_wall');
- Ttpls.Add('+ssparks_wall');
- Ttpls.Add('+sspks_blood');
- Ttpls.Add('+ssparks_blood');
- Ttpls.Add('+sspks_saber');
- Ttpls.Add('+ssparks_saber');
- Ttpls.Add('+backpack');
- Ttpls.Add('ghostcam');
+ Ttpls.AddStrings(
+  StaticTemplates[Integer(levelKind)]);
 
  Progress.Step;
 
  for i:=0 to Sectors.Count-1 do
  With Sectors[i] do
  For j:=0 to Surfaces.count-1 do
- With Surfaces[j] do sl_add(UsedMats,Material);
+ With Surfaces[j] do sl_add(UsedMats, Material);
 
 // UsedCMPs:=TStringList.Create;
  if MasterCMP<>'' then UsedCmps.Add(MasterCMP);
@@ -308,7 +309,6 @@ begin  {CompileLists}
   if UsedCMPs.IndexOf(ColorMap)=-1 then
      UsedCmps.Add(ColorMap);
  end;
-
 
  Progress.Step;
 
@@ -385,66 +385,83 @@ for i:=0 to UsedPars.count-1 do sl_Add(UsedMats,GetMatFromPAR(UsedPars[i]));
 f3do:=T3DOFile.Create;
 For i:=0 to Used3DOs.Count-1 do
 begin
- f3do.Load(Used3DOs[i]);
- for j:=0 to f3do.Mats.Count-1 do sl_Add(UsedMats,f3do.Mats[j]);
+  f3do.Load(Used3DOs[i]);
+  for j:=0 to f3do.Mats.Count-1 do sl_Add(UsedMats,f3do.Mats[j]);
 end;
+
+// Remove resources from static file
+StringListFilter(UsedWavs, GetStaticSoundList(kind));
+StringListFilter(UsedMats, GetStaticMatList(kind));
+StringListFilter(Used3DOs, GetStatic3doList(kind));
+StringListFilter(UsedSprs, GetStaticSprList(kind));
+StringListFilter(UsedKeys, GetStaticKeyList(kind));
+StringListFilter(UsedCogs, GetStaticCogScriptList(kind));
+
 f3do.free;
 newCogs.Free;
 NewTpls.Free;
 tcogs.Free;
 Ttpls.Free;
 
-end;
+end;   {CompileLists}
 
 Procedure WriteGeometry;
-var VxIdx,VXList:TVertices;
+  var VxIdx,VXList:TVertices;
     TXIdx,TXVXList:TTXVertices;
 
-{Function AddVX(v:TVertex):integer;
-var i,n:integer;s:string;
-begin
- s:=Format('%.7g %.7g %.7g',[v.x,v.y,v.z]);
- n:=VxIdx.IndexOf(s);
- if n<>-1 then
- begin
-  Result:=Integer(VxIdx.Objects[n]);
-  exit;
- end;
-  Result:=VXList.Add(v);
-  VxIdx.AddObject(s,TObject(Result));
-end;}
+  {Function AddVX(v:TVertex):integer;
+  var i,n:integer;s:string;
+  begin
+   s:=Format('%.7g %.7g %.7g',[v.x,v.y,v.z]);
+   n:=VxIdx.IndexOf(s);
+   if n<>-1 then
+   begin
+    Result:=Integer(VxIdx.Objects[n]);
+    exit;
+   end;
+    Result:=VXList.Add(v);
+    VxIdx.AddObject(s,TObject(Result));
+  end;}
 
-Function AddVX(v:TVertex):integer;
-var i,n:integer;s:string;
-begin
- if FindVX(VxIdx,v,n) then
- begin
-  Result:=VxIdx[n].num;
-  exit;
- end;
-  Result:=VXList.Add(v);
-  VxIdx.Insert(n,v);
-  v.Num:=result;
-end;
+  Function AddVX(v:TVertex):integer;
+  var i,n:integer;s:string;
+  begin
+   if FindVX(VxIdx,v,n) then
+   begin
+    Result:=VxIdx[n].num;
+    exit;
+   end;
+    Result:=VXList.Add(v);
+    VxIdx.Insert(n,v);
+    v.Num:=result;
+  end;
 
-Function AddTXVX(tv:TTXVertex):integer;
-var i,n,vx:integer;s:string;
-begin
- if FindTXVX(TxIdx,tv,n) then
- begin
-  Result:=TxIdx[n].num;
-  exit;
- end;
-  Result:=TXVXList.Add(tv);
-  TxIdx.Insert(n,tv);
-  tv.Num:=result;
-end;
+  Function AddTXVX(tv:TTXVertex):integer;
+  var i,n,vx:integer;s:string;
+  begin
+   if FindTXVX(TxIdx,tv,n) then
+   begin
+    Result:=TxIdx[n].num;
+    exit;
+   end;
+    Result:=TXVXList.Add(tv);
+    TxIdx.Insert(n,tv);
+    tv.Num:=result;
+  end;
 
 
-Function GetMatN(const mat:string):integer;
-begin
- if mat='' then Result:=-1 else Result:=UsedMats.IndexOf(mat);
-end;
+  Function GetMatN(const mat:string):integer;
+  begin
+    Result := -1;
+    if mat <> '' then
+      begin
+        var sml := GetStaticMatList(kind);
+        if (sml <> nil) and StringListFind(sml, mat, Result) then
+          Result := Result or StaticResIdxMask // Add static resource idx mask
+        else
+          Result := UsedMats.IndexOf(mat);
+      end;
+  end;
 
 Var    i,s,sf,v:integer;
        surf:TJKSurface;
@@ -488,7 +505,7 @@ begin {WriteGeometry}
  WriteS('#num:	vertex:');
  for v:=0 to VXList.Count-1 do
  With VXList[v] do
-  WriteFmt('%d: %.6f %.6f %.6f',[v,x,y,z]);
+  WriteFmt('%d: %.8f %.8f %.8f',[v,x,y,z]);
  WriteS('');
  VXList.Free;
 
@@ -509,18 +526,34 @@ begin {WriteGeometry}
 
 
  {Pool texture vertices}
+ //txvx := TTXVertex.Create;
  for s:=0 to Sectors.Count-1 do
  With Sectors[s] do
- begin
- For sf:=0 to Surfaces.Count-1 do
-  With SUrfaces[sf] do
-  for v:=0 to txvertices.count-1 do
-  begin
-   txvx:=TxVertices[v];
-   txvx.num:=AddTXVX(txvx);
-  end;
- end;
+   begin
+   For sf:=0 to Surfaces.Count-1 do
+    begin
+      const uvsurf = Surfaces[sf];
+      var matSize := TSize.Create(1,1);
+      if (kind = IJIM) and (not uvsurf.Material.IsEmpty) then
+       try
+        matSize := uvsurf.GetMaterialSize;
+       except on E:Exception do PanMessage(mt_warning,
+          Format('Cannot load %s for sector %d surface %d: %s' + sLineBreak
+            + '  Surface UV coords will be saved but are invalid!',
+            [uvsurf.Material, uvsurf.Sector.num, uvsurf.num, e.message]));
+       end;
 
+      for v:=0 to uvsurf.txvertices.count-1 do
+      begin
+       txvx := TTXVertex.Create;
+       txvx.Assign(uvsurf.TxVertices[v]);
+       //txvx := uvsurf.TxVertices[v];
+       txvx.u := txvx.u / matSize.Width;
+       txvx.v := txvx.v / matSize.Height;
+       uvsurf.TxVertices[v].num := AddTXVX(txvx);
+      end;
+    end;
+   end;
  TxIdx.Free;
 
 Progress.Msg:='Writing texture vertices';
@@ -529,9 +562,11 @@ Progress.Msg:='Writing texture vertices';
  WriteS('#num:	u:	v:');
 
  For v:=0 to TXVXList.Count-1 do
- With TXVXList[v] do
  begin
-  WriteFmt('%d: %.2f %.2f',[num,u,v]);
+  txvx := TXVXList[v];
+  with txvx do
+    WriteFmt('%d: %.8f %.8f',[num,u,v]);
+  txvx.Free;
  end;
  WriteS('');
  TXVxList.Free;
@@ -539,70 +574,86 @@ Progress.Msg:='Writing texture vertices';
  Adjoins:=TList.Create;
  For s:=0 to Sectors.Count-1 do
  With Sectors[s] do
- for Sf:=0 to Surfaces.count-1 do
- With Surfaces[sf] do
- begin
-
-   if Adjoin<>nil then
+   for Sf:=0 to Surfaces.count-1 do
+   With Surfaces[sf] do
    begin
-    Adj:=TAdjoin.Create;
-    nadj:=Adjoins.Add(Adj);
-    Adj.Surf:=num;
-    Adj.Flags:=AdjoinFlags and $7FFFFFFF;
-    Sec:=Sectors[s];
-    FindCenter(Sec,cx,cy,cz);
-    Adj.Dist:=DistToPlane(Surfaces[sf],cx,cy,cz);
-   end
-   else nadj:=-1;
- end;
+     if Adjoin<>nil then
+       begin
+        Adj:=TAdjoin.Create;
+        nadj:=Adjoins.Add(Adj);
+        Adj.Surf:=num;
+        Adj.Flags:=AdjoinFlags and $7FFFFFFF;
+        Sec:=Sectors[s];
+        FindCenter(Sec,cx,cy,cz);
+        Adj.Dist:=DistToPlane(Surfaces[sf],cx,cy,cz);
+       end
+       else nadj:=-1;
+   end;
 
  For s:=0 to Sectors.Count-1 do
- With Sectors[s] do
- for Sf:=0 to Surfaces.count-1 do
- With Surfaces[sf] do
- begin
-   if Adjoin<>nil then
-   begin
-    TAdjoin(Adjoins[nadj]).mirror:=Adjoin.nadj;
-   end;
- end;
-
-
+   With Sectors[s] do
+   for Sf:=0 to Surfaces.count-1 do
+   With Surfaces[sf] do
+     begin
+       if Adjoin<>nil then
+       begin
+        TAdjoin(Adjoins[nadj]).mirror:=Adjoin.nadj;
+       end;
+     end;
 
  WriteFmt('World adjoins %d',[adjoins.count]);
  WriteS('#num:	flags:	mirror:	dist:');
  for i:=0 to Adjoins.Count-1 do
  With TAdjoin(Adjoins[i]) do
- begin
-  WriteFmt('%d: 0x%x %d %.2f',[i,flags,mirror,dist]);
-  free;
- end;
+   begin
+    WriteFmt('%d: 0x%x %d %.2f',[i, flags, mirror, dist]);
+    free;
+   end;
  Adjoins.free;
+
  WriteS('');
  WriteFmt('World surfaces %d',[nsurf]);
  WriteS('#num:   mat:     surfflags:	faceflags:	geo:	light:	tex:	adjoin:	extralight:	nverts:	vertices:			intensities:');
  For s:=0 to Sectors.Count-1 do
  With Sectors[s] do
- for sf:=0 to surfaces.count-1 do
- With Surfaces[sf] do
- begin
-  nmat:=GetMatN(Material);
-  st:=Sprintf('%d:'#9'%d'#9'0x%x'#9'0x%x'#9'%d'#9'%d'#9'%d'#9'%d'#9'%.6f'#9'%d',
-  [num,nMat,SurfFlags and (not SFF_Flip),FaceFlags,geo,light,tex,nadj,extralight,vertices.Count]);
+   for sf:=0 to surfaces.count-1 do
+   With Surfaces[sf] do
+     begin
+      nmat:=GetMatN(Material);
+      if kind = TProjectType.IJIM then
+        st:=Sprintf('%d:'#9'%d'#9'0x%x'#9'0x%x'#9'%d'#9'%d'#9'%d'#9'%d'#9'%.8f %.8f %.8f %.8f'#9'%d',
+          [num,nMat,SurfFlags,FaceFlags and (not FF_SF_FLIP),geo,light,tex,nadj,
+          ExtraLight.r, ExtraLight.g, ExtraLight.b, ExtraLight.a,vertices.Count])
+      else
+        st:=Sprintf('%d:'#9'%d'#9'0x%x'#9'0x%x'#9'%d'#9'%d'#9'%d'#9'%d'#9'%.6f'#9'%d',
+          [num,nMat,SurfFlags,FaceFlags and (not FF_SF_FLIP),geo,light,tex,nadj,RgbaToIntensity(ExtraLight),vertices.Count]);
 
-  for v:=0 to Vertices.Count-1 do
-  With Vertices[v] do
-    st:=Concat(st,Format(' %d,%d',[num,TXVertices[v].num]));
+      for v:=0 to Vertices.Count-1 do
+      With Vertices[v] do
+        st:=Concat(st,Format(#9'%d,%d',[num,TXVertices[v].num]));
 
-  for v:=0 to Vertices.Count-1 do
-  With TXVertices[v] do
-  begin
-   if mots then st:=Concat(st,Sprintf(' %.4f %.4f %.4f %.4f',[color.a,color.r,color.g,color.b]))
-   else st:=Concat(st,Sprintf(' %.4f',[color.a]));
-  end;
+      for v:=0 to Vertices.Count-1 do
+      begin
+        With TXVertices[v] do
+        begin
+         if kind = TProjectType.MOTS then
+          st:=Concat(st,Sprintf(#9'%.4f'#9'%.4f'#9'%.4f'#9'%.4f',[color.a,color.r,color.g,color.b]))
+         else if kind = TProjectType.IJIM then
+          st:=Concat(st,Sprintf(#9'%.8f'#9'%.8f'#9'%.8f',[color.r,color.g,color.b]))
+         else st:=Concat(st,Sprintf(#9'%.4f',[color.a]));
+        end;
+      end;
+    //  With TXVertices[v] do
+    //  begin
+    //   if kind = TProjectType.MOTS then
+    //    st:=Concat(st,Sprintf(#9'%.4f'#9'%.4f'#9'%.4f'#9'%.4f',[color.a,color.r,color.g,color.b]))
+    //   else if kind = TProjectType.IJIM then
+    //    st:=Concat(st,Sprintf(#9'%.4f'#9'%.4f'#9'%.4f',[color.r,color.g,color.b]))
+    //   else st:=Concat(st,Sprintf(#9'%.4f',[color.a]));
+    //  end;
 
-  WriteS(st);
- end;
+      WriteS(st);
+     end; // surface loop
 
  {Write normals}
  WriteS('');
@@ -612,14 +663,14 @@ Progress.Msg:='Writing texture vertices';
  for sf:=0 to surfaces.count-1 do
  With Surfaces[sf] do
  begin
-  WriteFmt('%d: %.6f %.6f %.6f',[num,normal.dx,normal.dy,normal.dz]);
+  WriteFmt('%d:'#9'%.8f'#9'%.8f'#9'%.8f',[num,normal.dx,normal.dy,normal.dz])
  end;
 
 end;
 
 Procedure WriteSectors;
 var s,sf,v:integer;
-    cbox,bbox:TBox;
+    (*cbox,*)bbox:TBox;
     CX,CY,CZ,Rad:double;
     nsurf:integer;
 
@@ -636,7 +687,7 @@ end;
 begin
  {Write sectors}
  WriteS('');
- WriteFmt('World sectors %d',[Sectors.Count]);
+ WriteFmt('World sectors'#9'%d',[Sectors.Count]);
  WriteS('');
  nsurf:=0;
  For s:=0 to Sectors.Count-1 do
@@ -645,31 +696,55 @@ begin
   FindBBox(Sectors[s],bbox);
   FindBSphere(Sectors[s],CX,CY,CZ,Rad);
 
-  Flags:=Flags and (not SF_3DO);
+  Flags:=Flags and (not SECF_3DO);
 
-  if FindCollideBox(Sectors[s],bbox,CX,CY,CZ,cbox) then
-  Flags:=Flags or $1000 else Flags:=Flags and (not $1000);
+//  if FindCollideBox(Sectors[s],bbox,CX,CY,CZ,cbox) then
+//  Flags:=Flags or $1000 else Flags:=Flags and (not $1000);
 
-  WriteFmt('SECTOR %d',[s]);
-  WriteFmt('FLAGS 0x%x',[Flags]);
-  WriteFmt('AMBIENT LIGHT %.6f',[ambient]);
-  WriteFmt('EXTRA LIGHT %.6f',[extra]);
-  WriteFmt('COLORMAP %d',[GetNCMP(ColorMap)]);
-  WriteFmt('TINT %.6f %.6f %.6f',[tint.dx,tint.dy,Tint.dz]);
- With BBox do
-  WriteFmt('BOUNDBOX %.6f %.6f %.6f %.6f %.6f %.6f',[X1,Y1,Z1,X2,Y2,Z2]);
+  WriteFmt('SECTOR'#9'%d',[s]);
+  WriteFmt('FLAGS'#9'0x%x',[Flags]);
 
-  if (Flags and $1000)<>0 then With CBox do
-    WriteFmt('COLLIDEBOX %.6f %.6f %.6f %.6f %.6f %.6f',[X1,Y1,Z1,X2,Y2,Z2]);
+  if kind = TProjectType.IJIM then
+    begin
+      WriteFmt('AMBIENT LIGHT'#9'%.8f %.8f %.8f',[Ambient.r, Ambient.g, Ambient.b]);
+      WriteFmt('EXTRA LIGHT'#9'%.8f %.8f %.8f',[ExtraLight.r, ExtraLight.g, ExtraLight.b]);
+      if not tint.IsZero() then
+         WriteFmt('TINT'#9'%.8f %.8f %.8f',[Tint.r,Tint.g,Tint.b]);
+      if not PointLight.Color.IsZero() then
+        WriteFmt('AVERAGE LIGHT INTENSITY'#9'%.8f %.8f %.8f',
+          [PointLight.Color.r, PointLight.Color.g, PointLight.Color.b]);
+      if not PointLight.Position.IsZero() then
+        WriteFmt('AVERAGE LIGHT POSITION'#9'%.8f %.8f %.8f',
+          [PointLight.Position.x, PointLight.Position.y, PointLight.Position.z]);
+       if not PointLight.Falloff.IsZero() then
+        WriteFmt('AVERAGE LIGHT FALLOFF'#9'%.8f %.8f',
+          [PointLight.Falloff.x, PointLight.Falloff.y]);
+    end
+  else
+    begin
+      WriteFmt('AMBIENT LIGHT'#9'%.6f',[RgbToIntensity(ambient)]);
+      WriteFmt('EXTRA LIGHT'#9'%.6f',[RgbToIntensity(ExtraLight)]);
+      WriteFmt('COLORMAP'#9'%d',[GetNCMP(ColorMap)]);
+      WriteFmt('TINT'#9'%.6f'#9'%.6f'#9'%.6f',[Tint.r,Tint.g,Tint.b]);
+    end;
 
-  if Sound<>'' then WriteFmt('SOUND %s %.6f',[Sound,Snd_vol]);
-  WriteFmt('CENTER %.6f %.6f %.6f',[CX,CY,CZ]);
-  WriteFmt('RADIUS %.6f',[rad]);
+  With BBox do
+    WriteFmt('BOUNDBOX'#9'%.8f %.8f %.8f %.8f %.8f %.8f',[X1,Y1,Z1,X2,Y2,Z2]);
 
-  WriteFmt('VERTICES %d',[Vertices.Count]);
+  if BitTest(Flags, SECF_CollideBox) then With CollideBox do
+    WriteFmt('COLLIDEBOX'#9'%.8f %.8f %.8f %.8f %.8f %.8f',[X1,Y1,Z1,X2,Y2,Z2]);
+
+  if Sound <> '' then WriteFmt('SOUND'#9'%s %.6f',[Sound,Snd_vol]);
+  if (kind = TProjectType.IJIM) and not Thrust.IsZero() then
+    WriteFmt('THRUST'#9'%.8f'#9'%.8f'#9'%.8f',[Thrust.x,Thrust.y,Thrust.z]);
+
+  WriteFmt('CENTER'#9'%.8f %.8f %.8f',[CX,CY,CZ]);
+  WriteFmt('RADIUS'#9'%.8f',[rad]);
+
+  WriteFmt('VERTICES'#9'%d',[Vertices.Count]);
   for v:=0 to Vertices.Count-1 do
   WriteFmt('%d: %d',[v,Vertices[v].Num]);
-  WriteFmt('SURFACES %d %d',[nsurf,Surfaces.Count]);
+  WriteFmt('SURFACES'#9'%d'#9'%d',[nsurf,Surfaces.Count]);
   inc(nsurf,Surfaces.Count);
   WriteS('');  
  end;
@@ -681,88 +756,105 @@ var i,j:integer;
 begin
  {Write Placed cogs}
  WriteS('');
- WriteFmt('World cogs %d',[Cogs.Count+UsedCogs.Count]);
+ WriteFmt('World cogs'#9'%d',[Cogs.Count+UsedCogs.Count]);
  WriteS('#Num	Script          Symbol values');
  for i:=0 to Cogs.Count-1 do
  With Cogs[i] do
  begin
-  St:=Format('%d: %s',[i,Name]);
-  for j:=0 to Vals.Count-1 do st:=Concat(st,' ',Vals[j].AsString);
+  St:=Format('%d:'#9'%s',[i,Name]);
+  for j:=0 to Vals.Count-1 do st:=Concat(st,#9,Vals[j].AsString);
   WriteS(st);
  end;
 
 end;
 
 Procedure WriteTemplates;
-var i,j,n:integer;
+var i,j,n,ti:integer;
     wtpls:TStringList;
     tname,s:string;
     tp:TTemplate;
     vl:TTPLValue;
     norefs:boolean;
 begin
- wtpls:=TStringList.Create;
- {Arrange templates in a proper order}
+  wtpls:=TStringList.Create;
+  {Arrange templates in a proper order}
 
- {first set Objects[] to template object}
- for i:=UsedTpls.Count-1 downto 0 do
- begin
-  n:=Templates.IndexOfName(UsedTpls[i]);
-  if n=-1 then
-  begin
-   UsedTpls.delete(i);
-   continue;
+  {first set Objects[] to template object}
+  for i := UsedTpls.Count-1 downto 0 do
+    begin
+    ti := u_templates.Templates.IndexOfName(UsedTpls[i]);
+    if ti = -1 then
+      begin
+        PanMessageFmt(mt_warning,
+          'Skipping template ''%s''. Template not found.', [UsedTpls[i]]);
+        UsedTpls.delete(i);
+        continue;
+      end;
+    UsedTpls.Objects[i] := u_templates.Templates[ti];
   end;
-  UsedTpls.Objects[i]:=Templates[n];
- end;
- {First put base level objects in list}
+  {First put base level objects in list}
 
-{ For i:=UsedTpls.Count-1 downto 0 do
- begin
-  tp:=TTemplate(UsedTpls.Objects[i]);
-  if CompareText(tp.Parent,'none')<>0 then continue;
-  wtpls.AddObject(tp.Name,tp);
-  UsedTpls.Delete(i);
- end;}
-
- While UsedTpls.Count>0 do
- begin
-  n:=UsedTpls.Count;
-  For i:=UsedTpls.Count-1 downto 0 do
-  begin
-   tp:=TTemplate(UsedTpls.Objects[i]);
-   if (CompareText(tp.parent,'none')<>0) and
-      (wtpls.IndexOf(tp.parent)=-1) then continue;
-
-   norefs:=true;
-   for j:=0 to tp.Vals.count-1 do
+  { For i:=UsedTpls.Count-1 downto 0 do
    begin
-    vl:=tp.Vals[j];
-    if vl.atype<>at_tpl then continue;
-    if (CompareText(vl.s,'none')<>0) and
-       (wtpls.IndexOf(vl.s)=-1) then begin norefs:=false; break; end;
-   end;
+    tp:=TTemplate(UsedTpls.Objects[i]);
+    if CompareText(tp.Parent,'none')<>0 then continue;
+    wtpls.AddObject(tp.Name,tp);
+    UsedTpls.Delete(i);
+   end;}
 
-   if not norefs then continue;
+  While UsedTpls.Count>0 do
+    begin
+      n := UsedTpls.Count;
+      For i := UsedTpls.Count - 1 downto 0 do
+        begin
+          tp := TTemplate(UsedTpls.Objects[i]);
+          if (CompareText(tp.parent,'none') <> 0) and
+            (wtpls.IndexOf(tp.parent) = -1) then
+            begin
+              if (UsedTpls.IndexOf(tp.parent) = -1) then
+                begin
+                  // Find parent template and insert it into used list
+                  ti := u_templates.Templates.IndexOfName(tp.parent);
+                  if ti = -1 then
+                  begin
+                    PanMessageFmt(mt_warning,
+                      'Skipping template ''%s'' because parent template ''%s'' was''t found.', [tp.name, tp.parent]);
+                    UsedTpls.Delete(i);
+                    continue;
+                  end;
+                  UsedTpls.AddObject(tp.parent, u_templates.Templates[ti]);
+                end;
+              continue;
+            end;
 
-{   if wtpls.IndexOf(tp.Parent)=-1 then continue;}
-   wtpls.AddObject(tp.Name,tp);
-   UsedTpls.Delete(i);
-  end;
-  if n=UsedTpls.Count then break;
- end;
+          norefs:=true;
+          for j:=0 to tp.Vals.count-1 do
+            begin
+              vl := tp.Vals[j];
+              if vl.atype<>at_tpl then continue;
+              if (CompareText(vl.s,'none')<>0) and
+                 (wtpls.IndexOf(vl.s) = -1) then begin norefs := false; break; end;
+            end;
 
+          if not norefs then continue;
 
- {Write templates - UsedTpls}
- WriteS('');
- WriteFmt('World templates %d',[WTpls.Count]);
- WriteS('#Name:           Based On:        Params:');
- For i:=0 to WTpls.Count-1 do
- begin
-  tp:=TTemplate(Wtpls.Objects[i]);
-  WriteS(Tp.GetAsString);
- end;
- wtpls.Free;
+          { if wtpls.IndexOf(tp.Parent)=-1 then continue;}
+          wtpls.AddObject(tp.Name,tp);
+          UsedTpls.Delete(i);
+        end; // For i:=UsedTpls.Count-1 downto 0 do
+      if n = UsedTpls.Count then break;
+    end;
+
+  {Write templates - UsedTpls}
+  WriteS('');
+  WriteFmt('World templates %d',[WTpls.Count]);
+  WriteS('#Name:           Based On:        Params:');
+  For i := 0 to WTpls.Count-1 do
+    begin
+      tp := TTemplate(Wtpls.Objects[i]);
+      WriteS(Tp.GetAsString);
+    end;
+  wtpls.Free;
 end;
 
 Procedure WriteThings;
@@ -773,14 +865,14 @@ var i,j:integer;
 begin
  {Write things}
  RenumSecs;
- WriteFmt('World things %d',[Things.Count+200]);
+ WriteFmt('World things %d',[Things.Count + 256]);
  WriteS('#num template:       name:         	X:		Y:		Z:		Pitch:		Yaw:		Roll:		Sector:');
  For i:=0 to Things.Count-1 do
  With Things[i] do
  begin
   if Sec=nil then snum:=-1 else snum:=Sec.Num;
-  s:=Sprintf('%d: %s %s %.6f %.6f %.6f %.6f %.6f %.6f %d',[i,LowerCase(Name),LowerCase(Name),X,Y,Z,PCH,YAW,ROL,SNum]);
-  if mots then s:=s+' -1';
+  s:=Sprintf('%d: %s %s %.8f %.8f %.8f %.8f %.8f %.8f %d',[i,LowerCase(Name),LowerCase(Name),X,Y,Z,PCH,YAW,ROL,SNum]);
+  if kind = TProjectType.MOTS then s:=s+' -1';
   for j:=0 to Vals.Count-1 do
   begin
    v:=Vals[j];
@@ -796,15 +888,77 @@ var i,j:integer;
     v:TValue;
     snum:integer;
 begin
- {Write things}
  WriteFmt('Editor lights %d',[Lights.Count]);
  WriteS('');
  WriteS('#num:	type:	X:		Y:		Z:		intensity:	range:');
  For i:=0 to Lights.Count-1 do
  With Lights[i] do
-  WriteFmt('%d: 0 %.6f %.6f %.6f %.6f %.6f',[i,x,y,z,intensity,range]);
+  WriteFmt('%d: 0 %.8f %.8f %.8f %.8f %.8f %.8f %.8f %.8f %.8f %d',[i,x,y,z,intensity,range,RGBIntensity,r,g,b,Layer]);
 end;
 
+Procedure WriteLayers;
+begin
+  var lsecs := TObjectDictionary<integer, TList<integer>>.Create([doOwnsValues]);
+  var lths := TObjectDictionary<integer, TList<integer>>.Create([doOwnsValues]);
+  for var i := 0 to sectors.Count -1 do
+    begin
+      const l = sectors[i].Layer;
+      if not lsecs.ContainsKey(l) then
+         lsecs.Add(l, TList<integer>.Create);
+      lsecs[l].Add(i);
+    end;
+  for var i := 0 to things.Count -1 do
+    begin
+      const l = things[i].Layer;
+      if not lths.ContainsKey(l) then
+         lths.Add(l, TList<integer>.Create);
+      lths[l].Add(i);
+    end;
+
+  WriteFmt('Editor layers %d',[Layers.Count]);
+  WriteS('');
+  WriteS('#name secs things');
+  For var i:=0 to Layers.Count-1 do
+    begin
+      WriteS(Layers[i]);
+      var lix : string := '';
+
+      // Sectors
+      if lsecs.ContainsKey(i) then
+        begin
+          lix := Sprintf('%d:', [lsecs[i].Count]);
+          for var j := 0 to lsecs[i].Count -1 do
+            begin
+              if (j > 0) and  (j mod 64 = 0) then lix := lix + sLineBreak;
+              lix := Concat(lix, Sprintf(#9'%d',[lsecs[i][j]]));
+            end;
+        end
+      else
+        lix := '0:';
+
+      // Things
+      if lths.ContainsKey(i) then
+        begin
+          lix := lix + sLineBreak + Sprintf('%d:', [lths[i].Count]);
+          for var j := 0 to lths[i].Count -1 do
+            begin
+              if (j > 0) and  (j mod 64 = 0) then lix := lix + sLineBreak;
+              lix := Concat(lix, Sprintf(#9'%d',[lths[i][j]]));
+            end;
+        end
+      else
+         lix := lix + sLineBreak + '0:';
+
+      WriteS(lix);
+    end;
+
+  WriteS('');
+  WriteS('#Visibility');
+  WriteS(LVisString);
+
+  lsecs.Free;
+  lths.Free;
+end;
 
 Const
  steps=10;
@@ -813,35 +967,42 @@ Const
 begin {SaveToJKL}
 
  Assign(t,f); Rewrite(t);
- UsedWavs:=TStringList.Create;
- UsedMats:=TStringList.Create;
- UsedCmps:=TStringList.Create;
- UsedCogs:=TStringList.Create;
- UsedSnds:=TStringList.Create;
- UsedPups:=TStringList.Create;
- UsedKeys:=TStringList.Create;
- UsedSprs:=TStringList.Create;
- UsedPars:=TStringList.Create;
- Used3DOs:=TStringList.Create;
- UsedAIs:=TStringList.Create;
- UsedTpls:=TStringList.Create;
+ UsedWavs := TStringList.Create;
+ UsedMats := TStringList.Create;
+ UsedCmps := TStringList.Create;
+ UsedCogs := TStringList.Create;
+ UsedSnds := TStringList.Create;
+ UsedPups := TStringList.Create;
+ UsedKeys := TStringList.Create;
+ UsedSprs := TStringList.Create;
+ UsedPars := TStringList.Create;
+ Used3DOs := TStringList.Create;
+ UsedAIs  := TStringList.Create;
+ UsedTpls := TStringList.Create;
 
  Progress.Reset(steps+list_steps);
 
  Try
   {Write header}
-  WriteS('#This file is created by Jed version '+JedVersion);
-  WriteS('#Jed is (C) by Alexei Novikov');
-  WriteS('');
-  WriteS('SECTION: JK');
-  WriteS('');
+  //WriteS('#This file is created by Jed version '+JedVersion);
+  //WriteS('#Jed is (C) by Alexei Novikov');
+  //WriteS('');
+  if kind <> TProjectType.IJIM then
+    begin
+      WriteS('SECTION: JK');
+      WriteS('');
+    end;
+
   WriteS('SECTION: COPYRIGHT');
-  WriteS(LECLogo);
+  var logo: String := LECLogo;
+  if kind = TProjectType.IJIM then logo := LECLogoIJIM;
+  WriteS(logo);
   WriteS('');
+
   WriteHeaderSection;
   Progress.Msg:='Compiling lists';
   Progress.Step;
-  CompileLists;
+  CompileLists(kind);
 
   Progress.Msg:='Writing sounds';
   Progress.Step;
@@ -856,15 +1017,25 @@ begin {SaveToJKL}
   Progress.Step;
 
   WriteS('SECTION: MATERIALS');
-  WriteFmt('World materials %d',[UsedMats.Count]);
-  For i:=0 to UsedMats.Count-1 do WriteFmt('%d: %s %.6f %.6f',[i,UsedMats[i],1.0,1.0]);
+  var matBufSize := UsedMats.Count;
+  if kind = TProjectType.IJIM then matBufSize := matBufSize + 64;
+  WriteFmt('World materials %d',[matBufSize]); // TODO: Remove mats of static container from UsedMats
+  For i:=0 to UsedMats.Count-1 do
+    begin
+      if kind = TProjectType.IJIM then
+        WriteFmt('%d: %s',[i,UsedMats[i]])
+      else WriteFmt('%d: %s %.6f %.6f',[i,UsedMats[i],1.0,1.0]);
+    end;
   WriteS('end');
   WriteS('');
 
   WriteS('SECTION: GEORESOURCE');
-  WriteFmt('World Colormaps %d',[UsedCmps.Count]);
-  For i:=0 to UsedCmps.Count-1 do WriteFmt('%d: %s',[i,UsedCmps[i]]);
-  WriteS('');
+  if kind <> TProjectType.IJIM then
+    begin
+      WriteFmt('World Colormaps %d',[UsedCmps.Count]);
+      For i:=0 to UsedCmps.Count-1 do WriteFmt('%d: %s',[i,UsedCmps[i]]);
+      WriteS('');
+    end;
   WriteGeometry;
   WriteS('');
 
@@ -878,13 +1049,13 @@ begin {SaveToJKL}
   Progress.Step;
 
 
-  WriteListSection('Section: AICLASS','World AIClasses',UsedAIs);
-  WriteListSection('Section: MODELS','World models',Used3DOs);
-  WriteListSection('Section: SPRITES','World sprites',UsedSprs);
-  WriteListSection('Section: KEYFRAMES','World keyframes',UsedKeys);
-  WriteListSection('Section: ANIMCLASS','World puppets',UsedPups);
-  WriteListSection('Section: Soundclass','World soundclasses',UsedSnds);
-  WriteListSection('Section: cogscripts','World scripts',UsedCogs);
+  WriteListSection('Section: AICLASS'    ,'World AIClasses',    UsedAIs  , Max(UsedAIs.count  , 64));
+  WriteListSection('Section: MODELS'     ,'World models',       Used3DOs , Max(Used3DOs.count , 1024));
+  WriteListSection('Section: SPRITES'    ,'World sprites',      UsedSprs , Max(UsedSprs.count , 128));
+  WriteListSection('Section: KEYFRAMES'  ,'World keyframes',    UsedKeys , Max(UsedKeys.count , 512));
+  WriteListSection('Section: ANIMCLASS'  ,'World puppets',      UsedPups , Max(UsedPups.count , 64));
+  WriteListSection('Section: Soundclass' ,'World soundclasses', UsedSnds , Max(UsedSnds.count , 128));
+  WriteListSection('Section: cogscripts' ,'World scripts',      UsedCogs , Max(UsedCogs.count , 128));
 
   WriteS('Section: cogs');
   WriteCogs;
@@ -909,7 +1080,7 @@ begin {SaveToJKL}
   WriteS('end');
   WriteS('');
 
-  if Mots then
+  if kind = TProjectType.MOTS then
   begin
    WriteS('Section: ARCHLIGHTING');
    WriteS('Num ArchObjects 0');
@@ -917,12 +1088,21 @@ begin {SaveToJKL}
    WriteS('');
   end; 
 
-  WriteS('Section: Lights');
-  WriteLights;
-  WriteS('end');
-  WriteS('');
+  if SaveEditorLights then
+    begin
+      WriteS('Section: Lights');
+      WriteLights;
+      WriteS('end');
+      WriteS('');
+    end;
 
-
+  if SaveEditorLayers then
+  begin
+    WriteS('Section: Layers');
+    WriteLayers;
+    WriteS('end');
+    WriteS('');
+  end;
 
  finally
   RenumSecs;

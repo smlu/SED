@@ -7,7 +7,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
-  glunit, GlobalVars, Geometry, Render, StdCtrls, misc_utils;
+  glunit, GlobalVars, Geometry, Render, StdCtrls, misc_utils, Math;
 
 type
   TOGL_config = class(TForm)
@@ -25,7 +25,8 @@ var
 
 Type
   TOGLRenderer = class(TRenderer)
-    hdc, hglc: HDC;
+    hdc :HDC;
+    hglc: HGLRC;
     glx1, glx2, glz1, glz2: double;
 
     Perspective: boolean;
@@ -33,8 +34,8 @@ Type
     selectBuf: array [1 .. 2048] of GLInt;
     { R_style:TRenderStyle; }
 
-    ccenterx, ccentery, crad: Integer;
-    ccolor: TCOLORREF;
+    //ccenterx, ccentery, crad: Integer;
+    //ccolor: TCOLORREF;
 
     Procedure Initialize; override;
     Procedure BeginScene; override;
@@ -68,7 +69,7 @@ Type
       : boolean; override;
     Procedure SetPointSize(size: double); override;
     Procedure ProjectPoint(x, y, Z: double; Var WinX, WinY: Integer); override;
-    Procedure UnProjectPoint(WinX, WinY: Integer; WinZ: double;
+    Procedure UnProjectPoint(WinX, WinY: double; WinZ: double;
       var x, y, Z: double); override;
     Function HandleWMQueryPal: Integer; override;
     Function HandleWMChangePal: Integer; override;
@@ -98,9 +99,10 @@ end;
 
 Procedure TOGLRenderer.BeginScene;
 begin
+  wglMakeCurrent(hdc, hglc);
   DisableFPUExceptions;
   SetRenderMatrix;
-  crad := 0;
+  //crad := 0;
   With bgnd_clr do
     glClearColor(r / 255, g / 255, b / 255, 0);
   glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
@@ -120,21 +122,21 @@ end;
   end; }
 
 Procedure TOGLRenderer.EndScene;
-var
-  oldpen, pen: Hpen;
 begin
+  wglMakeCurrent(hdc, hglc);
   glFlush;
   SwapBuffers(hdc);
-  if crad <> 0 then
-  begin
-    SelectObject(hdc, GetStockObject(NULL_BRUSH));
-    pen := CreatePen(PS_SOLID, 1, ccolor);
-    oldpen := SelectObject(hdc, pen);
-    Ellipse(hdc, ccenterx - crad, ccentery - crad, ccenterx + crad,
-      ccentery + crad);
-    SelectObject(hdc, oldpen);
-    DeleteObject(pen);
-  end;
+  //wglMakeCurrent(0, 0);
+//  if crad <> 0 then // Draw circle
+//  begin
+//    SelectObject(hdc, GetStockObject(NULL_BRUSH));
+//    var pen := CreatePen(PS_SOLID, 50, ccolor);
+//    var oldpen := SelectObject(hdc, pen);
+//     Ellipse(hdc, ccenterx - crad, ccentery - crad, ccenterx + crad,
+//      ccentery + crad);
+//    SelectObject(hdc, oldpen);
+//    DeleteObject(pen);
+//  end;
 end;
 
 Procedure TOGLRenderer.SetCamera;
@@ -148,11 +150,21 @@ begin
   glMatrixMode(gl_Modelview);
   glLoadIdentity;
 
-  gluLookAt(0, 0, 0, -zv.dx, -zv.dy, -zv.dz, yv.dx, yv.dy, yv.dz);
 
+  //glScaleD(1.0, IfThen(zv.dz <0, -1,1) , 1.0);
+  //glTranslated(CamX, CamY, CamZ);
+  gluLookAt(0, 0, 0, -zv.dx, -zv.dy, -zv.dz, yv.dx, yv.dy, yv.dz);
   glTranslated(CamX, CamY, CamZ);
 
-  { mx[0,0]:=xv.dx; mx[1,0]:=xv.dy; mx[0,2]:=xv.dz;
+//  var rPch, rYaw, rRol: double;
+//  Jed_Main.sysGetPYR(xv, yv, zv, rPch, rYaw, rRol);
+//  glRotateD(rPch, xv.x, xv.y, xv.z);
+//  glRotateD(rYaw, yv.x, yv.y, yv.z);
+  //glRotateD(rRol, zv.x, zv.y, zv.z);
+
+
+
+   { mx[0,0]:=xv.dx; mx[1,0]:=xv.dy; mx[0,2]:=xv.dz;
     mx[0,1]:=yv.dx; mx[1,1]:=yv.dy; mx[1,2]:=yv.dz;
     mx[0,2]:=zv.dx; mx[1,2]:=zv.dy; mx[2,2]:=zv.dz;
 
@@ -179,12 +191,12 @@ begin
 
   GlOrtho(-dpx / 2, dpx / 2, -dpy / 2, dpy / 2, -ZRange / 2, ZRange / 2);
 
-  { gluPerspective(90,1,0.01,zrange); }
+   //gluPerspective(90,1,0.01,zrange);
 
-  { glFrustum(-dpx/2,dpx/2,-dpy/2,dpy/2,0.01,Zrange/2); }
+   //glFrustum(-dpx/2,dpx/2,-dpy/2,dpy/2,0.01,Zrange/2);
 
   SetCamera;
-  { glMatrixMode(GL_MODELVIEW);
+  {glMatrixMode(GL_MODELVIEW);
     glLoadIdentity; }
 end;
 
@@ -206,8 +218,8 @@ begin
 
   SetCamera;
 
-  { glMatrixMode(GL_ModelView);
-    glLoadIdentity; }
+//   glMatrixMode(GL_ModelView);
+//    glLoadIdentity;
 end;
 
 Function TOGLRenderer.CreateOGLPalette
@@ -295,9 +307,19 @@ begin
   wglMakeCurrent(hdc, hglc);
   SwapBuffers(hdc);
 
+  // Uncomment this block to have anti-aliased lines
+  //glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	//glEnable(GL_BLEND);
+	//glEnable(GL_LINE_SMOOTH);
+	//glHint (GL_LINE_SMOOTH_HINT, GL_NICEST);
+  //glLineWidth(1.0); //1.3 for diagonal lines
+  ////////////////////////////////////////////
+
+
   { glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK); }
-  glPolygonMode(GL_Front_AND_BACK, gl_Line);
+  //glPolygonMode(GL_Front_AND_BACK, gl_Line);
+  //wglMakeCurrent(0,0);
 
   { glEnable(GL_DEPTH_TEST);
     glDepthRange(0,1000);
@@ -338,14 +360,15 @@ begin
       with ps[i] do
       begin
         n := vertices.count;
-        case n of
-          3:
-            glBegin(GL_triangles);
-          4:
-            glBegin(GL_Quads);
-        else
-          glBegin(GL_Polygon);
-        end;
+//        case n of
+//          3:
+//            glBegin(GL_triangles);
+//          4:
+//            glBegin(GL_Quads);
+//        else
+//          glBegin(GL_Polygon);
+//        end;
+        glBegin(GL_LINE_LOOP);
         for j := 0 to vertices.count - 1 do
           with vertices[j] do
           begin
@@ -386,21 +409,22 @@ var
   i, n: Integer;
 begin
   n := p.vertices.count;
-  case n of
-    3:
-      glBegin(GL_triangles);
-    4:
-      glBegin(GL_Quads);
-  else
-    glBegin(GL_Polygon);
-  end;
 
-  for i := 0 to p.vertices.count - 1 do
-    with p.vertices[i] do
-    begin
-      glVertex3d(x, y, Z);
-      { glNormal3d(p.Normal.dx,p.normal.dz,-p.normal.dy); }
-    end;
+//  case n of
+//    3:
+//      glBegin(GL_triangles);
+//    4:
+//      glBegin(GL_Quads);
+//  else
+//    glBegin(GL_Polygon);
+//  end;
+  glBegin(GL_LINE_LOOP);
+    for i := 0 to p.vertices.count - 1 do
+      with p.vertices[i] do
+      begin
+        glVertex3d(x, y, Z);
+        // glNormal3d(p.Normal.dx,p.normal.dz, p.normal.dy);
+      end;
   glEnd;
 end;
 
@@ -413,22 +437,42 @@ begin
 end;
 
 Procedure TOGLRenderer.DrawCircle(cx, cy, cz, rad: double);
-var
-  pX, pY, px1, py1: Integer;
+const maxSides = 64;
 begin
-  ProjectPoint(cx, cy, cz, pX, pY);
-  ProjectPoint(cx + xv.dx * rad, cy + xv.dy * rad, cz + xv.dz * rad, px1, py1);
-  ccenterx := pX;
-  ccentery := pY;
-  crad := px1 - pX;
-  ccolor := RGB(Front_clr.r, Front_clr.g, Front_clr.b);
+//  ProjectPoint(cx, cy, cz, pX, pY);
+//  ProjectPoint(cx + xv.dx * rad, cy + xv.dy * rad, cz + xv.dz * rad, px1, py1);
+//  ccenterx := pX;
+//  ccentery := pY;
+//  crad := px1 - pX;
+//  ccolor := RGB(Front_clr.r, Front_clr.g, Front_clr.b);
+
+  const th = 6.2832 / maxSides;  // 6.2832 = 2*PI
+  var poly := TPolygon.Create;
+  for var s := 0 to maxSides - 1 do
+    begin
+      const ra = s * th;
+      const cr = cos(ra) * rad;
+      const sr = sin(ra) * rad;
+
+      // c + right * cos(th) * rad + forward * sin(th) * rad
+      const v = TVertex.Create;
+      v.x := cx + xv.x * cr + yv.x * sr;
+      v.y := cy + xv.y * cr + yv.y * sr;
+      v.z := cz + xv.z * cr + yv.z * sr;
+      poly.Vertices.Add(v);
+    end;
+  DrawPolygon(poly);
+
+  for var i := 0 to poly.Vertices.count - 1 do
+      poly.Vertices[i].Free;
+  poly.Free;
 end;
 
 Procedure TOGLRenderer.DrawVertices(vxs: TVertices);
 var
   i: Integer;
 begin
-  glBegin(gl_points);
+  glBegin(GL_POINTS);
   { With front_clr do glColor3ub(r,g,b); }
   for i := 0 to vxs.count - 1 do
     With vxs[i] do
@@ -469,10 +513,16 @@ end;
 
 Destructor TOGLRenderer.Destroy;
 begin
-  wglDeleteContext(hglc);
-  DeleteDC(hdc);
+  if (hdc <> 0) and (hglc <> 0) then
+  begin
+    wglMakeCurrent(hdc, hglc);
+    wglDeleteContext(hglc);
+    DeleteDC(hdc);
+  end;
   if Hpal <> 0 then
     DeleteObject(Hpal);
+  wglMakeCurrent(0, 0);
+  glFlush;
   inherited Destroy;
 end;
 
@@ -610,7 +660,7 @@ begin
   end;
 end;
 
-Procedure TOGLRenderer.UnProjectPoint(WinX, WinY: Integer; WinZ: double;
+Procedure TOGLRenderer.UnProjectPoint(WinX, WinY: double; WinZ: double;
   var x, y, Z: double);
 var
   vp: TViewPortArray;
@@ -668,9 +718,11 @@ end;
 
 Procedure TOGLRenderer.SetColor(what, r, g, b: byte);
 begin
+  Inherited SetColor(what, r, g, b);
   case what of
     CL_BackGround:
       begin
+        glColor3ub(r, g, b);
         bgnd_clr.r := r;
         bgnd_clr.g := g;
         bgnd_clr.b := b;
@@ -693,12 +745,12 @@ begin
     r_CULLBACK:
       begin
         glEnable(GL_CULL_FACE);
-        glCullFace(gl_back);
+        glCullFace(GL_BACK);
       end;
     r_CULLFRONT:
       begin
         glEnable(GL_CULL_FACE);
-        glCullFace(gl_front);
+        glCullFace(GL_FRONT);
       end;
   end;
 end;

@@ -26,7 +26,7 @@ TTempSurf=class
   nmat:integer;
   surfflags,faceflags:longint;
   geo,light,nadj,tex:integer;
-  extra:double;
+  extralight:TColorF;
   VXS:TIntList;
   TVXs:TIntList;
   intensities:TList;
@@ -62,7 +62,7 @@ var t:TTextFile; cpos:word; s,w1,w2:String;
     mats:TStringList;
     cmps:TStringList;
     vr,vg,vb:single;
-Procedure GetNextLine(var s:String);
+Procedure GetNextLine(var s:String; upper: boolean = true);
 var cmt_pos:word; {Position of #}
 begin
  s:='';
@@ -72,10 +72,12 @@ begin
   inc(cur_line);
   cmt_pos:=Pos('#',s);
   if cmt_pos<>0 then SetLength(s,cmt_pos-1);
-  s:=UpperCase(Trim(s));
+  s:=Trim(s);
+  if upper then s := UpperCase(s);
+  
  Until s<>'';
- if s='END' then begin CurSection:=''; EndOfSection:=true; end;
- if GetWordN(s,1)='SECTION:' then begin CurSection:=GetWordN(s,2); EndOfSection:=true; end;
+ if SameText(s, 'END') then begin CurSection:=''; EndOfSection:=true; end;
+ if SameText(GetWordN(s,1), 'SECTION:') then begin CurSection:=GetWordN(s,2); EndOfSection:=true; end;
 end; {GetNextLine}
 
 Procedure SkipToNextSection;
@@ -112,7 +114,16 @@ end;
 
 Function GetMat(n:integer):String;
 begin
- if (n<0) or (n>=mats.count) then begin result:=''; exit; end;
+  result:='';
+  if n >= StaticResIdxMask then
+    begin
+      var sr := GetStaticMatList(kind);
+      var si := n and not StaticResIdxMask; // Remove stati res. idx mask
+      if (sr <> nil) and (si < sr.Count) then
+        Result := sr[si];
+    end;
+
+ if (n<0) or (n>=mats.count) then exit;
  result:=mats[n];
 end;
 
@@ -125,11 +136,29 @@ begin
  i:=0;
  While (i<n) and (not EndOfSection) do
  begin
-  GetNextLine(s);
+  GetNextLine(s, false);
   GetWord(s,1,w1);
-  if w1='END' then break;
-  SScanf(s,'%s %s',[@w1,@w2]);
+  if SameText(w1, 'end') then break;
+
+  // Parse mat name with whitespaces
+  // Some materials from IJIM has spaces in their name.
+  var tokens := SplitString(s, ':');
+  var p := Length(tokens);
+  if p = 0 then continue;
+  w2 := tokens[p -1];
+  p := LowerCase(w2).IndexOf('.mat');
+  if p = -1 then
+  begin
+    PanMessageFmt(mt_warning, 'Invalid entry in materials section at index: %d', [i]);
+    inc(i);
+    continue;
+  end;
+
+  p := p + 5; // .mat - the reason for 5 and not 4 is the Delete is one-based array indexing
+  Delete(w2, p, w2.Length - p+1);
+  w2 := w2.Trim;
   mats.Add(w2);
+  inc(i);
  end;
 end;
 
@@ -147,21 +176,24 @@ begin
  
  CurSection:='';
  {ColorMaps}
- GetNextLine(s);
+ if kind <> TProjectType.IJIM then
+  begin
+   GetNextLine(s);
+   SScanf(s,'WORLD COLORMAPS %d',[@n]);
+   For i:=0 to n-1 do
+   begin
+    GetNextLine(s);
+    SScanf(s,'%s %s',[@w1,@w2]);
+    cmps.Add(w2);
+   end;
+  end;
 
- SScanf(s,'WORLD COLORMAPS %d',[@n]);
- For i:=0 to n-1 do
- begin
-  GetNextLine(s);
-  SScanf(s,'%s %s',[@w1,@w2]);
-  cmps.Add(w2);
- end;
  {Vertices}
-try
- DO_Progress;
-except
- on Exception do ;
-end;
+  try
+   DO_Progress;
+  except
+   on Exception do ;
+  end;
 
  Progress.Msg:='Loading Vertices';
  GetNextLine(s);
@@ -177,6 +209,7 @@ end;
   GVXList.Add(TempVX);
   With TempVX do SSCanf(s,'%s %f %f %f',[@w1,@x,@y,@z]);
  end;
+
  {Texture Vertices}
  Progress.Msg:='Loading Texture Vertices';
  GetNextLine(s);
@@ -203,6 +236,7 @@ end;
   GAdjoins.Add(adj);
   adj.surf:=-1;
  end;
+
 {Surfaces}
  GetNextLine(s);
  Progress.Msg:='Loading Surfaces';
@@ -229,10 +263,29 @@ end;
   ValInt(w1,TSurf.tex);
   p:=GetWord(s,p,w1); {adjoin}
   ValInt(w1,TSurf.nadj);
+
   if TSurf.nadj<>-1 then
    TAdjoin(GAdjoins[TSurf.nadj]).Surf:=i;
-  p:=GetWord(s,p,w1); {extralight}
-  ValDouble(w1,TSurf.extra);
+
+  {extralight}
+  if header.Version = 1 then
+    begin
+      p:=GetWord(s,p,w1);
+      ValSingle(w1,TSurf.extralight.a);
+      TSurf.extralight := IntensityToColor(TSurf.extralight.a);
+    end
+  else // IJIM
+    begin
+      p:=GetWord(s,p,w1);
+      ValSingle(w1,TSurf.extralight.r);
+      p:=GetWord(s,p,w1);
+      ValSingle(w1,TSurf.extralight.g);
+      p:=GetWord(s,p,w1);
+      ValSingle(w1,TSurf.extralight.b);
+      p:=GetWord(s,p,w1);
+      ValSingle(w1,TSurf.extralight.a);
+    end;
+
   p:=GetWord(s,p,w1); {Nvert}
   nvx:=StrToInt(w1);
   for j:=0 to nvx-1 do
@@ -240,6 +293,11 @@ end;
    p:=GetWord(s,p,w1);
    pc:=Pos(',',w1);
    if pc<>0 then w1[pc]:=' ';
+   if pc = Length(w1) then // if there is no UV idx in w1, get it
+    begin
+     p:=GetWord(s,p,w2);
+     w1 := w1 + w2;
+    end;
    SScanf(w1,'%d %d',[@vx,@tvx]);
    TSurf.VXS.Add(vx);
    TSurf.tvxs.Add(tvx);
@@ -249,22 +307,29 @@ end;
   While p<=length(s) do
   begin
    p:=GetWord(s,p,w1);
-   il.Add(StrToFloat(w1));
+   il.Add(StrToFloat(w1, TFormatSettings.Invariant));
   end;
 
-  if il.Count>nvx then
-  begin {MOTS}
-   mots:=true;
-   for j:=0 to nvx-1 do
-   begin
-    vxInt:=TVXIntensity.Create;
-    TSurf.Intensities.Add(vxInt);
-    vxInt.a:=il[j*4];
-    vxInt.r:=il[j*4+1];
-    vxInt.g:=il[j*4+2];
-    vxInt.b:=il[j*4+3];
-   end;
-  end
+  var viofs: integer := 0;
+  if il.Count > nvx then
+    begin {MOTS and IJIM}
+     if header.Version = 1 then
+      kind := TProjectType.MOTS;
+     for j:=0 to nvx-1 do
+      begin
+        vxInt:=TVXIntensity.Create;
+        TSurf.Intensities.Add(vxInt);
+        vxInt.a := TSurf.extralight.a; // IJIM
+        if header.Version = 1 then // MOTS
+          begin
+            vxInt.a:=il[viofs];
+            Inc(viofs)
+          end;
+        vxInt.r:=il[viofs]; Inc(viofs);
+        vxInt.g:=il[viofs]; Inc(viofs);
+        vxInt.b:=il[viofs]; Inc(viofs);
+      end;
+    end
   else {JK}
   begin
    for j:=0 to nvx-1 do
@@ -272,9 +337,9 @@ end;
     vxInt:=TVXIntensity.Create;
     TSurf.Intensities.Add(vxInt);
     vxInt.a:=il[j];
-    vxInt.r:=vxInt.r;
-    vxInt.g:=vxInt.g;
-    vxInt.b:=vxInt.b;
+    vxInt.r:=vxInt.a;
+    vxInt.g:=vxInt.a;
+    vxInt.b:=vxInt.a;
    end;
   end;
  end;
@@ -290,7 +355,7 @@ end;
 
  {To ensure that current project mode is correct when
   COGS start loading}
-  SetMots(Mots);
+  SetProjectType(kind);
 
  end;
 
@@ -315,7 +380,6 @@ begin
  dv.y:=sv.y;
  dv.z:=sv.z;
 end;
-
 begin
 
 Try
@@ -332,21 +396,59 @@ Try
   Jsec:=NewSector;
   Sectors.Add(Jsec);
 
+  // TODO: In case of a broken section this can loop forever.
+  //       Fix: jump out after n sec.
   Repeat
   GetNextLine(s);
   w1:=getWordN(s,1);
 
   With JSec do
   if w1='FLAGS' then SScanf(s,'FLAGS'#9'%x',[@Flags])
-  else if w1='AMBIENT' then SScanf(s,'AMBIENT LIGHT %f',[@Ambient])
-  else if w1='EXTRA' then SScanf(s,'EXTRA LIGHT %f',[@Extra])
+  else if w1='AMBIENT' then
+    begin
+      if header.Version = 1 then // JKDF2 & MOTS
+        begin
+          SScanf(s,'AMBIENT LIGHT %l',[@Ambient.a]);
+          Ambient := IntensityToColor(Ambient.a);
+        end
+      else // IJIM
+        begin
+          SScanf(s,'AMBIENT LIGHT %l %l %l',[@Ambient.r, @Ambient.g, @Ambient.b]);
+        end;
+      Ambient.a := 0.0;
+    end
+  else if w1='EXTRA' then
+    //SScanf(s,'EXTRA LIGHT %f',[@ExtraLight])
+    begin
+      if header.Version = 1 then // JKDF2 & MOTS
+        begin
+          SScanf(s,'EXTRA LIGHT %l',[@ExtraLight.a]);
+          ExtraLight := IntensityToColor(ExtraLight.a);
+        end
+      else // IJIM
+        begin
+          SScanf(s,'EXTRA LIGHT %l %l %l',[@ExtraLight.r, @ExtraLight.g, @ExtraLight.b]);
+          ExtraLight.a := 0.0;
+        end;
+    end
+  else if w1='AVERAGE' then
+  begin
+    w1 :=  getWordN(s,3);
+    if w1 = 'INTENSITY' then
+      SScanf(s,'AVERAGE LIGHT INTENSITY %l %l %l',[@PointLight.Color.r, @PointLight.Color.g, @PointLight.Color.b])
+    else if w1 = 'POSITION' then
+      SScanf(s,'AVERAGE LIGHT POSITION %f %f %f',[@PointLight.Position.x, @PointLight.Position.y, @PointLight.Position.z])
+    else if w1 = 'FALLOFF' then
+      SScanf(s,'AVERAGE LIGHT FALLOFF %f %f',[@PointLight.Falloff.x, @PointLight.Falloff.y])
+  end
   else if w1='SOUND' then SScanf(s,'SOUND %s %f',[@Sound,@Snd_vol])
   else if w1='COLORMAP' then ColorMap:=GetCmp(StrToInt(GetWordN(s,2)))
  { else if w1='CENTER' then SScanf(s,'CENTER %f %f %f',[@Cx,@Cy,@Cz])
-  else if w1='RADIUS' then SScanf(s,'RADIUS %f',[@rad])
+  else if w1='RADIUS' then SScanf(s,'RADIUS %f',[@rad])}
   else if w1='COLLIDEBOX' then
-   With CBox do SScanf(s,'COLLIDEBOX %f %f %f %f %f %f',[@x1,@y1,@z1,@x2,@y2,@z2])}
-  else if w1='TINT' then SScanf(s,'TINT %f %f %f',[@Tint.dx,@Tint.dy,@tint.dz]);
+    With CollideBox do SScanf(s,'COLLIDEBOX %f %f %f %f %f %f',[@x1,@y1,@z1,@x2,@y2,@z2])
+  else if w1='TINT' then SScanf(s,'TINT %l %l %l',[@Tint.r,@Tint.g,@tint.b])
+  else if w1='THRUST' then SScanf(s,'THRUST %f %f %f',[@Thrust.x,@Thrust.y,@Thrust.z]);
 
   if w1='VERTICES' then
   begin
@@ -356,60 +458,77 @@ Try
   end;
 
  if w1='SURFACES' then
- begin
-  SScanf(s,'SURFACES %d %d',[@bsurf,@nsurfs]);
-  for isurf:=bsurf to bsurf+nsurfs-1 do
-  begin
-   Tsurf:=TTempSurf(GSurfList[isurf]);
-   jsurf:=jsec.NewSurface;
-   jsec.surfaces.Add(jsurf);
-   jsurf.material:=GetMat(TSurf.nmat);
-   jsurf.SurfFlags:=Tsurf.SurfFlags;
-   jsurf.FaceFlags:=Tsurf.FaceFlags;
-   jsurf.geo:=tSurf.geo;
-   Jsurf.Light:=tSurf.light;
-   Jsurf.tex:=TSurf.tex;
-   Jsurf.nAdj:=TSurf.nAdj;
-   if tsurf.SurfFlags and SFF_DOUBLERES<>0 then begin jsurf.uscale:=2; jsurf.vscale:=2; end
-   else if tsurf.SurfFlags and SFF_HALFRES<>0 then begin jsurf.uscale:=0.5; jsurf.vscale:=0.5; end
-   else if tsurf.SurfFlags and SFF_EIGHTHRES<>0 then begin jsurf.uscale:=0.125; jsurf.vscale:=0.125; end;
-
-
-   for j:=0 to TSurf.vxs.count-1 do
    begin
-    igvx:=TSurf.vxs[j]; {global index of vertex}
-    ilvx:=SCVXList.IndexOf(igvx); {local index}
-    if ilvx=-1 then {not found}
-    begin
-     jvx:=jsec.NewVertex;
-     SetJVX(GVXList[igvx],jvx);
-{     jsec.vertices.Add(jvx);}
-     SCVXList.Add(igvx);
-     jsurf.AddVertex(jvx);
+    SScanf(s,'SURFACES %d %d',[@bsurf,@nsurfs]);
+    for isurf:=bsurf to bsurf+nsurfs-1 do
+      begin
+       Tsurf:= TTempSurf(GSurfList[isurf]);
+       jsurf:= jsec.NewSurface;
+       jsec.surfaces.Add(jsurf);
+       jsurf.material   := GetMat(TSurf.nmat);
+       jsurf.SurfFlags  := Tsurf.SurfFlags;
+       jsurf.FaceFlags  := Tsurf.FaceFlags;
+       jsurf.geo        := tSurf.geo;
+       Jsurf.Light      := tSurf.light;
+       Jsurf.tex        := TSurf.tex;
+       Jsurf.nAdj       := TSurf.nAdj;
+       jsurf.ExtraLight := tSurf.ExtraLight;
+       //jsurf.normal     := Tsurf.normal;
+
+       // Remove FF_DoubleSided flag since world geometry is always culled
+       jsurf.FaceFlags := jsurf.FaceFlags and not FF_DoubleSided;
+
+       // TODO: Remove because scales are calculated after this section is parsed
+       //if CurrentProject <>IJIM then
+       //begin
+//       if tsurf.SurfFlags and SF_DOUBLERES<>0 then begin jsurf.uscale:=2; jsurf.vscale:=2; end
+//       else if tsurf.SurfFlags and SF_HALFRES<>0 then begin jsurf.uscale:=0.5; jsurf.vscale:=0.5; end
+//       else if tsurf.SurfFlags and SF_EIGHTHRES<>0 then begin jsurf.uscale:=0.125; jsurf.vscale:=0.125; end;
+       //end;
+
+       var matSize := TSize.Create(1,1);
+       if (kind = IJIM) and (not jsurf.Material.IsEmpty) then
+         try
+          matSize := jsurf.GetMaterialSize;
+         except on E:Exception do PanMessage(mt_warning,
+            Format('Cannot load %s for sector %d surface %d: %s' +
+            '  Imported surface will have invalid UV coords!'
+            , [jsurf.Material, jsurf.Sector.num, isurf - bsurf, e.message]));
+         end;
+
+       for j:=0 to TSurf.vxs.count-1 do
+       begin
+        igvx:=TSurf.vxs[j]; {global index of vertex}
+        ilvx:=SCVXList.IndexOf(igvx); {local index}
+        if ilvx=-1 then {not found}
+          begin
+           jvx:=jsec.NewVertex;
+           SetJVX(GVXList[igvx],jvx);
+      {     jsec.vertices.Add(jvx);}
+           SCVXList.Add(igvx);
+           jsurf.AddVertex(jvx);
+          end;
+        if ilvx<>-1 then jsurf.addVertex(jsec.vertices[ilvx]);
+
+        {Add texture vertices}
+        itxvx:=tSurf.tvxs[j];
+        if (itxvx<0) or (itxvx>=GTXVXList.Count) then itxvx:=0;
+        txvx:=TTempTXVertex(GTXVXList[itxvx]);
+        With Jsurf.Txvertices[j] do
+          begin
+            u := txvx.u * matSize.Width;
+            v := txvx.v * matSize.Height;
+            vxInt   := TVXIntensity(tSurf.Intensities[j]);
+            color.a := vxInt.a;
+            color.r := vxInt.r;
+            color.g := vxInt.g;
+            color.b := vxInt.b;
+          end;
+       end;
+      end;
+     break;
     end;
-    if ilvx<>-1 then jsurf.addVertex(jsec.vertices[ilvx]);
-
-     {Add texture vertices}
-
-     itxvx:=tSurf.tvxs[j];
-     if (itxvx<0) or (itxvx>=GTXVXList.Count) then itxvx:=0;
-     txvx:=TTempTXVertex(GTXVXList[itxvx]);
-     With Jsurf.Txvertices[j] do
-     begin
-      u:=txvx.u;
-      v:=txvx.v;
-      vxInt:=TVXIntensity(tSurf.Intensities[j]);
-      color.a:=vxInt.a;
-      color.r:=vxInt.r;
-      color.g:=vxInt.g;
-      color.b:=vxInt.b;
-     end;
-
-   end;
-  end;
-   break;
-  end;
- until false;
+  until false;
  end;
  SCVXList.Free;
 
@@ -435,48 +554,74 @@ begin
  end;
 end;
 
+Procedure LoadTemplates;
+var n,p: integer;
+    w: string;
+begin
+  Progress.Msg:='Loading Templates';
+  CurSection:='';
+  GetNextLine(s);
+  SScanf(s,'World templates %d',[@n]);
+  For var i := 0 to n-1 do
+    begin
+      GetNextLine(s, false);
+      if (SameText(s, 'end')) or EndOfSection then break;
+      p := GetWord(s, 1, w);
+      if (w = '') or (w = '#') or (w = '//') then
+        continue;
+      self.templates.AddFromString(s);
+    end;
+end;
+
 Procedure LoadThings;
 var i,j,n,p,nsec:integer;
     th:TThing;
     pe:integer;
     v:TTPLValue;
 begin
- Progress.Msg:='Loading Things';
- CurSection:='';
+ Progress.Msg := 'Loading Things';
+ CurSection := '';
  GetNextLine(s);
- SScanf(s,'WORLD THINGS %d',[@n]);
- For i:=0 to n-1 do
+ SScanf(s,'WORLD THINGS %d', [@n]);
+ For i := 0 to n - 1 do
  begin
-  GetNextLine(s);
-  if (s='END') or EndOfSection then break;
-  th:=NewThing;
+  GetNextLine(s, false);
+  if (SameText(s, 'end')) or EndOfSection then break;
+  th := NewThing;
   With th do
   SScanf(s,'%s %s %s %f %f %f %f %f %f %d',
-        [@w1,@w1,@Name,@x,@y,@z,@pch,@yaw,@rol,@nsec]);
+        [@w1, @w1, @Name, @x, @y, @z, @pch, @yaw, @rol, @nsec]);
  try
-  th.Sec:=Sectors[nsec];
+  th.Sec := Sectors[nsec];
  except
-  on Exception do th.sec:=nil;
+  on Exception do th.sec := nil;
  end;
 
   Things.Add(th);
-  p:=1;
-  For j:=1 to 10 do
+  p := 1;
+  For j := 1 to 10 do
   begin
-   p:=ScanForNonSpace(s,p);
-   p:=ScanForSpace(s,p);
+   p := ScanForNonSpace(s ,p);
+   p := ScanForSpace(s, p);
   end;
 
-  While p<=Length(s) do
+  While p <= Length(s) do
   begin
-   p:=getWord(s,p,w1);
-   pe:=Pos('=',w1);
-   if pe=0 then continue;
-   v:=TTPLValue.Create;
-   v.Name:=Copy(w1,1,pe-1);
-   v.s:=Copy(w1,pe+1,length(w1)-pe);
-   v.vtype:=GetTPLVType(v.name);
-   v.atype:=GetTPLType(v.name);
+   p := getWord(s, p, w1);
+   pe := Pos('=', w1);
+   if pe = 0 then continue;
+   v := TTPLValue.Create;
+   v.Name  := Copy(w1, 1, pe - 1);
+   v.vtype := GetTplVType(v.name);
+   v.atype := GetTplType(v.name);
+
+   var vs := Copy(w1, pe + 1, length(w1) - pe);
+   if not v.Val(vs) then
+     begin
+       PanMessageFmt(mt_warning,'Thing ''%s'' parameter ''%s'' has invalid value: %s', [th.Name, v.Name, vs]);
+       // TODO: should assign string?
+     end;
+
    th.Vals.Add(v);
   end;
 
@@ -498,17 +643,75 @@ begin
   if w1='END' then break;
   lt:=NewLight;
   With Lt do
-  SScanf(s,'%s %d %f %f %f %f %f',[@w1,@l,@x,@y,@z,@Intensity,@range]);
-
-  lt.rgbintensity:=lt.intensity;
-  lt.r:=1;
-  lt.g:=1;
-  lt.b:=1;
-
+    if not SScanf(s,'%s %d %f %f %f %f %f %l %l %l %l %d',[@w1,@l,@x,@y,@z,@Intensity,@range,@RGBIntensity,@r,@g,@b,@Layer]) then
+      begin
+        SScanf(s,'%s %d %f %f %f %f %f',[@w1,@l,@x,@y,@z,@Intensity,@range]);
+        lt.rgbintensity:=lt.intensity;
+        lt.r:=1;
+        lt.g:=1;
+        lt.b:=1;
+      end;
   Lights.Add(lt);
  end;
 end;
 
+Procedure LoadLayers;
+  var
+    w: string;
+    idx, p: integer;
+begin
+  Progress.Msg:='Loading Layers';
+  CurSection:='';
+  var n := 0;
+  GetNextLine(s);
+  SScanf(s, 'EDITOR LAYERS %d',[@n]);
+
+  For var i := 0 to n-1 do
+  begin
+    GetNextLine(s, false);
+    Layers.Add(s);
+
+    // Sectors
+    GetNextLine(s);
+    p:=GetWord(s,1,w);
+    var sn := 0;
+    SScanf(w, '%d:',[@sn]);
+    for var j := 0 to sn -1 do
+    begin
+      if p >= Length(s) then
+        begin
+          GetNextLine(s);
+          p := 1;
+        end;
+      p:=GetWord(s,p,w);
+      if ValInt(w, idx) then
+        if idx < sectors.Count then
+          sectors[idx].Layer := i;
+    end;
+
+    // Things
+    GetNextLine(s);
+    p:=GetWord(s,1,w);
+    sn := 0;
+    SScanf(w, '%d:',[@sn]);
+    for var j := 0 to sn -1 do
+    begin
+      if p >= Length(s) then
+        begin
+          GetNextLine(s);
+          p := 1;
+        end;
+      p:=GetWord(s,p,w);
+      if ValInt(w, idx) then
+        if idx < things.Count then
+          things[idx].Layer := i;
+    end;
+  end;
+
+  // Layer visibility
+  GetNextLine(LVisString);
+  RemoveComment(LVisString);
+end;
 
 
 Procedure LoadCogs;
@@ -527,8 +730,8 @@ begin
  SScanf(s,'WORLD COGS %d',[@n]);
  for i:=0 to n-1 do
  begin
-  GetNextLine(s);
-  if (s='END') or EndOfSection then break;
+  GetNextLine(s, false);
+  if (SameText(s, 'end')) or EndOfSection then break;
   p:=GetWord(s,1,w1);
   p:=GetWord(s,p,w1);
   cg:=TCog.Create;
@@ -562,34 +765,44 @@ begin
   p:=GetWord(s,1,w1);
   p:=GetWord(s,p,w2);
 
- if w1='VERSION' then ValDword(w2,Version)
- else if w1='LOD' then
+  if w1='VERSION' then
+    begin
+      ValDword(w2,Version);
+      if (Version = 2) or (Version = 3) then
+        kind := TProjectType.IJIM
+      else if Version <> 1 then
+        raise Exception.CreateFmt('Unknown level version: %d', [Version]);
+    end
+  else if w1='LOD' then
    SScanf(s,'LOD DISTANCES %f %f %f %f',[@LODDist[1],@LODDist[2],@LODDist[3],@LODDist[4]])
- else if w1='MIPMAP' then
+  else if w1='FOG' then
+   SScanf(s,'FOG %b %l %l %l %l %f %f',[@Fog.enabled,@Fog.color.r,@Fog.color.g,@Fog.color.b,@Fog.color.a,@Fog.FogStart,@Fog.FogEnd])
+  else if w1='MIPMAP' then
    SScanf(s,'MIPMAP DISTANCES %f %f %f %f',[@MipMapDist[1],@MipMapDist[2],@MipMapDist[3],@MipMapDist[4]])
- else if w1='WORLD' then SScanf(s,'WORLD GRAVITY %f',[@Gravity])
- else if w1='PERSPECTIVE' then SScanf(s,'PERSPECTIVE DISTANCE %f',[@PerspDist])
- else if w1='GOURAUD' then SScanf(s,'GOURAUD DISTANCE %f',[@GouraudDist])
- else if w1='CEILING' then
- begin
-  GetWord(s,p,w1);
-  if w1='OFFSET' then SScanf(s,'CEILING SKY OFFSET %f %f',[@CeilingSkyOffs[1],@CeilingSkyOffs[2]]);
-  if w1='Z' then SScanf(s,'CEILING SKY Z %f',[@CeilingSkyZ]);
- end
- else if w1='HORIZON' then
- begin
-  GetWord(s,p,w1);
-  if w2='DISTANCE' then ValDouble(w1,HorDistance);
-  if w2='PIXELS' then SScanf(s,'HORIZON PIXELS PER REV %f',[@HorPixelsPerRev]);
-  if w2='SKY' then SScanf(s,'HORIZON SKY OFFSET %f %f',[@HorSkyOffs[1],@HorSkyOffs[2]]);
- end;
- end;
+  else if w1='WORLD' then SScanf(s,'WORLD GRAVITY %f',[@Gravity])
+  else if w1='PERSPECTIVE' then SScanf(s,'PERSPECTIVE DISTANCE %f',[@PerspDist])
+  else if w1='GOURAUD' then SScanf(s,'GOURAUD DISTANCE %f',[@GouraudDist])
+  else if w1='CEILING' then
+   begin
+    GetWord(s,p,w1);
+    if w1='OFFSET' then SScanf(s,'CEILING SKY OFFSET %f %f',[@CeilingSkyOffs[1],@CeilingSkyOffs[2]]);
+    if w1='Z' then SScanf(s,'CEILING SKY Z %f',[@CeilingSkyZ]);
+   end
+  else if w1='HORIZON' then
+   begin
+    GetWord(s,p,w1);
+    if w2='DISTANCE' then ValDouble(w1,HorDistance);
+    if w2='PIXELS' then SScanf(s,'HORIZON PIXELS PER REV %f',[@HorPixelsPerRev]);
+    if w2='SKY' then SScanf(s,'HORIZON SKY OFFSET %f %f',[@HorSkyOffs[1],@HorSkyOffs[2]]);
+   end;
+  end;
 end;
 
 var i,j:integer;
     cv:TCOGValue;
     tmpsurf:TJKSurface;
 begin {LoadFromJKL begin}
+ kind := TProjectType.JKDF2; // set level project type
  ppos:=0;
  FormatSettings.DecimalSeparator:='.';
  mats:=TStringList.Create;
@@ -616,9 +829,12 @@ While (CurSection='') and (not t.eof) do GetNextLine(s);
  else if CurSection='HEADER' then LoadHeader
  else if CurSection='SECTORS' then LoadSectors
  else if CurSection='MATERIALS' then LoadMats
- else if CurSection='THINGS' then LoadThings
  else if CurSection='COGS' then LoadCogs
+ else if CurSection='TEMPLATES' then LoadTemplates
+ else if CurSection='THINGS' then LoadThings
  else if CurSection='LIGHTS' then LoadLights
+ else if CurSection='LAYERS' then LoadLayers
+
  else SkipToNextSection;
 until t.eof;
 Finally
@@ -657,14 +873,15 @@ GAdjoins.Free;
   for j:=0 to Surfaces.Count-1 do
   begin
    tmpsurf:=Surfaces[j];
-   tmpsurf.Recalc;
-   if IsTXFlipped(tmpsurf) then tmpsurf.surfFlags:=longint(tmpsurf.surfFlags or SFF_Flip)
-   else tmpsurf.surfFlags:=tmpsurf.surfFlags and (not SFF_Flip);
+   tmpsurf.Recalc; // TODO: parse normals
+   if IsTXFlipped(tmpsurf) then tmpsurf.FaceFlags:=longint(tmpsurf.FaceFlags or FF_SF_Flip)
+   else tmpsurf.FaceFlags:=tmpsurf.FaceFlags and (not FF_SF_Flip);
+   FindUVScales(tmpsurf);
 
   end;
  end;
 
-  For i:=0 to Cogs.Count-1 do
+ For i:=0 to Cogs.Count-1 do
  With Cogs[i] do
  for j:=0 to Vals.count-1 do
    Vals[j].Resolve;
@@ -706,9 +923,9 @@ begin
  
  FormatSettings.DecimalSeparator:='.';
  Assign(t,f);Rewrite(t);
- WriteS('JED '+JedVerNum);
+ WriteS('SED ' + SedVerNum);
 
- if Mots then
+ if kind = TProjectType.MOTS then
  begin
    WriteS('');
    WriteS('SEC: MOTS');
@@ -748,7 +965,7 @@ Try
   if Sound='' then st:=st+' -' else st:=st+' '+Sound;
 
   WriteFmt('%s %.6f %x %.6f %.6f %.6f %.6f %.6f %d',
-   [st,snd_vol,Flags,Ambient,extra,tint.dx,tint.dy,tint.dz,Layer]);
+   [st,snd_vol,Flags,RgbToIntensity(Ambient),RgbToIntensity(ExtraLight),tint.r,tint.g,tint.b,Layer]);
 
   WriteFmt('VXS %d',[vertices.count]);
   for vx:=0 to vertices.count-1 do
@@ -765,7 +982,7 @@ Try
    st:=Material;
    if st='' then st:='-';
    WriteFmt('%s %x %x %d %d %d %.6f %d %d %d %x %.4f %.4f',
-     [st,SurfFlags,FaceFlags,geo,light,tex,extralight,Vertices.Count,asec,asf,AdjoinFlags,uscale,vscale]);
+     [st,SurfFlags,FaceFlags,geo,light,tex,RgbaToIntensity(ExtraLight),Vertices.Count,asec,asf,AdjoinFlags,uscale,vscale]);
    st:='';
    for vx:=0 to vertices.count-1 do
    With TXVertices[vx] do
@@ -940,8 +1157,11 @@ end;
  Sectors.Add(sec);
  With Sec do
  begin
-  ReadFmt('%s %s %f %x %f %f %f %f %f %d',
-   [@ColorMap,@Sound,@snd_vol,@Flags,@Ambient,@extra,@tint.dx,@tint.dy,@tint.dz,@Layer]);
+  ReadFmt('%s %s %f %x %l %l %l %l %l %d',
+   [@ColorMap,@Sound,@snd_vol,@Flags,@Ambient.a,@ExtraLight.a,@tint.r,@tint.g,@tint.b,@Layer]);
+
+  Ambient := IntensityToColor(Ambient.a);
+  ExtraLight := IntensityToColor(ExtraLight.a);
   if ColorMap='-' then ColorMap:='';
   if Sound='-' then Sound:='';
 
@@ -959,8 +1179,9 @@ end;
    Sec.Surfaces.Add(Surf);
    With Surf do
    begin
-    ReadFmt('%s %x %x %d %d %d %f %d %d %d %x %l %l',
-     [@Material,@SurfFlags,@FaceFlags,@geo,@light,@tex,@extralight,@nsv,@asec,@asf,@AdjoinFlags,@uscale,@vscale]);
+    ReadFmt('%s %x %x %d %d %d %l %d %d %d %x %l %l',
+     [@Material,@SurfFlags,@FaceFlags,@geo,@light,@tex,@ExtraLight.a,@nsv,@asec,@asf,@AdjoinFlags,@uscale,@vscale]);
+    ExtraLight := IntensityToColor(ExtraLight.a);
     if Material='-' then Material:='';
     Num:=asec shl 16+(asf and $FFFF);
     ReadS(st);
@@ -1087,7 +1308,7 @@ begin
     ReadFmt('%f %f %f %d %f %f %x %f %l %l %l %l',[@X,@Y,@Z,@Layer,@Intensity,@range,
      @Flags,@RGBRange,@RGBIntensity,@R,@g,@b]);
 
-  if not Mots then
+  if kind = TProjectType.JKDF2 then
   begin
    l.rgbintensity:=l.intensity;
    l.r:=1;
@@ -1160,7 +1381,7 @@ Try
    else if w='LIGHTS' then LoadLights
    else if w='LAYERS' then LoadLayers
    else if w='COGS' then LoadCogs
-   else if w='MOTS' then Mots:=true
+   else if w='MOTS' then kind := TProjectType.MOTS
    else if w='LVIS' then LoadLVis
    else if w='HIERARCHYDEF' then LoadHierarrchy;
    SkipToEOS;
@@ -1187,8 +1408,8 @@ Try
     tmpsurf:=Surfaces[j];
     tmpsurf.Recalc;
     if JedVer<0.81 then
-    if IsTXFlipped(tmpsurf) then tmpsurf.surfFlags:=tmpsurf.surfFlags or SFF_Flip
-    else tmpsurf.surfFlags:=tmpsurf.surfFlags and (not SFF_Flip);
+    if IsTXFlipped(tmpsurf) then tmpsurf.FaceFlags:=tmpsurf.FaceFlags or FF_SF_Flip
+    else tmpsurf.FaceFlags:=tmpsurf.FaceFlags and (not FF_SF_Flip);
     if JedVer<0.81 then tmpsurf.vscale:=tmpsurf.uscale;
    end;
 

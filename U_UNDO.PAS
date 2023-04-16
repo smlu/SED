@@ -2,7 +2,7 @@ unit u_undo;
 
 interface
 
-uses J_Level, misc_utils, SysUtils, Classes, GlobalVars, values, u_3dos;
+uses J_Level, misc_utils, SysUtils, Classes, GlobalVars, values, u_3dos, Math;
 
 {$A-}
 
@@ -38,25 +38,25 @@ Type
 
  PSecRec=^TSecRec;
  TSecRec=record
-  Flags:longint;
-  Ambient:TColorF;
-  ExtraLight:TColorF;
-  ColorMap:array[0..31] of char;
-  Tint:record r,g,b:single end;
+  Flags: longint;
+  Ambient: TColorF;
+  ExtraLight: TColorF;
+  ColorMap: array[0..31] of char;
+  Tint: TColorF;
   Sound:array[0..63] of char;
-  snd_vol:single;
-  layer:SmallInt;
-  nvxs,nsfs:integer;
+  snd_vol: double;
+  layer: integer;
+  nvxs,nsfs: integer;
  end;
 
  PSurfRec=^TSurfRec;
 
  TSurfRec = record
-  AdjSC,AdjSF: SmallInt;
+  AdjSC,AdjSF: integer;
   AdjoinFlags: Longint;
   Material: array[0..63] of char;
   SurfFlags, FaceFlags: Longint;
-  geo, light, tex: byte;
+  geo, light, tex: integer;
   extraLight: TColorF;
   uscale, vscale: single;
   nvxs: integer;
@@ -70,16 +70,16 @@ TLightRec=record
  flags:longint;
  R,G,B:Single;
  rgbintensity:single;
- layer:SmallInt;
+ layer:integer;
 end;
 
 PThingRec=^TThingRec;
 TThingRec=record
- Sec:SmallInt;
+ Sec:integer;
  name:array[0..63] of char;
  X,Y,Z:double;
  PCH,YAW,ROL:Double;
- layer:SmallInt;
+ layer:integer;
  vals:array[0..0] of char;
 end;
 
@@ -126,7 +126,6 @@ Function SetThingVals(thing: TJKThing; pvals: PChar): integer;
 Function GetCOGRecRecSize: integer;
 Procedure GetCOG(cog: TCog; var crec: TCogRec);
 Procedure SetCOG(cog: TCog; var crec: TCogRec);
-
 
 Function GetSecRecSize: Integer;
 Procedure GetSec(sec: TJKSector; var srec: TSecRec);
@@ -211,8 +210,6 @@ end;
   Destructor Destroy;override;
  end;
 
-
-
 var
   UndoStack:TList;
   curUndoRec:TUndoRec;
@@ -220,10 +217,10 @@ var
 Destructor TUndoChange.Destroy;
 begin
  if data<>nil then
- begin
-  FreeMem(data);
-  data := nil;
- end;
+   begin
+    FreeMem(data);
+    data := nil;
+   end;
 end;
 
 
@@ -307,18 +304,18 @@ Procedure GetSec(sec:TJKSector;var srec:TSecRec);
 begin
  with sec do
  begin
-  srec.flags:=Flags;
-  srec.Ambient:=Ambient;
-  srec.ExtraLight:=ExtraLight;
+  srec.flags      := Flags;
+  srec.Ambient    := Ambient;
+  srec.ExtraLight := ExtraLight;
+  srec.tint       := Tint;
+
   StrLCopy(srec.ColorMap, PChar(Colormap), Length(srec.colormap) - 1);
-  srec.tint.r:=Tint.dx;
-  srec.tint.g:=Tint.dy;
-  srec.tint.b:=Tint.dz;
   StrLCopy(srec.Sound, PChar(Sound), Length(srec.Sound) - 1);
-  srec.snd_vol:=snd_vol;
-  srec.layer:=Layer;
-  srec.nvxs:=Vertices.count;
-  srec.nsfs:=Surfaces.count;
+
+  srec.snd_vol := snd_vol;
+  srec.layer   := Layer;
+  srec.nvxs    := Vertices.count;
+  srec.nsfs    := Surfaces.count;
  end;
 end;
 
@@ -326,41 +323,48 @@ Procedure SetSec(sec:TJKSector;var srec:TSecRec);
 begin
  with sec do
  begin
-  Flags:=srec.flags;
-  Ambient:=srec.Ambient;
-  ExtraLight:=srec.ExtraLight;
-  ColorMap:=srec.Colormap;
-  Tint.dx:=srec.tint.r;
-  Tint.dy:=srec.tint.g;
-  Tint.dz:=srec.tint.b;
-  sound:=Srec.Sound;
-  snd_vol:=srec.snd_vol;
-  layer:=srec.layer;
+  Flags      := srec.flags;
+  Ambient    := srec.Ambient;
+  ExtraLight := srec.ExtraLight;
+  ColorMap   := srec.Colormap;
+  Tint       := srec.tint;
+  sound      := Srec.Sound;
+  snd_vol    := srec.snd_vol;
+  layer      := srec.layer;
  end;
 end;
 
-Procedure GetSurf(surf:TJKSurface;var sfrec:TSurfRec);
+Procedure GetSurf(surf:TJKSurface; var sfrec:TSurfRec);
 begin
 With surf do
-begin
- if adjoin=nil then begin sfrec.adjSC:=-1; sfrec.adjSF:=0; end else
- begin
-  sfrec.AdjSC:=adjoin.sector.num;
-  sfrec.adjSF:=adjoin.num;
-  sfrec.adjID:=adjoin.sector.id;
- end;
- sfrec.AdjoinFlags:=AdjoinFlags;
- StrLCopy(sfrec.Material, PChar(Material), Length(sfrec.Material) - 1);
- sfrec.SurfFlags:=SurfFlags;
- sfrec.FaceFlags:=FaceFlags;
- sfrec.geo:=geo;
- sfrec.light:=light;
- sfrec.tex:=tex;
- sfrec.extraLight:=extralight;
- sfrec.uscale:=uscale;
- sfrec.vscale:=vscale;
- sfrec.nvxs:=Vertices.count;
-end;
+  begin
+   if adjoin=nil then
+     begin
+      sfrec.adjSC:=-1;
+      sfrec.adjSF:= 0;
+      sfrec.adjID:=-1;
+     end
+     else
+       begin
+        sfrec.AdjSC:=adjoin.sector.num;
+        sfrec.adjSF:=adjoin.num;
+        sfrec.adjID:=adjoin.sector.id;
+       end;
+
+   FillChar(sfrec.Material, SizeOf(sfrec.Material), #0);
+   StrLCopy(sfrec.Material, PChar(Material), Math.Min(Material.Length, Length(sfrec.Material) - 1));
+
+   sfrec.AdjoinFlags := AdjoinFlags;
+   sfrec.SurfFlags   := SurfFlags;
+   sfrec.FaceFlags   := FaceFlags;
+   sfrec.geo         := geo;
+   sfrec.light       := light;
+   sfrec.tex         := tex;
+   sfrec.extraLight  := extralight;
+   sfrec.uscale      := uscale;
+   sfrec.vscale      := vscale;
+   sfrec.nvxs        := Vertices.count;
+  end;
 end;
 
 Function GetSurfRecSize: Integer;
@@ -368,25 +372,26 @@ begin
  Result:=sizeof(TSurfRec);
 end;
 
-Procedure SetSurf(surf:TJKSurface;var sfrec:TSurfRec);
+Procedure SetSurf(surf:TJKSurface; var sfrec:TSurfRec);
 begin
- surf.mark:=sfrec.AdjSC*65536+sfrec.AdjSF;
- surf.nadj:=sfrec.adjID;
- surf.AdjoinFlags:=sfrec.AdjoinFlags;
- surf.Material:=sfrec.Material;
- surf.SurfFlags:=sfrec.SurfFlags;
- surf.FaceFlags:=sfrec.FaceFlags;
- surf.geo:=sfrec.geo;
- surf.light:=sfrec.light;
- surf.tex:=sfrec.tex;
- surf.extralight:=sfrec.extraLight;
- surf.uscale:=sfrec.uscale;
- surf.vscale:=sfrec.vscale;
+ surf.mark        := sfrec.AdjSC*65536 + sfrec.AdjSF;
+ surf.nadj        := sfrec.adjID;
+ surf.AdjoinFlags := sfrec.AdjoinFlags;
+ surf.Material    := sfrec.Material;
+ //SetString(surf.Material, sfrec.Material, Length(sfrec.Material));
+ surf.SurfFlags   := sfrec.SurfFlags;
+ surf.FaceFlags   := sfrec.FaceFlags;
+ surf.geo         := sfrec.geo;
+ surf.light       := sfrec.light;
+ surf.tex         := sfrec.tex;
+ surf.extralight  := sfrec.extraLight;
+ surf.uscale      := sfrec.uscale;
+ surf.vscale      := sfrec.vscale;
 end;
 
 Function SCVertSize(vs:TJKVertices):integer;
 begin
- result:=vs.count*sizeof(TVXRec);
+ result := vs.count * sizeof(TVXRec);
 end;
 
 Procedure GetSCVertices(vs:TJKVertices;vxrecs:PVXRec);
@@ -791,66 +796,80 @@ var asec:TJKSector;
     surf,asurf:TJKSurface;
     i:integer;
     sc,sf:integer;
+    Procedure SetAdjoinParamBasedOnAdjoin(srf, adjoin: TJKSurface);
+    begin
+        srf.SurfFlags   := adjoin.SurfFlags;
+        srf.FaceFlags   := adjoin.FaceFlags;
+        srf.geo         := adjoin.geo;
+        srf.AdjoinFlags := adjoin.AdjoinFlags;
+    end;
 begin
-
  for i:=0 to sec.surfaces.count-1 do
- begin
-  surf:=sec.surfaces[i];
-  sc:=surf.mark shr 16;
-  sf:=surf.mark and 65535;
-  surf.adjoin:=nil;
-  if sc=65535 then continue;
+   begin
+    surf := sec.surfaces[i];
+    sc := surf.mark shr 16;
+    sf := surf.mark and 65535;
+    surf.adjoin := nil;
+    if sc=65535 then continue;
 
-  sc:=Level.GetSectorByID(surf.nadj);
-  if sc=-1 then continue;
+    sc := Level.GetSectorByID(surf.nadj);
+    if sc = -1 then continue;
 
-  if sc>=Level.Sectors.Count then continue;
-  asec:=Level.Sectors[sc];
-  if sf>=aSec.Surfaces.Count then continue;
-  asurf:=asec.surfaces[sf];
+    if sc>=Level.Sectors.Count then continue;
+    asec := Level.Sectors[sc];
 
-{  if (asurf.adjoin<>nil) and (asurf.adjoin.sector<>sec) then continue;}
-  surf.adjoin:=asurf;
-  asurf.adjoin:=surf;
+    if sf >= aSec.Surfaces.Count then continue;
+    asurf := asec.surfaces[sf];
 
-  {if asurf.adjoin=nil then}
+  {  if (asurf.adjoin<>nil) and (asurf.adjoin.sector<>sec) then continue;}
+    surf.adjoin  := asurf;
+    asurf.adjoin := surf;
 
+    // [new] Set surf adjoin params based on surf with lower geo.
+    // This is kind of hackish because the adjoin info of the asurf was lost during the sector undo.
+    //
+    // Why this is necessary:
+    //   When undoing sector cleaving the function RemoveSurfRefs or
+    //   RemoveSecRefs might be called which resets the opposite sector adjoin (asurf) to solid surface.
+    //   The adjoin params for that surface are not reset (and cannot be, in the case of sector deletion)
+    //   to previous state. Here we try to fix this by guessing what params
+    //   should be set for both adjoins based on the lower geo mode value.
 
- end;
+    if surf.geo < asurf.geo then
+      SetAdjoinParamBasedOnAdjoin(asurf, surf)
+    else
+       SetAdjoinParamBasedOnAdjoin(surf, asurf);
+    {if asurf.adjoin=nil then}
+   end;
 end;
-
 
 begin
  case change of
-  ch_changed,ch_deleted:
-              begin
-               n:=Level.GetSectorByID(objid);
-               if n=-1 then exit;
-               sec:=Level.Sectors[n];
-              end;
+  ch_changed, ch_deleted:
+    begin
+     n:=Level.GetSectorByID(objid);
+     if n=-1 then exit;
+     sec := Level.Sectors[n];
+    end;
  else exit;
  end;
 
-
- pd:=Data;
-
+ pd := Data;
  SetSec(sec,PSecRec(pd)^);
  inc(pd,GetSecRecSize);
 
-
- n:=sec.surfaces.count;
- if n>nsfs then n:=nsfs;
+ n := sec.surfaces.count;
+ if n > nsfs then n := nsfs;
 
  for i:=0 to n-1 do
- begin
-  SetSurf(sec.surfaces[i],PSurfRec(pd)^);
-  inc(pd,GetSurfRecSize);
-  sec.surfaces[i].adjoin:=nil;
- end;
+   begin
+    SetSurf(sec.surfaces[i],PSurfRec(pd)^);
+    inc(pd,GetSurfRecSize);
+    sec.surfaces[i].adjoin:=nil;
+   end;
 
  ResolveRefs;
  JedMain.SectorChanged(sec);
-
 end;
 
 
@@ -885,7 +904,7 @@ begin
    for i:=0 to sec.surfaces.count-1 do
    begin
     surf:=sec.surfaces[i];
-    pword(pd)^:=surf.vertices.count;
+    pword(pd)^ := surf.vertices.count;
     inc(pd,2);
     GetSFVertices(surf,PSFVX(pd));
     inc(pd,SFVertSize(surf.vertices));
@@ -931,7 +950,7 @@ try
  for i:=sec.surfaces.count-1 downto nsfs do
  begin
    surf:=sec.surfaces[i];
-   RemoveSurfRefs(Level,surf);
+   RemoveSurfRefs(Level, surf);
    surf.free;
    sec.surfaces.Delete(i);
  end;
@@ -1067,29 +1086,27 @@ begin
  CurUndoRec.ltchanges.AddObject(lch,lt.id);
 end;
 
-Procedure SaveSecUndo(sec:TJKSector;change:integer;how:integer);
+Procedure SaveSecUndo(sec: TJKSector;change: integer;how: integer);
 var lch:TUndoChange;
 begin
  if CurUndoRec=nil then exit;
 
- if (how and sc_geo)<>0 then
- if CurUndoRec.scgchanges.FindObjID(sec.id)=-1 then
- begin
-  lch:=TSecGeoUndo.Create;
-  lch.SaveUndo(sec,change);
-  CurUndoRec.scgchanges.AddObject(lch,sec.id);
- end;
+ if (how and sc_geo) <> 0 then
+   if CurUndoRec.scgchanges.FindObjID(sec.id) = -1 then
+     begin
+      lch:=TSecGeoUndo.Create;
+      lch.SaveUndo(sec,change);
+      CurUndoRec.scgchanges.AddObject(lch,sec.id);
+     end;
 
- if (how and sc_val)<>0 then
- if CurUndoRec.scvchanges.FindObjID(sec.id)=-1 then
- begin
-  lch:=TSecValUndo.Create;
-  lch.SaveUndo(sec,change);
-  CurUndoRec.scvchanges.AddObject(lch,sec.id);
- end;
-
+ if (how and sc_val) <> 0 then
+   if CurUndoRec.scvchanges.FindObjID(sec.id) = -1 then
+   begin
+    lch:=TSecValUndo.Create;
+    lch.SaveUndo(sec,change);
+    CurUndoRec.scvchanges.AddObject(lch,sec.id);
+   end;
 end;
-
 
 Procedure SaveThingUndo(th:TJKThing;change:integer);
 var tch:TUndoChange;

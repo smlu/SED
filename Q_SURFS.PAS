@@ -110,7 +110,7 @@ begin
   TQueryField.CreateInt(CBLight, EBLight, fi.Light);
   TQueryField.CreateInt(CBTex, EBTex, fi.tex);
 
-  TQueryField.CreateDouble(CBExtraL, EBExtraL, fi.extra_l);
+  TQueryField.CreateColor(CBExtraL, EBExtraL, fi.extra_l);
 
   TQueryField.CreateStr(CBLayer, EBLayer, fi.Layer);
 end;
@@ -247,8 +247,8 @@ end;
 
 procedure TFindSurfs.SBHelpClick(Sender: TObject);
 begin
-  Application.helpfile := basedir + 'jedhelp.hlp';
-  Application.HelpContext(450);
+  //Application.helpfile := basedir + 'jedhelp.hlp';
+  //Application.HelpContext(450);
 end;
 
 procedure TFindSurfs.BNLayerClick(Sender: TObject);

@@ -2,10 +2,46 @@ unit Geometry;
 
 interface
 
-uses GlobalVars, Classes, misc_utils;
+uses GlobalVars, Classes, Math, misc_utils;
+
+const
+  // Polygon face flags
+  FF_DoubleSided         = $01;       // No backface culling. 3DO models only
+  FF_Transluent          = $02;       // texture alpha blending (adjoin surfaces and 3DO models)
+  FF_TexClampX           = $04;
+  FF_TexClampY           = $08;
+  FF_TexNoFiltering      = $10;
+  FF_ZWriteDisabled      = $20;
+
+  // IJIM flags
+  FF_IJIM_3doLedge       = $40;      // (3DO model specific) Player can hang on the ledge of polygon face (Same as surface flag `SF_IJIM_Ledge`)
+  FF_IJIM_FogEnabled     = $100;     // Enables fog blending for the polygon
+  FF_IJIM_3doWhipAim     = $200;     // (3DO model specific) Whip aim surface (Same as surface flag `SF_IJIM_WhipAim`)
+
+  // Renderer flags
+  FF_RD_SpecialSurfaceWf = 1 shl 26; // Render flag for surfaces with special propeties
+  FF_RD_SolidSurfaceWf   = 1 shl 27;
+  FF_RD_FloorWf          = 1 shl 28;
+  FF_RD_AlphaRef         = 1 shl 29;
+  FF_RD_Adjoin           = 1 shl 30;
+
+  // SED flags
+  FF_SF_FLIP             = 1 shl 31;  // SED flag
 
 type
+  TGeoMode   = (NotDrawn, Vertex, Wireframe, Solid, Texture);
+  TLightMode = (None = 0, Lit = 1, Diffuse = 2, Gouraud = 3, Gouraud2 = 4, Gouraud3 = 5, VertexDiffuseOnly = -1); // VertexOnly - is internal type, to not be used in the game
+
+  TVector2d = record
+    x, y: double;
+    Function IsZero: Boolean;
+  end;
+
   TVector = record
+    Function IsZero: Boolean;
+    Procedure GetCoords(var x, y, z: double);
+    Procedure SetCoords(dx, dy, dz: double);
+
     case integer of
       0:
         (dx, dy, dz: double);
@@ -13,8 +49,10 @@ type
         (x, y, z: double);
   end;
 
+
   T3DPoint = record
     x, y, z: double;
+    Function IsZero: Boolean;
   end;
 
   TBox = record
@@ -29,17 +67,13 @@ type
 
   TVertex = class
     x, y, z: Float;
+    tx,ty,tz:double; {transformed}
     num: integer;
     mark: integer;
   end;
 
   TMat3x3 = array [0 .. 2, 0 .. 2] of double;
   TMat3x3s = array [0 .. 2, 0 .. 2] of single;
-
-  TColorF = record
-    r, g, b,
-    a: single;  // a - alpha or light intensity
-  end;
 
   TTXVertex = class
     u, v: single;
@@ -64,6 +98,9 @@ type
   end;
 
   TPolygon = class
+    FaceFlags: Longint;
+    geo, light, tex: integer;
+    ExtraLight: TColorF;
     normal: TVector;
     Vertices: TVertices;
     TXVertices: TTXVertices;
@@ -100,9 +137,6 @@ type
     For logically groupped polygons.
     Some of the vertices can be shared }
 
-Procedure SetVec(var v: TVector; dx, dy, dz: double);
-procedure GetVec(const vec: TVector; var x, y, z: double);
-
 Function FindVX(Vertices: TVertices; x, y, z: double): integer;
 
 implementation
@@ -111,14 +145,12 @@ Uses lev_utils;
 
 Constructor TTXVertex.Create;
 begin
-  color.a := 5;
-  color.r := 5;
-  color.g := 5;
-  color.b := 5;
+  color := ColorWhite;
 end;
 
 Procedure TTXVertex.Assign;
 begin
+  num := tv.num;
   u := tv.u;
   v := tv.v;
   color.a := tv.color.a;
@@ -169,6 +201,9 @@ begin
     TXVertices[i].Free;
   TXVertices.Free;
 
+// Should not free list vertices because they can be owned by some other list e.g. TPolygons.VXList
+//  for i := 0 to Vertices.count - 1 do
+//    Vertices[i].Free;
   Vertices.Free;
 end;
 
@@ -385,18 +420,33 @@ begin
   List[n] := p;
 end;
 
-procedure GetVec(const vec: TVector; var x, y, z: double);
+function TVector2d.IsZero: Boolean;
 begin
-  x := vec.dx;
-  y := vec.dy;
-  z := vec.dz;
+   Result := Math.IsZero(x) and Math.IsZero(y);
 end;
 
-Procedure SetVec(var v: TVector; dx, dy, dz: double);
+function TVector.IsZero: Boolean;
 begin
-  v.dx := dx;
-  v.dy := dy;
-  v.dz := dz;
+   Result := Math.IsZero(x) and Math.IsZero(y) and Math.IsZero(z);
+end;
+
+procedure TVector.GetCoords(var x, y, z: double);
+begin
+  x := self.dx;
+  y := self.dy;
+  z := self.dz;
+end;
+
+Procedure TVector.SetCoords(dx, dy, dz: double);
+begin
+  self.dx := dx;
+  self.dy := dy;
+  self.dz := dz;
+end;
+
+function T3DPoint.IsZero: Boolean;
+begin
+   Result := Math.IsZero(x) and Math.IsZero(y) and Math.IsZero(z);
 end;
 
 Function FindVX(Vertices: TVertices; x, y, z: double): integer;

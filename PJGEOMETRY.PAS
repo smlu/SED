@@ -1,3 +1,5 @@
+// Obsolete, was used by u_pj3dos & geo_utils
+
 unit pjGeometry;
 interface
 uses GlobalVars, Classes, misc_utils;
@@ -52,6 +54,7 @@ Property Items[n:integer]:TTXVertex read GetItem write SetItem; default;
 end;
 
 TPolygon=class
+ faceflags:Longint;
  normal:TVector;
  Vertices:TVertices;
  TXVertices:TTXVertices;

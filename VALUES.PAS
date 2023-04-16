@@ -34,6 +34,7 @@ type
     float: double;
     s: string;
     Function AsString: String;
+    Function Clone: TValue;
     Function Val(const s: string): boolean;
     Procedure Assign(v: TValue);
   end;
@@ -67,7 +68,8 @@ type
 
   TTplValue = class(TValue)
     atype: TAdjType;
-    Procedure Assign(v: TTplValue);
+    Procedure Assign(v: TTplValue); overload;
+    Function Clone: TTplValue; overload;
     Procedure GetFrame(var x, y, z, pch, yaw, rol: double);
     Procedure SetFrame(x, y, z, pch, yaw, rol: double);
   end;
@@ -190,7 +192,7 @@ begin
   v.cog_type := GetCogType(w);
   p := GetWord(st, p, w);
 
-  pe := Pos('=', w);
+  pe := Pos('=',  w);
   if pe = 0 then
     v.Name := w
   else
@@ -221,7 +223,7 @@ begin
   w := Copy(st, ps + 1, pe - ps - 1);
   v.vtype := GetCogVType(w);
   v.cog_type := GetCogType(w);
-  v.Val(Copy(st, pe + 1, length(st)));
+  v.Val(Copy(st, pe + 1, Length(st)));
 end;
 
 Function TCOGValue.AsJedString: String;
@@ -372,6 +374,12 @@ begin
   atype := v.atype;
 end;
 
+Function TTplValue.Clone: TTplValue;
+begin
+  Result := TTplValue.Create;
+  Result.Assign(self);
+end;
+
 Procedure TTplValue.GetFrame(var x, y, z, pch, yaw, rol: double);
 var
   vs: string;
@@ -394,7 +402,7 @@ Procedure TTplValue.SetFrame(x, y, z, pch, yaw, rol: double);
 begin
   if CompareText(name, 'frame') <> 0 then
     exit;
-  s := Sprintf('(%.6f/%.6f/%.6f:%.6f/%.6f/%.6f)', [x, y, z, pch, yaw, rol]);
+  s := Sprintf('(%1.6f/%1.6f/%1.6f:%1.6f/%1.6f/%1.6f)', [x, y, z, pch, yaw, rol]);
 end;
 
 Function TValue.AsString: String;
@@ -407,12 +415,18 @@ begin
     vt_int, vt_ptr:
       result := IntToStr(int);
     vt_float:
-      result := FloatToStr(float);
+      result := FloatToStr(float, TFormatSettings.Invariant);
     vt_flag:
       result := Format('0x%x', [int]);
   else
     result := '';
   end;
+end;
+
+Function TValue.Clone: TValue;
+begin
+  Result := TValue.Create;
+  Result.Assign(self);
 end;
 
 Function TValue.Val(const s: string): boolean;
@@ -507,7 +521,13 @@ begin
   v.Name := Copy(s, 1, p - 1);
   v.vtype := GetTplVType(v.Name);
   v.atype := GetTplType(v.Name);
-  v.s := Copy(s, p + 1, length(s));
+
+  var vs := Copy(s, p + 1, length(s));
+  if not v.Val(vs) then
+    begin
+      PanMessageFmt(mt_warning,'Template parameter ''%s'' has invalid value: %s', [v.Name, vs]);
+      // TODO: should assign string?
+    end;
 end;
 
 Procedure S2CogVal(const s: string; v: TCOGValue);
@@ -593,6 +613,7 @@ begin
   With TplVtypes do
   begin
     AddObject('frame', TObject(vt_frame));
+    AddObject('thingflags', TObject(vt_flag));
   end;
 end;
 

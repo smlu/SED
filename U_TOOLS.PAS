@@ -362,9 +362,10 @@ begin
     feValDouble(vGridYAW.s, yaw);
     feValDouble(vGridROL.s, rol);
 
-    SetVec(x, 1, 0, 0);
-    SetVec(y, 0, 1, 0);
-    SetVec(z, 0, 0, 1);
+    x.SetCoords(1, 0, 0);
+    y.SetCoords(0, 1, 0);
+    z.SetCoords(0, 0, 1);
+
     { PCH,ROL,YAW }
     RotateVector(x, pch, 0, 0);
     RotateVector(x, 0, rol, 0);
@@ -375,6 +376,7 @@ begin
     RotateVector(z, pch, 0, 0);
     RotateVector(z, 0, rol, 0);
     RotateVector(z, 0, 0, yaw);
+
     { So PCH - x , YAW - y, ROL - z }
     JedMain.Renderer.SetGridNormal(z.dx, z.dy, z.dz);
     JedMain.Renderer.SetGridXnormal(x.dx, x.dy, x.dz);

@@ -14,7 +14,7 @@ Const
 
 Type
   TPSFTRenderer = class(TRenderer)
-    wnd: integer;
+    wnd: HWND;
     hdc: HDC;
     Dc: TCanvas;
     { mode:TRenderStyle; }
@@ -61,7 +61,7 @@ Type
       : boolean; override;
     Procedure SetPointSize(size: double); override;
     Procedure ProjectPoint(x, y, Z: double; Var WinX, WinY: integer); override;
-    Procedure UnProjectPoint(WinX, WinY: integer; WinZ: double;
+    Procedure UnProjectPoint(WinX, WinY: double; WinZ: double;
       var x, y, Z: double); override;
     Function HandleWMQueryPal: integer; override;
     Function HandleWMChangePal: integer; override;
@@ -512,7 +512,7 @@ begin
   end;
 end;
 
-Procedure TPSFTRenderer.UnProjectPoint(WinX, WinY: integer; WinZ: double;
+Procedure TPSFTRenderer.UnProjectPoint(WinX, WinY: double; WinZ: double;
   var x, y, Z: double);
 begin
   SetRenderMatrix;

@@ -2,7 +2,7 @@ unit FieldEdit;
 
 interface
 
-uses Grids, Classes, StdCtrls;
+uses misc_utils, Grids, Classes, StdCtrls;
 
 { TFieldEdit pseudo control
   For Sector/Wall/Vertex/Object editors
@@ -10,7 +10,7 @@ uses Grids, Classes, StdCtrls;
 
 type
 
-  TVarType = (vtString, vtDouble, vtInteger, vtDword);
+  TVarType = (vtString, vtDouble, vtInteger, vtDword, vtColor);
 
   TFieldInfo = class
   Private
@@ -68,6 +68,8 @@ type
     Procedure AddFieldInt(const Name: string; id, V: Integer);
     Procedure AddFieldHex(const Name: string; id: Integer; V: longint);
     Procedure AddFieldFloat(const Name: string; id: Integer; V: Double);
+    Procedure AddFieldColor(const Name: string; id: Integer;
+      const V: TColorF; withAlpha: Boolean = true);
     Procedure AddFieldStr(const Name: string; id: Integer; const V: string);
     Function GetFieldByID(id: Integer): TFieldInfo;
     procedure KeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
@@ -88,22 +90,26 @@ type
     Procedure SetAsInt(i: Integer);
     Function GetS: String;
     Procedure SetAsFloat(d: Double);
+    Procedure SetAsColor(c: TColorF; withAlpha: Boolean = true);
     Procedure SetAsString(s: string);
     Property s: string read GetS;
     Function AsInt: Integer;
     Function AsFloat: Double;
+    Function AsColor: TColorF;
   Private
     Procedure SetS(const s: string);
     Function IntChange(const s: string): boolean;
     Function FloatChange(const s: string): boolean;
+    Function ColorChange(const s: string): boolean;
   end;
 
 Function feValDouble(const s: string; var d: Double): boolean;
 Function feValInt(const s: string; var i: Integer): boolean;
+Function feValColor(const s: string; var c: TColorF): boolean;
 
 implementation
 
-uses Misc_Utils, SysUtils, Windows, Messages, Forms;
+uses SysUtils, Windows, Messages, Forms;
 
 Constructor TFieldInfo.Create(aGrid: TStringGrid; arow: Integer);
 begin
@@ -279,6 +285,7 @@ var
   a: Integer;
   i: Integer;
   d: Double;
+  c: TColorF;
 begin
   a := -1;
   Case vt of
@@ -298,6 +305,8 @@ begin
             a := -1;
         end;
       end;
+    vtColor:
+      if not ValColor(s, c) then a := -1;
   end;
   Result := a = 0;
 end;
@@ -346,7 +355,7 @@ Procedure TFieldEdit.AddFieldHex(const Name: string; id: Integer; V: longint);
 begin
   With AddField(Name, id, vtInteger) do
   begin
-    olds := Format('%x', [V]);
+    olds := Format('0x%x', [V]);
     s := olds;
   end;
 end;
@@ -369,10 +378,20 @@ begin
   end;
 end;
 
+Procedure TFieldEdit.AddFieldColor(const Name: string; id: Integer;
+  const V: TColorF; withAlpha: Boolean);
+begin
+  With AddField(Name, id, vtColor) do
+  begin
+    olds := ColorToStr(V, withAlpha);
+    s := olds;
+  end;
+end;
+
 Procedure TFieldEdit.AddFieldStr(const Name: string; id: Integer;
   const V: string);
 begin
-  With AddField(Name, id, vtInteger) do
+  With AddField(Name, id, vtString) do
   begin
     olds := V;
     s := olds;
@@ -504,6 +523,13 @@ begin
   changed := false;
 end;
 
+Procedure TValInput.SetAsColor(c: TColorF; withAlpha: Boolean);
+begin
+  SetS(ColorToStr(c));
+  ONChange := ColorChange;
+  changed := false;
+end;
+
 Procedure TValInput.SetAsString(s: string);
 begin
   SetS(s);
@@ -543,6 +569,12 @@ begin
     Result := 0;
 end;
 
+Function TValInput.AsColor: TColorF;
+begin
+  if not feValColor(s, Result) then
+    Result := MakeColor(0.0, 0.0, 0.0, 0.0);
+end;
+
 Function feValDouble(const s: string; var d: Double): boolean;
 var
   st: string;
@@ -573,11 +605,32 @@ begin
   Result := ValInt(st, i);
 end;
 
+Function feValColor(const s: string; var c: TColorF): boolean;
+var
+  st: string;
+begin
+  st := s;
+  if s = '-' then
+  begin
+    Result := true;
+    c := MakeColor(0.0, 0.0, 0.0, 0.0);
+    exit;
+  end;
+  Result := ValColor(st, c);
+end;
+
 Function TValInput.FloatChange(const s: string): boolean;
 var
   d: Double;
 begin
   Result := feValDouble(s, d);
+end;
+
+Function TValInput.ColorChange(const s: string): boolean;
+var
+  c: TColorF;
+begin
+  Result := feValColor(s, c);
 end;
 
 end.

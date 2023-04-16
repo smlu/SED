@@ -407,7 +407,7 @@ begin
  for i:=0 to s.surfaces.count-1 do
  With s.surfaces[i] do
  begin
-  if (s.Flags and SF_3DO=0)
+  if (s.Flags and SECF_3DO=0)
   then if (geo=0) or (Material='') then begin D3DID:=-1; continue; end;
 
   surf:=Result.AddSurf;
@@ -431,14 +431,14 @@ begin
 
  for j:=0 to nvx-1 do
  begin
-  if s.Flags and SF_3DO=0 then nv:=j
+  if s.Flags and SECF_3DO=0 then nv:=j
   else nv:=nvx-j-1;
 
  With TXVertices[nv] do
  begin
   vd:=surf.AddVXD;
 
-  if (P3DFullLit) or (s.Flags and SF_3DO<>0) or (SurfFlags and (SFF_SKY or SFF_SKY1)<>0)
+  if (P3DFullLit) or (s.Flags and SECF_3DO<>0) or (SurfFlags and (SF_SkyHorizon or SF_SkyCeiling)<>0)
   then begin vd.r:=1; vd.g:=1; vd.b:=1; end else
   case s.level.mots and P3DColoredLights of
    true: begin vd.r:=r+s.extra+extralight; vd.g:=g+s.extra+extralight; vd.b:=b+s.extra+extralight; end;

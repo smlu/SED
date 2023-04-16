@@ -4,7 +4,8 @@ interface
 
 uses
   Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
-  J_level, Prender, D3D_Prender, GlobalVars;
+  J_level, Prender, D3D_Prender, GlobalVars, ogl_PRender, misc_utils, Geometry,
+  d3d_NPRender, U_Options;
 
 Procedure Set3DOPrevActive(isit: boolean);
 Procedure Set3DOCMP(const cmp: string);
@@ -34,9 +35,18 @@ Procedure InitRenderer;
 begin
   if render3D <> nil then
     exit;
-  render3D := TD3DRenderer.CreateFromPanel(ResPicker.Panel3D);
+
+  case P3DAPI of
+    P3D_OGL:
+      render3D := TOGLPRenderer.CreateFromPanel(ResPicker.Panel3D, TGeoMode.Texture, TLightMode.None);
+  else
+    render3D := TD3D5PRenderer.CreateFromPanel(ResPicker.Panel3D, TGeoMode.Texture, TLightMode.None);
+  end;
+
   try
     render3D.initialize;
+    render3D.highlightSelection := False;
+    render3D.SetClearColor(MakeColor(0.5, 0.5, 0.5, 1.0));
   except
     On Exception do
     begin
@@ -61,30 +71,27 @@ end;
 Procedure View3DO(const name: string);
 var
   a3Do: T3DO;
-  box: TThingBox;
 begin
   if not isactive then
     exit;
+
   InitRenderer;
   if render3D = nil then
     exit;
+
   a3Do := tmpthing.a3Do;
   tmpthing.a3Do := nil;
   a3Do.Free;
+  tmpthing.PCH := 0;
+  tmpthing.YAW := 0;
   tmpthing.a3Do := T3DO.CreateFrom3DO(name, 0);
-  tmpthing.YAW := 180;
-  tmpthing.a3Do.GetBBox(box);
-
-  render3D.thing_cmp := cur_cmp;
 
   render3D.SetGamma(P3DGamma);
   render3D.ClearThings;
   render3D.Addthing(tmpthing);
-  render3D.SetViewTothing(tmpthing);
-
+  render3D.thing_cmp := cur_cmp;
+  render3D.SetViewToThing(tmpthing, (*zoomOut=*)0.055, 0, 180);  // rote camera for 180° to front face model
   P3DO_SetPCHYAW(cPCH, CYaw);
-
-  render3D.redraw;
 end;
 
 procedure Init3DOPreview;
@@ -106,11 +113,14 @@ end;
 Procedure P3DO_SetPCHYAW(PCH, YAW: Double);
 begin
   cPCH := PCH;
-  CYaw := YAW;
-  if render3D = nil then
+  cYaw := YAW;
+  if (render3D = nil) or (not isactive) then
     exit;
-  render3D.SetPCHYaw(PCH, YAW);
-  render3D.redraw;
+
+  tmpthing.PCH:= -cPCH;
+  tmpthing.YAW:= cYaw;
+  render3D.UpdateThing(tmpthing);
+  render3D.Redraw;
 end;
 
 Initialization

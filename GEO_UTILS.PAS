@@ -1,7 +1,7 @@
 unit geo_utils;
 
 interface
-uses pjgeometry;
+uses geometry;
 
 const
  rt_x=0;

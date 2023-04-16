@@ -158,8 +158,8 @@ begin
  hnode:=THNode(Node.Data);
  lasthNode:=hNode;
  SetCBItem(CBParent,hnode.parent+1);
- SetEditText(EBXYZ,Sprintf('%.6f %.6f %.6f',[hnode.x,hnode.y,hnode.z]));
- SetEditText(EBPYR,Sprintf('%.6f %.6f %.6f',[hnode.pch,hnode.yaw,hnode.rol]));
+ SetEditText(EBXYZ,Sprintf('%1.6f %1.6f %1.6f',[hnode.x,hnode.y,hnode.z]));
+ SetEditText(EBPYR,Sprintf('%1.6f %1.6f %1.6f',[hnode.pch,hnode.yaw,hnode.rol]));
  SetEditText(EBType,IntToStr(hnode.ntype));
 end;
 

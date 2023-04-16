@@ -17,13 +17,14 @@ uses
   OLE2,
 {$ENDIF}
   Windows,
+  Math,
   SysUtils,
   Graphics,
   DDraw,
   D3D,
-  D3DRM,
-  D3DRMDef,
-  D3DRMObj,
+  //D3DRM,
+  //D3DRMDef,
+  //D3DRMObj,
   D3DTypes,
   DPlay,
   DInput,
@@ -207,7 +208,7 @@ procedure ReleaseCOMe(var COM);
 // Increases the reference-counter of an Delphi2 or 3 COM-interface
 function AddCOM(const COM) : pointer;
 // Computes the bounding box of an retained mode frame:
-function GetFrameBox(Frame: IDirect3DRMFrame; var FrameBox: TD3DRMBox) : boolean;
+//function GetFrameBox(Frame: IDirect3DRMFrame; var FrameBox: TD3DRMBox) : boolean;
 // Displays a message:
 procedure SM(Message: string);
 // Loads colorpalette-data from a Paint Shop Pro file:
@@ -586,17 +587,19 @@ var
   c, s, Q : TD3DValue;
   ret : TD3DMatrix;
 begin
+    // From Jones engine
     c := cos(fov*0.5);
     s := sin(fov*0.5);
-    Q := s/(1.0 - near_plane/far_plane);
+    Q := far_plane/(far_plane - near_plane); //s/(1.0 - near_plane/far_plane);
 
     ret := ZeroMatrix;
-    ret._11 := c;
-    ret._22 := c;
+
+    ret._11 := c /s;
+    ret._22 := c /s;
     ret._33 := Q;
 
-    ret._43 := -Q*near_plane;
-    ret._34 := s;
+    ret._43 := (-Q*near_plane);
+    ret._34 := 1.0;
     result := ret;
 end;
 
@@ -910,56 +913,56 @@ begin
     raise Exception.Create(DXStat+#13+'ReleaseCOM of NULL object');
 end;
 
-function GetFrameBox(Frame: IDirect3DRMFrame; var FrameBox: TD3DRMBox) : boolean;
-const
-  Visuals : IDirect3DRMVisualArray = nil;
-  Visual  : IDirect3DRMVisual = nil;
-  Mesh    : IDirect3DRMMesh = nil;
-  Meshbuilder : IDirect3DRMMeshbuilder = nil;
-var
-  Box : TD3DRMBox;
-  i,n : integer;
-begin
-  with FrameBox do begin
-    with min do begin
-      x := 0;
-      y := 0;
-      z := 0;
-    end;
-    with max do begin
-      x := 0;
-      y := 0;
-      z := 0;
-    end;
-  end;
-  Result := false;
-  if not assigned(Frame) then exit;
-  dxCheck( Frame.GetVisuals(Visuals) );
-  n := Visuals.GetSize;
-  if n = 0 then exit;
-  for i := 0 to n-1 do begin
-    Result := false;
-    dxCheck( Visuals.GetElement(i,Visual) );
-    if Visual.QueryInterface(IID_IDirect3DRMMesh,Mesh) = D3D_OK then begin
-      dxCheck( Mesh.GetBox(Box) );
-      ReleaseCOMe( Mesh );
-      Result := true;
-    end
-    else if Visual.QueryInterface(IID_IDirect3DRMMeshbuilder,Meshbuilder) = D3D_OK then begin
-      dxCheck( Meshbuilder.GetBox(Box) );
-      ReleaseCOMe( Meshbuilder );
-      Result := true;
-    end;
-    ReleaseCOMe( Visual );
-    if Box.min.x < FrameBox.min.x then FrameBox.min.x := Box.min.x;
-    if Box.min.y < FrameBox.min.y then FrameBox.min.y := Box.min.y;
-    if Box.min.z < FrameBox.min.z then FrameBox.min.z := Box.min.z;
-    if Box.max.x > FrameBox.max.x then FrameBox.max.x := Box.max.x;
-    if Box.max.y > FrameBox.max.y then FrameBox.max.y := Box.max.y;
-    if Box.max.z > FrameBox.max.z then FrameBox.max.z := Box.max.z;
-  end;
-  ReleaseCOM( Visuals );
-end;
+//function GetFrameBox(Frame: IDirect3DRMFrame; var FrameBox: TD3DRMBox) : boolean;
+//const
+//  Visuals : IDirect3DRMVisualArray = nil;
+//  Visual  : IDirect3DRMVisual = nil;
+//  Mesh    : IDirect3DRMMesh = nil;
+//  Meshbuilder : IDirect3DRMMeshbuilder = nil;
+//var
+//  Box : TD3DRMBox;
+//  i,n : integer;
+//begin
+//  with FrameBox do begin
+//    with min do begin
+//      x := 0;
+//      y := 0;
+//      z := 0;
+//    end;
+//    with max do begin
+//      x := 0;
+//      y := 0;
+//      z := 0;
+//    end;
+//  end;
+//  Result := false;
+//  if not assigned(Frame) then exit;
+//  dxCheck( Frame.GetVisuals(Visuals) );
+//  n := Visuals.GetSize;
+//  if n = 0 then exit;
+//  for i := 0 to n-1 do begin
+//    Result := false;
+//    dxCheck( Visuals.GetElement(i,Visual) );
+//    if Visual.QueryInterface(IID_IDirect3DRMMesh,Mesh) = D3D_OK then begin
+//      dxCheck( Mesh.GetBox(Box) );
+//      ReleaseCOMe( Mesh );
+//      Result := true;
+//    end
+//    else if Visual.QueryInterface(IID_IDirect3DRMMeshbuilder,Meshbuilder) = D3D_OK then begin
+//      dxCheck( Meshbuilder.GetBox(Box) );
+//      ReleaseCOMe( Meshbuilder );
+//      Result := true;
+//    end;
+//    ReleaseCOMe( Visual );
+//    if Box.min.x < FrameBox.min.x then FrameBox.min.x := Box.min.x;
+//    if Box.min.y < FrameBox.min.y then FrameBox.min.y := Box.min.y;
+//    if Box.min.z < FrameBox.min.z then FrameBox.min.z := Box.min.z;
+//    if Box.max.x > FrameBox.max.x then FrameBox.max.x := Box.max.x;
+//    if Box.max.y > FrameBox.max.y then FrameBox.max.y := Box.max.y;
+//    if Box.max.z > FrameBox.max.z then FrameBox.max.z := Box.max.z;
+//  end;
+//  ReleaseCOM( Visuals );
+//end;
 
 function FormatError(ErrorString,At: string) : string;
 begin
@@ -1302,19 +1305,19 @@ begin
     D3DERR_NOCURRENTVIEWPORT: Result := 'D3DERR_NOCURRENTVIEWPORT';
 
 
-    D3DRMERR_BADOBJECT: Result := 'D3DRMERR_BADOBJECT';
-    D3DRMERR_BADTYPE: Result := 'D3DRMERR_BADTYPE';
-    D3DRMERR_BADALLOC: Result := 'D3DRMERR_BADALLOC';
-    D3DRMERR_FACEUSED: Result := 'D3DRMERR_FACEUSED';
-    D3DRMERR_NOTFOUND: Result := 'D3DRMERR_NOTFOUND';
-    D3DRMERR_NOTDONEYET: Result := 'D3DRMERR_NOTDONEYET';
-    D3DRMERR_FILENOTFOUND: Result := 'The file was not found.';
-    D3DRMERR_BADFILE: Result := 'D3DRMERR_BADFILE';
-    D3DRMERR_BADDEVICE: Result := 'D3DRMERR_BADDEVICE';
-    D3DRMERR_BADVALUE: Result := 'D3DRMERR_BADVALUE';
-    D3DRMERR_BADMAJORVERSION: Result := 'D3DRMERR_BADMAJORVERSION';
-    D3DRMERR_BADMINORVERSION: Result := 'D3DRMERR_BADMINORVERSION';
-    D3DRMERR_UNABLETOEXECUTE: Result := 'D3DRMERR_UNABLETOEXECUTE';
+    //D3DRMERR_BADOBJECT: Result := 'D3DRMERR_BADOBJECT';
+//    D3DRMERR_BADTYPE: Result := 'D3DRMERR_BADTYPE';
+//    D3DRMERR_BADALLOC: Result := 'D3DRMERR_BADALLOC';
+//    D3DRMERR_FACEUSED: Result := 'D3DRMERR_FACEUSED';
+//    D3DRMERR_NOTFOUND: Result := 'D3DRMERR_NOTFOUND';
+//    D3DRMERR_NOTDONEYET: Result := 'D3DRMERR_NOTDONEYET';
+//    D3DRMERR_FILENOTFOUND: Result := 'The file was not found.';
+//    D3DRMERR_BADFILE: Result := 'D3DRMERR_BADFILE';
+//    D3DRMERR_BADDEVICE: Result := 'D3DRMERR_BADDEVICE';
+//    D3DRMERR_BADVALUE: Result := 'D3DRMERR_BADVALUE';
+//    D3DRMERR_BADMAJORVERSION: Result := 'D3DRMERR_BADMAJORVERSION';
+//    D3DRMERR_BADMINORVERSION: Result := 'D3DRMERR_BADMINORVERSION';
+//    D3DRMERR_UNABLETOEXECUTE: Result := 'D3DRMERR_UNABLETOEXECUTE';
     else Result := UnrecognizedError;
   end;
 end;

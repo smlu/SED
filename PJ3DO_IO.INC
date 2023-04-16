@@ -4,7 +4,7 @@ TTempTXVertex=class
   u,v:single;
 end;
 
-Constructor TPJ3DO.CreateFrom3DO(const name:string;lod:integer);
+Constructor TPJ3DO.CreateFrom3DO(const name:string; lod:integer; var fileVersion: double);
 var t:TTextFile; cpos:word; s,w1,w2:String;
     cur_line:integer;
     a,n,nx:Integer;
@@ -37,6 +37,13 @@ end;
 Procedure Error(s:String);
 begin
  PanMessage(mt_error,'File '+name+Format(' Error at line %d: %s',[cur_line,s]));
+end;
+
+Procedure LoadHeader(var version: double);
+begin
+ CurSection:='';
+ GetNextLine(s);
+ SScanf(s,'3DO %f',[@version]);
 end;
 
 Function GetMat(n:integer):String;
@@ -76,12 +83,12 @@ begin
  end else
  begin
   np:=ps-@s[1];
-  w:=trim(copy(s,p,np-p+1));
+  w:=Trim(Copy(s,p,np-p+1));
   result:=np+2;
  end;
 end;
 
-Procedure LoadGeometry;
+Procedure LoadGeometry(const version: double);
 var i,j,k,m,n,p,pc:integer;
     nvx,vx,tvx:integer;
     txvx:TTempTXVertex;
@@ -94,6 +101,7 @@ var i,j,k,m,n,p,pc:integer;
     face:T3DOFace;
     v:TVertex;
     tv:TTempTXVertex;
+    vertIntensities: array of TColorF;
 
 Function GetTXVX(n:integer):TTempTXVertex;
 begin
@@ -156,6 +164,7 @@ begin
    p:=GetWord(s,1,w1);
    if w1<>'VERTICES' then continue;
    SScanf(s,'VERTICES %d',[@Nvxs]);
+   SetLength(vertIntensities, Nvxs);
    break;
   end;
   if EndOfSection then exit;
@@ -167,8 +176,26 @@ begin
   for j:=0 to nvxs-1 do
   begin
    GetNextLine(s);
-   v:=TVertex.Create;
-   SScanf(s,'%s %f %f %f',[@w1,@v.x,@v.y,@v.z]);
+   v := TVertex.Create;
+   var vcolor: TColorF;
+
+   if IsClose(version, 2.1) then
+      begin
+        var vi: Double;
+        SScanf(s,'%s %f %f %f %f',[@w1,@v.x,@v.y,@v.z, @vi]);
+        vcolor := IntensityToColor(vi);
+      end
+    else if IsClose(version, 2.2) then
+      begin
+        SScanf(s,'%s %f %f %f %l %l %l',[@w1,@v.x,@v.y,@v.z, @vcolor.r, @vcolor.g, @vcolor.b]);
+        vcolor.a := 1.0;
+      end
+    else
+      begin // 2.3
+        SScanf(s,'%s %f %f %f %l %l %l %l',[@w1,@v.x,@v.y,@v.z, @vcolor.r, @vcolor.g, @vcolor.b, @vcolor.a]);
+      end;
+
+   vertIntensities[j] := vcolor;
    Mesh.Vertices.Add(v);
   end;
 
@@ -205,31 +232,53 @@ begin
   p:=GetWord(s,p,w1); {material}
   ValInt(w1,face.imat);
   p:=GetWord(s,p,w1); {type}
-  ValHex(w1,face.ftype);
+  ValHex(w1,face.faceflags);
   p:=GetWord(s,p,w1); {geo}
   ValInt(w1,face.geo);
   p:=GetWord(s,p,w1); {light}
   ValInt(w1,face.light);
   p:=GetWord(s,p,w1); {tex}
   ValInt(w1,face.tex);
-  p:=GetWord(s,p,w1); {extralight}
-  ValSingle(w1,face.extra_L);
+
+  {extralight}
+  if IsClose(version, 2.1) then
+    begin
+      p:=GetWord(s,p,w1);
+      ValSingle(w1,face.extraLight.a);
+      face.extraLight := IntensityToColor(face.extraLight.a);
+    end
+  else if IsClose(version, 2.2) then
+    begin
+      p:=GetWord(s,p,w1);
+      StripSScan(w1,'%l %l %l)',[@face.extraLight.r, @face.extraLight.g, @face.extraLight.b]);
+    end
+  else
+    begin // 2.3
+      p:=GetWord(s,p,w1);
+      StripSScan(w1,'%l %l %l %l)',[@face.extraLight.r, @face.extraLight.g, @face.extraLight.b, @face.extraLight.a]);
+    end;
+
   p:=GetWord(s,p,w1); {Nvert}
   nvxs:=StrToInt(w1);
   for k:=0 to nvxs-1 do
   begin
+   // vert
    p:=GetVXWord(s,p,w1);
    ValInt(w1,nvx);
    Face.AddVertex(Mesh.Vertices[nvx]);
+   var vcolor := vertIntensities[nvx];
+
+   // uv
    p:=GetWord(s,p,w1);
    ValInt(w1,nvx);
    tv:=GetTXVX(nvx);
    if tv<>nil then
-   With Face.TXVertices[k] do
-   begin
-    u:=tv.u;
-    v:=tv.v;
-   end;
+     With Face.TXVertices[k] do
+       begin
+        u := tv.u;
+        v := tv.v;
+        color := vcolor;
+       end;
   end;
 end;
   for m:=0 to GTXVXList.Count-1 do
@@ -279,8 +328,8 @@ Repeat
 While (CurSection='') and (not t.eof) do GetNextLine(s);
  if t.eof then break;
  EndOfSection:=false;
- if CurSection='GEOMETRYDEF' then LoadGeometry
- else if CurSection='HEADER' then CurSection:=''
+ if CurSection='GEOMETRYDEF' then LoadGeometry(fileVersion)
+ else if CurSection='HEADER' then LoadHeader(fileVersion)
  else if CurSection='MODELRESOURCE' then LoadMats
  else if CurSection='HIERARCHYDEF' then LoadHierarchy
  else SkipToNextSection;

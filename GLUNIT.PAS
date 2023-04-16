@@ -25,6 +25,7 @@ type
   GLint         = INT;
   PGLint        = ^GLint;
   GLsizei       = INT;
+  GLsizeiptr    = Integer;
   GLubyte       = UNSIGNED_CHAR;
   PGLubyte      = ^GLubyte;
   GLushort      = UNSIGNED_SHORT;
@@ -37,6 +38,7 @@ type
   GLdouble      = DOUBLE_;
   PGLdouble     = ^GLdouble;
   GLclampd      = DOUBLE_;
+  PGLvoid       = Pointer;
   {void GLvoid;}
 
 
@@ -914,6 +916,7 @@ const
 
 // TextureWrapMode
 const
+  GL_CLAMP_TO_EDGE          = $812F;
   GL_CLAMP                  = $2900;
   GL_REPEAT                 = $2901;
 
@@ -980,34 +983,49 @@ var
  
  glBegin:Procedure (mode: GLenum);stdcall;
  glBindTexture: Procedure (target: GLenum; texture:GLuint); stdcall;
+ glBlendFunc: Procedure (sfactor: GLenum; dfactor: GLenum); stdcall;
+ glBufferData: Procedure (target: GLenum;size: GLsizeiptr; const data: PGLvoid; usage: GLenum); stdcall;
  glCallList:Procedure (list: GLuint);stdcall;
  glClear:Procedure (mask: GLbitfield);stdcall;
  glClearColor:Procedure (red: GLclampf; green: GLclampf; blue: GLclampf; alpha: GLclampf);stdcall;
  glColor3f:Procedure (red: GLfloat; green: GLfloat; blue: GLfloat);stdcall;
  glColor3ub:Procedure (red: GLubyte; green: GLubyte; blue: GLubyte);stdcall;
+ glColor4f:Procedure (red: GLfloat; green: GLfloat; blue: GLfloat; alpha: GLfloat);stdcall;
+ glColor4ub:Procedure (red: GLubyte; green: GLubyte; blue: GLubyte; alpha: GLubyte);stdcall;
  glCullFace:Procedure (mode: GLenum);stdcall;
  glDeleteLists:Procedure (list: GLuint; range: GLsizei);stdcall;
- glDeleteTextures:Procedure(n:GLsizei; var textures:GLuint); stdcall;
+ glDeleteTextures:Procedure(n:GLsizei; const textures:PGLuint);stdcall;
+ glDepthFunc: Procedure (func: GLenum ); stdcall;
+ glDepthMask: Procedure (flag: GLboolean); stdcall;
  glDepthRange:Procedure (zNear: GLclampd; zFar: GLclampd);stdcall;
  glDisable:Procedure (cap: GLenum);stdcall;
  glEnable:Procedure (cap: GLenum);stdcall;
  glend: procedure; stdcall;
  glEndList: procedure; stdcall;
  glFlush: Procedure;stdcall;
+ glFogf: Procedure (pname: GLenum; param: GLfloat);stdcall;
+ glFogfv: Procedure (pname: GLenum; const params: PGLfloat);stdcall;
+ glFogi: Procedure (pname: GLenum; param: GLint);stdcall;
+ glFogiv: Procedure (pname: GLenum; const params: PGLint);stdcall;
 
  glFrontFace:Procedure (mode: GLenum);stdcall;
+ glFrustum: procedure (left, right, bottom, top, zNear, zFar: GLdouble); stdcall;
  glGenLists: Function (range: GLsizei): GLuint; stdcall;
- glGenTextures: Procedure (n:GLsizei; var textures:GLuint); stdcall;
+ glGenerateMipmap: Procedure (target: GLenum); stdcall;
+ glGenTextures: Procedure (n:GLsizei; const textures:PGLuint);stdcall;
 
  glGetDoublev:Procedure (pname: GLenum; params: PGLdouble);stdcall;
  glGetError: Function : GLenum; stdcall;
  glGetIntegerv:Procedure (pname: GLenum; params: PGLint);stdcall;
  glHint:Procedure (target: GLenum; mode: GLenum);stdcall;
  glInitNames: Procedure;stdcall;
+ glLineWidth: Procedure (width: GLfloat);stdcall;
  glLoadIdentity: Procedure; stdcall;
  glLoadName:Procedure (name: GLuint);stdcall;
  glMatrixMode:Procedure (mode: GLenum);stdcall;
  glNewList:Procedure (list: GLuint; mode: GLenum);stdcall;
+ glNormal3d:Procedure (nx: GLdouble ; ny: GLdouble ; nz: GLdouble );stdcall;
+ glNormal3f:Procedure (nx: GLfloat; ny: GLfloat; nz: GLfloat);stdcall;
  glOrtho:Procedure (left: GLdouble; right: GLdouble; bottom: GLdouble; top: GLdouble; zNear: GLdouble; zFar: GLdouble);stdcall;
  glPixelStorei:Procedure (pname: GLenum; param: GLint);stdcall;
  glPointSize:Procedure (size: GLfloat);stdcall;
@@ -1024,6 +1042,8 @@ var
  glTexImage2D:Procedure (target: GLenum; level: GLint; components: GLint; width: GLsizei; height: GLsizei; border: GLint; format: GLenum; atype: GLenum; const pixels);stdcall;
  glTexParameterf:Procedure (target: GLenum; pname: GLenum; param: GLfloat);stdcall;
  glTranslated:Procedure (x: GLdouble; y: GLdouble; z: GLdouble);stdcall;
+ glVertex2d:Procedure (x: GLdouble; y: GLdouble);stdcall;
+ glVertex2f:Procedure (x: GLfloat; y: GLfloat);stdcall;
  glVertex3d:Procedure (x: GLdouble; y: GLdouble; z: GLdouble);stdcall;
  glVertex3f:Procedure (x: GLfloat; y: GLfloat; z: GLfloat);stdcall;
  glViewport:Procedure (x: GLint; y: GLint; width: GLsizei; height: GLsizei);stdcall;
@@ -1061,18 +1081,27 @@ Function InitOpenGL:boolean;
 var gllib,glulib:integer;
     res:boolean;
 
-Function LoadGLProc(const name:string):pointer;
+
+Function TryLoadGLProc(const name:PAnsiChar):pointer;
 begin
  if not res then exit;
- result:=GetProcAddress(gllib,Pchar(name));
+ result:=GetProcAddress(gllib,name);
+ if (result = nil) and (Addr(wglGetProcAddress) <> nil) then
+    result:=wglGetProcAddress(name);
+end;
+
+Function LoadGLProc(const name:PAnsiChar):pointer;
+begin
+ if not res then exit;
+ result:=TryLoadGLProc(name);
  res:=res and (result<>nil);
  if result=nil then PanMessage(mt_warning,'Couldn''t find function '+name+' in OpenGL32.DLL');
 end;
 
-Function LoadGLUProc(const name:string):pointer;
+Function LoadGLUProc(const name:PAnsiChar):pointer;
 begin
  if not res then exit;
- result:=GetProcAddress(glulib,Pchar(name));
+ result:=GetProcAddress(glulib,name);
  res:=res and (result<>nil);
  if result=nil then PanMessage(mt_warning,'Couldn''t find function '+name+' in Glu32.DLL');
 end;
@@ -1088,25 +1117,38 @@ begin
 
  res:=true;
 
+ wglGetProcAddress:=LoadGLProc('wglGetProcAddress');
  glbegin:=LoadGLProc('glBegin');
  glBindTexture:=LoadGLProc('glBindTexture');
+ glBlendFunc:=LoadGLProc('glBlendFunc');
+ //glBufferData:=LoadGLProc('glBufferData');
  glCallList:=LoadGLProc('glCallList');
  glClear:=LoadGLProc('glClear');
  glClearColor:=LoadGLProc('glClearColor');
  glColor3f:=LoadGLProc('glColor3f');
  glColor3ub:=LoadGLProc('glColor3ub');
+ glColor4f:=LoadGLProc('glColor4f');
+ glColor4ub:=LoadGLProc('glColor4ub');
  glCullFace:=LoadGLProc('glCullFace');
  glDeleteLists:=LoadGLProc('glDeleteLists');
  glDeleteTextures:=LoadGLProc('glDeleteTextures');
+ glDepthFunc:=LoadGLProc('glDepthFunc');
+ glDepthMask:=LoadGLProc('glDepthMask');
  glDepthRange:=LoadGLProc('glDepthRange');
  glDisable:=LoadGLProc('glDisable');
  glEnable:=LoadGLProc('glEnable');
  glend:=LoadGLProc('glEnd');
  glEndList:=LoadGLProc('glEndList');
  glFlush:=LoadGLProc('glFlush');
+ glFogf:=LoadGLProc('glFogf');
+ glFogfv:=LoadGLProc('glFogfv');
+ glFogi:=LoadGLProc('glFogi');
+ glFogiv:=LoadGLProc('glFogiv');
 
  glFrontFace:=LoadGLProc('glFrontFace');
+ glFrustum:=LoadGLProc('glFrustum');
  glGenLists:=LoadGLProc('glGenLists');
+ glGenerateMipmap:=TryLoadGLProc('glGenerateMipmap');
  glGenTextures:=LoadGLProc('glGenTextures');
 
  glGetDoublev:=LoadGLProc('glGetDoublev');
@@ -1114,10 +1156,13 @@ begin
  glGetIntegerv:=LoadGLProc('glGetIntegerv');
  glHint:=LoadGLProc('glHint');
  glInitNames:=LoadGLProc('glInitNames');
+ glLineWidth:=LoadGLProc('glLineWidth');
  glLoadIdentity:=LoadGLProc('glLoadIdentity');
  glLoadName:=LoadGLProc('glLoadName');
  glMatrixMode:=LoadGLProc('glMatrixMode');
  glNewList:=LoadGLProc('glNewList');
+ glNormal3d:=LoadGLProc('glNormal3d');
+ glNormal3f:=LoadGLProc('glNormal3f');
  glOrtho:=LoadGLProc('glOrtho');
  glPixelStorei:=LoadGLProc('glPixelStorei');
  glPointSize:=LoadGLProc('glPointSize');
@@ -1134,6 +1179,8 @@ begin
  glTexImage2D:=LoadGLProc('glTexImage2D');
  glTexParameterf:=LoadGLProc('glTexParameterf');
  glTranslated:=LoadGLProc('glTranslated');
+ glVertex2d:=LoadGLProc('glVertex2d');
+ glVertex2f:=LoadGLProc('glVertex2f');
  glVertex3d:=LoadGLProc('glVertex3d');
  glVertex3f:=LoadGLProc('glVertex3f');
  glViewport:=LoadGLProc('glViewport');
@@ -1142,7 +1189,6 @@ begin
  wglDeleteContext:=LoadGLProc('wglDeleteContext');
  wglGetCurrentContext:=LoadGLProc('wglGetCurrentContext');
  wglMakeCurrent:=LoadGLProc('wglMakeCurrent');
- wglGetProcAddress:=LoadGLProc('wglGetProcAddress');
 
  if not res then
  begin

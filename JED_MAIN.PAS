@@ -8,7 +8,7 @@ uses
     Render, OGL_render, FileOperations, lev_utils, Geometry,
     Buttons, Math, Containers, Files, U_templates, Prefab, ListRes,
     sft_render, u_multisel, jed_plugins, values, shellApi, U_copypaste,
-    FileCtrl, u_undo, JED_COM, tbar_tools, u_3dos, System.ImageList, Vcl.ImgList;
+    FileCtrl, u_undo, JED_COM, tbar_tools, u_3dos, System.ImageList, Vcl.ImgList, Types;
 
 Const
     { Map modes }
@@ -31,6 +31,7 @@ Const
     MM_RotateGrid = 6;
     MM_CreateSector = 7;
     MM_RectSelect = 8;
+    MM_Ruler = 9;
 
     All_layers = -100;
 
@@ -47,6 +48,7 @@ Const
     sc_vertices = 1;
     sc_values = 2;
     sc_all = -1;
+
     { ScaleObject constants }
     sc_ScaleTX = 1;
     sc_scaleX = 2;
@@ -58,6 +60,7 @@ Const
     ro_down = 1;
     { Cursor constants }
     crSaber = 1;
+    crEye   = 2;
 
     { SetThingView constants }
     cv_Dots = 0;
@@ -91,6 +94,8 @@ type
     end;
 
     TOnExtraMove = procedure(sender: TObject; continued: boolean) of object;
+    TSectorCallback = reference to procedure(sec: TJKSector) ;
+    TSurfaceCallback = reference to procedure(sec: TJKSurface) ;
 
     TJedMain = class(TForm)
         MainMenu: TMainMenu;
@@ -105,8 +110,7 @@ type
         N2: TMenuItem;
         Save1: TMenuItem;
         Import1: TMenuItem;
-        SaveJKL: TSaveDialog;
-        Export1: TMenuItem;
+        SaveAs: TSaveDialog;
         Tools1: TMenuItem;
         CalculateLights1: TMenuItem;
         ConsistencyCheck1: TMenuItem;
@@ -124,11 +128,9 @@ type
         MUNextObject: TMenuItem;
         MUPrevObject: TMenuItem;
         MUSnapGridTo: TMenuItem;
-        SaveJed: TSaveDialog;
         Options1: TMenuItem;
         GobProject1: TMenuItem;
         SaveGOB: TSaveDialog;
-        SaveJKL1: TMenuItem;
         Viewtogrid1: TMenuItem;
         Toolbar1: TMenuItem;
         JedTutor1: TMenuItem;
@@ -201,6 +203,9 @@ type
         CutsceneHelper1: TMenuItem;
         N3DOHierarchy1: TMenuItem;
         BNEX: TSpeedButton;
+        NewIJIMProject: TMenuItem;
+        SetMapGeoBackfaceCulling: TMenuItem;
+
         procedure Exit1Click(sender: TObject);
         procedure OpenMenuClick(sender: TObject);
         procedure FormCreate(sender: TObject);
@@ -212,7 +217,6 @@ type
           Shift: TShiftState; X, Y: Integer);
         procedure Import1Click(sender: TObject);
         procedure FormPaint(sender: TObject);
-        procedure Export1Click(sender: TObject);
         procedure PlaceCogs1Click(sender: TObject);
         procedure FormMouseUp(sender: TObject; Button: TMouseButton;
           Shift: TShiftState; X, Y: Integer);
@@ -275,6 +279,14 @@ type
         procedure TutorialsonMassassiNet1Click(sender: TObject);
         procedure CutsceneHelper1Click(sender: TObject);
         procedure N3DOHierarchy1Click(sender: TObject);
+        procedure NewIJIMProjectClick(Sender: TObject);
+        procedure SetMapGeoBackfaceCullingClick(Sender: TObject);
+        procedure FormMouseWheel(Sender: TObject; Shift: TShiftState;
+          WheelDelta: Integer; MousePos: TPoint; var Handled: Boolean);
+
+        procedure OnFixSolidSurfaces(sender: TObject);
+        procedure OnFixPassableAdjoins(sender: TObject);
+
     public
         { Project vars }
         AskSaveAs: boolean;
@@ -289,10 +301,12 @@ type
         SnapToGrid: boolean;
         renderer: TRenderer;
         ListID: Integer;
-        hdc, hglc: HDC;
+        hdc: HDC;
+        hglc: HGLRC;
         { scale:double; }
         Cur_SC, Cur_SF, Cur_VX, Cur_ED, Cur_LT, Cur_TH, Cur_FR, Cur_EX: Integer;
         Map_mode: Integer;
+        MapGeoBackfaceCull: Boolean;
         Mouse_mode: Integer;
         msel_mode: Integer;
         thing_view: Integer;
@@ -310,6 +324,10 @@ type
         CleaveStarted: boolean;
         SCCreateStarted: boolean;
         LastX, LastY: Integer;
+        { Whip ruler vars}
+        RulerOrgXY: TPoint;
+        RulerOrg: T3DPoint;
+        RulerStarted: boolean;
         { Rect select vars }
         RectOrgX, RectOrgY: Integer;
         RectLastX, RectLastY: Integer;
@@ -355,13 +373,14 @@ type
         Procedure WMPalCHANGED(var msg: TMessage); message WM_PALETTECHANGED;
         procedure RecentClick(sender: TObject);
         procedure KBCommandClick(sender: TObject);
-        Procedure AddKBItem(mi: TMenuItem; const name: string; c: char;
-          sc: TShiftState);
+        Procedure AddKBItem(mi: TMenuItem; const name: string; c: char; sc: TShiftState); overload;
+        Procedure AddKBItem(mi: TMenuItem; const name: string; onClick: TNotifyEvent); overload;
+
         Function DoSaveJKL: boolean;
         Function GobProj(const name: string): boolean;
         procedure PluginClick(sender: TObject);
         Procedure LoadPlugins;
-        Procedure Import3DO(const name: string);
+        Procedure Import3DO(const name: string; const clearCurrentLevel: Boolean);
 
         procedure ExceptHandler(sender: TObject; E: Exception);
         Procedure SetRendfromPYR;
@@ -373,7 +392,7 @@ type
         Procedure ConnectSFs;
         Procedure ConnectSCs;
         Procedure JumpToObject;
-    public
+
         Procedure SaveSelThingsUndo(const rname: string; change: Integer);
         Procedure SaveSelLightsUndo(const rname: string; change: Integer);
         Procedure SaveSelFramesUndo(const rname: string; change: Integer);
@@ -388,7 +407,7 @@ type
         Function SaveProject: boolean;
         Function SysSaveProject(askSave: boolean): boolean;
         Procedure SaveJKLto(const name: string);
-        Procedure SaveJEDTo(const name: string);
+        Procedure SaveToFile(const filePath: string; ext: string; setSaved: Boolean = True);
         Procedure SnapGridToObject;
         Function GetXYZAt(atX, atY: Integer; var X, Y, z: double): boolean;
         Function GetMousePos(var X, Y: Integer): boolean;
@@ -399,6 +418,10 @@ type
         Procedure Do_StartCleave(X, Y: Integer; snaptovertex: boolean);
         Procedure Do_ProceedCleave(X, Y: Integer; snaptovertex: boolean);
         Procedure Do_EndCleave(X, Y: Integer; snaptovertex: boolean);
+
+        Procedure Do_StartRuler(X, Y: Integer; snaptovertex: boolean);
+        Procedure Do_ProceedRuler(X, Y: Integer; snaptovertex: boolean);
+        Procedure Do_EndRuler(X, Y: Integer; snaptovertex: boolean);
 
         Procedure Do_StartDrag(X, Y: Integer);
         Procedure Do_ProceedDrag(X, Y: Integer; snaptovx: boolean;
@@ -437,6 +460,7 @@ type
 
         Procedure SetMouseMode(mm: Integer);
         Procedure SetMapMode(mm: Integer);
+        Procedure EnableMapGeoBackfaceCull(enable: Boolean);
         Procedure SetCurSC(sc: Integer);
         Procedure SetCurSF(sc, SF: Integer);
         Procedure SetCurVX(sc, VX: Integer);
@@ -497,7 +521,7 @@ type
         Procedure SetMSelMode(mode: Integer);
         Procedure UpdateThingData(th: TJKThing);
         Procedure LoadTemplates;
-        Procedure SetMotsIndicator;
+        Procedure SetProjectTypeIndicator;
         Function ShortJKLName: string;
         Procedure DO_MultiSelect;
         Procedure ClearMultiSelection;
@@ -528,6 +552,9 @@ type
         Procedure AddThingAtXYZPYR(X, Y, z, pch, yaw, rol: double);
         Procedure SetHideLights(hide: boolean);
         Procedure SetHideThings(hide: boolean);
+
+        procedure ForSelectedSectorsDo(callback: TSectorCallback);
+        procedure ForSelectedSurfacesDo(callback: TSurfaceCallback);
     end;
 
 var
@@ -580,6 +607,9 @@ begin
         Free3DO(Level.Things[i].a3DO);
 
     Level.Clear;
+    Level.MasterCMP := '';
+    Level.kind := CurrentProject;
+
     sec := Level.NewSector;
     Level.Sectors.Add(sec);
 
@@ -691,10 +721,9 @@ begin
 
     AskSaveAs := true;
     NewLevel := true;
-    LevelFile := 'Untitled.jed';
+    LevelFile := 'Untitled';
     Level.AddMissingLayers;
-    Level.MasterCMP := '';
-    Level.mots := isMots;
+
 end;
 
 Procedure TJedMain.OpenProject(const fname: string; how: Integer);
@@ -707,7 +736,7 @@ begin
     ext := UpperCase(ExtractExt(fname));
     ResettingEditor;
     PMsg.Caption := '';
-    if ext = '.JKL' then
+    if (ext = '.JKL') or (ext = '.NDY') then
     begin
         Level.LoadFromJKL(fname);
         NewLevel := false;
@@ -723,7 +752,7 @@ begin
         AskSaveAs := IsInContainer(fname);
         SetLevelName;
     end;
-    SetMots(Level.mots);
+    SetProjectType(Level.kind);
     Level.JKLPostLoad;
     AddRecent(fname);
     ResetEditor(how <> op_revert);
@@ -740,48 +769,108 @@ begin
     Result := SysSaveProject(AskSaveAs);
 end;
 
-Procedure TJedMain.SaveJEDTo(const name: string);
+Procedure TJedMain.SaveToFile(const filePath: string; ext: string; setSaved: Boolean);
 begin
+    BackUpFile(filePath);
+    ForceDirectories(ExtractFilePath(filePath));
+
     Level.LVisString := ToolBar.GetLVisString;
-    Level.SaveToJed(name);
-    AskSaveAs := false;
-    NewLevel := false;
-    Changed := false;
-    LevelFile := name;
-    AddRecent(name);
-    SetLevelName;
+    if CompareText(ext, '.jed') = 0 then
+      begin
+        Level.SaveToJed(filePath);
+      end
+    else if (CompareText(ext, '.jkl') = 0) or (CompareText(ext,'.ndy') = 0) then
+      Level.SaveToJKL(filePath)
+    else
+      begin
+        PanMessageFmt(mt_error, 'SaveTo: Unkown file format with extension ''%s''', [ext]);
+        exit;
+      end;
+
+    if setSaved then
+    begin
+      AskSaveAs := false;
+      NewLevel := false;
+      Changed := false;
+      LevelFile := filePath;
+      AddRecent(filePath);
+      SetLevelName;
+    end;
 end;
 
 Function TJedMain.SysSaveProject(askSave: boolean): boolean;
 var
-    fpath, fname: string;
+    fname: string;
     t: TextFile;
 begin
     Result := false;
+
+//    if IsInContainer(LevelFile) then
+//    begin
+//        PanMessage(mt_error, 'File is in container - try "Save As"');
+//        exit;
+//    end;
+
     if not askSave then
-    begin
-        fname := ChangeFileExt(LevelFile, '.jed');
-        BackUpFile(fname);
-    end
+      begin
+        fname := LevelFile
+      end
     else
+      begin
+        SaveAs.FileName := LevelFile;
+        if not SaveAs.Execute then exit;
+        fname := SaveAs.FileName;
+      end;
+
+    var ext := ExtractExt(fname);
+    if CompareText(ext, '.jed') = 0 then
     begin
-        SaveJed.FileName := ChangeFileExt(ExtractName(LevelFile), '.jed');
-        if not SaveJed.Execute then
-            exit;
-        fname := SaveJed.FileName;
+      var fpath := ExtractFilePath(fname);
+      if not FileExists(fpath + 'episode.jk') then
+      begin
+          AssignFile(t, fpath + 'episode.jk');
+          Rewrite(t);
+          WriteLn(t, Format(EpisodeJKTpl, [ChangeFileExt(ExtractName(fname),
+            '.jkl')]));
+          CloseFile(t);
+      end;
     end;
-    fpath := ExtractFilePath(fname);
-    if not FileExists(fpath + 'episode.jk') then
-    begin
-        AssignFile(t, fpath + 'episode.jk');
-        Rewrite(t);
-        WriteLn(t, Format(EpisodeJKTpl, [ChangeFileExt(ExtractName(fname),
-          '.jkl')]));
-        CloseFile(t);
-    end;
-    SaveJEDTo(fname);
+
+    SaveToFile(fname, ext);
     Result := true;
 end;
+
+//Function TJedMain.SysSaveProject(askSave: boolean): boolean;
+//var
+//    fpath, fname: string;
+//    t: TextFile;
+//begin
+//    Result := false;
+//    if not askSave then
+//    begin
+//        fname := ChangeFileExt(LevelFile, '.jed');
+//        BackUpFile(fname);
+//    end
+//    else
+//    begin
+//        SaveJed.FileName := ChangeFileExt(ExtractName(LevelFile), '.jed');
+//        if not SaveJed.Execute then
+//            exit;
+//        fname := SaveJed.FileName;
+//        BackUpFile(fname);
+//    end;
+//    fpath := ExtractFilePath(fname);
+//    if not FileExists(fpath + 'episode.jk') then
+//    begin
+//        AssignFile(t, fpath + 'episode.jk');
+//        Rewrite(t);
+//        WriteLn(t, Format(EpisodeJKTpl, [ChangeFileExt(ExtractName(fname),
+//          '.jkl')]));
+//        CloseFile(t);
+//    end;
+//    SaveJEDTo(fname);
+//    Result := true;
+//end;
 
 procedure TJedMain.OpenMenuClick(sender: TObject);
 begin
@@ -789,7 +878,7 @@ begin
         exit;
     With GetFileOpen do
     begin
-        Filter := 'All acceptable files|*.JKL;*.JED;*.GOB;*.GOO|Jed files(*.JED)|*.JED|JK Files (*goo;*.gob;*.jkl)|*.GOO;*.GOB;*.JKL';
+        Filter := 'All acceptable files|*.JKL;*.NDY;*.JED;*.GOB;*.GOO|Jed files (*.JED)|*.JED|JK Files (*goo;*.gob;*.jkl)|*.GOO;*.GOB;*.JKL|Infernal Machine Files (*.gob;*.ndy)|*.GOB;*.NDY';
         If Execute then
             OpenProject(FileName, op_open);
     end;
@@ -874,27 +963,41 @@ end;
 Procedure TJedMain.DrawThingAt(th: TThing; X, Y, z, pch, yaw, rol: single);
 var
     i: Integer;
+    var cpclr: TRColor;
+    function highlight(clr: TRColor): TRColor;
+    begin
+      var hint: Integer := 152;
+      Result.r := Math.Min(clr.r + hint, 255);
+      Result.g := Math.Min(clr.g + hint, 255);
+      Result.b := Math.Min(clr.b + hint, 255);
+    end;
 begin
-    renderer.DrawVertex(X, Y, z);
+    var clr := renderer.Front_clr;
+    cpclr := renderer.Front_clr;
     case thing_view of
-        cv_Dots:
-            exit;
         cv_Boxes:
             begin
-                if th.bbox.x1 = th.bbox.x2 then
-                    exit;
-                BoxToPolys(th.bbox, tcube);
-                renderer.DrawPolygonsAt(tcube, X, Y, z, pch, yaw, rol);
+                if th.bbox.x1 <> th.bbox.x2 then
+                begin
+                  BoxToPolys(th.bbox, tcube);
+                  renderer.DrawPolygonsAt(tcube, X, Y, z, pch, yaw, rol);
+                end;
             end;
         cv_Wireframes:
             begin
-                if th.a3DO = nil then
-                    exit;
-                for i := 0 to th.a3DO.Meshes.Count - 1 do
-                    With th.a3DO.Meshes[i] do
-                        renderer.DrawPolygonsAt(Faces, X, Y, z, pch, yaw, rol);
+                if th.a3DO <> nil then
+                begin
+                  cpclr := highlight(cpclr);
+                  for i := 0 to th.a3DO.Meshes.Count - 1 do
+                      With th.a3DO.Meshes[i] do
+                          renderer.DrawPolygonsAt(Faces, X, Y, z, pch, yaw, rol);
+                end;
             end;
     end;
+
+    renderer.SetColor(CL_Front, cpclr.r, cpclr.g, cpclr.b);
+    renderer.DrawVertex(X, Y, z);
+    renderer.SetColor(CL_Front, clr.r, clr.g, clr.b);
 end;
 
 Procedure TJedMain.DrawSelThing(th: TThing);
@@ -993,9 +1096,12 @@ begin
     try
         With clMapBack do
             renderer.SetColor(CL_Background, r, g, b);
+
         renderer.BeginScene;
+
         With clGrid do
             renderer.SetColor(CL_Front, r, g, b);
+
         ps := 1;// * Screen.PixelsPerInch / 96;
         renderer.SetPointSize(ps);
         renderer.DrawGrid;
@@ -1015,7 +1121,13 @@ begin
         end;
 
         With clMapGeoBack do
-            renderer.SetColor(CL_Back, r, g, b);
+          begin
+            if MapGeoBackfaceCull then
+              renderer.SetColor(CL_Front, clMapGeo.r, clMapGeo.g, clMapGeo.b)
+            else
+              renderer.SetColor(CL_Back, r, g, b);
+          end;
+
         renderer.SetCulling(r_CULLBACK);
         for s := 0 to Level.Sectors.Count - 1 do
         begin
@@ -1024,14 +1136,17 @@ begin
                 renderer.DrawPolygons(sec.surfaces);
         end;
 
-        With clMapGeo do
-            renderer.SetColor(CL_Front, r, g, b);
-        renderer.SetCulling(r_CULLFRONT);
-        for s := 0 to Level.Sectors.Count - 1 do
-        begin
-            sec := Level.Sectors[s];
-            if ToolBar.IsLayerVisible(sec.Layer) then
-                renderer.DrawPolygons(sec.surfaces);
+        if not MapGeoBackfaceCull then
+          begin
+          With clMapGeo do
+              renderer.SetColor(CL_Front, r, g, b);
+          renderer.SetCulling(r_CULLFRONT);
+          for s := 0 to Level.Sectors.Count - 1 do
+          begin
+              sec := Level.Sectors[s];
+              if ToolBar.IsLayerVisible(sec.Layer) then
+                  renderer.DrawPolygons(sec.surfaces);
+          end;
         end;
 
         renderer.SetCulling(r_CULLNONE);
@@ -1041,6 +1156,7 @@ begin
         begin
             With clThing do
                 renderer.SetColor(CL_Front, r, g, b);
+
             for th := 0 to Level.Things.Count - 1 do
             begin
                 thing := Level.Things[th];
@@ -1207,7 +1323,9 @@ begin
                     renderer.SetColor(CL_Front, r, g, b);
                 for s := 0 to ltsel.Count - 1 do
                     With Level.Lights[ltsel.getLT(s)] do
+                    begin
                         renderer.DrawVertex(X, Y, z);
+                    end;
             end;
     end;
 
@@ -1427,6 +1545,7 @@ begin
     if MWMaxed then
         WindowState := wsMaximized;
 
+    EnableMapGeoBackfaceCull(true);
     tcube := TPolygons.Create;
     tcube.VXList := Tvertices.Create;
     for i := 1 to 8 do
@@ -1442,36 +1561,42 @@ begin
         p.AddVertex(VXList[3]);
         p := TPolygon.Create;
         Add(p);
+
         p.AddVertex(VXList[4]);
         p.AddVertex(VXList[5]);
         p.AddVertex(VXList[6]);
         p.AddVertex(VXList[7]);
         p := TPolygon.Create;
         Add(p);
+
         p.AddVertex(VXList[2]);
         p.AddVertex(VXList[6]);
         p.AddVertex(VXList[5]);
         p.AddVertex(VXList[3]);
         p := TPolygon.Create;
         Add(p);
+
         p.AddVertex(VXList[1]);
         p.AddVertex(VXList[7]);
         p.AddVertex(VXList[6]);
         p.AddVertex(VXList[2]);
         p := TPolygon.Create;
         Add(p);
+
         p.AddVertex(VXList[0]);
         p.AddVertex(VXList[4]);
         p.AddVertex(VXList[7]);
         p.AddVertex(VXList[1]);
         p := TPolygon.Create;
         Add(p);
+
         p.AddVertex(VXList[3]);
         p.AddVertex(VXList[5]);
         p.AddVertex(VXList[4]);
         p.AddVertex(VXList[0]);
     end;
     Screen.Cursors[crSaber] := LoadCursor(HInstance, PChar('SABER'));
+    Screen.Cursors[crEye]   := LoadCursor(HInstance, PChar('EYE'));
 
     AddKBItem(miMap, 'Top view', '1', []);
     AddKBItem(miMap, 'Front view', '2', []);
@@ -1480,6 +1605,7 @@ begin
     AddKBItem(miMap, 'Back view', '5', []);
     AddKBItem(miMap, 'Right view', '6', []);
 
+    AddKBItem(miMap, 'Move'#9'Shift+Middle Mouse Button', #0, []);
     AddKBItem(miMap, 'Move left', char(VK_RIGHT), []);
     AddKBItem(miMap, 'Move right', char(VK_LEFT), []);
     AddKBItem(miMap, 'Move Down', char(VK_UP), []);
@@ -1487,12 +1613,16 @@ begin
     AddKBItem(miMap, 'Move forth', char(VK_NEXT), []);
     AddKBItem(miMap, 'Move back', char(VK_PRIOR), []);
 
+    AddKBItem(miMap, 'Rotate'#9'Middle Mouse Button', #0, []);
+    AddKBItem(miMap, 'Rotate in X direction'#9'Ctrl+Middle Mouse Button', #0, []);
+    AddKBItem(miMap, 'Rotate in Y direction'#9'Ctrl+Shift+Middle Mouse Button', #0, []);
     AddKBItem(miMap, 'Rotate right', char(VK_RIGHT), [ssShift]);
     AddKBItem(miMap, 'Rotate left', char(VK_LEFT), [ssShift]);
     AddKBItem(miMap, 'Rotate Up', char(VK_UP), [ssShift]);
     AddKBItem(miMap, 'Rotate Down', char(VK_Down), [ssShift]);
     AddKBItem(miMap, 'Rotate ...', char(VK_NEXT), [ssShift]);
     AddKBItem(miMap, 'Rotate ...', char(VK_PRIOR), [ssShift]);
+    AddKBItem(miMap, 'Zoom at cursor'#9'Mouse Wheel', #0, []);
     AddKBItem(miMap, 'Zoom at cursor', 'C', [ssShift]);
     AddKBItem(miMap, 'Zoom in', Chr(VK_ADD), []);
     AddKBItem(miMap, 'Zoom out', Chr(VK_SUBTRACT), []);
@@ -1548,15 +1678,19 @@ begin
     AddKBItem(MIrecovery, 'Delete surface', char(VK_DELETE), [ssAlt]);
     AddKBItem(MIrecovery, 'Invert surface', 'I', [ssAlt]);
     AddKBItem(MIrecovery, 'Planarize surface', 'P', [ssCtrl]);
+    AddKBItem(MIrecovery, 'Fix solid surface(s)', OnFixSolidSurfaces);
+    AddKBItem(MIrecovery, 'Fix passable adjoin(s)', OnFixPassableAdjoins);
 
-    AddKBItem(MiEdit, 'Move item'#9'Ctrl+Mouse', #0, []);
+    AddKBItem(MiEdit, 'Move item'#9'Ctrl+Left Mouse Button', #0, []);
     AddKBItem(MiEdit, 'Start cleave', 'C', []);
     AddKBItem(MiEdit, 'Cleave by grid', 'C', [ssAlt]);
     AddKBItem(MiEdit, 'Assign Thing to Sector', 'A', [ssShift]);
     AddKBItem(MiEdit, 'Unadjoin', 'A', [ssAlt]);
     AddKBItem(MiEdit, 'Adjoin', 'A', []);
     AddKBItem(MiEdit, 'Join surfaces', 'J', []);
-
+    AddKBItem(MiEdit, 'Rotate Thing Pitch'#9'Ctrl+Shift+Mouse Wheel', #0, []);
+    AddKBItem(MiEdit, 'Rotate Thing Yaw'#9'Ctrl+Mouse Wheel', #0, []);
+    AddKBItem(MiEdit, 'Rotate Thing Roll'#9'Ctrl+Alt+Mouse Wheel', #0, []);
     AddKBItem(MiEdit, 'Raise item', char(VK_UP), [ssCtrl]);
     AddKBItem(MiEdit, 'Lower item', char(VK_Down), [ssCtrl]);
     AddKBItem(MiEdit, 'Raise item', #219, []);
@@ -1570,7 +1704,7 @@ begin
 
     AddKBItem(MiEdit, 'Extrude surface', 'X', []);
     AddKBItem(MiEdit, 'Extrude surface by', 'X', [ssShift]);
-    AddKBItem(MiEdit, 'Extrude&&Expand surface by', 'X', [ssCtrl]);
+    AddKBItem(MiEdit, 'Extrude && Expand surface by', 'X', [ssCtrl]);
     AddKBItem(MiEdit, 'Use item in COG', 'U', []);
     AddKBItem(MiEdit, 'Bring thing/light to surface', 'B', []);
 
@@ -1596,6 +1730,69 @@ begin
     if renderer <> nil then
         renderer.SetViewPort(0, 0, ClientWidth, Clientheight);
         ReDraw;
+end;
+
+
+procedure TJedMain.OnFixSolidSurfaces(sender: TObject);
+begin
+    const MakeSolid = procedure (surf: TJKSurface)
+      begin
+          if surf.Adjoin = nil then
+            begin
+                surf.geo       := integer(TGeoMode.Texture);
+                surf.SurfFlags := surf.SurfFlags or SF_Collision;
+                surf.CheckIfFloor;
+            end;
+      end;
+
+    case Map_mode of
+        MM_SC:
+          ForSelectedSectorsDo(procedure(sec: TJKSector)
+            begin
+                for var surf in sec.surfaces do
+                  MakeSolid(surf);
+                SectorChanged(sec);
+            end
+          );
+        MM_SF:
+          ForSelectedSurfacesDo(procedure(surf: TJKSurface)
+            begin
+                MakeSolid(surf);
+                SectorChanged(surf.Sector);
+            end
+          );
+    end;
+end;
+
+procedure TJedMain.OnFixPassableAdjoins(sender: TObject);
+begin
+    const MakePassable = procedure (surf: TJKSurface)
+      begin
+          if surf.Adjoin <> nil then
+            begin
+                surf.geo         := integer(TGeoMode.NotDrawn);
+                surf.AdjoinFlags := (SAF_Visible or SAF_Move)
+                  or (surf.AdjoinFlags and not (SAF_NoAIMove or SAF_NoPlayerMove));
+            end;
+      end;
+
+    case Map_mode of
+        MM_SC:
+          ForSelectedSectorsDo(procedure(sec: TJKSector)
+            begin
+                for var surf in sec.surfaces do
+                  MakePassable(surf);
+                SectorChanged(sec);
+            end
+          );
+        MM_SF:
+          ForSelectedSurfacesDo(procedure(surf: TJKSurface)
+            begin
+                MakePassable(surf);
+                SectorChanged(surf.Sector);
+            end
+          );
+    end;
 end;
 
 Procedure RotAxisAngle(var X, Y: TVector; ang: double);
@@ -1690,8 +1887,8 @@ begin
                                 end;
                             '4':
                                 begin
-                                    rPch := 0;
-                                    rYaw := 180;
+                                    rPch := 180;
+                                    rYaw := 0;
                                     rRol := 0;
                                     SetGridNormal(0, 0, -1);
                                     SetGridXNormal(-1, 0, 0);
@@ -1707,8 +1904,8 @@ begin
                             '6':
                                 begin
                                     rPch := 0;
-                                    rYaw := -90;
-                                    rRol := -90;
+                                    rYaw :=-90;
+                                    rRol :=-90;
                                     SetGridNormal(-1, 0, 0);
                                     SetGridXNormal(0, -1, 0);
                                 end;
@@ -1762,19 +1959,19 @@ begin
                                     SetGridXNormal(0, -1, 0);
                                 end;
                         end;
-            Ord('C'):
-                if GetMousePos(X, Y) then
-                    With renderer do
-                    begin
-                        ny := renderer.zv;
-                        if not GetXYZonPlaneAt(X, Y, ny, CamX, CamY, CamZ, dx,
-                          dy, dz) then
-                            exit;
-                        CamX := -dx;
-                        CamY := -dy;
-                        CamZ := -dz;
-                        renderer.Scale := renderer.Scale / 1.5;
-                    end;
+//            Ord('C'):   // Zoom in and mouse pos
+//                if GetMousePos(X, Y) then
+//                    With renderer do
+//                    begin
+//                        ny := renderer.zv;
+//                        if not GetXYZonPlaneAt(X, Y, ny, CamX, CamY, CamZ, dx,
+//                          dy, dz) then
+//                            exit;
+//                        CamX := -dx;
+//                        CamY := -dy;
+//                        CamZ := -dz;
+//                        renderer.Scale := renderer.Scale / 1.5;
+//                    end;
             { if GetXYZAt(X,Y,dx,dy,dz) then
               with Renderer do
               begin
@@ -1821,10 +2018,14 @@ begin
                     ExtrudeSurface(surf, dx);
                     SetCurSF(Cur_SC, Cur_SF);
                 end;
-            VK_RIGHT, VK_LEFT, VK_UP, VK_Down, VK_NEXT, VK_PRIOR:
+            VK_RIGHT,
+            VK_LEFT,
+            VK_UP,
+            VK_Down,
+            VK_NEXT,
+            VK_PRIOR:
                 if MapRot = MR_old then
                 begin
-
                     case Key of
                         VK_RIGHT:
                             rYaw := rYaw - 5;
@@ -1840,6 +2041,8 @@ begin
                             rRol := rRol + 5;
                     end;
                     SetRendfromPYR;
+                    with renderer do
+                      SetGridNormal(zv.dx, zv.dy, zv.dz); // New code, fixes cleaving
                     Invalidate;
                 end
                 else
@@ -1925,13 +2128,13 @@ begin
                         begin
                             i := scsel.AddSC(Cur_SC);
                             if scsel.Count = 2 then
-                            begin
+                              begin
                                 StartUndoRec('Unadjoin sectors');
-                                if UnAdjoinSectors(Level.Sectors[scsel.GetSC(0)
-                                  ], Level.Sectors[scsel.GetSC(1)]) then
+                                if UnAdjoinSectors(Level.Sectors[scsel.GetSC(0)],
+                                  Level.Sectors[scsel.GetSC(1)]) then
                                     PanMessage(mt_info, 'Sectors unadjoined');
-                            end
-                            else
+                              end
+                              else
                                 ShowMessage('You must have 2 sectors selected');
                             scsel.DeleteN(i);
                         end;
@@ -1942,12 +2145,11 @@ begin
                             nsel := 0;
                             StartUndoRec('Unadjoin surfaces');
                             for i := 0 to sfsel.Count - 1 do
-                            begin
+                              begin
                                 sfsel.GetSCSF(i, nsc, nsf);
-                                if UnAdjoin(Level.Sectors[nsc].surfaces[nsf])
-                                then
-                                    Inc(nsel);
-                            end;
+                                if UnAdjoin(Level.Sectors[nsc].surfaces[nsf]) then
+                                  Inc(nsel);
+                              end;
                             PanMessageFmt(mt_info,
                               '%d adjoins removed', [nsel]);
                             SetCurSF(Cur_SC, Cur_SF);
@@ -2088,7 +2290,7 @@ begin
                     if surf.adjoin <> nil then
                         exit;
                     s := DoubleToStr(surf.ExtrudeSize);
-                    if not InputQuery('Extrude&&Expand', 'By:', s) then
+                    if not InputQuery('Extrude && Expand', 'By:', s) then
                         exit;
                     if (Not ValDouble(s, dx)) or (dx = 0) then
                     begin
@@ -2096,9 +2298,9 @@ begin
                         exit;
                     end;
 
-                    StartUndoRec('Extrude&&Expand surface');
+                    StartUndoRec('Extrude && Expand surface');
 
-                    ExtrudeNExpandSurface(surf, dx);
+                    ExtrudeAndExpandSurface(surf, dx);
                     SetCurSF(Cur_SC, Cur_SF);
                 end;
         end;
@@ -2152,6 +2354,8 @@ begin
                         end;
                 end;
                 SetRendfromPYR;
+                with renderer do
+                  SetGridNormal(zv.dx, zv.dy, zv.dz); // New code, fixes cleaving
                 Invalidate;
             end
             else
@@ -2194,7 +2398,7 @@ begin
             end;
         VK_SUBTRACT:
             begin
-                renderer.Scale := renderer.Scale * 1.5;
+                renderer.Scale := Math.Min(renderer.Scale * 1.5, 3.5);  // max zoom out
             end;
         VK_UP, VK_Down, VK_LEFT, VK_RIGHT, VK_NEXT, VK_PRIOR:
             With renderer do
@@ -2202,11 +2406,11 @@ begin
                 { CreateRotMatrix(mx,PCH,YAW,ROL); }
 
                 With renderer do
-                    SetVec(nx, xv.dx * DpiScale, xv.dy * DpiScale, xv.dz * DpiScale);
+                    nx.SetCoords(xv.dx * DpiScale, xv.dy * DpiScale, xv.dz * DpiScale);
                 With renderer do
-                    SetVec(ny, yv.dx * DpiScale, yv.dy * DpiScale, yv.dz * DpiScale);
+                    ny.SetCoords(yv.dx * DpiScale, yv.dy * DpiScale, yv.dz * DpiScale);
                 With renderer do
-                    SetVec(nz, zv.dx * DpiScale, zv.dy * DpiScale, zv.dz * DpiScale);
+                    nz.SetCoords(zv.dx * DpiScale, zv.dy * DpiScale, zv.dz * DpiScale);
 
                 case Key of
                     VK_LEFT:
@@ -2311,6 +2515,8 @@ begin
             SetMapMode(MM_SC);
         Ord('C'):
             SetMouseMode(MM_Cleave);
+//        Ord('W'):
+//            SetMouseMode(MM_Ruler);
         Ord('F'):
             SetMapMode(MM_SF);
         Ord('J'):
@@ -2360,8 +2566,7 @@ begin
 
                             while scsel.Count > 1 do
                             begin
-                                sec := Level.Sectors
-                                  [scsel.GetSC(scsel.Count - 1)];
+                                sec := Level.Sectors[scsel.GetSC(scsel.Count - 1)];
                                 for i := 0 to scsel.Count - 2 do
                                 begin
                                     if MergeSectors(Level.Sectors[scsel.GetSC(i)
@@ -2384,21 +2589,20 @@ begin
                             case sfsel.Count of
                                 1:
                                     begin
-                                        surf := Level.Sectors[Cur_SC]
-                                        .surfaces[Cur_SF];
+                                        surf := Level.Sectors[Cur_SC].surfaces[Cur_SF];
                                         if surf.adjoin = nil then
-                                        exit;
+                                          exit;
                                         StartUndoRec('Merge sectors');
                                         sec := MergeSectors(surf.sector,
                                         surf.adjoin.sector);
                                         if sec = nil then
-                                        PanMessage(mt_info,
+                                          PanMessage(mt_info,
                                         'Sectors weren''t merged')
                                         else
-                                        begin
-                                        SetCurSF(sec.num, 0);
-                                        sfsel.Clear;
-                                        end;
+                                          begin
+                                            SetCurSF(sec.num, 0);
+                                            sfsel.Clear;
+                                          end;
                                     end;
                             else
                                 begin
@@ -2855,6 +3059,78 @@ begin
     end;
 end;
 
+
+{ Whip Ruler mouse functions }
+
+Procedure TJedMain.Do_StartRuler(X, Y: Integer; snaptovertex: boolean);
+begin
+    if RulerStarted then
+        ReDraw;
+    With RulerOrgXY do
+        if not GetMousePos(Integer(X), Integer(Y)) then
+            exit;
+    WIth RulerOrg do
+    begin
+        if not renderer.GetGridAt(RulerOrgXY.X, RulerOrgXY.Y, X, Y, z) then
+            exit;
+        if snaptovertex then
+            GetNearestVX(Level, X, Y, z, X, Y, z, 0.2)
+        else if SnapToGrid then
+            renderer.GetNearestGrid(X, Y, z, X, Y, z);
+    end;
+    With RulerOrg do
+        renderer.ProjectPoint(X, Y, z, Integer(RulerOrgXY.X),
+          Integer(RulerOrgXY.Y));
+    LastX := RulerOrgXY.X;
+    LastY := RulerOrgXY.Y;
+    SetMouseMode(MM_Ruler);
+    RulerStarted := true;
+end;
+
+Procedure TJedMain.Do_ProceedRuler(X, Y: Integer; snaptovertex: boolean);
+var
+    fx, fy, fz: double;
+begin
+    if not RulerStarted then
+        exit;
+    Canvas.Pen.mode  := pmXor;
+    Canvas.Pen.Color := clRed;
+    Canvas.MoveTo(RulerOrgXY.X, RulerOrgXY.Y);
+    Canvas.LineTo(LastX, LastY);
+    Canvas.MoveTo(RulerOrgXY.X, RulerOrgXY.Y);
+
+    if not renderer.GetGridAt(X, Y, fx, fy, fz) then
+        exit;
+    if snaptovertex then
+        GetNearestVX(Level, fx, fy, fz, fx, fy, fz, 0.2)
+    else if SnapToGrid then
+        renderer.GetNearestGrid(fx, fy, fz, fx, fy, fz);
+
+
+    renderer.ProjectPoint(fx, fy, fz, X, Y);
+
+    Canvas.LineTo(X, Y);
+    LastX := X;
+    LastY := Y;
+end;
+
+Procedure TJedMain.Do_EndRuler(X, Y: Integer; snaptovertex: boolean);
+var
+    x1, y1, z1, x2, y2, z2: double;
+    cnormal: TVector;
+    cleaved: boolean;
+    i: Integer;
+begin
+    try
+        if not RulerStarted then
+            exit;
+    finally
+        SetMouseMode(MM_Select);
+        Invalidate;
+        RulerStarted := false;
+    end;
+end;
+
 Procedure TJedMain.DO_StartRectSelect(X, Y: Integer);
 begin
     RectSelStarted := true;
@@ -2982,6 +3258,7 @@ var
 begin
     if not renderer.GetGridAt(X, Y, fx, fy, fz) then
         exit;
+
     SetMouseMode(MM_Drag);
     DragOrg.X := fx;
     DragOrg.Y := fy;
@@ -3105,6 +3382,14 @@ begin
             end;
         MM_Extra:
             begin
+                if (Cur_EX < -1) or (ExtraObjs.Count = 0) then
+                  begin
+                    rx := 0;
+                    ry := 0;
+                    rz := 0;
+                    exit;
+                  end;
+
                 EX := ExtraObjs[Cur_EX];
                 if EX is TVertex then
                     With TVertex(EX) do
@@ -3299,21 +3584,26 @@ Procedure TJedMain.Do_StartTranslateCam(X, Y: Integer);
 begin
     CamOrg.X := X;
     CamOrg.Y := Y;
+    SetMouseMode(MM_TranslateCam);
 end;
 
 Procedure TJedMain.Do_TranslateCam(X, Y: Integer);
 var
-    nx, ny, nz: double;
+    nx, ny, nz, nx1, ny1, nz1: double;
 begin
+    if (CamOrg.X = X) and (CamOrg.Y = Y) then exit;
     With renderer do
     begin
         if not GetXYZonPlaneAt(X, Y, renderer.zv, CamX, CamY, CamZ, nx, ny, nz)
-        then
-            exit;
+        then exit;
 
-        CamX := nx;
-        CamY := ny;
-        CamZ := nz;
+        if not GetXYZonPlaneAt(CamOrg.X, CamOrg.Y, renderer.zv, CamX, CamY, CamZ, nx1, ny1, nz1)
+        then exit;
+
+        const s = Min(renderer.DpiScale * 10000.0, 1.0);
+        CamX := CamX + (nx - nx1)*s;
+        CamY := CamY + (ny - ny1)*s;
+        CamZ := CamZ + (nz - nz1)*s;
     end;
 
     { nx:=Renderer.xv;
@@ -3349,6 +3639,19 @@ begin
     OrgY := renderer.yv;
     OrgZ := renderer.zv;
 
+
+//      var nx, ny, nz: double;
+//      with renderer do
+//        begin
+//            if not GetXYZonPlaneAt(X, Y, renderer.zv, CamX, CamY, CamZ, nx, ny, nz)
+//        then exit;
+//
+//
+//        CamX :=  nx;
+//        CamY :=  ny;
+//        CamZ :=  nz;
+//        end;
+
     SetMouseMode(MM_RotateCam);
 end;
 
@@ -3359,13 +3662,41 @@ var
 begin
     dx := X - GOrgXY.X;
     dy := Y - GOrgXY.Y;
+//      var cx, cy, cz: double;
+//     With renderer do
+//    begin
+//        var nx1, ny1, nz1, nx2, ny2, nz2: double;
+//        if not GetXYZonPlaneAt(X, Y, renderer.zv, CamX, CamY, CamZ, nx1, ny1, nz1)
+//        then exit;
+//
+//        if not GetXYZonPlaneAt(GOrgXY.X, GOrgXY.Y, renderer.zv, CamX, CamY, CamZ, nx2, ny2, nz2)
+//        then exit;
+//
+//        cx := nx2;
+//        cy := ny2;
+//        cz := nz2;
+//        CamX := CamX+ nx2;
+//        CamY := CamY+ ny2;
+//        CamZ := CamZ +nz2;
+//    end;
 
     if MapRot = MR_old then
     begin
         with GOrg do
         begin
-            rRol := z + dx;
-            rPch := X + dy;
+            const s = Min(renderer.DpiScale * 100.0, 1.0);
+            rRol := z - dx * s;
+            rPch := X - dy * s;
+//            if rRol > 360 then
+//              rRol := rRol - 360
+//            else if rRol < 0 then
+//              rRol := rRol + 360;
+//            if rPch > 360 then
+//              rPch := rPch - 360
+//            else if rPch < 0 then
+//              rPch := rPch + 360;
+
+           // PanMessageFmt(mt_Info, 'pch: %f rol: %f', [rPch, rRol]);
             SetRendfromPYR;
         end;
     end
@@ -3376,15 +3707,19 @@ begin
         nz := OrgZ;
 
         RotAxisAngle(nx, ny, dx); { l/r }
-        RotAxisAngle(ny, nz, dy); { u/d }
+        RotAxisAngle(nz, ny, dy); { u/d }
 
         With nz do
             renderer.SetZ(dx, dy, dz);
         With nx do
             renderer.SetX(dx, dy, dz);
+//        With ny do
+//            renderer.SetY(dx, dy, dz);
 
     end;
 
+    with renderer do
+        SetGridNormal(zv.dx, zv.dy, zv.dz); // New code, fixes cleaving
     Invalidate;
 end;
 
@@ -3536,18 +3871,18 @@ begin
         begin
             FindBBox(sc, box);
             vl := box.x2 - box.x1;
-            SetVec(nx, nx.dx / vl, nx.dy / vl, nx.dz / vl);
+            nx.SetCoords(nx.dx / vl, nx.dy / vl, nx.dz / vl);
         end;
 
         vl := Vlen(nx);
 
         nz := renderer.gnormal;
-        SetVec(nz, nz.dx * vl, nz.dy * vl, nz.dz * vl);
+        nz.SetCoords(nz.dx * vl, nz.dy * vl, nz.dz * vl);
 
         VMult(nz.dx, nz.dy, nz.dz, nx.dx, nx.dy, nx.dz, ny.dx, ny.dy, ny.dz);
 
         Normalize(ny);
-        SetVec(ny, ny.dx * vl, ny.dy * vl, ny.dz * vl);
+        ny.SetCoords(ny.dx * vl, ny.dy * vl, ny.dz * vl);
 
         sec := Level.Sectors[Cur_SC];
         nsc := Level.NewSector;
@@ -3574,34 +3909,113 @@ procedure TJedMain.FormMouseDown(sender: TObject; Button: TMouseButton;
 var
     t: TJKThing;
 begin
-    case Mouse_mode of
-        MM_Select:
-            ;
-        MM_Cleave:
-            Do_StartCleave(X, Y, ssShift in Shift);
-        MM_CreateSector:
-            DO_StartCreateSC(X, Y, ssShift in Shift);
+    case Button of
+      TMouseButton.mbLeft:
+        case Mouse_mode of
+            MM_Select:
+                ;
+            MM_Cleave:
+                Do_StartCleave(X, Y, ssShift in Shift);
+            MM_CreateSector:
+                DO_StartCreateSC(X, Y, ssShift in Shift);
+            mm_Ruler:
+                Do_StartRuler(X, Y, ssShift in Shift);
+        end;
+      TMouseButton.mbRight: ;
+      TMouseButton.mbMiddle:
+        if GetMousePos(X, Y) then
+          begin
+            if [ssShift, ssMiddle] = Shift then
+              Do_StartTranslateCam(X, Y)
+            else
+              Do_StartRotateCam(X, Y);
+          end;
     end;
 end;
 
 procedure TJedMain.FormMouseUp(sender: TObject; Button: TMouseButton;
   Shift: TShiftState; X, Y: Integer);
 begin
-    Case Mouse_mode of
-        MM_Select:
-            begin
-                Do_SelectAt(X, Y, ssAlt in Shift);
-                if ssShift in Shift then
-                    DO_MultiSelect;
+    case Button of
+        TMouseButton.mbLeft:
+            Case Mouse_mode of
+                MM_Select:
+                    begin
+                        Do_SelectAt(X, Y, ssAlt in Shift);
+                        if ssShift in Shift then
+                            DO_MultiSelect;
+                    end;
+                MM_CreateSector:
+                    DO_EndCreateSC(X, Y, ssShift in Shift);
+                MM_Drag:
+                    Do_EndDrag(X, Y);
+                MM_Cleave:
+                    Do_EndCleave(X, Y, ssShift in Shift);
+                MM_Ruler:
+                    Do_EndRuler(X, Y, ssShift in Shift);
+                MM_RectSelect:
+                    DO_EndRectSelect(X, Y);
             end;
-        MM_CreateSector:
-            DO_EndCreateSC(X, Y, ssShift in Shift);
-        MM_Drag:
-            Do_EndDrag(X, Y);
-        MM_Cleave:
-            Do_EndCleave(X, Y, ssShift in Shift);
-        MM_RectSelect:
-            DO_EndRectSelect(X, Y);
+        TMouseButton.mbRight: ;
+        TMouseButton.mbMiddle: SetMouseMode(MM_Select);
+    end;
+end;
+
+procedure TJedMain.FormMouseWheel(Sender: TObject; Shift: TShiftState;
+  WheelDelta: Integer; MousePos: TPoint; var Handled: Boolean);
+  var dx, dy, dz: double;
+begin
+  if WheelDelta = 0 then exit;
+
+  if Shift <> [] then
+    begin
+      if ((Map_mode = MM_TH) or (Map_mode = MM_FR)) and (ssCtrl in Shift) then
+      begin
+          dx := 0;
+          dy := 0;
+          dz := 0;
+
+          var axis := -1;
+          const angle = Round(WheelDelta * 0.008);
+          if Shift = [ssCtrl] then
+            axis := rt_z
+          else if Shift = [ssShift, ssCtrl] then
+            axis := rt_x
+          else if Shift = [ssAlt, ssCtrl] then
+            axis := rt_y;
+
+          if axis <> -1 then
+            begin
+                RotateObject(angle, axis);
+                //Invalidate;
+            end;
+      end;
+    end
+  else   // Zoom Map
+    begin
+        MousePos := ScreenToClient(MousePos);
+        With renderer do
+          begin
+              var ny := renderer.zv;
+              if not GetXYZonPlaneAt(MousePos.X, MousePos.Y, ny, CamX, CamY, CamZ,
+                dx, dy, dz) then
+                  exit;
+              CamX := dx;
+              CamY := dy;
+              CamZ := dz;
+
+              if WheelDelta > 0 then
+                renderer.Scale := renderer.Scale / 1.5
+              else
+                renderer.Scale := Math.Min(renderer.Scale * 1.5, 3.5);  // max zoom out
+
+              GetXYZonPlaneAt(MousePos.X, MousePos.Y, ny, CamX, CamY, CamZ, dx, dy, dz);
+              CamX := dx;
+              CamY := dy;
+              CamZ := dz;
+
+              Invalidate;
+        end;
     end;
 end;
 
@@ -3626,12 +4040,20 @@ begin
             Do_ProceedCleave(X, Y, ssShift in Shift);
         MM_CreateSector:
             DO_ProceedCreateSC(X, Y, ssShift in Shift);
+        MM_Ruler:
+            Do_ProceedRuler(X, Y, ssShift in Shift);
         MM_TranslateGrid:
             Do_TranslateGrid(X, Y);
         MM_TranslateCam:
             Do_TranslateCam(X, Y);
         MM_RotateCam:
+          begin
+            if (ssShift in Shift) and (ssCtrl in Shift) then
+              X := GOrgXY.X
+            else if ssCtrl in Shift then
+              Y := GOrgXY.Y;
             Do_RotateCam(X, Y);
+          end;
         MM_RectSelect:
             DO_ProceedRectSelect(X, Y);
     end;
@@ -3641,10 +4063,9 @@ begin
 
 end;
 
-Procedure TJedMain.Import3DO(const name: string);
+Procedure TJedMain.Import3DO(const name: string; const clearCurrentLevel: Boolean);
 var
     a3DO: T3DO;
-    n, i, j, k: Integer;
     mesh: T3DOMesh;
     v3: TVertex;
     v: TJKVertex;
@@ -3654,17 +4075,19 @@ var
     tv: TTXVertex;
     hnode: THNode;
 begin
-    a3DO := T3DO.CreateFrom3DO(name, 0);
-    Level.Clear;
+    var fileVersion : double := 0;
+    a3DO := T3DO.CreateFrom3DO(name, 0, fileVersion);
+    var fixUVs := IsClose(fileVersion, 2.3);
+    if clearCurrentLevel then Level.Clear;
     try
-        for i := 0 to a3DO.Meshes.Count - 1 do
+        for var i := 0 to a3DO.Meshes.Count - 1 do
         begin
             mesh := a3DO.Meshes[i];
             sec := Level.NewSector;
-            sec.Flags := sec.Flags or SF_3DO;
+            //sec.Flags := sec.Flags or SECF_3DO;
             sec.Layer := Level.AddLayer(mesh.name);
             Level.Sectors.Add(sec);
-            for j := 0 to mesh.vertices.Count - 1 do
+            for var j := 0 to mesh.vertices.Count - 1 do
             begin
                 v3 := mesh.vertices[j];
                 v3.num := j;
@@ -3674,35 +4097,54 @@ begin
                 v.z := v3.z;
             end;
 
-            for j := 0 to mesh.Faces.Count - 1 do
+            for var j := 0 to mesh.Faces.Count - 1 do
             begin
                 face := mesh.Faces[j];
                 surf := sec.NewSurface;
                 sec.surfaces.Add(surf);
                 With surf do
                 begin
-                    adjoin := nil;
-                    Material := a3DO.GetMat(face.imat);
-                    geo := face.geo;
-                    light := face.light;
-                    tex := face.tex;
-                    if face.ftype and 2 <> 0 then
-                        surf.FaceFlags := surf.FaceFlags or FF_Transluent;
-                    extraLight := face.extra_l;
+                    adjoin         := nil;
+                    Material       := a3DO.GetMat(face.imat);
+                    geo            := face.geo;
+                    light          := face.light;
+                    tex            := face.tex;
+                    FaceFlags      := face.faceflags;
+                    ExtraLight     := face.extraLight;
+                    normal         := face.normal;
                 end;
 
-                n := face.vertices.Count;
-                for k := n - 1 downto 0 do
+                var matSize := TSize.Create(1,1);
+                if fixUVs and (not surf.Material.IsEmpty) then
+                  try
+                    matSize := surf.GetMaterialSize;
+                  except on E:Exception do PanMessage(mt_warning,
+                    Format('Cannot load %s for mesh %d face %d: %s' + sLineBreak
+                      + '  Imported surface will have invalid UV coords!',
+                      [surf.Material, i, j, e.message]));
+                  end;
+
+                for var k := 0 to face.vertices.Count - 1 do
                 begin
                     surf.AddVertex(sec.vertices[face.vertices[k].num]);
-                    surf.TXVertices[n - k - 1].Assign(face.TXVertices[k]);
+                    var uvtx := surf.TXVertices[k];
+                    uvtx.Assign(face.TXVertices[k]);
+                    uvtx.u     := uvtx.u * matSize.Width;
+                    uvtx.v     := uvtx.v * matSize.Height;
                 end;
+//                for k := n - 1 downto 0 do
+//                begin
+//                    surf.AddVertex(sec.vertices[face.vertices[k].num]);
+//                    surf.TXVertices[n - k - 1].Assign(face.TXVertices[k]);
+//                end;
                 surf.Recalc;
                 FindUVScales(surf);
+                if CompareValue(surf.normal.z, 0.6, CloseEnough) = GreaterThanValue then // If less LE 40°
+                  surf.SurfFlags := surf.SurfFlags or SF_Floor;
             end;
         end;
 
-        for i := 0 to a3DO.hnodes.Count - 1 do
+        for var i := 0 to a3DO.hnodes.Count - 1 do
         begin
             hnode := Level.New3DONode;
             hnode.Assign(a3DO.hnodes[i]);
@@ -3713,11 +4155,16 @@ begin
         end;
 
     finally
-        ClearUndoBuffer;
-        Level.Things.Add(Level.NewThing);
+        if clearCurrentLevel then
+          begin
+            ClearUndoBuffer;
+            Level.Things.Add(Level.NewThing);
+        end;
         Level.RenumSecs;
-        for i := 0 to Level.Sectors.Count - 1 do
+        for var i := 0 to Level.Sectors.Count - 1 do
             Level.Sectors[i].Renumber;
+
+        if sec <> nil then SetCurSC(sec.num);
         a3DO.free;
     end;
 end;
@@ -3743,11 +4190,19 @@ begin
             s := LowerCase(ExtractFileExt(FileName));
             if s = '.3do' then
             begin
-                { a3DO:=T3DO.CreateFrom3DO(FileName,0);
-                  a3Do.SaveToFile('i:\a.3do');
-                  a3Do.Free; }
-
-                Import3DO(FileName);
+              { a3DO:=T3DO.CreateFrom3DO(FileName,0);
+                a3Do.SaveToFile('i:\a.3do');
+                a3Do.Free; }
+              var clearCurrent := MsgBox('Do you want to import 3DO sector(s) to the current project?', 'Info', MB_YESNO) <> ID_YES;
+              Import3DO(FileName, clearCurrent);
+              if not clearCurrent then
+                begin
+                  LevelChanged;
+                  Preview3D.ReloadLevel;
+                  SyncRecents;
+                  exit;
+                end;
+                
             end
             else if s = '.asc' then
             begin
@@ -3764,10 +4219,10 @@ begin
             end;
 
             PMsg.Caption := '';
-            LevelFile := 'Untitled.jed';
+            LevelFile := 'Untitled';
             NewLevel := true;
             ResetEditor(true);
-            Level.mots := isMots;
+            Level.kind := CurrentProject;
             for i := 0 to Level.Things.Count - 1 do
             begin
                 th := Level.Things[i];
@@ -3799,6 +4254,11 @@ begin
         EditObject;
         updatestuff := false;
     end;
+end;
+
+procedure TJedMain.SetMapGeoBackfaceCullingClick(Sender: TObject);
+begin
+    EnableMapGeoBackfaceCull(not MapGeoBackfaceCull);
 end;
 
 Procedure TJedMain.SetMapMode(mm: Integer);
@@ -4051,6 +4511,20 @@ begin
     Invalidate;
 end;
 
+Procedure TJedMain.EnableMapGeoBackfaceCull(enable: Boolean);
+begin
+  MapGeoBackfaceCull := enable;
+  SetMapGeoBackfaceCulling.Caption := 'Disable Backface Cull';
+  SetMapGeoBackfaceCulling.Hint := 'Disable map geometry back-face culling';
+  if not MapGeoBackfaceCull then
+    begin
+      SetMapGeoBackfaceCulling.Caption := 'Enable Backface Cull';
+      SetMapGeoBackfaceCulling.Hint := 'Enable map geometry back-face culling'
+    end;
+
+  if renderer <> nil then ReDraw;
+end;
+
 Procedure TJedMain.SetCurSC(sc: Integer);
 begin
     Cur_SC := sc;
@@ -4188,24 +4662,24 @@ begin
     Level.SaveToJKL(name);
 end;
 
-procedure TJedMain.Export1Click(sender: TObject);
-begin
-    SaveJKL.FileName := ChangeFileExt(ExtractName(LevelFile), '.jkl');
-    if not SaveJKL.Execute then
-        exit;
-    Level.SaveToJKL(SaveJKL.FileName);
-end;
-
 Function TJedMain.GetTargetJKLName: string;
 begin
-    if CompareText(ExtractFileExt(LevelFile), '.jkl') = 0 then
-    begin
-        Result := LevelFile;
-        exit;
-    end;
+    var ext := '.jkl';
+    var dir := 'jkl\';
+    if CurrentProject = IJIM then
+      begin
+        ext := '.ndy';
+        dir := 'ndy\';
+      end;
 
-    Result := ProjectDir + 'jkl\' + ChangeFileExt
-      (ExtractFileName(LevelFile), '.jkl');
+    if CompareText(ExtractFileExt(LevelFile), ext) = 0 then
+      begin
+          Result := LevelFile;
+          exit;
+      end;
+
+      Result := ProjectDir + dir + ChangeFileExt
+        (ExtractFileName(LevelFile), ext);
 end;
 
 procedure TJedMain.SaveJKL1Click(sender: TObject);
@@ -4218,21 +4692,34 @@ var
     s: string;
 begin
     Result := false;
-    if IsInContainer(LevelFile) then
-    begin
-        PanMessage(mt_error, 'File is in container - try "SaveJKL to"');
-        exit;
-    end;
-    if NewLevel then
-    begin
-        PanMessage(mt_error, 'Project was never saved');
-        exit;
-    end;
-    s := GetTargetJKLName;
-    ForceDirectories(ExtractFilePath(s));
-    DeleteFile(ProjectDir + ChangeFileExt(ExtractFileName(LevelFile), '.jkl'));
-    Level.SaveToJKL(s);
-    Result := true;
+    var ext := '.jkl';
+    if CurrentProject = IJIM then ext := '.ndy';
+
+    if CompareText(ExtractFileExt(LevelFile), ext) <> 0 then
+      begin
+          LevelFile := ChangeFileExt(LevelFile, ext);
+      end;
+
+    Result := SysSaveProject(AskSaveAs);
+//    Result := false;
+//    if IsInContainer(LevelFile) then
+//    begin
+//        PanMessage(mt_error, 'File is in container - try "SaveJKL to"');
+//        exit;
+//    end;
+//    if NewLevel then
+//    begin
+//        PanMessage(mt_error, 'Project was never saved');
+//        exit;
+//    end;
+//
+//    var ext := '.jkl';
+//    if CurrentProject = IJIM then ext := '.ndy';
+//    s := GetTargetJKLName;
+//    ForceDirectories(ExtractFilePath(s));
+//    DeleteFile(ProjectDir + ChangeFileExt(ExtractFileName(LevelFile), ext));
+//    Level.SaveToJKL(s);
+//    Result := true;
 end;
 
 Procedure TJedMain.ResettingEditor;
@@ -4279,42 +4766,43 @@ begin
         ToolBar.CBGridStep.Text := DoubleToStr(DefGridStep);
         ToolBar.CBGridLine.Text := DoubleToStr(DefGridLine);
         ToolBar.CBGridDot.Text := DoubleToStr(DefGridDot);
+        ToolBar.EnableSnapToGrid(DefSnapToGrid);
         ToolBar.CBGridSize.Text := DoubleToStr(DefGridSize);
-        ToolBar.CBGrid.Checked := true;
     end;
+
+    Preview3D.Reset; // call before SetMapMode
+    LoadTemplates; // load before calling SetThingView to load correct templates for current ptoject
 
     if DefaultParams then
-    begin
-        SetMapMode(MM_SC);
-        ToolBar.SetLVis(Level.LVisString);
-        SetThingView(defThingView);
-        SetMSelMode(DefMSelMode);
-        scsel.Clear;
-        sfsel.Clear;
-        edsel.Clear;
-        vxsel.Clear;
-        thsel.Clear;
-        ltsel.Clear;
-    end
+      begin
+          SetMapMode(MM_SC);
+          ToolBar.SetLVis(Level.LVisString);
+          SetThingView(defThingView);
+          SetMSelMode(DefMSelMode);
+          scsel.Clear;
+          sfsel.Clear;
+          edsel.Clear;
+          vxsel.Clear;
+          thsel.Clear;
+          ltsel.Clear;
+      end
     else
-    begin
-        ToolBar.RefreshLayers(false);
-        SetMapMode(Map_mode);
-        VerifyMultiSelection;
-    end;
+      begin
+          ToolBar.RefreshLayers(false);
+          SetMapMode(Map_mode);
+          VerifyMultiSelection;
+      end;
 
+    Changed := false;
     SetLevelName;
     CogForm.RefreshList;
 
-    LoadTemplates;
-
     LoadPlugins;
 
-    Changed := false;
     Preview3D.ReloadLevel;
     SyncRecents;
 
-    SetMotsIndicator;
+    SetProjectTypeIndicator;
 
     For i := 0 to Level.Things.Count - 1 do
         UpdateThingData(Level.Things[i]);
@@ -4329,18 +4817,28 @@ Procedure TJedMain.SetLevelName;
 var
     l: Integer;
 begin
-    Caption := Format('Jed - %s', [LevelFile]);
+    var title := Format('SED - %s*', [LevelFile]);
+    if not changed then
+      SetLength(title, Length(title)-1); // remove '*'
+    Caption := title;
+
     if AskSaveAs then
         ProjectDir := ''
     else
         ProjectDir := ExtractFilePath(LevelFile);
 
     if CompareText(ExtractFileExt(LevelFile), '.jkl') = 0 then
-    begin
-        l := length(ProjectDir);
-        if CompareText(Copy(ProjectDir, l - 3, 4), 'jkl\') = 0 then
-            SetLength(ProjectDir, l - 4);
-    end;
+      begin
+          l := Length(ProjectDir);
+          if CompareText(Copy(ProjectDir, l - 3, 4), 'jkl\') = 0 then
+              SetLength(ProjectDir, l - 4);
+      end
+    else if CompareText(ExtractFileExt(LevelFile), '.ndy') = 0 then
+      begin
+          l := Length(ProjectDir);
+          if CompareText(Copy(ProjectDir, l - 3, 4), 'ndy\') = 0 then
+              SetLength(ProjectDir, l - 4);
+      end;
 
     if ProjectDir <> '' then
         SetCurDir(ProjectDir);
@@ -4542,6 +5040,7 @@ begin
         newsc := Level.NewSector;
         With renderer, sec.vertices[0] do
             DuplicateSector(sec, newsc, X, Y, z, gxnormal, gynormal, gnormal,
+            //DuplicateSector(sec, newsc, X, Y, z, xv, yv, zv,   // <-- fixes new sector shape but is randomly rotated
               dx, dy, dz);
         Level.Sectors.Add(newsc);
         SaveSecUndo(newsc, ch_added, sc_both);
@@ -4895,7 +5394,7 @@ begin
         MM_Select:
             CurSor := crDefault;
         MM_Cleave:
-            CurSor := crSaber;
+            CurSor := crUpArrow; //crSaber;
         MM_Drag:
             CurSor := crDrag;
         MM_TranslateCam:
@@ -4910,10 +5409,13 @@ begin
             CurSor := crDefault;
         MM_RectSelect:
             CurSor := crDefault;
+        MM_Ruler:
+            CurSor := crDefault;
     else
         exit;
     end;
     Mouse_mode := mm;
+    Screen.Cursor := CurSor;
 end;
 
 Procedure TJedMain.EditObject;
@@ -4922,13 +5424,22 @@ begin
         exit;
     case Map_mode of
         MM_SC:
+          begin
             ItemEdit.LoadSector(Level.Sectors[Cur_SC]);
+            Preview3D.Repaint; // draws selection wf in 3D preview
+          end;
         MM_SF:
+          begin
             ItemEdit.LoadSurface(Level.Sectors[Cur_SC].surfaces[Cur_SF]);
+            Preview3D.Repaint; // draws selection wf in 3D preview
+          end;
         MM_VX:
             ItemEdit.LoadVertex(Level.Sectors[Cur_SC].vertices[Cur_VX]);
         MM_TH:
+          begin
             ItemEdit.LoadThing(Level.Things[Cur_TH]);
+            Preview3D.Repaint; // draws selection wf in 3D preview
+          end;
         MM_LT:
             ItemEdit.LoadLight(Cur_LT);
         MM_ED:
@@ -5133,10 +5644,11 @@ begin
                     v1 := Level.Sectors[sc].vertices[VX];
                     vxsel.GetSCVX(1, sc, VX);
                     v2 := Level.Sectors[sc].vertices[VX];
-                    SetVec(xnorm, v2.X - v1.X, v2.Y - v1.Y, v2.z - v1.z);
+                    xnorm.SetCoords(v2.X - v1.X, v2.Y - v1.Y, v2.z - v1.z);
                     vxsel.GetSCVX(2, sc, VX);
                     v1 := Level.Sectors[sc].vertices[VX];
-                    SetVec(av, v1.X - v2.X, v1.Y - v2.Y, v1.z - v2.z);
+
+                    av.SetCoords(v1.X - v2.X, v1.Y - v2.Y, v1.z - v2.z);
                     VMult(xnorm.dx, xnorm.dy, xnorm.dz, av.dx, av.dy, av.dz,
                       norm.dx, norm.dy, norm.dz);
                 end;
@@ -5272,6 +5784,11 @@ begin
                 Invalidate;
                 RectSelStarted := false;
             end;
+        MM_Ruler:
+            begin
+                Invalidate;
+                RulerStarted := false;
+            end;
     end;
     SetMouseMode(MM_Select);
 end;
@@ -5283,7 +5800,7 @@ begin
     ResettingEditor;
 
     PMsg.Caption := '';
-    SetMots(false);
+    SetProjectType(TProjectType.JKDF2);
     NewProject;
     ResetEditor(true);
 end;
@@ -5294,10 +5811,22 @@ begin
         exit;
     ResettingEditor;
     PMsg.Caption := '';
-    SetMots(true);
+    SetProjectType(TProjectType.MOTS);
     NewProject;
     ResetEditor(true);
 end;
+
+procedure TJedMain.NewIJIMProjectClick(sender: TObject);
+begin
+    if Not askSave then
+        exit;
+    ResettingEditor;
+    PMsg.Caption := '';
+    SetProjectType(TProjectType.IJIM);
+    NewProject;
+    ResetEditor(true);
+end;
+
 
 procedure TJedMain.FormDestroy(sender: TObject);
 var
@@ -5333,21 +5862,26 @@ begin
     { if Ext='.JED' then Idir:=ProjectDir else iDir:=ExtractFilePath(LevelFile); }
     gobname := ExtractFilePath(SaveGOB.FileName);
     if gobname = '' then
-        gobname := GameDir + 'EPISODE\';
+        if CurrentProject = IJIM then
+          gobname := GameDir + 'Resource\'
+        else
+          gobname := GameDir + 'EPISODE\';
 
-    if isMots then
-    begin
-        SaveGOB.FileName := gobname +
-          ChangeFileExt(ExtractFileName(LevelFile), '.goo');
-        SaveGOB.FilterIndex := 2;
-        SaveGOB.DefaultExt := 'goo';
-    end
-    else
-    begin
-        SaveGOB.FileName := gobname +
-          ChangeFileExt(ExtractFileName(LevelFile), '.gob');
-        SaveGOB.FilterIndex := 1;
-        SaveGOB.DefaultExt := 'gob';
+    case CurrentProject of
+      JKDF2,IJIM:
+        begin
+            SaveGOB.FileName := gobname +
+              ChangeFileExt(ExtractFileName(LevelFile), '.gob');
+            SaveGOB.FilterIndex := 1;
+            SaveGOB.DefaultExt := 'gob';
+        end;
+      MOTS:
+        begin
+            SaveGOB.FileName := gobname +
+              ChangeFileExt(ExtractFileName(LevelFile), '.goo');
+            SaveGOB.FilterIndex := 2;
+            SaveGOB.DefaultExt := 'goo';
+        end
     end;
 
     if not SaveGOB.Execute then
@@ -5356,6 +5890,7 @@ begin
 end;
 
 Function TJedMain.GobProj(const name: string): boolean;
+// TODO: implement for IJIM
 var
     gob: TGOB2Creator;
 
@@ -5367,6 +5902,16 @@ var
 
     checklist: TStringList;
     extlist: TStringList;
+
+    Function IfIjimAnd(expr: bool): bool;
+    begin
+      Result := (CurrentProject = IJIM) and expr;
+    end;
+
+    Function IfNotIjimAnd(expr: bool): bool;
+    begin
+      Result := (CurrentProject <> IJIM) and expr;
+    end;
 
     Procedure InitSmartGOB;
     var
@@ -5395,7 +5940,8 @@ var
         end;
 
         for i := 0 to slist.Count - 1 do
-            if CompareText(ExtractFileExt(slist[i]), '.jkl') = 0 then
+            if IfNotIjimAnd(CompareText(ExtractFileExt(slist[i]), '.jkl') = 0) or
+               IfIjimAnd(CompareText(ExtractFileExt(slist[i]), '.ndy') = 0) then
                 LoadJKLLists(ProjectDir + slist[i], checklist);
 
         id := TITEMSDATFile.Create;
@@ -5403,12 +5949,14 @@ var
         checklist.AddStrings(id.cogs);
         id.free;
 
-        md := TMODELSDATFile.Create;
-        md.Load('models.dat');
-        checklist.AddStrings(md.snds);
-        checklist.AddStrings(md.a3dos);
-        md.free;
-
+        if CurrentProject <> IJIM then
+            begin
+                md := TMODELSDATFile.Create;
+                md.Load('models.dat');
+                checklist.AddStrings(md.snds);
+                checklist.AddStrings(md.a3dos);
+                md.free;
+            end;
     end;
 
     Procedure CheckFlist(slist, flist: TStringList);
@@ -5456,8 +6004,8 @@ var
                 slist.Add(subdir + ls[i]);
             end;
 
-            if mask = '*.jkl' then
-                Inc(njkls);
+            if IfIjimAnd(mask = '*.ndy') or IfNotIjimAnd(mask = '*.jkl') then
+              Inc(njkls);
         end;
     end;
 
@@ -5485,11 +6033,14 @@ begin
         begin
             s := ls[i];
             ext := UpperCase(ExtractFileExt(s));
-            if ext = '.JK' then
+            if IfNotIjimAnd(ext = '.JK') then
                 flist.Add(s)
-            else if ext = '.JKL' then
+            else if IfIjimAnd(ext = '.NDY') or IfNotIjimAnd(ext = '.JKL') then
             begin
-                flist.Add('jkl\' + s);
+                if CurrentProject <> IJIM then
+                  flist.Add('jkl\' + s) 
+                else                     
+                  flist.Add('ndy\' + s);
                 Inc(njkls);
             end
             else if ext = '.COG' then
@@ -5501,18 +6052,21 @@ begin
             else if ext = '.DAT' then
                 flist.Add('misc\' + s)
             else if ext = '.UNI' then
-            begin
-                if (CompareText(ExtractFileName(s), 'cogstrings.uni') = 0) or
-                  (CompareText(ExtractFileName(s), 'sithstrings.uni') = 0) then
-                    flist.Add('misc\' + s)
-                else
-                    flist.Add('ui\' + s);
-            end
+              begin
+                  var sfn := ExtractFileName(s);
+                  if IfNotIjimAnd(CompareText(sfn, 'cogstrings.uni') = 0) or
+                    (CompareText(sfn, 'sithstrings.uni') = 0) or
+                     IfIjimAnd(CompareText(sfn, 'jonesstrings.uni') = 0) or
+                     IfIjimAnd(CompareText(sfn, 'voicestrings.uni') = 0)  then
+                      flist.Add('misc\' + s)
+                  else if CurrentProject <> IJIM then
+                      flist.Add('ui\' + s);
+              end
             else if ext = '.KEY' then
                 flist.Add('3do\key\' + s)
             else if (ext = '.AI') or (ext = '.AI0') or (ext = '.AI2') then
                 flist.Add('misc\ai\' + s)
-            else if ext = '.CMP' then
+            else if IfNotIjimAnd(ext = '.CMP') then
                 flist.Add('misc\cmp\' + s)
             else if ext = '.PAR' then
                 flist.Add('misc\par\' + s)
@@ -5526,13 +6080,13 @@ begin
                 flist.Add('misc\spr\' + s)
             else if ext = '.WAV' then
                 flist.Add('sound\' + s)
-            else if ext = '.BM' then
+            else if IfNotIjimAnd(ext = '.BM') then
                 flist.Add('ui\bm\' + s)
-            else if ext = '.SFT' then
+            else if IfNotIjimAnd(ext = '.SFT') then
                 flist.Add('ui\sft\' + s)
-            else if ext = '.SMK' then
+            else if IfNotIjimAnd(ext = '.SMK') then
                 flist.Add('video\' + s)
-            else if ext = '.SAN' then
+            else if IfNotIjimAnd(ext = '.SAN') then
                 flist.Add('video\' + s);
         end;
 
@@ -5540,29 +6094,42 @@ begin
             slist.Add(ExtractFileName(flist[i]));
 
         AddFiles('cog\', '*.cog');
-        AddFiles('jkl\', '*.jkl');
+        if CurrentProject = IJIM then
+          AddFiles('ndy\', '*.ndy')
+        else
+          AddFiles('jkl\', '*.jkl');
         AddFiles('3do\', '*.3do');
-        AddFiles('3do\mat\', '*.mat');
         AddFiles('mat\', '*.mat');
+        if CurrentProject <> IJIM then
+          AddFiles('3do\mat\', '*.mat');
         AddFiles('misc\', '*.uni');
-        AddFiles('ui\', '*.uni');
+        if CurrentProject <> IJIM then
+          AddFiles('ui\', '*.uni');
         AddFiles('misc\', '*.dat');
         AddFiles('3do\key\', '*.key');
         AddFiles('misc\ai\', '*.ai;*.ai2;*.ai0');
-        AddFiles('misc\cmp\', '*.cmp');
+        if CurrentProject <> IJIM then
+          AddFiles('misc\cmp\', '*.cmp');
         AddFiles('misc\par\', '*.par');
         AddFiles('misc\per\', '*.per');
         AddFiles('misc\pup\', '*.pup');
         AddFiles('misc\snd\', '*.snd');
         AddFiles('misc\spr\', '*.spr');
         AddFiles('sound\', '*.wav');
-        AddFiles('voice\', '*.wav');
-        AddFiles('voiceuu\', '*.wav');
-        AddFiles('ui\bm\', '*.bm');
-        AddFiles('ui\sft\', '*.sft');
+        if CurrentProject <> IJIM then
+        begin
+          AddFiles('voice\', '*.wav');
+          AddFiles('voiceuu\', '*.wav');
+          AddFiles('ui\bm\', '*.bm');
+          AddFiles('ui\sft\', '*.sft');
+        end;
 
         if njkls = 0 then
-            PanMessage(mt_warning, 'No JKL files found in project directory!');
+          begin
+              var extn := 'JKL';
+              if CurrentProject = IJIM then extn := 'NDY';              
+              PanMessageFmt(mt_warning, 'No %s files found in project directory!', [extn]);
+          end;
 
         if GOBSmart then
             InitSmartGOB;
@@ -5606,8 +6173,8 @@ Procedure TJedMain.SetGridToView;
 var
     X, z: TVector;
 begin
-    SetVec(X, 1, 0, 0);
-    SetVec(z, 0, -1, 0);
+    X.SetCoords(1, 0, 0);
+    z.SetCoords(0, -1, 0);
 
     X := renderer.xv;
     z := renderer.zv;
@@ -5648,14 +6215,14 @@ end;
 
 procedure TJedMain.Topics1Click(sender: TObject);
 begin
-    Application.HelpFile := BaseDir + 'Jedhelp.hlp';
-    Application.HelpContext(10);
+    //Application.HelpFile := BaseDir + 'Jedhelp.hlp';
+    //Application.HelpContext(10);
 end;
 
 procedure TJedMain.JedTutor1Click(sender: TObject);
 begin
-    Application.HelpFile := BaseDir + 'Jedtutor.hlp';
-    Application.HelpContext(10);
+    //Application.HelpFile := BaseDir + 'Jedtutor.hlp';
+    //Application.HelpContext(10);
 end;
 
 procedure TJedMain.N3DPreview1Click(sender: TObject);
@@ -5891,11 +6458,11 @@ begin
 
     case axis of
         rt_x:
-            SetVec(vec, 1, 0, 0);
+            vec.SetCoords(1, 0, 0);
         rt_y:
-            SetVec(vec, 0, 1, 0);
+            vec.SetCoords(0, 1, 0);
         rt_z:
-            SetVec(vec, 0, 0, 1);
+            vec.SetCoords(0, 0, 1);
         rt_grid:
             begin
                 vec := renderer.gnormal;
@@ -5930,7 +6497,7 @@ begin
 
                 StartUndoRec('Rotate thing(s)');
                 i := thsel.AddTH(Cur_TH);
-                RotateThings(Level, thsel, vec, cx, cy, cz, angle);
+                RotateThings(Level, thsel, vec, cx, cy, cz, angle, True);
                 thsel.DeleteN(i);
             end;
         MM_LT:
@@ -5966,7 +6533,7 @@ begin
 
                 StartUndoRec('Rotate frame(s)');
                 i := frsel.AddFR(Cur_TH, Cur_FR);
-                RotateFrames(Level, frsel, vec, cx, cy, cz, angle);
+                RotateFrames(Level, frsel, vec, cx, cy, cz, angle, True);
                 frsel.DeleteN(i);
             end;
     end;
@@ -6024,11 +6591,11 @@ begin
 
                 case how of
                     rt_x:
-                        SetVec(vec, 1, 0, 0);
+                        vec.SetCoords(1, 0, 0);
                     rt_y:
-                        SetVec(vec, 0, 1, 0);
+                        vec.SetCoords(0, 1, 0);
                     rt_z:
-                        SetVec(vec, 0, 0, 1);
+                        vec.SetCoords(0, 0, 1);
                     rt_grid:
                         begin
                             vec := renderer.gnormal;
@@ -6059,11 +6626,11 @@ begin
 
                 case how of
                     rt_x:
-                        SetVec(vec, 1, 0, 0);
+                        vec.SetCoords(1, 0, 0);
                     rt_y:
-                        SetVec(vec, 0, 1, 0);
+                        vec.SetCoords(0, 1, 0);
                     rt_z:
-                        SetVec(vec, 0, 0, 1);
+                        vec.SetCoords(0, 0, 1);
                     rt_grid:
                         begin
                             vec := renderer.gnormal;
@@ -6211,9 +6778,9 @@ begin
     esurf := Level.Sectors[Cur_SC].surfaces[Cur_SF];
 
     StartUndoRec('Stitch surfaces');
-    StitchSurfaces(ssurf, esurf);
     if ssurf.Material <> '' then
         esurf.Material := ssurf.Material;
+    StitchSurfaces(ssurf, esurf);
 
     SectorChanged(esurf.sector);
     StartStitch;
@@ -6347,13 +6914,13 @@ var
 begin
 
     With renderer do
-        if how = ro_up then
+      if how = ro_up then
         begin
             dx := gnormal.dx * perpStep;
             dy := gnormal.dy * perpStep;
             dz := gnormal.dz * perpStep;
         end
-        else
+      else
         begin
             dx := -gnormal.dx * perpStep;
             dy := -gnormal.dy * perpStep;
@@ -6659,15 +7226,15 @@ begin
           ChangeFileExt(ExtractFileName(LevelFile), '.bat');
         if not FileExists(batname) then
         begin
-            if isMots then
+            if CurrentProject = MOTS then
                 ext := 'jkm.exe'
             else
                 ext := 'jk.exe';
 
             if Pos(' ', ProjectDir) = 0 then
-                StrLCopy(pdir, PChar(ProjectDir), sizeof(pdir))
+                StrLCopy(pdir, PChar(ProjectDir), Length(pdir) - 1)
             else
-                GetShortPathName(PChar(ProjectDir), pdir, sizeof(pdir));
+                GetShortPathName(PChar(ProjectDir), pdir, Length(pdir) - 1);
 
             AssignFile(t, batname);
             Rewrite(t);
@@ -6720,6 +7287,7 @@ end;
 Procedure TJedMain.LevelChanged;
 begin
     Changed := true;
+    SetLevelName;
     Invalidate;
 end;
 
@@ -6728,7 +7296,7 @@ begin
     Result := true;
     if not Changed then
         exit;
-    Case MsgBox('The project was changed. Save?', 'JED', MB_YESNOCANCEL) of
+    Case MsgBox('The project was changed. Save?', 'SED', MB_YESNOCANCEL) of
         ID_YES:
             Result := SaveProject;
         ID_NO:
@@ -6841,37 +7409,88 @@ procedure TJedMain.LoadTemplates;
 var
     tplname: string;
 begin
-    if isMots then
-        tplname := 'mots.tpl'
-    else
-        tplname := 'master.tpl';
+    case CurrentProject of
+      JKDF2: tplname := 'master.tpl';
+      MOTS: tplname := 'mots.tpl';
+      IJIM: tplname := 'ijim.tpl';
+    end;
+
     if (ProjectDir = '') or (not FileExists(ProjectDir + tplname)) then
-        Templates.LoadFromFile(BaseDir + 'jeddata\' + tplname)
+      begin
+        if FileExists(BaseDir + DataDir + '\' + tplname) then
+          Templates.LoadFromFile(BaseDir + DataDir + '\' + tplname)
+        else
+           PanMessage(mt_warning,
+            Format('Cannot load %s. File not found!',[tplname]));
+      end
     else
         Templates.LoadFromFile(ProjectDir + tplname);
+
+    Templates.Merge(Level.templates);
 end;
 
-Procedure TJedMain.SetMotsIndicator;
+Procedure TJedMain.SetProjectTypeIndicator;
 begin
-    if isMots then
-    begin
-        PNProjType.Caption := 'MOTS';
-        PNProjType.hint :=
-          'Current project is MOTS project (double-click to change)';
-    end
-    else
-    begin
+  GobProject1.Visible := true;
+  SaveJKLGob1.Visible := false;
+  //SaveJKLGob1.Caption := 'Save JKL And GOB';
+  EpisodeEditor1.Visible := true;
+  EpisodeEditor1.Enabled := true;
+  SaveJKLGOBandTest1.Visible := true;
+
+  SaveAs.DefaultExt := 'jkl';
+  SaveAs.FileName   := '1.jkl';
+  SaveAs.Filter     := 'JKL|*.jkl|JED file (*.jed)|*.jed';
+
+  case CurrentProject of
+    JKDF2:
+      begin
         PNProjType.Caption := 'JK';
         PNProjType.hint :=
           'Current project is JK project (double-click to change)';
-    end;
+      end;
+    MOTS:
+      begin
+        PNProjType.Caption := 'MOTS';
+        PNProjType.hint :=
+          'Current project is MOTS project (double-click to change)';
+      end;
+    else
+      begin
+        PNProjType.Caption := 'IJIM';
+        PNProjType.hint :=
+          'Current project is Infernal Machine project (double-click to change)';
+        //GobProject1.Visible := false;
+        //SaveJKLGob1.Visible := false;
+        //SaveJKLGob1.Caption := 'Save NDY And GOB';
+        EpisodeEditor1.Visible := false;
+        EpisodeEditor1.Enabled := false;
+        SaveJKLGOBandTest1.Visible := false;
+        SaveAs.DefaultExt := 'ndy';
+        SaveAs.FileName   := '1.ndy';
+        SaveAs.Filter     := 'Infernal Machine|*.ndy';
+      end;
+  end;
 end;
 
 procedure TJedMain.PNProjTypeDblClick(sender: TObject);
+  var kind: TProjectType;
 begin
-    SetMots(not isMots);
-    SetMotsIndicator;
+    if CurrentProject = IJIM then
+      begin
+        if MsgBox('Infernal project is not fully compatible with JKDF2 & MOTS!'#10#10'Continue anyway?', 'Warning', MB_YESNO) <> ID_YES then
+          exit;
+        kind := TProjectType.JKDF2;
+      end
+    else if CurrentProject = JKDF2 then
+      kind := MOTS
+    else if CurrentProject = MOTS then
+      kind := IJIM;
+
+    SetProjectType(kind);
+    SetProjectTypeIndicator;
     LoadTemplates;
+    EditObject;
 end;
 
 procedure TJedMain.EpisodeEditor1Click(sender: TObject);
@@ -6932,11 +7551,12 @@ begin
 
     AddTHValue('thingflags', '0x408');
     AddTHValue('numframes', '2');
-    AddTHValue('frame', Sprintf('(%.6f/%.6f/%.6f:%.6f/%.6f/%.6f)',
+    AddTHValue('frame', Sprintf('(%1.6f/%1.6f/%1.6f:%1.6f/%1.6f/%1.6f)',
       [th.X, th.Y, th.z, th.pch, th.yaw, th.rol]));
-    SetVec(nz, 0, 0, d);
+
+    nz.SetCoords(0, 0, d);
     RotateVector(nz, th.pch, th.yaw, th.rol);
-    AddTHValue('frame', Sprintf('(%.6f/%.6f/%.6f:%.6f/%.6f/%.6f)',
+    AddTHValue('frame', Sprintf('(%1.6f/%1.6f/%1.6f:%1.6f/%1.6f/%1.6f)',
       [th.X + nz.dx, th.Y + nz.dy, th.z + nz.dz, th.pch, th.yaw, th.rol]));
 
     cf := TCOGFile.Create;
@@ -6964,7 +7584,7 @@ var
     a3DO: T3DO;
     fname: string;
     mesh: T3DOMesh;
-    cx, cy, cz: double;
+    cx, cy, cz, fileVersion: double;
 
     Function AddMat(const mat: string): Integer;
     var
@@ -7003,24 +7623,38 @@ var
                 if adjoin <> nil then
                     continue;
 
-                face := T3DOFace.Create;
-                face.imat := AddMat(Material);
-                face.ftype := 0;
-                if (FaceFlags and FF_Transluent <> 0) then
-                    face.ftype := 2;
-                face.geo := geo;
-                face.light := light;
-                face.tex := tex;
-                face.extra_l := extraLight;
-                for j := vertices.Count - 1 downto 0 do
+                face            := T3DOFace.Create;
+                face.imat       := AddMat(Material);
+                face.faceflags  := FaceFlags;
+                face.geo        := geo;
+                face.light      := light;
+                face.tex        := tex;
+                face.extraLight := ExtraLight;
+
+                var matSize := TSizeF.Create(1,1);
+                if (not Material.IsEmpty) and IsClose(fileVersion, 2.3) then
+                  try
+                    var matSizeI := GetMaterialSize;
+                    matSize.Width  := 1 / matSizeI.Width;
+                    matSize.Height := 1 / matSizeI.Height;
+                  except on E:Exception do PanMessage(mt_warning,
+                    Format('Cannot load %s for mesh %d face %d: %s' + sLineBreak
+                      + '  Exported surface will have invalid UV coords!',
+                      [Material, i, j, e.message]));
+                  end;
+
+                //for j := vertices.Count - 1 downto 0 do
+                for j:=0 to vertices.Count - 1 do
                 begin
                     jv := vertices[j];
                     jtv := TXVertices[j];
+                    n := mesh.AddVertex(jv.X - cx, jv.Y - cy, jv.z - cz, True);
                     n := face.AddVertex(mesh.vertices[jv.mark]);
                     With face.TXVertices[n] do
                     begin
-                        u := jtv.u;
-                        v := jtv.v;
+                        u     := jtv.u * matSize.Width;
+                        v     := jtv.v * matSize.Height;
+                        //color := jtv.color;
                     end;
                 end;
                 mesh.Faces.Add(face);
@@ -7042,6 +7676,9 @@ begin
     fname := Save3DO.FileName;
     sec := Level.Sectors[Cur_SC];
     a3DO := T3DO.CreateNew;
+
+    fileVersion := 2.1;
+    if CurrentProject = IJIM then fileVersion := 2.3;
 
     cx := 0;
     cy := 0;
@@ -7093,8 +7730,8 @@ begin
                 hnode := THNode.Create;
                 a3DO.hnodes.Add(hnode);
                 hnode.nodename := a3DO.Meshes[i].name;
-                hnode.nmesh := i;
-                hnode.parent := 0;
+                hnode.nmesh    := i;
+                hnode.parent   := 0;
             end;
         end;
     end;
@@ -7145,7 +7782,7 @@ begin
 
     end;
 
-    a3DO.SaveToFile(fname);
+    a3DO.SaveToFile(fname, fileVersion);
     a3DO.free;
     nsel.free;
 
@@ -7262,6 +7899,8 @@ begin
         MM_LT:
             ltsel.Clear;
     end;
+    if (Map_mode = MM_SC) or (Map_mode = MM_SF) or (Map_mode = MM_TH) then
+      Preview3D.Repaint;
 end;
 
 Procedure TJedMain.CleaveBy(const norm: TVector; X, Y, z: double);
@@ -7330,7 +7969,15 @@ begin
     mi.Add(nmi);
 end;
 
-procedure TJedMain.KBCommandClick(sender: TObject);
+Procedure TJedMain.AddKBItem(mi: TMenuItem; const name: string; onClick: TNotifyEvent);
+begin
+    var nmi := TMenuItem.Create(mi);
+    nmi.OnClick := onClick;
+    nmi.Caption := name;
+    mi.Add(nmi);
+end;
+
+Procedure TJedMain.KBCommandClick(sender: TObject);
 var
     Key: Word;
     sc: TShiftState;
@@ -7349,47 +7996,52 @@ var
     grdot, grline, grsize, grstep: double;
 begin
     if renderer = nil then
-    begin
-        SetVec(X, 1, 0, 0);
-        SetVec(z, 0, 0, 1);
-        SetVec(gX, 1, 0, 0);
-        SetVec(gZ, 0, 0, 1);
-        Scale := 1;
-        cmx := 0;
-        cmy := 0;
-        cmz := 0;
-        grx := 0;
-        gry := 0;
-        grz := 0;
-        grdot :=0.2;
-        grstep := 0.2;
-        grline := 1;
-    end
+      begin
+          X.SetCoords(1, 0, 0);
+          z.SetCoords(0, 0, 1);
+          gX.SetCoords(1, 0, 0);
+          gZ.SetCoords(0, 0, 1);
+          Scale := 1;
+          cmx := 0;
+          cmy := 0;
+          cmz := 0;
+          grx := 0;
+          gry := 0;
+          grz := 0;
+          grdot :=0.2;
+          grstep := 0.2;
+          grline := 1;
+      end
     else
-    begin
-        X := renderer.xv;
-        z := renderer.zv;
-        gX := renderer.gxnormal;
-        gZ := renderer.gnormal;
-        Scale := renderer.Scale;
-        cmx := renderer.CamX;
-        cmy := renderer.CamY;
-        cmz := renderer.CamZ;
-        grx := renderer.GridX;
-        gry := renderer.GridY;
-        grz := renderer.GridZ;
-        grdot := renderer.GridDot;
-        grline := renderer.GridLine;
-        grstep := renderer.GridStep;
-
-        renderer.free;
-    end;
+      begin
+          X := renderer.xv;
+          z := renderer.zv;
+          gX := renderer.gxnormal;
+          gZ := renderer.gnormal;
+          Scale := renderer.Scale;
+          cmx := renderer.CamX;
+          cmy := renderer.CamY;
+          cmz := renderer.CamZ;
+          grx := renderer.GridX;
+          gry := renderer.GridY;
+          grz := renderer.GridZ;
+          grdot := renderer.GridDot;
+          grline := renderer.GridLine;
+          grstep := renderer.GridStep;
+          renderer.free;
+          renderer := nil;
+      end;
     try
+        EnableMapGeoBackfaceCull(True);
+        SetMapGeoBackfaceCulling.Visible := True;
         case wireframeAPI of
             WF_Software:
                 renderer := TSFTRenderer.Create(Self.Handle);
             WF_OpenGL:
+              begin
                 renderer := TOGLRenderer.Create(Self.Handle);
+                SetMapGeoBackfaceCulling.Visible := False; // backface culling doesn't work at the moment
+              end
         else
             renderer := TSFTRenderer.Create(Self.Handle);
         end;
@@ -7757,6 +8409,9 @@ begin
     case Map_mode of
         MM_SC:
             begin
+                if not CanPasteSectors then
+                  exit;
+
                 sec := Level.Sectors[Cur_SC];
                 n := PasteSectors(Level, rx, ry, rz);
                 if n = -1 then
@@ -7789,6 +8444,9 @@ begin
             end;
         MM_LT:
             begin
+                if not CanPasteLights then
+                  exit;
+
                 Layer := 0;
                 if Level.Lights.Count > 0 then
                     Layer := Level.Lights[Cur_LT].Layer;
@@ -7812,6 +8470,9 @@ begin
             end;
         MM_TH:
             begin
+                if not CanPasteThings then
+                  exit;
+
                 Layer := 0;
                 if Level.Things.Count > 0 then
                     Layer := Level.Things[Cur_TH].Layer;
@@ -8096,9 +8757,10 @@ Procedure TJedMain.SetRendfromPYR;
 var
     X, Y, z: TVector;
 begin
-    SetVec(X, 1, 0, 0);
-    SetVec(Y, 0, 1, 0);
-    SetVec(z, 0, 0, 1);
+    X.SetCoords(1, 0, 0);
+    Y.SetCoords(0, 1, 0);
+    z.SetCoords(0, 0, 1);
+
     { PCH,ROL,YAW }
     RotateVector(X, rPch, 0, 0);
     RotateVector(X, 0, rRol, 0);
@@ -8109,9 +8771,16 @@ begin
     RotateVector(z, rPch, 0, 0);
     RotateVector(z, 0, rRol, 0);
     RotateVector(z, 0, 0, rYaw);
+
+
+    //var mat: TMat3x3s;
+    //CreateRotMatrix(mat, rPch, rYaw, rRol);
+
     { So PCH - x , YAW - y, ROL - z }
     renderer.SetZ(z.dx, z.dy, z.dz);
     renderer.SetX(X.dx, X.dy, X.dz);
+    //renderer.SetY(Y.dx, Y.dy, Y.dz);
+
 end;
 
 { Old one - for ROL, YAW , PCH order }
@@ -8179,18 +8848,25 @@ begin
         sysGetPYR(xv, yv, zv, rPch, rYaw, rRol);
 end;
 
+
 procedure TJedMain.SaveTimerTimer(sender: TObject);
 var
     fname: string;
 begin
     if ProjectDir = '' then
         exit;
-    If CompareText(ExtractFileExt(LevelFile), '.jed') <> 0 then
+
+    var ext := ExtractFileExt(LevelFile);
+    If ((CompareText(ext, '.jed') <> 0)
+    and (CompareText(ext, '.jkl') <> 0)
+    and (CompareText(ext, '.ndy') <> 0)) or IsInContainer(LevelFile) then
         exit;
 
     ForceDirectories(ProjectDir + 'autosave');
     fname := ProjectDir + 'autosave\' + ExtractFileName(LevelFile);
-    Level.SaveToJed(fname);
+    //Level.SaveToJed(fname);
+    SaveToFile(fname, ext, (*setSaved:=*)False);
+
     PanMessage(mt_info, 'Project autosaved to ' + fname);
 end;
 
@@ -8243,7 +8919,7 @@ begin
                     ct_sec:
                         Result := Level.Sectors[Cur_SC];
                 else
-                    ShowMessage('Jed map is not in the appropriate mode');
+                    ShowMessage('SED map is not in the appropriate mode');
                 end;
             end;
         MM_SF:
@@ -8254,7 +8930,7 @@ begin
                     ct_sec:
                         Result := Level.Sectors[Cur_SC];
                 else
-                    ShowMessage('Jed map is not in the appropriate mode');
+                    ShowMessage('SED map is not in the appropriate mode');
                 end;
             end;
         MM_TH:
@@ -8263,11 +8939,11 @@ begin
                     ct_thg:
                         Result := Level.Things[Cur_TH];
                 else
-                    ShowMessage('Jed map is not in the appropriate mode');
+                    ShowMessage('SED map is not in the appropriate mode');
                 end;
             end;
     else
-        ShowMessage('Jed map is not in the appropriate mode');
+        ShowMessage('SED map is not in the appropriate mode');
     end;
 end;
 
@@ -8425,6 +9101,9 @@ var
     xv, yv, zv: TVector;
     v1, v2: TJKVertex;
 begin
+    if (sc < 0) or (th < 0) or (sf < 0) then
+      exit;
+
     StartUndoRec('Bring thing to Surface');
     surf := Level.Sectors[sc].surfaces[SF];
     CalcSurfCenter(surf, X, Y, z);
@@ -8443,7 +9122,8 @@ begin
     v1 := surf.vertices[0];
     v2 := surf.vertices[1];
     zv := surf.normal;
-    SetVec(yv, v2.X - v1.X, v2.Y - v1.Y, v2.z - v1.z);
+
+    yv.SetCoords(v2.X - v1.X, v2.Y - v1.Y, v2.z - v1.z);
     Normalize(yv);
     VMult(yv.dx, yv.dy, yv.dz, zv.dx, zv.dy, zv.dz, xv.dx, xv.dy, xv.dz);
 
@@ -8673,6 +9353,9 @@ var
     j: Integer;
     EX: TObject;
 begin
+    if (Cur_EX < -1) or (ExtraObjs.Count = 0) then
+      exit;
+
     EX := ExtraObjs[Cur_EX];
     if EX is TVertex then
         With TVertex(EX) do
@@ -8745,7 +9428,7 @@ begin
     if s = '' then
         exit;
     AddPrefab(s, Level.Sectors[Cur_SC]);
-    SavePrefabs(BaseDir + 'JedData\shapes.tpl');
+    SavePrefabs(BaseDir + DataDir + '\shapes.tpl');
     ToolBar.UpdatePrefabs;
 end;
 
@@ -8771,4 +9454,32 @@ begin
     UrqForm.Show;
 end;
 
+procedure TJedMain.ForSelectedSectorsDo(callback: TSectorCallback);
+begin
+    if Map_mode <> MM_SC then exit;
+    var curi := scsel.AddSC(Cur_SC);
+    for var i := 0 to scsel.Count - 1 do
+        begin
+            var sec := Level.Sectors[scsel.GetSC(i)];
+            callback(sec);
+        end;
+    scsel.DeleteN(curi);
+end;
+
+procedure TJedMain.ForSelectedSurfacesDo(callback: TSurfaceCallback);
+begin
+    if Map_mode <> MM_SF then exit;
+    var curi := sfsel.AddSF(Cur_SC, Cur_SF);
+    for var i := 0 to sfsel.Count - 1 do
+    begin
+        var sci := -1;
+        var sfi := -1;
+        sfsel.GetSCSF(i, sci, sfi);
+        var surf := Level.Sectors[sci].surfaces[sfi];
+        callback(surf);
+    end;
+    sfsel.DeleteN(curi);
+end;
+
 end.
+

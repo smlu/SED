@@ -23,8 +23,8 @@ type
     CBAxis: TComboBox;
     procedure FormShow(Sender: TObject);
   private
-    hdc:Thandle;
-    hglc:Thandle;
+    hdc: HDC;
+    hglc:HGLRC;
     The3DO:T3DO;
     SelectedTriangle:integer;
     pixelFormat:Integer;

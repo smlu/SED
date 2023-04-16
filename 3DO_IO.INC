@@ -21,7 +21,7 @@ begin
 
 end;
 
-Constructor T3DO.CreateFrom3DO(const name:string;lod:integer);
+Constructor T3DO.CreateFrom3DO(const name:string;lod:integer; var fileVersion: double);
 var t:TTextFile; cpos:word; s,w1,w2:String;
     cur_line:integer;
     a,n,nx:Integer;
@@ -56,6 +56,13 @@ begin
  PanMessage(mt_error,'File '+name+Format(' Error at line %d: %s',[cur_line,s]));
 end;
 
+Procedure LoadHeader(var version: double);
+begin
+ CurSection:='';
+ GetNextLine(s);
+ SScanf(s,'3DO %f',[@version]);
+end;
+
 Function GetMat(n:integer):String;
 begin
  if (n<0) or (n>=mats.count) then begin result:=''; exit; end;
@@ -74,8 +81,12 @@ begin
   GetNextLine(s);
   p:=GetWord(s,1,w1);
   if w1='END' then break;
-  GetWord(s,p,w1);
-  mats.Add(w1);
+  var tokens := SplitString(s, ':');
+  var matofs := Length(tokens);
+  if matofs < 1 then
+    raise Exception.CreateFMT('Invalid entry in material section at index: %d', [n]);
+  matofs := matofs -1;
+  mats.Add(tokens[matofs].Trim);
   inc(i);
  end;
 end;
@@ -98,7 +109,7 @@ begin
  end;
 end;
 
-Procedure LoadGeometry;
+Procedure LoadGeometry(const version: double);
 var i,j,k,m,n,p,pc:integer;
     nvx,vx,tvx:integer;
     txvx:TTempTXVertex;
@@ -111,6 +122,7 @@ var i,j,k,m,n,p,pc:integer;
     face:T3DOFace;
     v:TVertex;
     tv:TTempTXVertex;
+    vertIntensities: array of TColorF;
 
 Function GetTXVX(n:integer):TTempTXVertex;
 begin
@@ -129,7 +141,7 @@ begin
  GetNextLine(s); {Geosets}
  SScanf(s,'GEOSETS %d',[@ngeos]);
 
- if lod>ngeos-1 then lod:=ngeos-1; 
+ if lod>ngeos-1 then lod:=ngeos-1;
 
 
  While not EndOfSection do
@@ -148,14 +160,13 @@ begin
 
  for i:=0 to nmeshes-1 do
  begin
-
   While not EndOfSection do
-  begin
-   GetNextLine(s);
-   p:=GetWord(s,1,w1);
-   if w1<>'MESH' then continue;
-   break;
-  end;
+    begin
+     GetNextLine(s);
+     p:=GetWord(s,1,w1);
+     if w1 <> 'MESH' then continue;
+     break;
+    end;
   if EndOfSection then exit;
 
   Mesh:=NewMesh;
@@ -174,18 +185,36 @@ begin
   begin
    GetNextLine(s);
    p:=GetWord(s,1,w1);
-   if w1<>'VERTICES' then continue;
+   if w1 <> 'VERTICES' then continue;
    SScanf(s,'VERTICES %d',[@Nvxs]);
+   SetLength(vertIntensities, Nvxs);
    break;
   end;
   if EndOfSection then exit;
 
-
   for j:=0 to nvxs-1 do
   begin
    GetNextLine(s);
-   v:=TVertex.Create;
-   SScanf(s,'%s %f %f %f',[@w1,@v.x,@v.y,@v.z]);
+   v := TVertex.Create;
+   var vcolor: TColorF;
+
+   if IsClose(version, 2.1) then
+      begin
+        var vi: Double;
+        SScanf(s,'%s %f %f %f %f',[@w1,@v.x,@v.y,@v.z, @vi]);
+        vcolor := IntensityToColor(vi);
+      end
+    else if IsClose(version, 2.2) then
+      begin
+        SScanf(s,'%s %f %f %f %l %l %l',[@w1,@v.x,@v.y,@v.z, @vcolor.r, @vcolor.g, @vcolor.b]);
+        vcolor.a := 1.0;
+      end
+    else
+      begin // 2.3
+        SScanf(s,'%s %f %f %f %l %l %l %l',[@w1,@v.x,@v.y,@v.z, @vcolor.r, @vcolor.g, @vcolor.b, @vcolor.a]);
+      end;
+
+   vertIntensities[j] := vcolor;
    Mesh.Vertices.Add(v);
   end;
 
@@ -204,7 +233,7 @@ begin
   begin
    GetNextLine(s);
    p:=GetWord(s,1,w1);
-   if w1<>'FACES' then continue;
+   if w1 <> 'FACES' then continue;
    break;
   end;
   if EndOfSection then exit;
@@ -212,48 +241,90 @@ begin
   GetWord(s,p,w1);
   nfaces:=StrToInt(w1);
 
- For j:=0 to nfaces-1 do
- begin
-  GetNextLine(s);
-  Face:=T3DOFace.Create;
-  Mesh.Faces.Add(face);
-
-  p:=GetWord(s,1,w1); {num}
-  p:=GetWord(s,p,w1); {material}
-  ValInt(w1,face.imat);
-  p:=GetWord(s,p,w1); {type}
-  ValHex(w1,face.ftype);
-  p:=GetWord(s,p,w1); {geo}
-  ValInt(w1,face.geo);
-  p:=GetWord(s,p,w1); {light}
-  ValInt(w1,face.light);
-  p:=GetWord(s,p,w1); {tex}
-  ValInt(w1,face.tex);
-  p:=GetWord(s,p,w1); {extralight}
-  ValSingle(w1,face.extra_L);
-  p:=GetWord(s,p,w1); {Nvert}
-  nvxs:=StrToInt(w1);
-  for k:=0 to nvxs-1 do
-  begin
-   p:=GetVXWord(s,p,w1);
-   ValInt(w1,nvx);
-   Face.AddVertex(Mesh.Vertices[nvx]);
-   p:=GetWord(s,p,w1);
-   ValInt(w1,nvx);
-   tv:=GetTXVX(nvx);
-   if tv<>nil then
-   With Face.TXVertices[k] do
+   For j:=0 to nfaces-1 do
    begin
-    u:=tv.u;
-    v:=tv.v;
-   end;
-  end;
-end;
-  for m:=0 to GTXVXList.Count-1 do
-  TTempTXVertex(GTXVXList[m]).Free;
-  GTXVXList.Clear;
-end;
-GTXVXList.Free;
+    GetNextLine(s);
+    Face:=T3DOFace.Create;
+    Mesh.Faces.Add(face);
+
+    p:=GetWord(s,1,w1); {num}
+    p:=GetWord(s,p,w1); {material}
+    ValInt(w1,face.imat);
+    p:=GetWord(s,p,w1); {type}
+    ValHex(w1,face.faceflags);
+    p:=GetWord(s,p,w1); {geo}
+    ValInt(w1,face.geo);
+    p:=GetWord(s,p,w1); {light}
+    ValInt(w1,face.light);
+    p:=GetWord(s,p,w1); {tex}
+    ValInt(w1,face.tex);
+
+    {extralight}
+    if IsClose(version, 2.1) then
+      begin
+        p:=GetWord(s,p,w1);
+        ValSingle(w1,face.extraLight.a);
+        face.extraLight := IntensityToColor(face.extraLight.a);
+      end
+    else if IsClose(version, 2.2) then
+      begin
+        p:=GetWord(s,p,w1);
+        StripSScan(w1,'%l %l %l)',[@face.extraLight.r, @face.extraLight.g, @face.extraLight.b]);
+      end
+    else
+      begin // 2.3
+        p:=GetWord(s,p,w1);
+        StripSScan(w1,'%l %l %l %l)',[@face.extraLight.r, @face.extraLight.g, @face.extraLight.b, @face.extraLight.a]);
+      end;
+
+    p:=GetWord(s,p,w1); {Nvert}
+    nvxs:=StrToInt(w1);
+    for k:=0 to nvxs-1 do
+      begin
+       // vert
+       p:=GetVXWord(s,p,w1);
+       ValInt(w1,nvx);
+       Face.AddVertex(Mesh.Vertices[nvx]);
+       var vcolor := vertIntensities[nvx];
+
+       // uv
+       p:=GetWord(s,p,w1);
+       ValInt(w1,nvx);
+       tv:=GetTXVX(nvx);
+       if tv<>nil then
+         With Face.TXVertices[k] do
+           begin
+            u := tv.u;
+            v := tv.v;
+            color := vcolor;
+           end;
+      end;
+   end; // face
+
+
+   // face normals
+   While not EndOfSection do
+    begin
+     GetNextLine(s);
+     p:=GetWord(s,1,w1);
+     p:=GetWord(s,p,w2);
+     if (w1 <> 'FACE') and (w2 <> 'NORMALS') then continue;
+     break;
+    end;
+   if EndOfSection then exit;
+
+   For j:=0 to nfaces-1 do
+     begin
+      GetNextLine(s);
+      face := Mesh.Faces[j];
+      SScanf(s,'%s %f %f %f',[@w1,@face.normal.x,@face.normal.y,@face.normal.z]);
+     end;
+
+   for m:=0 to GTXVXList.Count-1 do
+    TTempTXVertex(GTXVXList[m]).Free;
+   GTXVXList.Clear;
+ end; // mesh
+ GTXVXList.Free;
 end;
 
 
@@ -342,17 +413,17 @@ begin {CreateFrom3DO begin}
  EndOfSection:=false;
  CurSection:='';
 Try
-Try
-Repeat
-While (CurSection='') and (not t.eof) do GetNextLine(s);
- if t.eof then break;
- EndOfSection:=false;
- if CurSection='GEOMETRYDEF' then LoadGeometry
- else if CurSection='HEADER' then CurSection:=''
- else if CurSection='MODELRESOURCE' then LoadMats
- else if CurSection='HIERARCHYDEF' then LoadHierarchy
- else SkipToNextSection;
-until t.eof;
+  Try
+  Repeat
+  While (CurSection='') and (not t.eof) do GetNextLine(s);
+   if t.eof then break;
+   EndOfSection:=false;
+   if CurSection='GEOMETRYDEF' then LoadGeometry(fileVersion)
+   else if CurSection='HEADER' then LoadHeader(fileVersion)
+   else if CurSection='MODELRESOURCE' then LoadMats
+   else if CurSection='HIERARCHYDEF' then LoadHierarchy
+   else SkipToNextSection;
+  until t.eof;
 
 Finally
 
@@ -388,7 +459,7 @@ begin
  Result:=0;
 end;
 
-Procedure T3DO.SaveToFile(const name:string);
+Procedure T3DO.SaveToFile(const name: string; const version: double);
 var t:TextFile;
     TXVXList,TxIdx:TTXVertices;
     txvx:TTXvertex;
@@ -518,11 +589,11 @@ begin
  UnOffsetMeshes;
 
 Try
- WriteFmt('# MODEL %s created by JED %s',[name,JedVersion]);
+ WriteFmt('# MODEL %s created by SED %s',[name, SedVersion]);
  WriteS('');
  WriteS('SECTION: HEADER');
  WriteS('');
- WriteS('3DO 2.1');
+ WriteFmt('3DO %.1f', [version]);
  WriteS('');
  WriteS('SECTION: MODELRESOURCE');
  WriteS('');
@@ -560,14 +631,18 @@ Try
   WriteFmt('RADIUS %.6f',[rad]);
   WriteS('GEOMETRYMODE	4');
   WriteS('LIGHTINGMODE	3');
-  WriteS('TEXTUREMODE	1');
+  if IsClose(version, 2.3) then WriteS('TEXTUREMODE	3') // IJIM
+  else WriteS('TEXTUREMODE	1');
   WriteS('');
 
   WriteFmt('VERTICES %d',[Vertices.count]);
   WriteS('');
   For j:=0 to Vertices.count-1 do
   With Vertices[j] do
-   WriteFmt('%d: %.6f %.6f %.6f 0',[j,X,Y,Z]);
+    if IsClose(version, 2.3) then
+      WriteFmt('%d: %.6f %.6f %.6f 0.000000 0.000000 0.000000 1.000000',[j,X,Y,Z]) // IJIM
+    else
+      WriteFmt('%d: %.6f %.6f %.6f 0',[j,X,Y,Z]);
   WriteS('');
 
   {!!!! Texture vertices !!!}
@@ -649,7 +724,12 @@ Try
   begin
    {#  num:  material:   type:  geo:  light:   tex:  extralight:  verts:}
 
-   s:=Sprintf('%d: %d 0x%x %d %d %d %.4f %d',[j,imat,ftype,geo,light,tex,extra_l,vertices.count]);
+   if IsClose(version, 2.3) then// IJIM
+      s:=Sprintf('%d: %d 0x%x %d %d %d (%.6f/%.6f/%.6f/%.6f) %d',
+        [j,imat,faceflags,geo,light,tex,extraLight.r,extraLight.g,extraLight.b,extraLight.a,vertices.count])
+    else
+      s:=Sprintf('%d: %d 0x%x %d %d %d %.4f %d',
+        [j,imat,faceflags,geo,light,tex,RgbaToIntensity(extraLight),vertices.count]);
 
    for v:=0 to Vertices.Count-1 do
    With Vertices[v] do

@@ -214,7 +214,7 @@ begin
  f:=OpenFileRead(name,0);
 Try
  F.FRead(gh,sizeof(gh));
- if gh.magic<>'GOB'#10 then raise Exception.Create(Name+' is not a GOB file');
+ if (gh.magic<>'GOB'#10) then raise Exception.Create(Name+' is not a GOB file');
  F.FSeek(gh.index_ofs);
  F.FRead(gn,sizeof(gn));
  for i:=0 to gn-1 do
@@ -256,8 +256,8 @@ begin
  While (F.FPos<F.FSize) do
  begin
   F.FRead(le,sizeof(le));
-  StrLCopy(n,le.name,sizeof(le.name));
-  StrLCopy(e,le.tag,sizeof(le.tag));
+  StrLCopy(n,le.name, Length(le.name) - 1);
+  StrLCopy(e, le.tag, Length(le.tag) - 1);
   fi:=TFInfo.Create;
   Fi.offs:=F.FPos;
   fi.size:=le.size;
@@ -752,7 +752,7 @@ Try
   fi:=TWEInfo.Create;
   fi.offs:=we.Pentry;
   fi.size:=we.Length;
-  Files.AddObject(StrLCopy(ename,we.name,8),fi);
+  Files.AddObject(StrLCopy(ename, we.name, 8),fi);
  end;
 Finally
  F.FClose;

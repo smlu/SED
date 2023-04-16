@@ -43,9 +43,6 @@ Coordinates=243,248,46,33
 [Boxes]
 Coordinates=194,248,45,33
 
-[SaveJKL1]
-Coordinates=414,209,63,33
-
 [Tools1]
 Coordinates=145,248,47,33
 
@@ -136,9 +133,6 @@ Coordinates=745,157,73,33
 [HideLights]
 Coordinates=745,209,67,33
 
-[SaveJed]
-Coordinates=565,390,56,33
-
 [Exit1]
 Coordinates=516,390,40,33
 
@@ -204,9 +198,6 @@ Coordinates=888,209,70,33
 [ItemEditor1]
 Coordinates=888,261,70,33
 
-[Export1]
-Coordinates=667,461,52,33
-
 [BNSC]
 Coordinates=217,132,43,33
 
@@ -230,9 +221,6 @@ Coordinates=888,417,72,33
 
 [CalculateLights1]
 Coordinates=888,469,96,33
-
-[SaveJKL]
-Coordinates=510,461,57,33
 
 [miGrid]
 Coordinates=461,461,47,33
@@ -325,5 +313,5 @@ Coordinates=1038,365,75,33
 Coordinates=506,559,46,33
 
 []
-Coordinates=0,198,82,33
+Coordinates=414,209,63,33
 

@@ -2,7 +2,7 @@ unit misc_utils;
 
 interface
 
-uses Classes, SysUtils, GlobalVars, Forms, U_MsgForm, StdCtrls, Graphics;
+uses Classes, SysUtils, GlobalVars, Forms, U_MsgForm, StdCtrls, Graphics,TypInfo;
 
 { Miscellaneous help routines }
 
@@ -12,6 +12,27 @@ Const
 Type
 
   TMsgType = (mt_info, mt_warning, mt_error); { Message Types for PanMessage() }
+  TColorF = record
+    r, g, b, a: single;  // a - alpha or light intensity
+
+    class operator Add(a, b: TColorF): TColorF;
+    class operator Add(a: TColorF; b: single): TColorF;
+    class operator Subtract(a, b: TColorF): TColorF;
+    class operator Subtract(a: TColorF; b: single): TColorF;
+    class operator Multiply(a, b: TColorF): TColorF;
+    class operator Multiply(a: TColorF; b: single): TColorF;
+    class operator Divide(a, b: TColorF): TColorF;
+    class operator Divide(a: TColorF; b: single): TColorF;
+    class operator Equal(a, b: TColorF): Boolean;
+    class operator NotEqual(a, b: TColorF): Boolean;
+    Procedure Clamp; overload;
+    Procedure Clamp(min, max: TColorF); overload;
+    Procedure SetToZero;
+    Function IsBrighter(c: TColorF): Boolean;
+    Function ToJedColor: TJedColor;
+    Function IsZero: Boolean;
+  end;
+  PColorF=^TColorF;
 
   TIntList = class(TList)
     Function GetInt(n: Integer): Integer;
@@ -47,6 +68,39 @@ Type
     Property Objs[n: Integer]: TObject read GetObj write SetObj; default;
   end;
 
+  TNotifyEventWrapper = class(TComponent)
+  private
+    FProc: TProc<TObject>;
+  public
+    constructor Create(Owner: TComponent; Proc: TProc<TObject>);
+  published
+    procedure Event(Sender: TObject);
+  end;
+
+function LambdaNotifyEvent(Owner: TComponent; Proc: TProc<TObject>): TNotifyEvent;
+
+Function BitTest(flags, mask: LongInt): Boolean;
+Function FlagsNotSet(flags, mask: LongInt): Boolean;
+Procedure BitSet(var val: Integer; flags: Integer);
+Procedure BitClear(var val: Integer; flags: Integer);
+
+Function MakeColor(r, g, b: single; a: single = 1.0): TColorF; overload;
+Function MakeColor(c: TJedColor): TColorF; overload;
+Function EncodeARGB(color: TColorF): UInt32;
+Function EncodeABGR(color: TColorF): UInt32;
+Function DecodeABGR(abgr: UInt32): TColorF;
+Function EncodeBGR(color: TColorF): UInt32;
+Function DecodeBGR(bgr: UInt32): TColorF;
+Function IntensityToColor(i: single): TColorF;
+Function RgbToIntensity(rgb: TColorF): single;
+Function RgbaToIntensity(rgba: TColorF): single;
+Function L2B(c:single):byte;
+
+Function ClampD(v: Double; min: Double; max: Double): Double;
+Function ClampF(v: Single; min: Single; max: Single): single;
+Function ClampF_01(v: Single): single;
+Function ClampI(v: Integer; min: Integer; max: Integer): Integer;
+
 Function MsgBox(Txt, Caption: String; flags: Integer): Integer;
 Function GetWord(const s: string; p: Integer; var w: string): Integer;
 Function GetWordN(const s: String; n: Integer): String;
@@ -62,6 +116,9 @@ Function PScanf(ps: Pchar; const format: String;
 Function SScanf(const s: string; const format: String;
   const Vals: array of pointer): boolean;
 
+Function StripSScan(s: string; const format: String;
+  const Vals: array of pointer): boolean;
+
 { Lightweight version of Format(). formats floats differently -
   accepts %f and %.#f and puts max of fractional # digits in the string }
 Function SPrintf(const format: string; const Vals: array of const): string;
@@ -75,6 +132,7 @@ Function JKRound(d: Double): Double; { Rounds to 6 decimal points }
 Function UVRound(d: Single): Single; { Round to 2 decimal digits }
 
 Function DoubleToStr(d: Double): String;
+Function ColorToStr(c: TColorF; withAlpha: Boolean = true): String;
 
 { handles the number -2147483648 ($80000000) properly.
   for some reason, StrToInt gets confused by it }
@@ -85,6 +143,7 @@ Function ValDword(const s: String; var d: Longint): boolean;
 Function ValDouble(const s: String; var d: Double): boolean;
 Function ValSingle(const s: String; var f: Single): boolean;
 Function ValVector(const s: string; var x, y, z: Double): boolean;
+Function ValColor(const s: string; var color: TColorF): boolean;
 
 Function PadRight(const s: string; tolen: Integer): String;
 Procedure RemoveComment(var s: String);
@@ -101,16 +160,148 @@ Function ScanForNonSpace(const s: string; p: Integer): Integer;
 
 Function IsClose(d1, d2: Double): boolean;
 
-Function FindJedDataFile(const Name: string): String;
-
-Function SetFlags(val, flags: Integer): Integer;
-Function ClearFlags(val, flags: Integer): Integer;
+Function FindDataFile(const Name: string): String;
 
 Procedure SetEditText(ed: TEdit; const s: string); // Doesn't invoke OnChange
 
+Function StringListFind(const list: TStringList; const str: string; var index: Integer): Boolean;
+
+// Removes all entries in list that matches filter list
+Procedure StringListFilter(list: TStringList; const filter: TStringList);
+
+
+const
+  ColorBlack: TColorF = (r:0;g:0;b:0;a:1);
+  ColorBlue : TColorF  = (r:0;g:0;b:1;a:1);
+  ColorGreen : TColorF  = (r:0;g:1;b:0;a:1);
+  ColorCyan : TColorF  = (r:0;g:1;b:1;a:1);
+  ColorRed : TColorF  = (r:1;g:0;b:0;a:1);
+  ColorRedDark : TColorF  = (r:0.54;g:0;b:0;a:1);
+  ColorRedScarlet : TColorF  = (r:1;g:0.14;b:0;a:1);
+  ColorWhite: TColorF = (r:1;g:1;b:1;a:1);
+  ColorYellow: TColorF = (r:1;g:1;b:0;a:1);
+
 implementation
 
-uses Windows, Jed_main;
+uses Windows, Jed_main, Math, System.Character;
+
+class operator TColorF.Add(a, b: TColorF): TColorF;
+begin
+  Result.r := a.r + b.r;
+  Result.g := a.g + b.g;
+  Result.b := a.b + b.b;
+  Result.a := a.a + b.a;
+end;
+
+class operator TColorF.Add(a: TColorF; b: single): TColorF;
+begin
+  Result.r := a.r + b;
+  Result.g := a.g + b;
+  Result.b := a.b + b;
+  Result.a := a.a + b;
+end;
+
+class operator TColorF.Subtract(a, b: TColorF): TColorF;
+begin
+  Result.r := a.r - b.r;
+  Result.g := a.g - b.g;
+  Result.b := a.b - b.b;
+  Result.a := a.a - b.a;
+end;
+
+class operator TColorF.Subtract(a: TColorF; b: single): TColorF;
+begin
+  Result.r := a.r - b;
+  Result.g := a.g - b;
+  Result.b := a.b - b;
+  Result.a := a.a - b;
+end;
+
+class operator TColorF.Multiply(a, b: TColorF): TColorF;
+begin
+  Result.r := a.r * b.r;
+  Result.g := a.g * b.g;
+  Result.b := a.b * b.b;
+  Result.a := a.a * b.a;
+end;
+
+class operator TColorF.Multiply(a: TColorF; b: single): TColorF;
+begin
+  Result.r := a.r * b;
+  Result.g := a.g * b;
+  Result.b := a.b * b;
+  Result.a := a.a * b;
+end;
+
+class operator TColorF.Divide(a, b: TColorF): TColorF;
+begin
+  Result.r := a.r / b.r;
+  Result.g := a.g / b.g;
+  Result.b := a.b / b.b;
+  Result.a := a.a / b.a;
+end;
+
+class operator TColorF.Divide(a: TColorF; b: single): TColorF;
+begin
+  Result.r := a.r / b;
+  Result.g := a.g / b;
+  Result.b := a.b / b;
+  Result.a := a.a / b;
+end;
+
+class operator TColorF.Equal(a, b: TColorF): Boolean;
+begin
+  Result := (a.r = b.r) and (a.g = b.g) and (a.b = b.b) and (a.a = b.a);
+end;
+
+class operator TColorF.NotEqual(a, b: TColorF): Boolean;
+begin
+  Result := not (a = b);
+end;
+
+Procedure TColorF.Clamp;
+begin
+    r := ClampF_01(r);
+    g := ClampF_01(g);
+    b := ClampF_01(b);
+    a := ClampF_01(a);
+end;
+
+Procedure TColorF.Clamp(min, max: TColorF);
+begin
+  r := ClampF(r, min.r, max.r);
+  g := ClampF(g, min.g, max.g);
+  b := ClampF(b, min.b, max.b);
+  a := ClampF(a, min.a, max.a);
+end;
+
+Procedure TColorF.SetToZero;
+begin
+  r := 0.0;
+  g := 0.0;
+  b := 0.0;
+  a := 0.0;
+end;
+
+Function TColorF.IsBrighter(c: TColorF): Boolean;
+ var aa, ba: single;
+begin
+  aa := (r + g + b + a) / 4.0;
+  ba := (c.r + c.g + c.b + c.a) / 4.0;
+  Result := (aa > ba);
+end;
+
+ Function TColorF.ToJedColor: TJedColor;
+ begin
+    Result.r := ClampI(Round(r * 255), 0, 255);
+    Result.g := ClampI(Round(g * 255), 0, 255);
+    Result.b := ClampI(Round(b * 255), 0, 255);
+ end;
+
+ Function TColorF.IsZero: Boolean;
+begin
+  Result := Math.IsZero(r) and Math.IsZero(g) and Math.IsZero(b) and Math.IsZero(a);
+end;
 
 Function TIntList.GetInt(n: Integer): Integer;
 begin
@@ -221,6 +412,23 @@ end;
 Procedure TObjList.SetObj(n: Integer; obj: TObject);
 begin
   Items[n] := obj;
+end;
+
+
+constructor TNotifyEventWrapper.Create(Owner: TComponent; Proc: TProc<TObject>);
+begin
+  inherited Create(Owner);
+  FProc := Proc;
+end;
+
+procedure TNotifyEventWrapper.Event(Sender: TObject);
+begin
+  FProc(Sender);
+end;
+
+function LambdaNotifyEvent(Owner: TComponent; Proc: TProc<TObject>): TNotifyEvent;
+begin
+  Result := TNotifyEventWrapper.Create(Owner, Proc).Event;
 end;
 
 Function PadRight(const s: string; tolen: Integer): String;
@@ -454,6 +662,26 @@ begin
   Result := Result and (a = 0);
 end;
 
+Function ValColor(const s: string; var color: TColorF): boolean;
+var
+  w: string;
+  p, a: Integer;
+begin
+  p := GetWord(s, 1, w);
+  val(w, color.r, a);
+  Result := a = 0;
+  p := GetWord(s, p, w);
+  val(w, color.g, a);
+  Result := Result and (a = 0);
+  p := GetWord(s, p, w);
+  val(w, color.b, a);
+
+  // Try to get alpha from the string
+  p := GetWord(s, p, w);
+  val(w, color.a, a);
+  if a <> 0 then color.a := 1.0;
+end;
+
 Function StrToDword(const s: String): Longint;
 var
   a: Integer;
@@ -472,6 +700,26 @@ begin
     end;
   if (a <> 0) and (s[a] <> #0) then
     Raise EConvertError.Create(s + ' is not a valid number');
+end;
+
+Function BitTest(flags, mask: LongInt): Boolean;
+begin;
+  Result := (flags and mask) = mask;
+end;
+
+Function FlagsNotSet(flags, mask: LongInt): Boolean;
+begin;
+  Result := (flags and mask) = 0;
+end;
+
+Procedure BitSet(var val: Integer; flags: Integer);
+begin
+  val := val or flags;
+end;
+
+Procedure BitClear(var val: Integer; flags: Integer);
+begin
+  val := val and (not flags);
 end;
 
 Function DwordToStr(d: Longint): String;
@@ -497,6 +745,113 @@ begin
   end
 end;
 
+Function MakeColor(r, g, b: single; a: single = 1.0): TColorF;
+begin
+  Result.r := ClampF_01(r);
+  Result.g := ClampF_01(g);
+  Result.b := ClampF_01(b);
+  Result.a := ClampF_01(a);
+end;
+
+Function MakeColor(c: TJedColor): TColorF;
+begin
+  Result := MakeColor(c.r /255, c.g /255, c.b /255);
+end;
+
+Function EncodeARGB(color: TColorF): UInt32;
+var
+  br, bg, bb, ba: byte;
+begin
+  // Big-endian encoded RGBA 32 bpp
+  br := ClampI(Round(color.r * 255), 0, 255);
+  bg := ClampI(Round(color.g * 255), 0, 255);
+  bb := ClampI(Round(color.b * 255), 0, 255);
+  ba := ClampI(Round(color.a * 255), 0, 255);
+  result := (bb or (bg shl 8) or (br shl 16) or (ba shl 24));
+end;
+
+Function EncodeABGR(color: TColorF): UInt32;
+var
+  br, bg, bb, ba: byte;
+begin
+  // Big-endian encoded RGBA 32 bpp
+  br := ClampI(Round(color.r * 255), 0, 255);
+  bg := ClampI(Round(color.g * 255), 0, 255);
+  bb := ClampI(Round(color.b * 255), 0, 255);
+  ba := ClampI(Round(color.a * 255), 0, 255);
+  result := (ba or (bb shl 8) or (bg shl 16) or (br shl 24));
+end;
+
+Function DecodeABGR(abgr: UInt32): TColorF;
+var r, g, b, a: single;
+begin
+  r:= ClampF_01(Byte(abgr shr 24) / 255.0);
+  g:= ClampF_01(Byte(abgr shr 16) / 255.0);
+  b:= ClampF_01(Byte(abgr shr 8) / 255.0);
+  a:= ClampF_01(Byte(abgr) / 255.0);
+  Result := MakeColor(r, g, b, a);
+end;
+
+Function EncodeBGR(color: TColorF): UInt32;
+begin
+  Result := EncodeABGR(color);
+  Result := UInt32((Result shr 8) and not(255 shl 24)); // remove alpha
+end;
+
+Function DecodeBGR(bgr: UInt32): TColorF;
+begin
+  bgr := UInt32(bgr shl 8) or 255; // add 1.0 alpha component
+  Result := DecodeABGR(bgr);
+end;
+
+Function IntensityToColor(i: single): TColorF;
+begin
+  Result := MakeColor(i, i, i, 1.0);
+end;
+
+Function RgbToIntensity(rgb: TColorF): single;
+begin
+  Result := (rgb.r + rgb.g + rgb.b) / 3;
+end;
+
+Function RgbaToIntensity(rgba: TColorF): single;
+begin
+  Result := (rgba.r + rgba.g + rgba.b + rgba.a) / 4;
+end;
+
+Function L2B(c:single):byte;
+begin
+ if c<0 then result:=0
+ else if c>1 then result:=255
+ else result:=Round(255*c);
+end;
+
+Function ClampD(v: Double; min: Double; max: Double): Double;
+begin
+  Result := v;
+  if v < min then Result:= min
+  else if v > max then Result:= max;
+end;
+
+Function ClampF(v: single; min: single; max: single): single;
+begin
+  Result := v;
+  if v < min then Result:= min
+  else if v > max then Result:= max;
+end;
+
+Function ClampF_01(v: Single): single;
+begin
+  Result := ClampF(v, 0.0, 1.0);
+end;
+
+Function ClampI(v: Integer; min: Integer; max: Integer): Integer;
+begin
+  Result := v;
+  if v < min then Result:= min
+  else if v > max then Result:= max;
+end;
+
 Function MsgBox(Txt, Caption: String; flags: Integer): Integer;
 begin
   Result := Application.MessageBox(Pchar(Txt), Pchar(Caption), flags);
@@ -513,10 +868,10 @@ begin
     exit;
   end;
   b := p;
-  While (b <= length(s)) and (s[b] in [' ', #9])do
+  While (b <= length(s)) and (s[b] in [' ', #9])do  // #9 = tab
     inc(b);
   e := b;
-  While (e <= length(s)) and (not(s[e] in [' ', #9])) do
+  While (e <= length(s)) and (not(s[e] in [' ', #9])) do   // #9 = tab
     inc(e);
   w := Copy(s, b, e - b);
   GetWord := e;
@@ -542,11 +897,11 @@ begin
   Result := pe;
 end;
 
-{ Accepted formatters - %s %d %x %.1f - %.6f }
+{ Accepted formatters - %s %d %x %.1f - %.8f %1.1f - %9.8f}
 Function SPrintf(const format: string; const Vals: array of const): string;
 var
-  pres, pf, pe, pp, pa: Pchar;
-  cv, I, ndig: Integer;
+  pres, pf, pe, pp, pa: PChar;
+  cv, I, width, ndig: Integer;
   pv: ^TVarRec;
   buf: array [0 .. 4095] of Char;
 begin
@@ -562,15 +917,27 @@ begin
       pe := strEnd(pf)
     else
       pe := pp;
+
     StrLCopy(pres, pf, pe - pf);
     pres := strEnd(pres);
+
     if pp = nil then
       break;
+
     inc(pp);
 
     if cv > high(Vals) then
       raise EConvertError.Create('Not enough parameters');
+
     pv := @Vals[cv];
+
+    // get 0 left pad len (max 9)
+    width := 0;
+    if pp^.isNumber then
+      begin
+        width := ord(pp^) - ord('0');
+        inc(pp);
+      end;
 
     case pp^ of
       's', 'S':
@@ -594,50 +961,64 @@ begin
         end;
       'f', 'F', '.':
         begin
+          ndig := 6;
           if pp^ = '.' then
-          begin
-            inc(pp);
-            ndig := ord(pp^) - ord('0');
-            inc(pp);
-          end
-          else
-            ndig := 2;
+            begin
+              inc(pp);
+              ndig := ord(pp^) - ord('0');
+              inc(pp);
+
+              if ndig > 8 then
+                ndig := 8;
+            end;
+
           if pv^.vtype <> vtExtended then
             raise EConvertError.Create('Invalid parameter type');
 
-          case ndig of
-            1:
-              I := FloatToTextFmt(pres, pv.vExtended^, fvExtended, '.#');
-            2:
-              I := FloatToTextFmt(pres, pv.vExtended^, fvExtended, '.##');
-            3:
-              I := FloatToTextFmt(pres, pv.vExtended^, fvExtended, '.###');
-            4:
-              I := FloatToTextFmt(pres, pv.vExtended^, fvExtended, '.####');
-            5:
-              I := FloatToTextFmt(pres, pv.vExtended^, fvExtended, '.#####');
-            6:
-              I := FloatToTextFmt(pres, pv.vExtended^, fvExtended, '.######');
-          else
-            I := FloatToTextFmt(pres, pv.vExtended^, fvExtended, '.##');
-          end;
+          var fmt := StringOfChar('0', width) + '.' + StringOfChar('#', ndig);
+          I := FloatToTextFmt(pres, pv.vExtended^, fvExtended, PChar(fmt), TFormatSettings.Invariant);
+
+//          case ndig of
+//            1:
+//              I := FloatToTextFmt(pres, pv.vExtended^, fvExtended, '.#', TFormatSettings.Invariant);
+//            2:
+//              I := FloatToTextFmt(pres, pv.vExtended^, fvExtended, '.##', TFormatSettings.Invariant);
+//            3:
+//              I := FloatToTextFmt(pres, pv.vExtended^, fvExtended, '.###', TFormatSettings.Invariant);
+//            4:
+//              I := FloatToTextFmt(pres, pv.vExtended^, fvExtended, '.####', TFormatSettings.Invariant);
+//            5:
+//              I := FloatToTextFmt(pres, pv.vExtended^, fvExtended, '.#####', TFormatSettings.Invariant);
+//            6:
+//              I := FloatToTextFmt(pres, pv.vExtended^, fvExtended, '.######', TFormatSettings.Invariant);
+//            7:
+//              I := FloatToTextFmt(pres, pv.vExtended^, fvExtended, '.#######', TFormatSettings.Invariant);
+//            8:
+//              I := FloatToTextFmt(pres, pv.vExtended^, fvExtended, '.########', TFormatSettings.Invariant);
+//          else
+//            I := FloatToTextFmt(pres, pv.vExtended^, fvExtended, '.######', TFormatSettings.Invariant);
+//          end;
+
           if I = 0 then
-          begin
-            pres^ := '0';
-            inc(pres);
-          end
+            begin
+              pres^ := '0';
+              inc(pres);
+            end
           else
             inc(pres, I);
         end;
     else
       if I = 0 then;
     end;
+
     if pp^ <> #0 then
       inc(pp);
+
     pf := pp;
     pres := strEnd(pres);
     inc(cv);
   until false;
+
   Result := buf;
   if pa = nil then;
 end;
@@ -719,7 +1100,7 @@ begin
           Dword(Vals[nval]^) := dw;
         end;
       'f', 'F':
-        val(ptmp, Double(Vals[nval]^), a);
+          val(ptmp, Double(Vals[nval]^), a);
       'l', 'L':
         val(ptmp, Single(Vals[nval]^), a);
       'b', 'B':
@@ -759,6 +1140,14 @@ Function SScanf(const s: string; const format: String;
   const Vals: array of pointer): boolean;
 begin
   Result := PScanf(Pchar(s), format, Vals);
+end;
+
+Function StripSScan(s: string; const format: String;
+  const Vals: array of pointer): boolean;
+begin
+  for var i := 1 to length(s) do
+    if s[i] in ['/', ':', '(', ')'] then s[i] := ' ';
+  Result := SScanf(s, format, Vals);
 end;
 
 Procedure PanMessageFmt(mt: TMsgType; const fmt: String;
@@ -875,7 +1264,7 @@ Function DoubleToStr(d: Double): String;
 var
   I: Integer;
 begin
-  Result := FormatFloat('.######', d);
+  Result := FormatFloat('0.########', d, TFormatSettings.Invariant);
   if Result = '' then
     Result := '0';
   { Format('%.6f',[d]);
@@ -887,7 +1276,23 @@ begin
     end; }
 end;
 
-Function FindJedDataFile(const Name: string): String;
+Function ColorToStr(c: TColorF; withAlpha: Boolean): String;
+begin
+  if withAlpha then
+    begin
+      Result := Sprintf('%1.3f %1.3f %1.3f %1.3f', [c.r, c.g, c.b, c.a]);
+      if Result = '' then
+        Result := '0 0 0 0';
+    end
+  else
+    begin
+      Result := Sprintf('%1.3f %1.3f %1.3f', [c.r, c.g, c.b]);
+      if Result = '' then
+        Result := '0 0 0';
+    end;
+end;
+
+Function FindDataFile(const Name: string): String;
 begin
   if ProjectDir <> '' then
   begin
@@ -895,17 +1300,7 @@ begin
     if FileExists(Result) then
       exit;
   end;
-  Result := BaseDir + 'JedDATA\' + Name;
-end;
-
-Function SetFlags(val, flags: Integer): Integer;
-begin
-  Result := val or flags;
-end;
-
-Function ClearFlags(val, flags: Integer): Integer;
-begin
-  Result := val and (not flags);
+  Result := BaseDir + DataDir + '\' + Name;
 end;
 
 Procedure SetEditText(ed: TEdit; const s: string); // Doesn't invoke OnChange
@@ -916,6 +1311,28 @@ begin
   ed.OnChange := nil;
   ed.Text := s;
   ed.OnChange := a;
+end;
+
+Function StringListFind(const list: TStringList; const str: string; var index: Integer): Boolean;
+begin
+  if list.Sorted then
+    Result := list.Find(str, index)
+  else
+    begin
+      index := list.IndexOf(str);
+      Result := index > -1;
+    end;
+end;
+
+Procedure StringListFilter(list: TStringList; const filter: TStringList);
+begin
+  if filter = nil then exit;
+  for var i := 0 to filter.Count - 1 do
+    begin
+      var lidx: Integer := -1;
+      if StringListFind(list, filter[i], lidx) then
+        list.Delete(lidx);
+    end;
 end;
 
 Initialization

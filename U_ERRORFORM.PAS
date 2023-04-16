@@ -44,7 +44,7 @@ end;
 procedure TErrForm.BNSaveClick(Sender: TObject);
 begin
 try
- MMError.Lines.SaveToFile(BaseDir+'Jed.log');
+ MMError.Lines.SaveToFile(BaseDir + 'sed.log');
 except
  on Exception do ;
 end;
@@ -62,7 +62,7 @@ begin
   mov ps,ebp
  end;
 
-{ dec(Pchar(ps),372);}
+{ dec(PAnsichar(ps),372);}
 
  stk:='';
 Try
@@ -79,8 +79,8 @@ end;
 
  {if adr<>nil then dec(pchar(adr),Longint(@TextStart)-616);}
 
- s:=Format('%s: %s at %p'#13#10#13#10'Jed %s'#13#10'D3DDevice %s'#13#10'P3DAPI %d'#13#10'WFAPI %d'#13#10'GameDir %s'#13#10'BaseDir %s'#13#10'Base %x'#13#10'Stack: %s',
- [exObj.ClassName,exObj.message,adr,JedVersion,D3DDevice,P3DAPI,WireframeAPI,GameDir,BaseDir,Longint(@TextStart)-640,stk]);
+ s:=Format('%s: %s at %p'#13#10#13#10'SED %s'#13#10'D3DDevice %s'#13#10'P3DAPI %d'#13#10'WFAPI %d'#13#10'GameDir %s'#13#10'BaseDir %s'#13#10'Base %x'#13#10'Stack: %s',
+ [exObj.ClassName,exObj.message,adr,SedVersion,D3DDevice,P3DAPI,WireframeAPI,GameDir,BaseDir,Longint(@TextStart)-640,stk]);
 
 
  if (self=nil) or (MMError=nil) then ShowMessage(s) else

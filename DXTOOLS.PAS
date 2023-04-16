@@ -11,8 +11,8 @@ unit dxtools;
 interface
 
 uses
-  OLE2, Windows, Messages, SysUtils, D3DRMObj, D3DTypes, D3DRMDef, DDraw,
-  D3D, D3Drm, Dialogs, misc_utils;
+  OLE2, Windows, Messages, SysUtils, (*D3DRMObj,D3DRMDef,D3Drm*) D3DTypes, DDraw,
+  D3D, Dialogs, misc_utils;
 
 type
   EDirectX = class(Exception);

@@ -2,15 +2,15 @@ unit u_3dos;
 
 interface
 
-uses classes, geometry, SysUtils, misc_utils, GlobalVars;
+uses classes, geometry, SysUtils, misc_utils, GlobalVars, StrUtils, System.Generics.Collections;
 
 Type
 
   T3DOFace = class(TPolygon)
     imat: integer;
-    ftype: Longint;
-    geo, light, tex: integer;
-    extra_l: single;
+    //faceflags: Longint;
+//    geo, light, tex: integer;
+//    extraLight: TColorF;
   end;
 
   T3DOFaces = class(TPolygons)
@@ -28,7 +28,7 @@ Type
     Property vertices: TVertices read GetVXs;
     Destructor Destroy; override;
     Function FindRadius: double;
-    Function AddVertex(x, y, z: double): integer;
+    Function AddVertex(x, y, z: double; duplicates: Boolean = False): integer;
   end;
 
   T3DOMeshes = class(TList)
@@ -61,12 +61,13 @@ Type
     Meshes: T3DOMeshes;
     hnodes: THNodes;
     Constructor CreateNew;
-    Constructor CreateFrom3DO(const name: string; lod: integer);
+    Constructor CreateFrom3DO(const name: string; lod: integer); overload;
+    Constructor CreateFrom3DO(const name: string; lod: integer; var fileVersion: double); overload;
     Destructor Destroy; override;
     Function NewMesh: T3DOMesh;
     Function GetMat(n: integer): string;
     Procedure GetBBox(var box: TThingBox);
-    Procedure SaveToFile(const name: string);
+    Procedure SaveToFile(const name: string; const version: double);
     Function FindRadius: double;
   end;
 
@@ -121,7 +122,7 @@ begin
   else
   begin
     try
-      Result := T3DO.CreateFrom3DO(name, 3);
+      Result := T3DO.CreateFrom3DO(name, 0);
       L3DOs.AddObject(name, Result);
       Result.ucount := 1;
     except
@@ -198,6 +199,12 @@ begin
   Mats := TStringList.Create;
   Meshes := T3DOMeshes.Create;
   hnodes := THNodes.Create;
+end;
+
+Constructor T3DO.CreateFrom3DO(const name: string; lod: integer);
+  var version: double;
+begin
+  CreateFrom3DO(name, lod, version);
 end;
 
 Destructor T3DO.Destroy;
@@ -312,22 +319,26 @@ begin
     end;
 end;
 
-Function T3DOMesh.AddVertex(x, y, z: double): integer;
+ Function T3DOMesh.AddVertex(x, y, z: double; duplicates: Boolean): integer;
 var
   i: integer;
   v: Tvertex;
 begin
-  i := FindVX(vertices, x, y, z);
-  if i <> -1 then
-    Result := i
-  else
-  begin
-    v := Tvertex.Create;
-    v.x := x;
-    v.y := y;
-    v.z := z;
-    Result := vertices.Add(v);
-  end;
+  if not duplicates then
+    begin
+      i := FindVX(vertices, x, y, z);
+      if i <> -1 then
+        begin
+          Result := i;
+          exit;
+        end;
+    end;
+  v := Tvertex.Create;
+  v.x := x;
+  v.y := y;
+  v.z := z;
+  Result := vertices.Add(v);
+
 end;
 
 Function T3DO.FindRadius: double;

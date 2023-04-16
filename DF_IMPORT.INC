@@ -16,7 +16,8 @@ end;
 Procedure SetSecLight(s:TJKSector;l:integer);
 var i,j:integer;
 begin
- s.ambient:=l/31;
+ s.Ambient:= IntensityToColor(l/31);
+ s.Ambient.a := 0.0;
  for i:=0 to s.surfaces.count-1 do
  With S.Surfaces[i] do
  for j:=0 to txvertices.count-1 do
@@ -286,10 +287,10 @@ begin
  fsurf.SurfFlags:=fsurf.SurfFlags or SF_Floor;
  {fsurf.material:=GetTexture(Sector.Floor_TX);}
 
- SetVec(un,1,0,0);
- SetVec(vn,0,1,0);
- UpdateSurfUVData(fsurf,un,vn);
- ArrangeTexture(fsurf,0,un,vn);
+ un.SetCoords(1, 0, 0);
+ vn.SetCoords(0, 1, 0);
+ UpdateSurfUVData(fsurf, un, vn);
+ ArrangeTexture(fsurf, 0, un, vn);
 
 { With fsurf.Vertices[0],fsurf.TXVertices[0] do
  begin
@@ -313,8 +314,10 @@ begin
   jv.z:=cl;
   csurf.AddVertex(jv);
  end;
- SetVec(un,1,0,0);
- SetVec(vn,0,1,0);
+
+ un.SetCoords(1,0,0);
+ vn.SetCoords(0,1,0);
+
  {csurf.material:=GetTexture(Sector.Ceiling_TX);}
  UpdateSurfUVData(fsurf,un,vn);
  ArrangeTexture(csurf,0,un,vn);
@@ -373,7 +376,7 @@ begin
  fsurf.material:=GetTexture(Sector.Floor_TX);
 
  if sector.flags and 128<>0 then
-  fsurf.SurfFlags:=fsurf.SurfFlags or SFF_SKY;
+  fsurf.SurfFlags:=fsurf.SurfFlags or SF_SkyHorizon;
 
 { With fsurf.Vertices[0],fsurf.TXVertices[0] do
  begin
@@ -383,8 +386,8 @@ begin
   vv:=Round(vv/64)*64;
  end;}
 
- SetVec(un,1,0,0);
- SetVec(vn,0,1,0);
+ un.SetCoords(1,0,0);
+ vn.SetCoords(0,1,0);
  UpdateSurfUVData(fsurf,un,vn);
  ArrangeTexture(fsurf,0,un,vn);
 
@@ -402,13 +405,14 @@ begin
   DfToJK(v.x,sector.Ceiling_y,v.z,jv.x,jv.y,jv.z);
   csurf.AddVertex(jv);
  end;
- SetVec(un,1,0,0);
- SetVec(vn,0,1,0);
+
+ un.SetCoords(1,0,0);
+ vn.SetCoords(0,1,0);
  csurf.material:=GetTexture(Sector.Ceiling_TX);
  UpdateSurfUVData(fsurf,un,vn);
  ArrangeTexture(csurf,0,un,vn);
  if sector.flags and 1<>0 then
-  csurf.SurfFlags:=csurf.SurfFlags or SFF_SKY;
+  csurf.SurfFlags:=csurf.SurfFlags or SF_SkyHorizon;
 
  {Build Sides}
  nv:=poly.count;
@@ -1230,11 +1234,11 @@ var cf:TTextFile;
 begin
  dflogics.sorted:=true;
  try
-  cf:=TTextFile.CreateRead(OpenFileRead(BaseDir+'JedData\df2jk.lst',0));
+  cf:=TTextFile.CreateRead(OpenFileRead(BaseDir + DataDir + '\df2jk.lst',0));
  except
   on Exception do
   begin
-   PanMessage(mt_Warning,'Can''t open file '+BaseDir+'JedData\df2jk.lst');
+   PanMessage(mt_Warning,'Can''t open file ' + BaseDir + DataDir + '\df2jk.lst');
    exit;
   end;
  end;

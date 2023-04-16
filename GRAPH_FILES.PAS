@@ -2,22 +2,16 @@ unit graph_files;
 
 interface
 
-uses Images, Graphics, Files, FileOperations, SysUtils, Misc_Utils;
+uses Images, Graphics, Files, FileOperations, SysUtils, Misc_Utils, Math;
 
-Type
-
+type
   TMatHeader = record
-    tag: array [0 .. 3] of AnsiChar; { 'MAT ' - notice space after MAT }
-    ver: Longint; { Apparently - version = 0x32 ('2') }
-    mat_Type: Longint;
-    { 0 = colors(TColorHeader) , 1= ?, 2= texture(TTextureHeader) }
-    NumOfTextures: Longint; { number of textures or colors }
-    NumOfTextures1: Longint;
-    { In color MATs, it's 0, in TX ones, it's equal to numOfTextures }
-    pad1: Longint; { = 0 }
-    numbits: Longint; { = 8 }
-    rBits, gBits, bBits: Longint;
-    pads: array [0 .. 8] of Longint; { unknown. Some pad? }
+    tag: array [0 .. 3] of AnsiChar; // 'MAT ' - notice space after MAT
+    version: Longint; //Apparently - version = 0x32 ('2')
+    mat_Type: Longint;  // 0 = colors(TColorHeader) , 1= ?, 2= texture(TTextureHeader)
+    celCount: Longint;  // number of celluloid texture or color records }
+    textureCount: Longint; // In color MATs, it's 0, in TX ones, it's equal to celCount
+    ci: TColorInfo;
   end;
 
   TColorHeader = record
@@ -37,7 +31,8 @@ Type
       : Longint { number of corresponding texture, beginning with 0, ranging to NumOfTextures-1 }
     end;
 
-    TTextureData = record SizeX: Longint;
+  TTextureData = record
+    SizeX: Longint;
     { horizontal size of first MipMap, must be divisable by 2 }
     SizeY: Longint; { Vertical size of first MipMap ,must be divisable by 2 }
     Pad: array [0 .. 2] of Longint; { padding = 0 }
@@ -51,19 +46,19 @@ Type
     stuff: array [1 .. 52] of byte;
   end;
 
-  TCMPPal = array [0 .. 255] of record r, g, b: byte;
-end;
-TCMPTable = array [0 .. 255] of byte;
 
-TPCXHeader = packed record manuf, hard, encod, bitperpixel: byte;
-x1, y1, x2, y2, hres, vres: word;
-palette:
-array [0 .. 15] of record red, green, blue: byte;
-end;
-vmode, nplanes: byte;
-byteperline, palinfo, shres, svres: word;
-extra:
-array [0 .. 53] of byte;
+TCMPTable = array [0 .. 255] of byte;
+PTCMPTable = ^TCMPTable;
+
+TPCXHeader = packed record
+  manuf, hard, encod, bitperpixel: byte;
+  x1, y1, x2, y2, hres, vres: word;
+  palette: array [0 .. 15] of record
+    red, green, blue: byte;
+  end;
+  vmode, nplanes: byte;
+  byteperline, palinfo, shres, svres: word;
+  extra: array [0 .. 53] of byte;
 end;
 
 Type
@@ -74,12 +69,13 @@ Type
     bpos, bsize: Integer;
     Constructor Create(aF: TFile);
     Destructor Destroy; Override;
-    procedure GetLine(var buf); override;
+    procedure ReadRow(var buf); override;
   end;
 
   TMAT = class(TImageSource)
     f: TFile;
-    mh: TMatHeader;
+    //mh: TMatHeader;
+    celCount: Longint;
     th: TTextureHeader;
     ch: TColorHeader;
     td: TTextureData;
@@ -90,10 +86,19 @@ Type
     txoffs: Longint;
     Constructor Create(aF: TFile; nCell: Integer);
     Destructor Destroy; Override;
-    procedure GetLine(var buf); override;
+    Function Stride: Uint32; // row length in bytes as bpp/8 * width
+    Procedure ReadRow(var buf); override; // reads image row from file and writes it to buf
+    Procedure ReadImage(pDestBuf: Pointer; dstci: TColorInfo; pitch: LongInt; const ppal:PTCMPPal; gamma: double = 1.0);overload; override;
+    Procedure ReadImage(pDestBuf: Pointer; const dstci: TColorInfo; const pitch: LongInt; const gamma: double = 1.0); overload; override; // Reads RGB(A) texture from file, encodes to dstci and writes it to buffer
     Procedure SetPal(cmppal: TCMPPal);
     Procedure LoadBits(var buf);
+
+  private
+    Procedure RecodeTextureRow(srcRow: PByte; dstRow: PByte; dstci: TColorInfo; gamma : double);  // Decodes RGB(A) texture row to dstci and writes to dstRow.
   end;
+
+Function EncodePixel(r,g,b,a : Uint32 ; dstci: TColorInfo; gamma: double = 1.0): UInt32; inline;
+Function RecodePixel(pixel: Uint32; pixci: TColorInfo; dstci: TColorInfo; gamma: double = 1.0): Uint32; inline;
 
 Function LoadCMPPal(const cmpname: string; var pal: TCMPPal): boolean;
 { loads palette from CMP }
@@ -284,6 +289,7 @@ Constructor TMAT.Create(aF: TFile; nCell: Integer);
 var
   i, j: Integer;
   msize, w, h: Integer;
+  mh: TMatHeader;
 begin
   Inherited Create;
   f := aF;
@@ -292,55 +298,58 @@ begin
   if mh.tag <> 'MAT ' then
     Raise Exception.Create('Not a MAT file');
 
+  if mh.version <> $32 then
+    Raise Exception.Create('Invalid MAT file version');
+
+  FInfo.ci := mh.ci;
+  celCount := mh.celCount;
   if mh.mat_Type = 0 then
-  begin
-    iscolor := true;
-    f.Fread(ch, Sizeof(ch));
-    FInfo.width := 64;
-    FInfo.height := 64;
-    FInfo.StoredAs := ByLines;
-    colornum := ch.colornum;
-  end
-  else
-  begin
-    iscolor := false;
-    f.Fseek(Sizeof(mh) + mh.NumOfTextures * Sizeof(th));
-
-    if nCell >= mh.NumOfTextures then
-      nCurCell := mh.NumOfTextures - 1
-    else
-      nCurCell := nCell;
-
-    for i := 0 to nCurCell do
     begin
-      f.Fread(td, Sizeof(td));
-      FInfo.width := td.SizeX;
-      FInfo.height := td.SizeY;
-      w := td.SizeX;
-      h := td.SizeY;
-      msize := 0;
-      for j := 0 to td.NumMipMaps - 1 do
+      iscolor := true;
+      f.Fread(ch, Sizeof(ch));
+      FInfo.width  := 64;
+      FInfo.height := 64;
+      colornum     := ch.colornum;
+    end
+  else
+    begin
+      if (mh.ci.bpp mod 8) <> 0 then
+        Raise Exception.Create('MAT bitmap BPP not multiple of 8');
+
+      if mh.ci.bpp > 32 then
+        Raise Exception.Create('Unsupported MAT bitmap BPP');
+
+      iscolor  := false;
+      f.Fseek(Sizeof(mh) + mh.celCount * Sizeof(th));
+
+      if nCell >= mh.celCount then
+        nCurCell := mh.celCount - 1
+      else
+        nCurCell := nCell;
+
+      for i := 0 to nCurCell do
       begin
-        msize := msize + w * h;
-        if mh.numbits = 16 then
-          msize := msize * 2;
-        w := w div 2;
-        h := h div 2;
+        f.Fread(td, Sizeof(td));
+        FInfo.width  := td.SizeX;
+        FInfo.height := td.SizeY;
+        w := td.SizeX;
+        h := td.SizeY;
+        msize := 0;
+        for j := 0 to td.NumMipMaps - 1 do
+        begin
+          msize := msize + w * mh.ci.PixelSize * h;
+          w := w div 2;
+          h := h div 2;
+        end;
+
+        txoffs := f.fpos;
+        f.Fseek(txoffs + msize);
       end;
 
-      txoffs := f.fpos;
-      f.Fseek(txoffs + msize);
+      isAnimated := (celCount > 1) and (not iscolor);
+
+      f.Fseek(txoffs);
     end;
-
-    f.Fseek(txoffs);
-
-    if mh.numbits = 16 then
-      FInfo.StoredAs := ByLines16
-    else
-      FInfo.StoredAs := ByLines;
-  end;
-
-  isAnimated := (mh.NumOfTextures > 1) and (not iscolor);
 end;
 
 Procedure TMAT.LoadBits(var buf);
@@ -350,23 +359,144 @@ begin
     FillChar(buf, FInfo.width * FInfo.height, colornum);
     exit;
   end;
-  if mh.numbits = 16 then
-    f.Fread(buf, FInfo.width * FInfo.height * 2)
-  else
-    f.Fread(buf, FInfo.width * FInfo.height);
+  f.Fread(buf, FInfo.height * Stride);
 end;
 
-procedure TMAT.GetLine(var buf);
+Function TMAT.Stride: Uint32;
+begin
+  Result := FInfo.width * FInfo.ci.PixelSize;
+end;
+
+procedure TMAT.ReadRow(var buf);
 begin
   if iscolor then
+    begin
+      FillChar(buf, FInfo.width, colornum);
+      exit;
+    end;
+  f.Fread(buf, Stride);
+end;
+
+Function getColorMask(bpc: Uint32): Uint32; inline;
+begin
+    Result := $FFFFFFFF shr (32 - bpc);
+end;
+
+Function addGamma(c: Uint32; gamma: double):Uint32; inline;
+begin
+ Result := min(Round(c * gamma), 255);
+end;
+
+Function EncodePixel(r, g, b, a : Uint32 ; dstci: TColorInfo; gamma: double = 1.0): UInt32; inline;
+begin
+  Result := ((addGamma(r, gamma) shr dstci.redShr) shl dstci.redShl) or
+            ((addGamma(g, gamma) shr dstci.greenShr) shl dstci.greenShl) or
+            ((addGamma(b, gamma) shr dstci.blueShr) shl dstci.blueShl);
+
+  if dstci.alphaBPP > 0 then
+    Result := Result or ((a shr dstci.alphaShr) shl dstci.alphaShl);
+end;
+
+Function RecodePixel(pixel: Uint32; pixci: TColorInfo; dstci: TColorInfo; gamma: double = 1.0): Uint32;
+begin
+  if (pixci = dstci) and (gamma = 1.0) then
+    begin
+      Result := pixel;
+      exit;
+    end;
+
+  const r: Uint32 = ((pixel shr pixci.redShl)   and getColorMask(pixci.redBPP))   shl pixci.redShr;
+  const g: Uint32 = ((pixel shr pixci.greenShl) and getColorMask(pixci.greenBPP)) shl pixci.greenShr;
+  const b: Uint32 = ((pixel shr pixci.blueShl)  and getColorMask(pixci.blueBPP))  shl pixci.blueShr;
+  var a: Uint32 := 255;
+
+  if pixci.alphaBPP <> 0 then
   begin
-    FillChar(buf, FInfo.width, colornum);
-    exit;
+    a := ((pixel shr pixci.alphaShl) and getColorMask(pixci.alphaBPP)) shl pixci.alphaShr;
+    if pixci.alphaBPP = 1 then
+    begin
+      a := Uint32(a > 0) * 255;
+    end;
   end;
-  if mh.numbits = 16 then
-    f.Fread(buf, FInfo.width * 2)
-  else
-    f.Fread(buf, FInfo.width);
+
+  Result := EncodePixel(r,g,b,a, dstci, gamma);
+end;
+
+
+procedure TMAT.RecodeTextureRow(srcRow: PByte; dstRow: PByte; dstci: TColorInfo; gamma : double);
+begin
+  if FInfo.ci.mode = Indexed then
+    raise Exception.Create('Can''t read decoded row of texture with indexed color mode');
+
+  const pixSize  = FInfo.ci.PixelSize;
+  const hasAlpha = FInfo.ci.mode = RGBA;
+  const pixSizeDst = dstci.PixelSize;
+  for var sc := 0 to self.FInfo.width - 1 do
+  begin
+    var epix: Uint32 := 0;
+    case pixSize of
+      2: epix := Uint32(PWord(srcRow)^);
+      3: epix := srcRow^ or ((srcRow + 1)^ shl 8) or ((srcRow + 2)^ shl 16);
+      else epix := PUint32(srcRow)^;
+    end;
+    const dpix = RecodePixel(epix, FInfo.ci, dstci, gamma);
+    var pdp: PByte := dstRow + sc * pixSizeDst;
+    Move(PByte(@dpix)^, pdp^, pixSizeDst);
+    inc(srcRow, pixSize);
+  end;
+end;
+
+Procedure TMAT.ReadImage(pDestBuf: Pointer; dstci: TColorInfo; pitch: LongInt; const ppal:PTCMPPal; gamma: double = 1.0);
+begin
+  if FInfo.ci.mode <> Indexed then
+    begin
+       ReadImage(pDestBuf, dstci, pitch, gamma);
+       exit;
+    end;
+
+  // Load palletized image
+  if ppal = nil then
+    raise Exception.Create('Cannot read index color texture, pallete is nil');
+
+  var pRow: PByte;
+  const pixSizeDst = dstci.PixelSize;
+  GetMem(pRow, Stride);
+  try
+    for var y:=0 to FInfo.height-1 do
+      begin
+        ReadRow(pRow^);
+        for var x:=0 to FInfo.width-1 do
+          begin
+            var c:=(pRow+x)^;
+            With ppal[ord(c)] do
+              begin
+                const pix  = EncodePixel(r, g, b, 255, dstci, gamma);
+                const pdst = PByte(pDestBuf) + y * pitch + x * pixSizeDst;
+                Move(PByte(@pix)^, pdst^, pixSizeDst);
+              end;
+          end;
+      end;
+  finally
+    FreeMem(prow);
+  end;
+end;
+
+Procedure TMAT.ReadImage(pDestBuf: Pointer; const dstci: TColorInfo; const pitch: LongInt; const gamma: double = 1.0); // Reads texture from file, decodes it to RGB(A
+begin
+  if FInfo.ci.mode = Indexed then
+    raise Exception.Create('Can''t read texture with indexed color mode');
+
+  var pRow: PByte;
+  GetMem(pRow, Stride);
+  try
+    for var r := 0 to FInfo.height -1 do
+      begin
+        ReadRow(pRow^);
+        RecodeTextureRow(pRow, PByte(pDestBuf) + r * pitch, dstci, gamma);
+      end;
+  finally
+    FreeMem(prow);
+  end;
 end;
 
 Destructor TPCX.Destroy;
@@ -392,7 +522,8 @@ begin
   end;
   FInfo.width := ph.x2 - ph.x1 + 1;
   FInfo.height := ph.y2 - ph.y1 + 1;
-  FInfo.StoredAs := ByLines;
+  FInfo.ci.mode := Indexed;
+  FInfo.ci.bpp  := 8;
 
   f.Fseek(f.Fsize - Sizeof(Pxpal) - Sizeof(ptype));
   f.Fread(ptype, Sizeof(ptype));
@@ -425,7 +556,7 @@ begin
   bsize := 0;
 end;
 
-procedure TPCX.GetLine(var buf);
+procedure TPCX.ReadRow(var buf);
   function GetNextByte: byte;
   begin
     if bpos >= bsize then
@@ -607,5 +738,3 @@ end;
   end;} *)
 
 end.
-
-  end.

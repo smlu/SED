@@ -1,14 +1,13 @@
 unit u_pj3dos;
-
+// TODO: Replace this file with u_3dos
 interface
-uses pjgeometry, SysUtils, misc_utils, GlobalVars, classes;
+uses geometry, SysUtils, misc_utils, GlobalVars, classes;
 
 Type
 
 T3DOFace=class(TPolygon)
  imat:integer;
- ftype:Longint;
- geo,light,tex:integer;
+// geo,light,tex:integer;
  extra_l:single;
 end;
 
@@ -21,7 +20,7 @@ end;
 T3DOMesh=class
  name:string;
  faces:T3DOFaces;
- COnstructor Create;
+ Constructor Create;
  Function GetVXs:TVertices;
  Property vertices:Tvertices read GetVXs;
  Destructor Destroy;override;
@@ -58,7 +57,8 @@ TPJ3DO=class
  Meshes:T3DOMeshes;
  hnodes:T3DOHNodes;
  Constructor CreateNew;
- Constructor CreateFrom3DO(const name:string;lod:integer);
+ Constructor CreateFrom3DO(const name: string; lod: integer); overload;
+ Constructor CreateFrom3DO(const name: string; lod: integer; var fileVersion: double); overload;
  Destructor Destroy;override;
  Function NewMesh:T3DOMesh;
  Function GetMat(n:integer):string;
@@ -152,6 +152,12 @@ begin
  Mats:=TStringList.create;
  Meshes:=T3DOMeshes.Create;
  hnodes:=T3DOHnodes.Create;
+end;
+
+Constructor TPJ3DO.CreateFrom3DO(const name: string; lod: integer);
+  var version: double;
+begin
+  CreateFrom3DO(name, lod, version);
 end;
 
 Destructor TPJ3DO.Destroy;

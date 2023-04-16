@@ -16,6 +16,9 @@ type
     Memo: TMemo;
     ScrollBox: TScrollBox;
     Label1: TLabel;
+    ScrollBox1: TScrollBox;
+    Label2: TLabel;
+    LabelMemo: TLabel;
     procedure OKButtonClick(Sender: TObject);
     procedure JEDHomeClick(Sender: TObject);
     procedure TimerTimer(Sender: TObject);
@@ -44,7 +47,7 @@ end;
 
 procedure TJed_about.JEDHomeClick(Sender: TObject);
 begin
-  if ShellExecute(Handle, 'open', 'http://www.code-alliance.com/', nil, nil,
+  if ShellExecute(Handle, 'open', 'https://github.com/smlu/sed', nil, nil,
     0) < 32 then
   begin
     MessageBeep(0);
@@ -74,10 +77,13 @@ end;
 
 procedure TJed_about.FormShow(Sender: TObject);
 begin
-  Timer.Enabled := true;
-  Label1.Caption := Memo.Lines.Text;
+  //Timer.Enabled := true;
+  //Label1.Caption := Memo.Lines.Text;
+  LabelMemo.Caption := Memo.Lines.Text;
+  LabelMemo.AutoSize := true;
+  LabelMemo.Width := 463;
   Label1.AutoSize := true;
-  LBVersion.Caption := 'JED Version ' + JedVersion;
+  LBVersion.Caption := 'Sith Editor v' + SedVersion;
 end;
 
 procedure TJed_about.FormHide(Sender: TObject);

@@ -28,7 +28,8 @@ TOGLPRenderer=class(TPreviewRender)
    TXList,CmpList:TStringList;
    sectors:TSectors;
    things:TThings;
-   hdc,hglc:integer;
+   hdc: HDC;
+   hglc:HLGC;
    hpal:integer;
    masterPalSet:boolean;
    MasterPal:TCMPPal;
@@ -36,7 +37,7 @@ TOGLPRenderer=class(TPreviewRender)
    thLists,scLists:TIntList;
 
  Constructor Create(aForm:TForm);
- {Constructor CreateFromPanel(aPanel:TPanel);}
+ Constructor CreateFromPanel(aPanel:TPanel);
  Procedure Initialize;override;
  Procedure ClearSectors;override;
  Procedure ClearThings;override;
@@ -119,6 +120,23 @@ begin
  thLists:=TIntList.Create;
  things:=TThings.Create;
  WHandle:=aForm.Handle;
+end;
+
+Constructor TOGLPRenderer.CreateFromPanel(aPanel: TPanel);
+begin
+  Whandle := aPanel.handle;
+  VWidth := aPanel.width;
+  VHeight := aPanel.height;
+  gamma := 1;
+  TXList := TStringList.Create;
+  TXList.Sorted := true;
+  CmpList := TStringList.Create;
+  CmpList.Sorted := true;
+  Sectors := TSectors.Create;
+  scLists:=TIntList.Create;
+  thLists:=TIntList.Create;
+  things := TThings.Create;
+  thing_cmp:='dflt.cmp';
 end;
 
 Destructor TOGLPRenderer.Destroy;
@@ -501,7 +519,7 @@ try
   for j:=0 to sc.Surfaces.count-1 do
   begin
    surf:=sc.Surfaces[j];
-   if (sc.Flags and SF_3DO=0)
+   if (sc.Flags and SECF_3DO=0)
    then if (surf.geo=0) or (surf.Material='') then continue;
 
    nvx:=surf.Vertices.Count;
@@ -517,7 +535,7 @@ try
 
    for v:=0 to nvx-1 do
    begin
-    if sc.Flags and SF_3DO=0 then nv:=v
+    if sc.Flags and SECF_3DO=0 then nv:=v
     else nv:=nvx-v-1;
 
     With surf.Vertices[nv] do glVertex3f(x,y,z);
@@ -654,7 +672,7 @@ begin
  for i:=0 to s.surfaces.count-1 do
  With s.surfaces[i] do
  begin
-  if (s.Flags and SF_3DO=0)
+  if (s.Flags and SECF_3DO=0)
   then if (geo=0) or (Material='') then begin D3DID:=-1; continue; end;
 
   nvx:=Vertices.Count;
@@ -681,13 +699,13 @@ begin
 
  for j:=0 to nvx-1 do
  begin
-  if s.Flags and SF_3DO=0 then nv:=j
+  if s.Flags and SECF_3DO=0 then nv:=j
   else nv:=nvx-j-1;
 
  With Vertices[nv],TXVertices[nv] do
  begin
 
-  if (P3DFullLit) or (s.Flags and SF_3DO<>0) or (SurfFlags and (SFF_SKY or SFF_SKY1)<>0) or
+  if (P3DFullLit) or (s.Flags and SECF_3DO<>0) or (SurfFlags and (SF_SkyHorizon or SF_SkyCeiling)<>0) or
       (light=0)
   then glColor3f(1,1,1) else
   case s.level.mots and P3DColoredLights of

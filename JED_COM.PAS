@@ -54,7 +54,7 @@ TJEDCOM=class(IJED)
   Procedure GetCurFR(var th,fr:integer);override;
   Procedure SetCurFR(th,fr:integer);override;
 
-  Procedure NewLevel(mots:boolean);override;
+  Procedure NewLevel(kind:TProjectType);override;
   Procedure LoadLevel(name:pchar);override;
 
   {Different level editing functions}
@@ -164,8 +164,12 @@ TJEDCOM=class(IJED)
   Function GetJEDDir:String;
   Function GetLevelFile:String;, gobs, cddir, regbase, LEClogo, JKDIr, MotsDir,
   defshape, recent}
-  Function GetIsMOTS:boolean;override;
-  Procedure SetIsMOTS(mots:boolean);override;
+
+  Function GetIsMOTS:boolean;override;     // deprecated
+  Procedure SetIsMOTS(mots:boolean);override;  // deprecated
+
+  Function GetProjectType:TProjectType;override;                // SED 0.1.0
+  Procedure SetProjectType(kind:TProjectType);override;         // SED 0.1.0
 
   {0.93}
   Function GetJedWindow(whichone:integer):integer;override;
@@ -485,7 +489,7 @@ end;
 
 Function TJEDCOM.GetVersion:double;
 begin
- ValDouble(JedVernum,Result);
+ ValDouble(SedVerNum,Result);
  Result:=result*100;
 end;
 
@@ -518,13 +522,11 @@ begin
  begin
   if (what and s_flags)<>0 then rec.Flags:=flags;
   if (what and s_ambient)<>0 then rec.Ambient:=Ambient;
-  if (what and s_extra)<>0 then rec.extra:=extra;
+  if (what and s_extra)<>0 then rec.ExtraLight:=ExtraLight;
   if (what and s_cmp)<>0 then rec.ColorMap:=pchar(ColorMap);
   if (what and s_tint)<>0 then
   begin
-   rec.Tint_r:=Tint.dx;
-   rec.Tint_g:=Tint.dy;
-   rec.Tint_b:=Tint.dz;
+   rec.Tint:=Tint;
   end;
   if (what and s_sound)<>0 then rec.Sound:=pchar(Sound);
   if (what and s_sndvol)<>0 then rec.snd_vol:=snd_vol;
@@ -538,9 +540,9 @@ begin
  begin
   if (what and s_flags)<>0 then Flags:=rec.flags;
   if (what and s_ambient)<>0 then Ambient:=rec.Ambient;
-  if (what and s_extra)<>0 then extra:=rec.extra;
+  if (what and s_extra)<>0 then ExtraLight:=rec.ExtraLight;
   if (what and s_cmp)<>0 then ColorMap:=rec.ColorMap;
-  if (what and s_tint)<>0 then SetVec(tint,rec.tint_r,rec.tint_g,rec.tint_b);
+  if (what and s_tint)<>0 then Tint:=rec.Tint;
   if (what and s_sound)<>0 then Sound:=rec.Sound;
   if (what and s_sndvol)<>0 then snd_vol:=rec.snd_vol;
   if (what and s_layer)<>0 then layer:=rec.layer;
@@ -584,6 +586,7 @@ begin
   if (rflags and lh_GouraudDist)<>0 then lh.GouraudDist:=GouraudDist;
   if (rflags and lh_ppu)<>0 then lh.PixelPerUnit:=Level.PPUnit;
   if (rflags and lh_MasterCMP)<>0 then lh.MasterCMP:=Pchar(Level.MasterCMP);
+  if (rflags and lh_Fog) <> 0 then lh.Fog := Fog;
 
  end;
 end;
@@ -625,6 +628,7 @@ begin
   if (rflags and lh_GouraudDist)<>0 then GouraudDist:=lh.GouraudDist;
   if (rflags and lh_ppu)<>0 then Level.ppunit:=lh.PixelPerUnit;
   if (rflags and lh_MasterCMP)<>0 then level.MasterCMP:=lh.MasterCMP;
+  if (rflags and lh_Fog) <> 0 then Fog:=lh.Fog;
 
  end;
 end;
@@ -1304,11 +1308,12 @@ begin
  JedMain.SetCurFR(th,fr);
 end;
 
-Procedure TJEDCOM.NewLevel(mots:boolean);
+Procedure TJEDCOM.NewLevel(kind:TProjectType);
 begin
- case mots of
-  true: JedMain.New1.Click;
-  false: JedMain.NewMotsProject1.Click;
+ case kind of
+  TProjectType.JKDF2: JedMain.New1.Click;
+  TProjectType.MOTS: JedMain.NewMotsProject1.Click;
+  else raise JedMain.NewIJIMProject;
  end;
 end;
 
@@ -1735,7 +1740,7 @@ end;
 
 Procedure TJEDCOM.SaveJED(name:pchar);
 begin
- JedMain.SaveJedTo(name);
+ JedMain.SaveToFile(name, 'jed');
 end;
 
 Procedure TJEDCOM.SaveJKL(name:pchar);
@@ -1927,7 +1932,7 @@ begin
  result:=-1;
  obj:=Consistency.ErrorObject(n);
  if obj=nil then exit;
- result:=obj.etype;
+ result:=integer(obj.itype);
 end;
 
 Function TJEDCOM.GetConsErrorSector(n:integer):integer;
@@ -1935,8 +1940,8 @@ var obj:TConsistencyError;
 begin
  result:=-1;
  obj:=Consistency.ErrorObject(n);
- if obj.etype=et_sector then Result:=TJKSector(obj.itm).num
- else if obj.etype=et_surface then Result:=TJKSurface(obj.itm).sector.num;
+ if obj.itype=itSector then Result:=TJKSector(obj.item).num
+ else if obj.itype=itSurface then Result:=TJKSurface(obj.item).sector.num;
 end;
 
 Function TJEDCOM.GetConsErrorSurface(n:integer):integer;
@@ -1944,7 +1949,7 @@ var obj:TConsistencyError;
 begin
  result:=-1;
  obj:=Consistency.ErrorObject(n);
- if obj.etype=et_surface then Result:=TJKSurface(obj.itm).num;
+ if obj.itype=itSurface then Result:=TJKSurface(obj.item).num;
 end;
 
 Function TJEDCOM.GetConsErrorThing(n:integer):integer;
@@ -1952,7 +1957,7 @@ var obj:TConsistencyError;
 begin
  result:=-1;
  obj:=Consistency.ErrorObject(n);
- if obj.etype=et_thing then Result:=TJKThing(obj.itm).num;
+ if obj.itype=itThing then Result:=TJKThing(obj.item).num;
 end;
 
 Function TJEDCOM.GetConsErrorCog(n:integer):integer;
@@ -1960,7 +1965,7 @@ var obj:TConsistencyError;
 begin
  result:=-1;
  obj:=Consistency.ErrorObject(n);
- if obj.etype=et_cog then Result:=J_Level.Level.COGS.IndexOf(obj.itm);
+ if obj.itype=itCog then Result:=J_Level.Level.COGS.IndexOf(obj.item);
 end;
 
 Function TJEDCOM.IsPreviewActive:boolean;
@@ -1976,7 +1981,7 @@ case what of
  js_CDDir: result:=PChar(CDDir);
  js_GameDir: result:=PChar(GameDir);
  js_LevelFile: result:=PChar(JedMain.LevelFile);
- js_jedregkey: result:=PChar(RegBase);
+ js_jedregkey: result:= '';//PChar(RegBase);  // deprecated, use js_confile
  js_LECLogo: result:=PChar(LECLogo);
  js_recent1: result:=PChar(Recent1);
  js_recent2: result:=PChar(Recent2);
@@ -1988,6 +1993,7 @@ case what of
  js_mp1gob: result:=PChar(mp1_Gob);
  js_mp2gob: result:=PChar(mp2_Gob);
  js_mp3gob: result:=PChar(mp3_Gob);
+ js_confile: result:=PChar(GetConfigFilePath());
 else begin
       tmpstr[0]:=#0;
       result:=@tmpstr[0];
@@ -1996,15 +2002,27 @@ end;
 
 end;
 
-
-Function TJEDCOM.GetIsMOTS:boolean;
+Function TJEDCOM.GetIsMOTS:boolean; deprecated
 begin
- Result:=GlobalVars.IsMots;
+ Result:= (GlobalVars.CurrentProject = TProjectType.MOTS);
 end;
 
-Procedure TJEDCOM.SetIsMOTS(mots:boolean);
+Procedure TJEDCOM.SetIsMOTS(mots:boolean); deprecated
+ var kind: TProjectType;
 begin
- SetMots(mots);
+ kind := TProjectType.JKDF2;
+ if mots then kind := TProjectType.MOTS;
+ U_Options.SetProjectType(kind);
+end;
+
+Function TJEDCOM.GetProjectType:TProjectType;
+begin
+ Result:=GlobalVars.CurrentProject;
+end;
+
+Procedure TJEDCOM.SetProjectType(kind:TProjectType);
+begin
+ SetProjectType(kind);
 end;
 
 Function TJEDCOM.GetJedWindow(whichone:integer):integer;
@@ -2284,12 +2302,12 @@ begin
  case what of
   rv_CamPos: begin x:=CamX; y:=CamY; z:=CamZ; end;
   rv_GridPos: begin x:=GridX; y:=GridY; z:=GridZ; end;
-  rv_CamXAxis: GetVec(xv,x,y,z);
-  rv_CamYAxis: GetVec(yv,x,y,z);
-  rv_CamZAxis: GetVec(zv,x,y,z);
-  rv_GridXAxis: GetVec(gxnormal,x,y,z);
-  rv_GridYAxis: GetVec(gynormal,x,y,z);
-  rv_GridZAxis: GetVec(gnormal,x,y,z);
+  rv_CamXAxis: xv.GetCoords(x,y,z);
+  rv_CamYAxis: yv.GetCoords(x,y,z);
+  rv_CamZAxis: zv.GetCoords(x,y,z);
+  rv_GridXAxis: gxnormal.GetCoords(x,y,z);
+  rv_GridYAxis: gynormal.GetCoords(x,y,z);
+  rv_GridZAxis: gnormal.GetCoords(x,y,z);
  else begin x:=0; y:=0; z:=0; end;
  end;
 end;

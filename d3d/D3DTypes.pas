@@ -858,7 +858,7 @@ type
     D3DRENDERSTATE_FOGTABLEEND,         (* Fog table end          *)
     D3DRENDERSTATE_FOGTABLEDENSITY,     (* Fog table density      *)
     D3DRENDERSTATE_STIPPLEENABLE,       (* TRUE to enable stippling *)
-    D3DRENDERSTATE_EDGEANTIALIAS,       (* TRUE to enable edge antialiasing *)
+    D3DRENDERSTATE_EDGEANTIALIAS = 40,  (* TRUE to enable edge antialiasing *)
     D3DRENDERSTATE_COLORKEYENABLE,      (* TRUE to enable source colorkeyed textures *)
     D3DRENDERSTATE_BORDERCOLOR = 43,    (* Border color for texturing w/border *)
     D3DRENDERSTATE_TEXTUREADDRESSU,     (* Texture addressing mode for U coordinate *)

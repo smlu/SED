@@ -40,9 +40,9 @@ type
 
   TRenderer = class
     hpal: integer;
-    hViewer: integer;
+    hViewer: HWND;
     CamX, CamY, CamZ: double;
-    { Pch,Yaw,Rol:double; }
+    //Pch,Yaw,Rol:double;
     xv, yv, zv: Tvector;
     scale: double;
     vpx, vpy, vpw, vph: integer; { viewport }
@@ -64,7 +64,7 @@ type
 
   Public
     Property Selected: TIntList read FSelected;
-    Constructor Create(TheViewer: integer);
+    Constructor Create(TheViewer: HWND);
     Destructor Destroy; Override;
     Procedure Initialize; virtual; abstract;
     Procedure SetViewPort(x, y, w, h: integer); virtual;
@@ -114,7 +114,7 @@ type
     Procedure GetNearestGrid(iX, iY, iZ: double; Var x, y, z: double);
     Procedure ProjectPoint(x, y, z: double; Var WinX, WinY: integer);
       virtual; abstract;
-    Procedure UnProjectPoint(WinX, WinY: integer; WinZ: double;
+    Procedure UnProjectPoint(WinX, WinY: double; WinZ: double;
       var x, y, z: double); virtual; abstract;
     Function HandleWMQueryPal: integer; virtual; abstract;
     Function HandleWMChangePal: integer; virtual; abstract;
@@ -133,7 +133,7 @@ begin
   vph := h;
 end;
 
-Constructor TRenderer.Create(TheViewer: integer);
+Constructor TRenderer.Create(TheViewer: HWND);
 var
   r: Trect;
 begin
@@ -245,7 +245,7 @@ var
 begin
   g.dx := dx;
   g.dy := dy;
-  g.dz := dz;
+  g.dz := (dz);  // TODO: If dz is negative the scene is mirroved. Abs. dz fixes this but the scene can't be then turned upside down.
   Normalize(g);
 
   if IsClose(Vlen(g), 0) then
@@ -281,6 +281,7 @@ var
   x, y, z: double;
   v1, v2: TVertex;
   gsize2: double;
+
 begin
   v1 := TVertex.Create;
   v2 := TVertex.Create;
@@ -294,6 +295,7 @@ begin
       z := GridZ + (i * GridDot * gxnormal.dz) + (j * GridDot * gynormal.dz);
       DrawVertex(x, y, z);
     end;
+
   n := Round(GridSize / GridLine);
 
   gsize2 := GridSize / 2;
@@ -324,6 +326,7 @@ begin
 
   With clGridX do
     SetColor(CL_FRONT, r, g, b);
+
   v1.x := GridX;
   v1.y := GridY;
   v1.z := GridZ;
@@ -344,7 +347,6 @@ begin
 
   v1.Free;
   v2.Free;
-
 end;
 
 Procedure TRenderer.GetNearestGrid(iX, iY, iZ: double; Var x, y, z: double);

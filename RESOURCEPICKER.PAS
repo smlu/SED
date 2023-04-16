@@ -5,7 +5,8 @@ interface
 uses
   Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
   StdCtrls, ComCtrls, GlobalVars, misc_utils, ExtCtrls, Preview, jdh_jdl,
-  J_Level, Buttons, u_templates, values, System.ImageList, Vcl.ImgList;
+  J_Level, Buttons, u_templates, values, System.ImageList,
+  Vcl.ImgList;
 
 type
   TResPicker = class(TForm)
@@ -27,6 +28,7 @@ type
     SBYAW: TScrollBar;
     SBPCH: TScrollBar;
     SBMatCell: TScrollBar;
+    LBInfo: TLabel;
     procedure ResListClick(Sender: TObject);
     procedure EBResNameChange(Sender: TObject);
     procedure BNOKClick(Sender: TObject);
@@ -45,6 +47,7 @@ type
     { Private declarations }
     { ProjDir:String;
       FLevel:TLevel; }
+    InitPreviewRes: string;
     StdPreview: boolean;
     Pv: TPreviewThread;
     CurTXGroup, CurPalGroup, CurSndGroup, CurITMGroup, CurMSCGroup,
@@ -309,7 +312,7 @@ Procedure TResPicker.AddDirGroup(const dir, name, mask: String);
 var
   sl: TStringList;
 begin
-  if dir <> '' then
+  if (dir <> '') and DirectoryExists(dir) then
   begin
     sl := TStringList.Create;
     ListDirMask(dir, mask, sl);
@@ -323,6 +326,9 @@ var
   tplval: TTPLvalue;
   tpname: string;
 begin
+  LBInfo.Caption := 'Type: None';
+  SBPCH.Enabled := False;
+  SBYAW.Enabled := False;
   n := ResList.ItemIndex;
   if n < 0 then
     exit;
@@ -330,14 +336,26 @@ begin
   SetResName(tpname);
   n := templates.IndexOfName(tpname);
   if n = -1 then
-    LBDetails.Caption := ''
+      LBDetails.Caption := ''
   else
   begin
+    tplval := templates.GetTPLField(tpname, 'type');
+    if tplval <> nil then
+      LBInfo.Caption := 'Type: ' + tplval.AsString;
+
     tplval := templates.GetTPLField(tpname, 'model3d');
     if tplval <> nil then
-      Pv.StartPreview(tplval.AsString)
+      begin
+        SBPCH.Enabled := CB3DOPrev.checked;
+        SBYAW.Enabled := CB3DOPrev.checked;
+        if Pv <> nil then
+          Pv.StartPreview(tplval.AsString)
+        else
+          InitPreviewRes := tplval.AsString;
+      end
     else
-      Panel3D.Invalidate;
+     Panel3D.Invalidate;
+
     LBDetails.Caption := templates[n].Desc;
   end;
 end;
@@ -346,6 +364,8 @@ Procedure TResPicker.InitTPLPreview;
 begin
   { Memo.Visible:=true;
     Memo.ScrollBars:=ssVertical; }
+  LBInfo.Caption := '';
+  LBInfo.Visible := true;
   LBDetails.Caption := '';
   LBDetails.Visible := true;
   oldOnClick := ResList.OnClick;
@@ -363,6 +383,7 @@ Procedure TResPicker.DoneTplPreview;
 begin
   { Memo.Visible:=false;
     Memo.ScrollBars:=ssBoth; }
+  LBInfo.Visible := false;
   LBDetails.Visible := false;
   ResList.OnClick := oldOnClick;
   CB3DOPrev.Visible := false;
@@ -392,13 +413,18 @@ begin
       end;
     TVGroups.Items.AddObject(nil, 'Templates', sl);
 
-    if IsMots then
-      LoadJLH('mtpls.jlh', TVGroups)
-    else
-      LoadJLH('tpls.jlh', TVGroups);
+    case CurrentProject of
+      TProjectType.JKDF2:
+        LoadJLH('tpls.jlh', TVGroups);
+      TProjectType.MOTS:
+        LoadJLH('mtpls.jlh', TVGroups)
+      else
+        LoadJLH('ijimtpls.jlh', TVGroups);
+    end;
 
     ResetGroups('');
     ChangeResName(curtpl);
+    CB3DOPrev.checked := true;
 
     if ShowModal = idOK then
       Result := EBResName.Text
@@ -429,14 +455,18 @@ begin
       end;
     TVGroups.Items.AddObject(nil, 'Templates', sl);
 
-    if IsMots then
-      LoadJLH('mtpls.jlh', TVGroups)
-    else
-      LoadJLH('tpls.jlh', TVGroups);
+    case CurrentProject of
+      TProjectType.JKDF2:
+        LoadJLH('tpls.jlh', TVGroups);
+      TProjectType.MOTS:
+        LoadJLH('mtpls.jlh', TVGroups);
+      else
+        LoadJLH('ijimtpls.jlh', TVGroups);
+    end;
 
     ResetGroups('');
-
     ChangeResName(curThing);
+    CB3DOPrev.checked := true;
 
     if ShowModal = idOK then
       Result := EBResName.Text
@@ -453,11 +483,15 @@ Procedure TResPicker.Inita3DOPreview;
 begin
   { Memo.Visible:=true;
     Memo.ScrollBars:=ssVertical; }
+  LBInfo.Caption := '';
+  LBInfo.Visible := true;
   LBDetails.Caption := '';
   LBDetails.Visible := true;
+  CB3DOPrev.Visible := true;
+
   oldOnClick := ResList.OnClick;
   ResList.OnClick := A3DOListClick;
-  CB3DOPrev.Visible := true;
+
   Panel3D.Visible := true;
   SBPCH.Visible := true;
   SBYAW.Visible := true;
@@ -470,6 +504,7 @@ Procedure TResPicker.DoneA3DOPreview;
 begin
   { Memo.Visible:=false;
     Memo.ScrollBars:=ssBoth; }
+  LBInfo.Visible := false;
   LBDetails.Visible := false;
   ResList.OnClick := oldOnClick;
   CB3DOPrev.Visible := false;
@@ -491,7 +526,12 @@ begin
     exit;
   fname := ResList.Items[n];
   SetResName(fname);
-  Pv.StartPreview(fname);
+  SBPCH.Enabled := CB3DOPrev.checked;
+  SBYAW.Enabled := CB3DOPrev.checked;
+  if Pv <> nil then
+    Pv.StartPreview(fname)
+  else
+    InitPreviewRes := fname;
 end;
 
 Function TResPicker.Pick3DO(const cur3do: String): String;
@@ -503,18 +543,25 @@ begin
   SetCMP(Level.GetMasterCMP);
   Try
     ClearGroups;
+    AddGobGroup(Res1_gob, '3do', true);
     AddGobGroup(Res2_gob, '3do', true);
     AddProjDirGroup('*.3do');
     AddProjSubDirGroup('3do\', '*.3do');
+    if CurrentProject = IJIM then
+      AddDirGroup(IJIMDir + '3do\', 'Install>3do', '*.3do');
 
-    if IsMots then
-      LoadJLH('m3dos.jlh', TVGroups)
-    else
-      LoadJLH('3dos.jlh', TVGroups);
+    case CurrentProject of
+      TProjectType.JKDF2:
+        LoadJLH('3dos.jlh', TVGroups);
+      TProjectType.MOTS:
+        LoadJLH('m3dos.jlh', TVGroups)
+      else // IJIM
+        LoadJLH('ijim3dos.jlh', TVGroups)
+    end;
 
     ResetGroups('');
-
     ChangeResName(cur3do);
+    CB3DOPrev.checked := true;
 
     if ShowModal = idOK then
       Result := EBResName.Text
@@ -868,7 +915,8 @@ begin
   if ResList.ItemIndex < 0 then
     exit;
   SetResName(ResList.Items[ResList.ItemIndex]);
-  Pv.StartPreview(EBResName.Text);
+  if Pv <> nil then
+    Pv.StartPreview(EBResName.Text);
 end;
 
 procedure TResPicker.EBResNameChange(Sender: TObject);
@@ -904,8 +952,13 @@ end;
 
 Procedure TResPicker.SetCMP(const cmp: string);
 begin
-  Cur_CMP := cmp;
-  loadcmp := true;
+  if CurrentProject = TProjectType.IJIM then
+    loadcmp := false
+  else
+    begin
+      Cur_CMP := cmp;
+      loadcmp := true;
+    end;
 end;
 
 procedure TResPicker.FormShow(Sender: TObject);
@@ -921,25 +974,36 @@ begin
     exit;
   Pv := TPreviewThread.Create(BMPreview, Memo, LBDetails, SBMatCell);
   if loadcmp then
-  begin
-    CBCMPs.Visible := true;
-    cf := OpenGameContainer(Res2_gob);
-    cf.ChDir('misc\cmp');
-    CBCMPs.Items.Assign(cf.ListFiles);
-    i := CBCMPs.Items.IndexOf(Cur_CMP);
-    if i = -1 then
-      i := CBCMPs.Items.Add(Cur_CMP);
-    CBCMPs.ItemIndex := i;
-    CBCMPsChange(nil);
-  end;
+    begin
+      CBCMPs.Visible := true;
+      cf := OpenGameContainer(Res2_gob);
+      cf.ChDir('misc\cmp');
+      CBCMPs.Items.Assign(cf.ListFiles);
+      i := CBCMPs.Items.IndexOf(Cur_CMP);
+      if i = -1 then
+        i := CBCMPs.Items.Add(Cur_CMP);
+      CBCMPs.ItemIndex := i;
+      CBCMPsChange(nil);
+    end;
+
+  if not InitPreviewRes.IsEmpty then
+    Pv.StartPreview(InitPreviewRes)
+  else if ResList.ItemIndex >= 0 then
+    ResListClick(nil);
 end;
 
 procedure TResPicker.FormHide(Sender: TObject);
 begin
+  InitPreviewRes := '';
   if Pv <> nil then
   begin
+    Pv.FreeOnTerminate := False;
     Pv.Terminate;
     Pv.Resume;
+
+    Pv.WaitFor;
+    Pv.Free;
+    Pv := nil
   end;
   if loadcmp then
   begin
@@ -982,8 +1046,8 @@ end;
 
 procedure TResPicker.SBHelpClick(Sender: TObject);
 begin
-  Application.HelpFile := basedir + 'jedhelp.hlp';
-  Application.HelpContext(470);
+  //Application.HelpFile := basedir + 'jedhelp.hlp';
+  //Application.HelpContext(470);
 end;
 
 Function TResPicker.PickCMP(const CurCMP: string): string;
@@ -1004,17 +1068,24 @@ Function TResPicker.PickSecSound(CurWav: string): string;
 begin
   ClearGroups;
   AddGobGroup(Res1_gob, 'sound', true);
+  AddGobGroup(Res2_gob, 'sound', true);
   AddGobGroup(Res1_gob, 'voice', true);
-  if IsMots then
+  if CurrentProject = TProjectType.MOTS then
     AddGobGroup(Res2_gob, 'voiceuu', true);
   AddProjDirGroup('*.wav');
   AddProjSubDirGroup('sound\', '*.wav');
   AddProjSubDirGroup('voice\', '*.wav');
+  if CurrentProject = IJIM then
+    AddDirGroup(IJIMDir + 'sound\', 'Install>sound', '*.wav');
 
-  if IsMots then
-    LoadJLH('mwavs.jlh', TVGroups)
-  else
-    LoadJLH('wavs.jlh', TVGroups);
+  case CurrentProject of
+    TProjectType.JKDF2:
+      LoadJLH('wavs.jlh', TVGroups);
+    TProjectType.MOTS:
+      LoadJLH('mwavs.jlh', TVGroups)
+    else // IJIM
+        LoadJLH('ijimwavs.jlh', TVGroups)
+  end;
 
   ResetGroups('');
   ChangeResName(CurWav);
@@ -1027,21 +1098,34 @@ end;
 Function TResPicker.PickMAT(CurMAT: string): string;
 begin
   ClearGroups;
+  AddGobGroup(Res1_gob, 'mat', true);
   AddGobGroup(Res2_gob, 'mat', true);
-  AddGobGroup(Res2_gob, '3do\mat', true);
   AddProjDirGroup('*.mat');
   AddProjSubDirGroup('mat\', '*.mat');
-  AddProjSubDirGroup('3do\mat\', '*.mat');
-
-  if IsMots then
-    LoadJLH('mmats.jlh', TVGroups)
+  if CurrentProject <> IJIM then
+    begin
+      AddProjSubDirGroup('3do\mat\', '*.mat');
+      AddGobGroup(Res2_gob, '3do\mat', true);
+    end
   else
-    LoadJLH('mats.jlh', TVGroups);
+    AddDirGroup(IJIMDir + 'mat\', 'Install>mat', '*.mat');
+
+  case CurrentProject of
+    TProjectType.JKDF2:
+      LoadJLH('mats.jlh', TVGroups);
+    TProjectType.MOTS:
+      LoadJLH('mmats.jlh', TVGroups);
+    else // IJIM
+        LoadJLH('ijimats.jlh', TVGroups)
+  end;
 
   ResetGroups('');
   ChangeResName(CurMAT);
+
   if ShowModal = idOK then
-    Result := EBResName.Text
+  begin
+    Result := EBResName.Text;
+  end
   else
     Result := CurMAT;
 end;
@@ -1053,15 +1137,21 @@ begin
   AddGobGroup(mp1_gob, 'cog', true);
   AddGobGroup(mp2_gob, 'cog', true);
   AddGobGroup(mp3_gob, 'cog', true);
+  AddGobGroup(Res1_gob, 'cog', true);
   AddGobGroup(Res2_gob, 'cog', true);
-  { AddGobGroup(Res2_gob,'3do\mat',true); }
   AddProjDirGroup('*.cog');
   AddProjSubDirGroup('cog\', '*.cog');
+  if CurrentProject = IJIM then
+      AddDirGroup(IJIMDir + 'cog\', 'Install>cog', '*.cog');
 
-  if IsMots then
-    LoadJLH('mcogs.jlh', TVGroups)
-  else
-    LoadJLH('cogs.jlh', TVGroups);
+  case CurrentProject of
+    TProjectType.JKDF2:
+      LoadJLH('cogs.jlh', TVGroups);
+    TProjectType.MOTS:
+      LoadJLH('mcogs.jlh', TVGroups);
+    else // IJIM
+      LoadJLH('ijimcogs.jlh', TVGroups)
+  end;
 
   ResetGroups('');
   ChangeResName(CurCog);
@@ -1121,9 +1211,12 @@ end;
 Function TResPicker.PickAI(const CurAI: string): string;
 begin
   ClearGroups;
+  AddGobGroup(Res1_gob, 'misc\ai', true);
   AddGobGroup(Res2_gob, 'misc\ai', true);
   AddProjDirGroup('*.ai;*.ai0;*.ai2');
   AddProjSubDirGroup('misc\ai\', '*.ai;*.ai0;*.ai2');
+  if CurrentProject = IJIM then
+      AddDirGroup(IJIMDir + 'misc\ai\', 'Install>misc\ai', '*.ai');
   ResetGroups('');
   ChangeResName(CurAI);
   if ShowModal = idOK then
@@ -1138,6 +1231,8 @@ begin
   AddGobGroup(Res2_gob, '3do\key', true);
   AddProjDirGroup('*.key');
   AddProjSubDirGroup('3do\key\', '*.key');
+  if CurrentProject = IJIM then
+      AddDirGroup(IJIMDir + '3do\key\', 'Install>3do\key', '*.key');
   ResetGroups('');
   ChangeResName(CurKEY);
   if ShowModal = idOK then
@@ -1149,9 +1244,12 @@ end;
 Function TResPicker.PickSND(const CurSND: string): string;
 begin
   ClearGroups;
+  AddGobGroup(Res1_gob, 'misc\snd', true);
   AddGobGroup(Res2_gob, 'misc\snd', true);
   AddProjDirGroup('*.snd');
   AddProjSubDirGroup('misc\snd\', '*.snd');
+  if CurrentProject = IJIM then
+      AddDirGroup(IJIMDir + 'misc\snd\', 'Install>misc\snd', '*.snd');
   ResetGroups('');
   ChangeResName(CurSND);
   if ShowModal = idOK then
@@ -1166,7 +1264,8 @@ begin
   AddGobGroup(Res2_gob, 'misc\pup', true);
   AddProjDirGroup('*.pup');
   AddProjSubDirGroup('misc\pup\', '*.pup');
-
+  if CurrentProject = IJIM then
+      AddDirGroup(IJIMDir + 'misc\pup\', 'Install>misc\pup', '*.pup');
   ResetGroups('');
   ChangeResName(CurPUP);
   if ShowModal = idOK then
@@ -1178,9 +1277,12 @@ end;
 Function TResPicker.PickSPR(const CurSPR: string): string;
 begin
   ClearGroups;
+  AddGobGroup(Res1_gob, 'misc\spr', true);
   AddGobGroup(Res2_gob, 'misc\spr', true);
   AddProjDirGroup('*.spr');
   AddProjSubDirGroup('misc\spr\', '*.spr');
+  if CurrentProject = IJIM then
+      AddDirGroup(IJIMDir + 'misc\spr\', 'Install>misc\spr', '*.spr');
   ResetGroups('');
   ChangeResName(CurSPR);
   if ShowModal = idOK then
@@ -1192,9 +1294,12 @@ end;
 Function TResPicker.PickPAR(const CurPAR: string): string;
 begin
   ClearGroups;
+  AddGobGroup(Res1_gob, 'misc\par', true);
   AddGobGroup(Res2_gob, 'misc\par', true);
   AddProjDirGroup('*.par');
   AddProjSubDirGroup('misc\par\', '*.par');
+  if CurrentProject = IJIM then
+      AddDirGroup(IJIMDir + 'misc\par\', 'Install>misc\par', '*.par');
   ResetGroups('');
   ChangeResName(CurPAR);
   if ShowModal = idOK then
@@ -1285,7 +1390,13 @@ procedure TResPicker.CB3DOPrevClick(Sender: TObject);
 begin
   Set3DOPrevActive(CB3DOPrev.checked);
   if CB3DOPrev.checked then
-    ResList.OnClick(ResList);
+    ResList.OnClick(ResList)
+  else
+    begin
+      SBPCH.Enabled := false;
+      SBYAW.Enabled := false;
+      Panel3D.Invalidate;
+    end;
 end;
 
 procedure TResPicker.SBPCHChange(Sender: TObject);

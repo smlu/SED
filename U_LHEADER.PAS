@@ -4,7 +4,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
-  StdCtrls, ExtCtrls, FieldEdit, J_Level;
+  StdCtrls, ExtCtrls, FieldEdit, J_Level, misc_utils, GlobalVars;
 
 type
   TLHEdit = class(TForm)
@@ -44,13 +44,25 @@ type
     BNCmp: TButton;
     EBPPU: TEdit;
     Label12: TLabel;
+    CBFog: TCheckBox;
+    ColorDialog1: TColorDialog;
+    EBFogColor: TEdit;
+    EBFogStart: TEdit;
+    EBFogEnd: TEdit;
+    BNFogColor: TButton;
+    GBFog: TGroupBox;
     procedure FormCreate(Sender: TObject);
     procedure BNCmpClick(Sender: TObject);
+    procedure CBFogClick(Sender: TObject);
+    procedure BNFogColorClick(Sender: TObject);
   private
     { Private declarations }
     vGrav, vSkyZ, vSkyX, vSkyY, vHorDist, vPar, vHorX, vHorY, vMM1, vMM2, vMM3,
-      vMM4, vLOD1, vLOD2, vLOD3, vLOD4, vGouraud, vPerp, vCMP, vPPu: TValInput;
+      vMM4, vLOD1, vLOD2, vLOD3, vLOD4, vGouraud, vPerp, vCMP, vPPu, vFogColor,
+      vFogStart, vFogEnd: TValInput;
 
+    Procedure EnableFog(enable: Boolean);
+    Procedure InitProjectMode;
   public
     { Public declarations }
     Function EditHeader: boolean;
@@ -87,6 +99,9 @@ begin
   vPerp := TValInput.Create(EBPerspective);
   vCMP := TValInput.Create(EBCMP);
   vPPu := TValInput.Create(EBPPU);
+  vFogColor := TValInput.Create(EBFogColor);
+  vFogStart := TValInput.Create(EBFogStart);
+  vFogEnd := TValInput.Create(EBFogEnd);
 end;
 
 procedure TLHEdit.BNCmpClick(Sender: TObject);
@@ -94,11 +109,41 @@ begin
   vCMP.SetAsString(ResPicker.PickCMP(vCMP.s));
 end;
 
+procedure TLHEdit.BNFogColorClick(Sender: TObject);
+var f: TColor;
+  c: TColorF;
+begin
+  ValColor(vFogColor.s, c);
+  ColorDialog1.Color := RGB(
+    Round(c.r * 255),
+    Round(c.g * 255),
+    Round(c.b * 255)
+  );
+  if ColorDialog1.Execute(self.Handle) then
+    begin
+      f := ColorDialog1.Color;
+      if f = -1 then  f :=0;       
+      c := MakeColor(
+        GetRValue(f) / 255,
+        GetGValue(f) / 255,
+        GetBValue(f) / 255,
+        c.a
+      );
+      vFogColor.SetAsString(ColorToStr(c, true));
+    end;
+end;
+
+procedure TLHEdit.CBFogClick(Sender: TObject);
+begin
+     EnableFog(CBFog.Checked);
+end;
+
 Function TLHEdit.EditHeader: boolean;
 begin
   Result := false;
   With Level.Header do
   begin
+    InitProjectMode();
     vGrav.SetAsFloat(Gravity);
     vSkyZ.SetAsFloat(CeilingSkyZ);
     vSkyX.SetAsFloat(CeilingSkyOffs[1]);
@@ -119,6 +164,11 @@ begin
     vPerp.SetAsFloat(PerspDist);
     vPPu.SetAsFloat(Level.PPUnit);
     vCMP.SetAsString(Level.MasterCMP);
+    EnableFog(Fog.Enabled);
+    vFogColor.SetAsString(ColorToStr(Fog.Color, true));
+    vFogStart.SetAsFloat(Fog.FogStart);
+    vFogEnd.SetAsFloat(Fog.FogEnd);
+
     if ShowModal <> MrOK then
       exit;
     Gravity := vGrav.AsFloat;
@@ -142,7 +192,67 @@ begin
     PerspDist := vPerp.AsFloat;
     Result := CompareText(Level.MasterCMP, vCMP.s) <> 0;
     Level.MasterCMP := vCMP.s;
+    Fog.Enabled := CBFog.Checked;
+    if not ValColor(vFogColor.s, Fog.Color) and Fog.Enabled then
+       MsgBox('The fog color was not set because the color value is invalid', 'Warning', MB_OK);
+    Fog.FogStart := vFogStart.AsFloat;
+    Fog.FogEnd := vFogEnd.AsFloat;
+
+    Result:=True;
   end;
+end;
+
+Procedure TLHEdit.EnableFog(enable: Boolean);
+begin
+  CBFog.Checked := enable;
+  EBFogColor.Enabled := enable;
+  BNFogColor.Enabled := enable;
+  EBFogStart.Enabled := enable;
+  EBFogEnd.Enabled := enable;
+end;
+
+Procedure TLHEdit.InitProjectMode;
+begin
+  if CurrentProject = TProjectType.IJIM then
+    begin
+      Label5.Visible := false;
+      EBMip1.Visible := false;
+      EBMip2.Visible := false;
+      EBMip3.Visible := false;
+      EBMip4.Visible := false;
+
+      Label8.Visible        := false;
+      EBGouraud.Visible     := false;
+      Label7.Visible        := false;
+      EBPerspective.Visible := false;
+      Label11.Visible       := false;
+      EBCMP.Visible         := false;
+      BNCmp.Visible         := false;
+      Label12.Visible       := false;
+      EBPPU.Visible         := false;
+
+      GBFog.Visible         := true;
+    end
+  else
+    begin
+      Label5.Visible := true;
+      EBMip1.Visible := true;
+      EBMip2.Visible := true;
+      EBMip3.Visible := true;
+      EBMip4.Visible := true;
+
+      Label8.Visible        := true;
+      EBGouraud.Visible     := true;
+      Label7.Visible        := true;
+      EBPerspective.Visible := true;
+      Label11.Visible       := true;
+      EBCMP.Visible         := true;
+      BNCmp.Visible         := true;
+      Label12.Visible       := true;
+      EBPPU.Visible         := true;
+
+      GBFog.Visible         := false;
+    end;
 end;
 
 end.

@@ -30,10 +30,14 @@ type
 
    Function GetFlags:Longint;
    Procedure SetFlags(f:longint);
-   Function GetAmbient:double;
-   Procedure SetAmbient(amb:double);
-   Function GetExtra:double;
-   Procedure SetExtra(ex:double);
+   Function GetAmbient:double; // deprecated;
+   Procedure SetAmbient(amb:double); // deprecated;
+   Function GetAmbientBGR:UInt32;      // SED 0.1.0
+   Procedure SetAmbientBGR(amb:UInt32); // SED 0.1.0
+   Function GetExtra:double; // deprecated;
+  Procedure SetExtra(ex:double); // deprecated;
+   Function GetExtraLightBGR:UInt32;      // SED 0.1.0
+   Procedure SetExtraLightBGR(ex:UInt32); // SED 0.1.0
    Function GetCMP:string;
    Procedure SetCMP(const cmp:string);
    Function GetSound:String;
@@ -43,9 +47,14 @@ type
    Function GetLayer:Integer;
    Procedure SetLayer(l:integer);
 
+   // deprecated;
    Function GetTintR:double;
    Function GetTintG:double;
    Function GetTintB:double;
+
+   // SED 0.1.0
+   Function GetTintBGR:UInt32;
+   Procedure SetTintBGR(ex:UInt32);
 
   automated
    Function AddSurface:Integer;
@@ -65,7 +74,7 @@ type
    Procedure GetTint(var r,g,b:double);
    Procedure SetTint(r,g,b:double);
 
-   {0.9}
+   {JED 0.9}
    Function IsConvex:WordBool;
 
    Property NVertices:Integer read GetNVertices;
@@ -75,12 +84,16 @@ type
    Property Tinx_G:double read GetTintG;
    Property Tinx_B:double read GetTintB;
    Property Flags:longint read GetFlags write SetFlags;
-   Property Ambient:double read GetAmbient write SetAmbient;
-   Property ExtraLight:double read GetExtra write SetExtra;
+   Property Ambient:double read GetAmbient write SetAmbient; // deprecated
+   Property ExtraLight:double read GetExtra write SetExtra;  // deprecated
    Property ColorMap:String read GetCMP write SetCMP;
    Property Sound:string read GetSound write SetSound;
    Property Volume:double read GetVol write SetVol;
    Property Layer:Integer read GetLayer write SetLayer;
+
+   {SED 0.1.0}
+   Property AmbientBGR:UInt32 read GetAmbientBGR write SetAmbientBGR;
+   Property ExtraLightBGR:UInt32 read GetExtraLightBGR write SetExtraLightBGR;
   end;
 
   TOLEThing=class(TAutoObject)
@@ -213,8 +226,10 @@ type
 
    Function GetMAT:string;
    Procedure SetMat(const mat:string);
-   Function GetExtra:double;
-   Procedure SetExtra(ex:double);
+   Function GetExtra:double; // deprecated
+   Procedure SetExtra(ex:double); // deprecated
+   Function GetExtraLightABGR:UInt32;
+   Procedure SetExtraLightABGR(ex:UInt32);
    Function GetUScale:double;
    Function GetVScale:double;
    Procedure SetUScale(sc:double);
@@ -269,7 +284,7 @@ type
    Function GetVertexG(n:integer):Double;
    Function GetVertexB(n:integer):Double;
 
-   {0.9}
+   {JED 0.9}
 
    Function IsConvex:Wordbool;
    Function IsPlanar:Wordbool;
@@ -282,7 +297,7 @@ type
    Property Tex:integer read GetTex;
 
    Property Material:string read GetMAT write SetMat;
-   Property ExtraLight:double read GetExtra write SetExtra;
+   Property ExtraLight:double read GetExtra write SetExtra; // deprecated
    Property TXScale:double read GetUScale write SetTXScale;
    Property UScale:double read GetUScale write SetUScale;
    Property VScale:double read GetVScale write SetVScale;
@@ -290,8 +305,11 @@ type
    Property NormalY:double read GetNormY;
    Property NormalZ:double read GetNormZ;
 
-   {0.85}
+   {JED 0.85}
    Property Nvertices:Integer read GetNVertices;
+
+   {SED 0.1.0}
+   Property ExtraLightABGR:UInt32 read GetExtraLightABGR write SetExtraLightABGR;
 
   end;
 
@@ -316,22 +334,22 @@ type
    Function GetSurface(sc,sf:integer):variant;
    Function GetThing(n:integer):variant;
    Function GetLight(n:integer):variant;
-   Function GetCOG(n:integer):variant; {0.81}
+   Function GetCOG(n:integer):variant; {JED 0.81}
 
    Procedure DeleteSector(n:integer);
    Procedure DeleteThing(n:integer);
    Procedure DeleteLight(n:integer);
-   Procedure DeleteCOG(n:integer); {0.81}
+   Procedure DeleteCOG(n:integer); {JED 0.81}
 
    Function AddSector:Integer;
    Function AddThing:Integer;
    Function AddLight:Integer;
-   Function AddCOG(const name:string):Integer; {0.81}
+   Function AddCOG(const name:string):Integer; {JED 0.81}
 
    Function GetLayerName(n:integer):String;
    Function AddLayer(const name:string):integer;
 
-   {0.85}
+   {JED 0.85}
    Property NLayers:integer read GetNLayers;
 
    Property NSectors:integer read GetNSectors;
@@ -340,7 +358,7 @@ type
    Property MasterCMP:string read GetMasterCMP write SetMasterCMP;
   end;
 
-  {0.85}
+  {JED 0.85}
   TOLETemplates=class(TAutoObject)
   automated
    Procedure ClearTemplates;
@@ -390,8 +408,12 @@ type
    Function GetProjectDir:String;
    Function GetJEDDir:String;
 
-   Function GetIsMots:wordbool;
-   Procedure SetIsMots(mots:wordbool);
+   Function GetProjectType:Word;
+   Procedure SetProjectType(kind:Word);
+
+   Function GetIsMots:wordbool;  // deprecated
+   Procedure SetIsMots(mots:wordbool); // deprecated
+
    Function GetVersion:double;
 
    Procedure SaveCurApp;
@@ -446,7 +468,7 @@ type
     Function PickSND(const CurSND:string):string;
     Function PickPUP(const CurPUP:string):string;
 
-    {0.81}
+    {JED 0.81}
     Function PickSPR(const CurSPR:string):string;
     Function PickPAR(const CurPAR:string):string;
     Function PickPER(const CurPER:string):string;
@@ -456,9 +478,9 @@ type
     Procedure SendKey(shift:integer;key:integer);
     Function ExecuteMenu(const itemref:string):WordBool;
 
-    {/0.81}
+    {JED 0.81}
 
-    {0.85}
+    {JED 0.85}
     Function EditSectorFlags(flags:LongInt):LongInt;
     Function EditSurfaceFlags(flags:LongInt):LongInt;
     Function EditAdjoinFlags(flags:LongInt):LongInt;
@@ -476,7 +498,7 @@ type
     Procedure GetCamXYZ(var x,y,z:double);
     Procedure GetGridXYZ(var x,y,z:double);
 
-    {0.81}
+    {JED 0.81}
     Procedure SetCamXYZ(x,y,z:double);
     Procedure SetGridXYZ(x,y,z:double);
     Procedure GetGridAxes(var xx,xy,xz,yx,yy,yz,zx,zy,zz:double);
@@ -528,7 +550,7 @@ type
     Function FindSelectedFR(th,fr:integer):integer;
     Function FindSelectedLT(lt:integer):integer;
 
-    {0.85}
+    {JED 0.85}
     Procedure StartUndo(const name:string);
     Procedure SaveUndoForThing(n:integer;change:integer);
     Procedure SaveUndoForLight(n:integer;change:integer);
@@ -538,7 +560,7 @@ type
     Function GetJEDSetting(const name:string):variant;
     Function IsLayerVisible(n:integer):WordBool;
 
-    {0.9}
+    {JED 0.9}
     procedure CheckConsistencyErrors;
     procedure CheckResources;
     Function NConsistencyErrors:integer;
@@ -579,15 +601,17 @@ type
    Property GameDir:String read GetGameDir;
    Property ProjectDir:String read GetProjectDir;
    Property JEDDir:String read GetJedDir;
-   Property IsMots:WordBool read GetIsMots write SetIsMots;
-   {0.85}
+   Property IsMots:WordBool read GetIsMots write SetIsMots; // deprecated
 
+   {JED 0.85}
    Property LevelFile:String read GetLevelFile;
    Property Templates:variant read GetTemplates;
 
-   {0.9}
+   {JED 0.9}
    Property CurEX:integer read GetCurEX write SetCurEX;
 
+   {SED 0.1.0}
+   Property CurrentProject:Word read GetProjectType write SetProjectType;
 
   end;
 
@@ -674,24 +698,45 @@ begin
  sec.Flags:=f;
 end;
 
-Function TOLESector.GetAmbient:double;
+Function TOLESector.GetAmbient:double; deprecated
 begin
- Result:=sec.Ambient;
+ Result:= RgbToIntensity(sec.Ambient);
 end;
 
-Procedure TOLESector.SetAmbient(amb:double);
+Procedure TOLESector.SetAmbient(amb:double); deprecated
 begin
- sec.ambient:=amb;
+ sec.Ambient:=IntensityToColor(amb);
+ sec.Ambient.a := 0.0;
 end;
 
-Function TOLESector.GetExtra:double;
+Function TOLESector.GetAmbientBGR:UInt32;
 begin
- Result:=sec.Extra;
+ Result:=EncodeBGR(sec.Ambient);
 end;
 
-Procedure TOLESector.SetExtra(ex:double);
+Procedure TOLESector.SetAmbientBGR(amb:UInt32);
 begin
- sec.Extra:=ex;
+ sec.ambient:=DecodeBGR(amb);
+end;
+
+Function TOLESector.GetExtra:double; deprecated
+begin
+  Result := RgbToIntensity(sec.ExtraLight);
+end;
+Procedure TOLESector.SetExtra(ex:double); deprecated
+begin
+  sec.ExtraLight := IntensityToColor(ex);
+  sec.ExtraLight.a := 0.0;
+end;
+
+Function TOLESector.GetExtraLightBGR:UInt32;
+begin
+ Result := EncodeBGR(sec.ExtraLight);
+end;
+
+Procedure TOLESector.SetExtraLightBGR(ex:UInt32);
+begin
+ sec.ExtraLight := DecodeBGR(ex);
 end;
 
 Function TOLESector.GetCMP:string;
@@ -736,32 +781,41 @@ end;
 
 Function TOLESector.GetTintR:double;
 begin
- Result:=sec.tint.dx;
+ Result:=sec.tint.r;
 end;
 
 Function TOLESector.GetTintG:double;
 begin
- Result:=sec.tint.dy;
+ Result:=sec.tint.g;
 end;
 
 Function TOLESector.GetTintB:double;
 begin
- Result:=sec.tint.dz;
+ Result:=sec.tint.b;
 end;
 
+Function TOLESector.GetTintBGR:UInt32;
+begin
+ Result := EncodeBGR(sec.Tint);
+end;
+
+Procedure TOLESector.SetTintBGR(ex:UInt32);
+begin
+ sec.Tint := DecodeBGR(ex);
+end;
 
 Procedure TOLESector.GetTint(var r,g,b:double);
 begin
- r:=sec.tint.dx;
- g:=sec.tint.dy;
- b:=sec.tint.dz;
+ r:=sec.tint.r;
+ g:=sec.tint.g;
+ b:=sec.tint.b;
 end;
 
 Procedure TOLESector.SetTint(r,g,b:double);
 begin
- sec.tint.dx:=r;
- sec.tint.dy:=g;
- sec.tint.dz:=b;
+ sec.tint.r:=r;
+ sec.tint.g:=g;
+ sec.tint.b:=b;
 end;
 
 Function TOLESector.GetNVertices:Integer;
@@ -1029,14 +1083,23 @@ begin
  surf.Material:=mat;
 end;
 
-Function TOLESurface.GetExtra:double;
+Function TOLESurface.GetExtra:double; deprecated
 begin
- Result:=surf.ExtraLight;
+ Result := RgbaToIntensity(surf.ExtraLight);
+end;
+Procedure TOLESurface.SetExtra(ex:double); deprecated
+begin
+ surf.ExtraLight:= IntensityToColor(ex);
 end;
 
-Procedure TOLESurface.SetExtra(ex:double);
+Function TOLESurface.GetExtraLightABGR:UInt32;
 begin
- surf.extraLight:=ex;
+ Result := EncodeABGR(surf.ExtraLight);
+end;
+
+Procedure TOLESurface.SetExtraLightABGR(ex:UInt32);
+begin
+ surf.ExtraLight := DecodeABGR(ex);
 end;
 
 Function TOLESurface.GetUScale:double;
@@ -1915,17 +1978,31 @@ end;
 
 Function TJEDApp.GetVersion:double;
 begin
- ValDouble(JedVerNum,Result);
+ ValDouble(SedVerNum,Result);
 end;
 
-Function TJEDApp.GetIsMots:wordbool;
+
+Function TJEDApp.GetIsMots:WordBool; deprecated
 begin
- Result:=GlobalVars.IsMots;
+ Result:= (GlobalVars.CurrentProject = TProjectType.MOTS);
 end;
 
-Procedure TJEDApp.SetIsMots(mots:wordbool);
+Procedure TJEDApp.SetIsMots(mots:WordBool); deprecated
+ var kind: TProjectType;
 begin
- SetMots(mots);
+ kind := TProjectType.JKDF2;
+ if mots then kind := TProjectType.MOTS;
+ U_Options.SetProjectType(kind);
+end;
+
+Function TJEDApp.GetProjectType:Word;
+begin
+ Result:=Word(GlobalVars.CurrentProject);
+end;
+
+Procedure TJEDApp.SetProjectType(kind:Word);
+begin
+ U_Options.SetProjectType(TProjectType(kind));
 end;
 
 Function TJEDApp.GetLevel:Variant;
@@ -2069,7 +2146,7 @@ end;
 
 Procedure TJEDApp.SaveJED(const name:string);
 begin
- JedMain.SaveJedTo(name);
+ JedMain.SaveToFile(name, 'jed');
 end;
 
 Procedure TJEDApp.SaveJKL(const name:string);
@@ -2875,7 +2952,7 @@ begin
  result:=-1;
  obj:=Consistency.ErrorObject(n);
  if obj=nil then exit;
- result:=obj.etype;
+ result:=integer(obj.itype);
 end;
 
 Function TJEDApp.GetConsErrorSector(n:integer):integer;
@@ -2883,8 +2960,8 @@ var obj:TConsistencyError;
 begin
  result:=-1;
  obj:=Consistency.ErrorObject(n);
- if obj.etype=et_sector then Result:=TJKSector(obj.itm).num
- else if obj.etype=et_surface then Result:=TJKSurface(obj.itm).sector.num;
+ if obj.itype=itSector then Result:=TJKSector(obj.item).num
+ else if obj.itype=itSurface then Result:=TJKSurface(obj.item).sector.num;
 end;
 
 Function TJEDApp.GetConsErrorSurface(n:integer):integer;
@@ -2892,7 +2969,7 @@ var obj:TConsistencyError;
 begin
  result:=-1;
  obj:=Consistency.ErrorObject(n);
- if obj.etype=et_surface then Result:=TJKSurface(obj.itm).num;
+ if obj.itype=itSurface then Result:=TJKSurface(obj.item).num;
 end;
 
 Function TJEDApp.GetConsErrorThing(n:integer):integer;
@@ -2900,7 +2977,7 @@ var obj:TConsistencyError;
 begin
  result:=-1;
  obj:=Consistency.ErrorObject(n);
- if obj.etype=et_thing then Result:=TJKThing(obj.itm).num;
+ if obj.itype=itThing then Result:=TJKThing(obj.item).num;
 end;
 
 Function TJEDApp.GetConsErrorCog(n:integer):integer;
@@ -2908,7 +2985,7 @@ var obj:TConsistencyError;
 begin
  result:=-1;
  obj:=Consistency.ErrorObject(n);
- if obj.etype=et_cog then Result:=J_Level.Level.COGS.IndexOf(obj.itm);
+ if obj.itype=itCog then Result:=J_Level.Level.COGS.IndexOf(obj.item);
 end;
 
 Function TJEDApp.GetCurEX:integer;
@@ -2949,9 +3026,9 @@ procedure RegisterJEDAuto;
 const
   AutoClassInfo: TAutoClassInfo = (
     AutoClass: TJEDApp;
-    ProgID: 'JED.App';
+    ProgID: 'SED.App';
     ClassID: '{6E6FA130-F620-11D1-988C-000000000000}';
-    Description: 'JED';
+    Description: 'SED';
     Instancing: acMultiInstance);
 begin
   Automation.RegisterClass(AutoClassInfo);

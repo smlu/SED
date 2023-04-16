@@ -3,7 +3,7 @@ unit lev_utils;
 interface
 
 uses Geometry, J_Level, misc_utils, GlobalVars, ProgressDialog,
-  graph_files, U_multisel, u_undo, u_3dos;
+  graph_files, U_multisel, u_3dos, Images;
 
 Const
   rs_surfs = 1;
@@ -127,11 +127,11 @@ Procedure TranslateLights(lev: TJKLevel; ltsel: TLTMultiSel; curlt: integer;
 Procedure RotateSectors(lev: TJKLevel; scsel: TSCMultiSel; axis: TVector;
   cx, cy, cz: double; angle: double);
 Procedure RotateThings(lev: TJKLevel; thsel: TTHMultiSel; axis: TVector;
-  cx, cy, cz: double; angle: double);
+  cx, cy, cz: double; angle: double; bRotatePYR: Boolean = False);
 Procedure RotateLights(lev: TJKLevel; ltsel: TLTMultiSel; axis: TVector;
   cx, cy, cz: double; angle: double);
 Procedure RotateFrames(lev: TJKLevel; frsel: TFRMultisel; axis: TVector;
-  cx, cy, cz: double; angle: double);
+  cx, cy, cz: double; angle: double; bRotatePYR: Boolean = False);
 
 Procedure ScaleSectors(lev: TJKLevel; scsel: TSCMultiSel; const sd: TScaleData;
   scaletx: boolean);
@@ -161,7 +161,7 @@ Function GetNearestVX(lev: TJKLevel; pX, pY, pZ: double; var rx, ry, rz: double;
   mdist: double): boolean;
 
 Procedure ExtrudeSurface(surf: TJKSurface; by: double);
-Procedure ExtrudeNExpandSurface(surf: TJKSurface; by: double);
+Procedure ExtrudeAndExpandSurface(surf: TJKSurface; by: double);
 
 Function CleaveSurface(surf: TJKSurface; const cnormal: TVector;
   cx, cy, cz: double): boolean;
@@ -233,6 +233,9 @@ Procedure SysAdjoinSurfaces(surf1, surf2: TJKSurface);
 Function AdjoinSectors(sec, sec1: TJKSector): boolean;
 Function UnAdjoinSectors(sec, sec1: TJKSector): boolean;
 
+Procedure SetAdjoinParams(sf: TJKSurface);
+Procedure ClearAdjoinParams(sf: TJKSurface);
+
 Procedure CreateCube(lev: TJKLevel; x, y, z: double;
   const pnormal, edge: TVector);
 
@@ -252,7 +255,7 @@ Procedure UnOffsetByNode(lev: TJKLevel; nnode: integer; var x, y, z: double);
 
 implementation
 
-uses Math, SysUtils, Jed_main, u_tbar, values, u_COGForm;
+uses Math, SysUtils, Jed_main, u_tbar, values, u_COGForm, Types, u_undo;
 
 Type
   TXData = record
@@ -655,6 +658,8 @@ var
   n, cmn: integer;
   cmax, cs: double;
 begin
+  if surf.Vertices.count < 3 then exit;
+  
   With surf.Vertices[0] do
   begin
     x1 := x;
@@ -1345,13 +1350,15 @@ begin
   sf.SurfFlags := 0;
   sf.FaceFlags := 0;
   sf.geo := 0;
-  sf.AdjoinFlags := 7;
+  sf.AdjoinFlags := SAF_Visible or SAF_Move;
+  if CurrentProject <> IJIM then
+    BitSet(sf.AdjoinFlags, SAF_AllowSoundPass);
 end;
 
 Procedure ClearAdjoinParams(sf: TJKSurface);
 begin
   sf.SurfFlags := 4;
-  sf.FaceFlags := 4;
+  sf.FaceFlags := 0;
   sf.geo := 4;
   if sf.material = '' then
     sf.material := 'dflt.mat';
@@ -1365,7 +1372,7 @@ begin
   SetAdjoinParams(surf2);
 end;
 
-Procedure ExtrudeNExpandSurface(surf: TJKSurface; by: double);
+Procedure ExtrudeAndExpandSurface(surf: TJKSurface; by: double);
 var
   lev: TJKLevel;
   nsec: TJKSector;
@@ -1473,6 +1480,8 @@ begin
     nsurf.AddVertex(osurf.Vertices[vc - i - 1]);
     nsec.surfaces.Add(nsurf);
   end;
+
+  // Update level and new sector
   lev.sectors.Add(nsec);
   lev.RenumSecs;
   for i := 0 to nsec.surfaces.count - 1 do
@@ -1515,8 +1524,6 @@ begin
   end;
   nsec.surfaces.Add(asurf);
 
-  SysAdjoinSurfaces(surf, asurf);
-
   { Construct opposite surface }
   osurf := nsec.newsurface;
   osurf.Assign(surf);
@@ -1558,11 +1565,18 @@ begin
     nsurf.AddVertex(osurf.Vertices[vc - i - 1]);
     nsec.surfaces.Add(nsurf);
   end;
+
+
+  // Update level and new sector
   lev.sectors.Add(nsec);
   lev.RenumSecs;
   for i := 0 to nsec.surfaces.count - 1 do
     nsec.surfaces[i].NewRecalcAll;
   nsec.Renumber;
+
+  // Map adjoins
+  SysAdjoinSurfaces(surf, asurf);
+
   JedMain.SectorAdded(nsec);
   JedMain.SectorChanged(surf.sector);
 end;
@@ -2011,27 +2025,27 @@ begin
     With lev.sectors[i] do
       for j := 0 to surfaces.count - 1 do
         With surfaces[j] do
-        begin
-          if adjoin = nil then
-            continue;
-          if adjoin = surf then
           begin
-            SaveSecUndo(adjoin.sector, ch_changed, sc_val);
-            adjoin := nil;
-            ClearAdjoinParams(surfaces[j]);
-            JedMain.SectorChanged(lev.sectors[i]);
+            if adjoin = nil then
+              continue;
+            if adjoin = surf then
+              begin
+                //SaveSecUndo(adjoin.sector, ch_changed, sc_val, True);
+                SaveSecUndo(lev.sectors[i], ch_changed, sc_val); // new change
+                adjoin := nil;
+                ClearAdjoinParams(surfaces[j]);
+                JedMain.SectorChanged(lev.sectors[i]);
+              end;
           end;
-        end;
 
   For i := 0 to lev.cogs.count - 1 do
     With lev.cogs[i] do
       for j := 0 to Vals.count - 1 do
         With Vals[j] do
-        begin
-          if (Cog_Type = ct_srf) and (obj = surf) then
-            obj := nil;
-        end;
-
+          begin
+            if (Cog_Type = ct_srf) and (obj = surf) then
+              obj := nil;
+          end;
 end;
 
 Function CleaveSector(sec: TJKSector; const cnormal: TVector;
@@ -2302,7 +2316,7 @@ var
     begin
       v1 := bysurf.Vertices[i];
       v2 := bysurf.Vertices[bysurf.NextVX(i)];
-      SetVec(vec, v2.x - v1.x, v2.y - v1.y, v2.z - v1.z);
+      vec.SetCoords(v2.x - v1.x, v2.y - v1.y, v2.z - v1.z);
       if not Normalize(vec) then
         continue;
       VMult(vec.dx, vec.dy, vec.dz, bysurf.normal.dx, bysurf.normal.dy,
@@ -2551,7 +2565,7 @@ begin
   tv2 := surf.txvertices[nv2];
 
   d1 := tv2.u - tv1.u;
-  if d1 = 0 then
+  if IsZero(d1) or (CompareValue(d1,0) = LessThanValue) then
   begin
     v2 := surf.Vertices[nv3];
     tv2 := surf.txvertices[nv3];
@@ -2560,13 +2574,14 @@ begin
 
   d2 := SMult(un.dx, un.dy, un.dz, v2.x - v1.x, v2.y - v1.y, v2.z - v1.z) *
     PixelPerUnit;
-  surf.uscale := d1 / d2;
+  surf.uscale := Abs(d1 / d2);
+  surf.uscale := IfThen(IsNan(surf.uscale) or IsInfinite(surf.uscale), 1, surf.uscale);
 
   v2 := surf.Vertices[nv2];
   tv2 := surf.txvertices[nv2];
 
   d1 := tv2.v - tv1.v;
-  if d1 = 0 then
+  if IsZero(d1) or (CompareValue(d1,0) = LessThanValue) then
   begin
     v2 := surf.Vertices[nv3];
     tv2 := surf.txvertices[nv3];
@@ -2575,7 +2590,8 @@ begin
 
   d2 := SMult(vn.dx, vn.dy, vn.dz, v2.x - v1.x, v2.y - v1.y, v2.z - v1.z) *
     PixelPerUnit;
-  surf.vscale := d1 / d2;
+  surf.vscale := Abs(d1 / d2);
+  surf.vscale := IfThen(IsNan(surf.vscale) or IsInfinite(surf.vscale), 1, surf.vscale);
 
 end;
 
@@ -2617,8 +2633,8 @@ begin
 
   if not FindTri(surf, nv1, nv2, nv3) then
   begin
-    SetVec(un, 0, 0, 0);
-    SetVec(vn, 0, 0, 0);
+    un.SetCoords(0, 0, 0);
+    vn.SetCoords(0, 0, 0);
     exit;
   end;
 
@@ -2628,8 +2644,10 @@ begin
   tv2 := surf.txvertices[nv2];
   v3 := surf.Vertices[nv3];
   tv3 := surf.txvertices[nv3];
-  SetVec(a, v1.x - v2.x, v1.y - v2.y, v1.z - v2.z);
-  SetVec(b, v3.x - v2.x, v3.y - v2.y, v3.z - v2.z);
+
+  a.SetCoords(v1.x - v2.x, v1.y - v2.y, v1.z - v2.z);
+  b.SetCoords(v3.x - v2.x, v3.y - v2.y, v3.z - v2.z);
+
   du1 := tv1.u - tv2.u;
   dv1 := tv1.v - tv2.v;
   du2 := tv3.u - tv2.u;
@@ -2644,9 +2662,9 @@ begin
   vn.dz := du2 * a.dz - du1 * b.dz;
 
   if dv2 * du1 < dv1 * du2 then
-    SetVec(un, -un.dx, -un.dy, -un.dz);
+    un.SetCoords(-un.dx, -un.dy, -un.dz);
   if du2 * dv1 < du1 * dv2 then
-    SetVec(vn, -vn.dx, -vn.dy, -vn.dz);
+    vn.SetCoords(-vn.dx, -vn.dy, -vn.dz);
 
   if not Normalize(un) then
   begin
@@ -2681,23 +2699,53 @@ begin
   CalcUVNormalsFromVX(surf, 0, un, vn);
 end;
 
+
+Function GetSurfResScale(surfflags: integer): double;
+begin
+  Result := 1;
+  if BitTest(surfflags, SF_EIGHTHRES) then
+    Result := 0.125
+  else if BitTest(surfflags, SF_QUATERRES) then
+    Result := 0.25
+  else if BitTest(surfflags, SF_HALFRES) then
+    Result := 0.5
+  else if BitTest(surfflags, SF_DOUBLERES) then
+    Result := 2.0
+  else if BitTest(surfflags, SF_QUADRUPLERES) then
+    Result := 4.0;
+end;
+
+
+//Function PixlePerRef(surfflags: integer): double;
+//begin
+//  Result := 320.0;
+//  if ( (surfflags and $4000000) <>0 ) then
+//    Result := 80.0
+//  else if ((surfflags and $20) <>0  )  then
+//    Result := 160.0
+//  else if ((surfflags and $10) <>0  ) then
+//    Result := 640.0
+//  else if ((surfflags and $8000000) <>0  )then
+//    Result :=1280.0
+//  else if ((surfflags and $40) <>0  ) then
+//    Result := 40.0;
+//end;
+
 Procedure ArrangeTextureBy(surf: TJKSurface; const un, vn: TVector;
   refx, refy, refz, refu, refv: double);
-var
-  i: integer;
 begin
-  for i := 0 to surf.Vertices.count - 1 do
+  for var i := 0 to surf.Vertices.count - 1 do
     With surf.txvertices[i], surf.Vertices[i] do
     begin
       u := UVRound(refu + SMult(un.dx, un.dy, un.dz, x - refx, y - refy,
         z - refz) * PixelPerUnit * surf.uscale);
 
-      if surf.SurfFlags and SFF_Flip <> 0 then
+      if surf.FaceFlags and FF_SF_FLIP <> 0 then
         v := UVRound(refv + SMult(-vn.dx, -vn.dy, -vn.dz, x - refx, y - refy,
           z - refz) * PixelPerUnit * surf.vscale)
       else
         v := UVRound(refv + SMult(vn.dx, vn.dy, vn.dz, x - refx, y - refy,
-          z - refz) * PixelPerUnit * surf.vscale)
+          z - refz) * PixelPerUnit * surf.vscale);
     end;
 end;
 
@@ -3583,8 +3631,10 @@ var
         v0 := Vertices[PrevVX(i)];
         v1 := Vertices[i];
         v2 := Vertices[NextVX(i)];
-        SetVec(e1, v1.x - v0.x, v1.y - v0.y, v1.z - v0.z);
-        SetVec(e2, v2.x - v1.x, v2.y - v1.y, v2.z - v1.z);
+
+        e1.SetCoords(v1.x - v0.x, v1.y - v0.y, v1.z - v0.z);
+        e2.SetCoords(v2.x - v1.x, v2.y - v1.y, v2.z - v1.z);
+
         if not Normalize(e1) then
           continue;
         Normalize(e2);
@@ -3602,8 +3652,10 @@ var
         v0 := Vertices[PrevVX(i)];
         v1 := Vertices[i];
         v2 := Vertices[NextVX(i)];
-        SetVec(e1, v1.x - v0.x, v1.y - v0.y, v1.z - v0.z);
-        SetVec(e2, v2.x - v1.x, v2.y - v1.y, v2.z - v1.z);
+
+        e1.SetCoords(v1.x - v0.x, v1.y - v0.y, v1.z - v0.z);
+        e2.SetCoords(v2.x - v1.x, v2.y - v1.y, v2.z - v1.z);
+
         if not Normalize(e1) then
           continue;
         Normalize(e2);
@@ -4295,7 +4347,8 @@ var
 begin
   v0 := surf.Vertices[0];
   v1 := surf.Vertices[1];
-  SetVec(xv, v1.x - v0.x, v1.y - v0.y, v1.z - v0.z);
+  xv.SetCoords(v1.x - v0.x, v1.y - v0.y, v1.z - v0.z);
+
   if not Normalize(xv) then;
   With surf.normal do
     VMult(dx, dy, dz, xv.dx, xv.dy, xv.dz, yv.dx, yv.dy, yv.dz);
@@ -4371,22 +4424,6 @@ begin
   cz := v0.z + x * xv.dz + y * yv.dz;
 end;
 
-Procedure RotateVertex(v: TJKVertex; const rd: TRotateData);
-var
-  x, y, z: double;
-begin
-  if v.Mark <> 0 then
-    exit;
-  x := v.x - rd.cx;
-  y := v.y - rd.cy;
-  z := v.z - rd.cz;
-  MultVM3(rd.m3, x, y, z);
-  v.x := x + rd.cx;
-  v.y := y + rd.cy;
-  v.z := z + rd.cz;
-  v.Mark := 1;
-end;
-
 Procedure PrepareRotData(var rd: TRotateData; const axis: TVector;
   cx, cy, cz, angle: double);
 Var
@@ -4396,9 +4433,9 @@ begin
   rd.cy := cy;
   rd.cz := cz;
 
-  SetVec(vx, 1, 0, 0);
-  SetVec(vy, 0, 1, 0);
-  SetVec(vz, 0, 0, 1);
+  vx.SetCoords(1, 0, 0);
+  vy.SetCoords(0, 1, 0);
+  vz.SetCoords(0, 0, 1);
 
   RotatePoint(0, 0, 0, axis.dx, axis.dy, axis.dz, angle, vx.dx, vx.dy, vx.dz);
   RotatePoint(0, 0, 0, axis.dx, axis.dy, axis.dz, angle, vy.dx, vy.dy, vy.dz);
@@ -4408,12 +4445,49 @@ begin
   rd.m3[0, 0] := vx.dx;
   rd.m3[0, 1] := vx.dy;
   rd.m3[0, 2] := vx.dz;
+
   rd.m3[1, 0] := vy.dx;
   rd.m3[1, 1] := vy.dy;
   rd.m3[1, 2] := vy.dz;
+
   rd.m3[2, 0] := vz.dx;
   rd.m3[2, 1] := vz.dy;
   rd.m3[2, 2] := vz.dz;
+end;
+
+
+Procedure RotateXYZ(var ax, ay, az: double; const rd: TRotateData);
+var
+  x, y, z: double;
+begin
+  x := ax - rd.cx;
+  y := ay - rd.cy;
+  z := az - rd.cz;
+
+  MultVM3(rd.m3, x, y, z);
+
+  ax := x + rd.cx;
+  ay := y + rd.cy;
+  az := z + rd.cz;
+end;
+
+Procedure RotateVertex(v: TJKVertex; const rd: TRotateData);
+var
+  x, y, z: double;
+begin
+  if v.Mark <> 0 then
+    exit;
+
+  x := v.x - rd.cx;
+  y := v.y - rd.cy;
+  z := v.z - rd.cz;
+
+  MultVM3(rd.m3, x, y, z);
+
+  v.x := x + rd.cx;
+  v.y := y + rd.cy;
+  v.z := z + rd.cz;
+  v.Mark := 1;
 end;
 
 Procedure RotateSectors(lev: TJKLevel; scsel: TSCMultiSel; axis: TVector;
@@ -4462,31 +4536,43 @@ begin
     RotSec(lev.sectors[scsel.getSC(i)]);
 end;
 
-Procedure RotateXYZ(var ax, ay, az: double; const rd: TRotateData);
-var
-  x, y, z: double;
+procedure RotatePYR(var pitch, yaw, roll: double; const axis: TVector; const angle: double);
+    Function ClampAngle(const angle: double) : double;
+    begin
+        Result := angle;
+        if Result > 359 then
+            Result := Result - 360//*(Result / 360)
+        else if Result < -359 then
+            Result := Result + 360;;//*(-Result / 360);
+    end;
+
 begin
-  x := ax - rd.cx;
-  y := ay - rd.cy;
-  z := az - rd.cz;
-  MultVM3(rd.m3, x, y, z);
-  ax := x + rd.cx;
-  ay := y + rd.cy;
-  az := z + rd.cz;
+    pitch := ClampAngle(pitch + axis.x * angle);
+    yaw   := ClampAngle(yaw   + axis.z * angle);
+    roll  := ClampAngle(roll  + axis.y * angle);
 end;
 
 Procedure RotateThings(lev: TJKLevel; thsel: TTHMultiSel; axis: TVector;
-  cx, cy, cz: double; angle: double);
+  cx, cy, cz: double; angle: double; bRotatePYR: Boolean);
 var
   rd: TRotateData;
   i: integer;
   th: TJKThing;
 begin
+  // TODO: when object is rotated in any of the axis the new rotation is wrong.
+
   PrepareRotData(rd, axis, cx, cy, cz, angle);
   for i := 0 to thsel.count - 1 do
   begin
     th := lev.Things[thsel.GetTH(i)];
     SaveThingUndo(th, ch_changed);
+
+
+    if bRotatePYR then
+      begin
+        RotatePYR(th.PCH, th.YAW, th.ROL, axis, -angle);
+      end;
+
     RotateXYZ(th.x, th.y, th.z, rd);
     JedMain.ThingChanged(th);
   end;
@@ -4510,7 +4596,7 @@ begin
 end;
 
 Procedure RotateFrames(lev: TJKLevel; frsel: TFRMultisel; axis: TVector;
-  cx, cy, cz: double; angle: double);
+  cx, cy, cz: double; angle: double; bRotatePYR: Boolean);
 var
   rd: TRotateData;
   i: integer;
@@ -4526,6 +4612,8 @@ begin
     SaveThingUndo(lev.Things[th], ch_changed);
     vl.GetFrame(x, y, z, pch, yaw, rol);
     RotateXYZ(x, y, z, rd);
+    if bRotatePYR then
+      RotatePYR(pch, yaw, rol, axis, -angle);
     vl.SetFrame(x, y, z, pch, yaw, rol);
     JedMain.ThingChanged(lev.Things[th]);
   end;
@@ -4754,9 +4842,9 @@ begin
   surf.Recalc;
 
   if IsTXFlipped(surf) then
-    surf.SurfFlags := SetFlags(surf.SurfFlags, SFF_Flip)
+    BitSet(surf.FaceFlags, Integer(FF_SF_FLIP))
   else
-    surf.SurfFlags := ClearFlags(surf.SurfFlags, SFF_Flip);
+    BitClear(surf.FaceFlags, Integer(FF_SF_FLIP));
 
 end;
 
@@ -5039,12 +5127,12 @@ begin
 
     a := SMult(p1v.dx, p1v.dy, p1v.dz, un.dx, un.dy, un.dz);
     b := SMult(lv.dx, lv.dy, lv.dz, un.dx, un.dy, un.dz);
-    SetVec(un, a * p2v.dx + b * lv.dx, a * p2v.dy + b * lv.dy,
+    un.SetCoords(a * p2v.dx + b * lv.dx, a * p2v.dy + b * lv.dy,
       a * p2v.dz + b * lv.dz);
 
     a := SMult(p1v.dx, p1v.dy, p1v.dz, vn.dx, vn.dy, vn.dz);
     b := SMult(lv.dx, lv.dy, lv.dz, vn.dx, vn.dy, vn.dz);
-    SetVec(vn, a * p2v.dx + b * lv.dx, a * p2v.dy + b * lv.dy,
+    vn.SetCoords(a * p2v.dx + b * lv.dx, a * p2v.dy + b * lv.dy,
       a * p2v.dz + b * lv.dz);
   end;
 
@@ -5059,10 +5147,10 @@ begin
   surf1.uscale := surf.uscale;
   surf1.vscale := surf.vscale;
 
-  if (surf.SurfFlags and SFF_Flip <> 0) then
-    surf1.SurfFlags := surf1.SurfFlags or SFF_Flip
+  if (surf.FaceFlags and FF_SF_FLIP <> 0) then
+    surf1.FaceFlags := surf1.FaceFlags or FF_SF_FLIP
   else
-    surf1.SurfFlags := surf1.SurfFlags and (not SFF_Flip);
+    surf1.FaceFlags := surf1.FaceFlags and (not FF_SF_FLIP);
 
   ArrangeTexture(surf1, nv2, un, vn);
 
@@ -5502,7 +5590,7 @@ end;
 
 Procedure CalcSectorAmbients(lev: TJKLevel; scs: TSCMultiSel);
 var
-  vlight, sflight: double;
+  vlight, sflight: TColorF;
   v, nv, s, sf: integer;
   sec: TJKSector;
   surf: TJKSurface;
@@ -5511,25 +5599,25 @@ begin
   begin
     sec := lev.sectors[scs.getSC(s)];
 
-    vlight := 0;
-    sflight := 0;
+    vlight.SetToZero;
+    sflight.SetToZero;
     nv := 0;
     for sf := 0 to sec.surfaces.count - 1 do
     begin
       surf := sec.surfaces[sf];
-      sflight := sflight + surf.extralight;
+      sflight := sflight + surf.ExtraLight;
       inc(nv, surf.Vertices.count);
       for v := 0 to surf.Vertices.count - 1 do
         With surf.txvertices[v] do
         begin
-          if color.a < 0 then
-            color.a := 0;
-          vlight := vlight + color.a;
+          color.Clamp;
+          vlight := vlight + color;
         end;
     end;
+    // TODO: Check if sector.extra light has to be applied.
     vlight := vlight / nv;
     sflight := sflight / sec.surfaces.count;
-    if vlight > sflight then
+    if vlight.IsBrighter(sflight) then
       sec.ambient := vlight
     else
       sec.ambient := sflight;
@@ -5565,7 +5653,7 @@ var
       if asurf = surf then
         exit;
       if (asurf.adjoin <> nil) then
-        if (asurf.AdjoinFlags and AF_BlockLight = 0) then
+        if (asurf.AdjoinFlags and SAF_BlockLight = 0) then
           exit;
       csd := Pointer(sfd + asurf.Mark * sizeof(TLCSurfData));
       D := csd^.D;
@@ -5906,7 +5994,7 @@ var
     begin
       surf := viasec.surfaces[i];
       if (surf.adjoin = nil) { or (surf.geo>=4) }
-        or (surf.Vertices.count = 0) or (surf.AdjoinFlags and AF_BlockLight <> 0)
+        or (surf.Vertices.count = 0) or (surf.AdjoinFlags and SAF_BlockLight <> 0)
       then
         continue;
 
@@ -6010,7 +6098,7 @@ begin
             end; }
 
           vx := surf.Vertices[v];
-          SetVec(lvec, lt.x - vx.x, lt.y - vx.y, lt.z - vx.z);
+          lvec.SetCoords(lt.x - vx.x, lt.y - vx.y, lt.z - vx.z);
 
           dist2 := sqr(lvec.dx) + sqr(lvec.dy) + sqr(lvec.dz);
           if dist2 >= range2 then

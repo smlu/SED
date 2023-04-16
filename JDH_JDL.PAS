@@ -18,7 +18,7 @@ var
   p: Integer;
   MainList: TStringList;
 begin
-  Assign(t, FindJedDataFile(Name));
+  Assign(t, FindDataFile(Name));
   Reset(t);
   Try
     MainList := TStringList.Create;
@@ -102,7 +102,7 @@ begin
     CurNode := nil;
     stack := TList.Create;
     SP := 0;
-    s := FindJedDataFile(FName);
+    s := FindDataFile(FName);
     if Not FileExists(s) then
       exit;
     Assign(t, s);

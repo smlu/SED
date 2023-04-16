@@ -52,9 +52,13 @@ var
     try
       With sec do
       begin
-        if not ReadFmt('%s %s %f %x %f %f %f %f %f %d', [@ColorMap, @Sound, @snd_vol,
-          @Flags, @Ambient, @extra, @tint.dx, @tint.dy, @tint.dz, @Layer]) then
+        // TODO: parse version 2 with RGB colors for Ambient & ExtraLight, and IJIM light intensity, force etc...
+        if not ReadFmt('%s %s %f %x %l %l %l %l %l %d', [@ColorMap, @Sound, @snd_vol,
+          @Flags, @Ambient.a, @ExtraLight.a, @tint.r, @tint.g, @tint.b, @Layer]) then
           raise Exception.Create('Failed to parse template sector info');
+
+        Ambient    := IntensityToColor(Ambient.a);
+        ExtraLight := IntensityToColor(ExtraLight.a);
         if ColorMap = '-' then
           ColorMap := '';
         if Sound = '-' then
@@ -75,10 +79,12 @@ var
           sec.Surfaces.Add(surf);
           With surf do
           begin
-            if not ReadFmt('%s %x %x %d %d %d %f %d %d %d %x',
+            // TODO: parse version 2 with RGB colors for ExtraLight
+            if not ReadFmt('%s %x %x %d %d %d %l %d %d %d %x',
               [@Material, @SurfFlags, @FaceFlags, @geo, @light, @tex,
-              @extralight, @nsv, @asec, @asf, @AdjoinFlags])
+              @ExtraLight.a, @nsv, @asec, @asf, @AdjoinFlags])
               then raise Exception.Create('Failed to parse template sector surface info');
+            ExtraLight := IntensityToColor(ExtraLight.a);
             if Material = '-' then
               Material := '';
             { Num:=asec shl 16+(asf and $FFFF); }
@@ -157,6 +163,7 @@ begin
       if CompareText(w, 'SEC') = 0 then
       begin
         sname := Trim(Copy(s, p, length(s)));
+        // TODO: add version parsing
         sec := LoadSector;
         if sec <> nil then
           Prefabs.AddObject(sname, sec);
@@ -202,9 +209,9 @@ begin
   if (cx = 99999) or (cy = 99999) or (cz = 99999) then
     exit;
 
-  SetVec(nx, 1, 0, 0);
-  SetVec(ny, 0, 1, 0);
-  SetVec(nz, 0, 0, 1);
+  nx.SetCoords(1, 0, 0);
+  ny.SetCoords(0, 1, 0);
+  nz.SetCoords(0, 0, 1);
   newsec := Level.NewSector;
   DuplicateSector(s, newsec, cx, cy, cz, nx, ny, nz, -cx, -cy, -cz);
   Prefabs.AddObject(pname, newsec);
@@ -230,6 +237,7 @@ begin
   for i := 1 to Prefabs.count - 1 do
     With TJKSector(Prefabs.Objects[i]) do
     begin
+      // TODO: Add version no. 2 to the end of SEC line
       WriteFmt('SEC %s', [Prefabs[i]]);
       if ColorMap = '' then
         st := '-'
@@ -240,8 +248,9 @@ begin
       else
         st := st + ' ' + Sound;
 
+      // TODO: Write Ambient & ExtraLIght as RGB, store IJIM light intensity, force etc ...
       WriteFmt('%s %.6f %x %.6f %.6f %.6f %.6f %.6f %d',
-        [st, snd_vol, Flags, Ambient, extra, tint.dx, tint.dy, tint.dz, Layer]);
+        [st, snd_vol, Flags, RgbToIntensity(Ambient), RgbToIntensity(ExtraLight), tint.r, tint.g, tint.b, Layer]);
 
       WriteFmt('VXS %d', [Vertices.count]);
       for vx := 0 to Vertices.count - 1 do
@@ -266,8 +275,9 @@ begin
           st := Material;
           if st = '' then
             st := '-';
+          // TODO: WriteExtraLIght as RGB
           WriteFmt('%s %x %x %d %d %d %.6f %d %d %d %x %.4f %.4f',
-            [st, SurfFlags, FaceFlags, geo, light, tex, extralight,
+            [st, SurfFlags, FaceFlags, geo, light, tex, RgbaToIntensity(ExtraLight),
             Vertices.count, asec, asf, AdjoinFlags, uscale, vscale]);
           st := '';
           for vx := 0 to Vertices.count - 1 do
@@ -297,8 +307,8 @@ var
 begin
   Prefabs := TStringList.Create;
   js := Level.NewSector;
-  SetVec(z, 0, 0, 1);
-  SetVec(x, 1, 0, 0);
+  z.SetCoords(0, 0, 1);
+  x.SetCoords(1, 0, 0);
   CreateCubeSec(js, 0, 0, 0, z, x);
   Prefabs.AddObject('Cube', js);
 end;

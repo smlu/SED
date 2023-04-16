@@ -4,7 +4,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
-  StdCtrls, ExtCtrls;
+  StdCtrls, ExtCtrls, GlobalVars;
 
 type
   TSCFieldPicker = class(TForm)
@@ -50,15 +50,19 @@ end;
 Function TSCFieldPicker.PickGeo(geo: integer): integer;
 begin
   SetCaptions('GEO mode');
-  if geo > 5 then
+  if (geo > 4) and (CurrentProject <> IJIM) then
+    geo := 4
+  else if geo > 5 then
     geo := 5;
+
   ClearItems;
   AddItem('Not rendered');
   AddItem('Draw vertices');
   AddItem('Draw wireframe');
   AddItem('Draw solid color');
   AddItem('Draw textured');
-  AddItem('Draw textured');
+  if CurrentProject <> IJIM then
+    AddItem('Draw textured');
   RGItems.ItemIndex := geo;
   if ShowModal = mrOk then
     result := RGItems.ItemIndex
@@ -69,15 +73,21 @@ end;
 Function TSCFieldPicker.PickLightMode(lmode: integer): integer;
 begin
   SetCaptions('Lighting mode');
-  if lmode > 5 then
+  if (lmode > 3) and (CurrentProject <> IJIM) then
+    lmode := 3
+  else if lmode > 5 then
     lmode := 5;
+
   ClearItems;
   AddItem('Fully lit');
   AddItem('Not lit');
   AddItem('Diffuse');
   AddItem('Gouraud');
-  AddItem('Gouraud');
-  AddItem('Gouraud');
+  if CurrentProject <> IJIM then
+    begin
+      AddItem('Gouraud');
+      AddItem('Gouraud');
+    end;
   RGItems.ItemIndex := lmode;
   if ShowModal = mrOk then
     result := RGItems.ItemIndex
