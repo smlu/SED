@@ -1,0 +1,55 @@
+JED 0.3
+SEC: HEADER
+HDR 1 4 15 2 2 dflt.cmp
+HOR 100 768 0 0
+CEIL 0 0
+MIP 1 2 3 4
+LOD 0.3 0.6 0.9 1.2
+END
+
+SEC: GEO
+SECS 1
+dflt.cmp - 0 0 5 0 0 0 0 0
+VXS 8
+-1 1 0
+-1 -1 0
+1 -1 0
+1 1 0
+-1 1 1
+1 1 1
+1 -1 1
+-1 -1 1
+SURFS 6
+00tabll2.mat 5 4 4 3 1 0 4 -1 -1 7
+ 0 0 0 5 1 640 0 5 2 640 -640 5 3 0 -640 5
+dflt.mat 4 4 4 3 1 0 4 -1 -1 7
+ 4 0 0 5 5 640 0 5 6 640 -640 5 7 0 -640 5
+dflt.mat 4 4 4 3 1 0 4 -1 -1 7
+ 2 0 0 5 6 320 0 5 5 320 -640 5 3 0 -640 5
+dflt.mat 4 4 4 3 1 0 4 -1 -1 7
+ 1 0 0 5 7 320 0 5 6 320 -640 5 2 0 -640 5
+53cint4c.mat 4 4 4 3 1 0 4 -1 -1 7
+ 0 0 0 5 4 320 0 5 7 320 -640 5 1 0 -640 5
+dflt.mat 4 4 4 3 1 0 4 -1 -1 7
+ 3 0 0 5 5 320 0 5 4 320 -640 5 0 0 -640 5
+END
+
+SEC: THINGS
+THS 1
+walkplayer 0 0 0.1 0 0 0 0 0
+
+END
+
+SEC: LIGHTS
+LTS 1
+0 0 0.5 0 10 2
+END
+
+SEC: COGS
+COGS 0
+END
+
+SEC: LAYERS
+LAYERS 1
+Layer0
+END

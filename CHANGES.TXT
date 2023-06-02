@@ -1,0 +1,101 @@
+6/15/98
+- Fixed Fliping bug.
+- Fixed bug in refreshing COG parameters when you click "Refresh" in 
+  Placed Cogs window.
+- Now you can also double-click on COG parameters in Placed COG editor
+  to perform appropriate actions depending on parameter type. Here they
+  are:
+  sound,model,template,mat, ai, cog - invokes appropriate picker.
+  thing,sector,surface - selects them in the editor
+- Added Copy/Paste
+- Improved stitching to handle some more complicated cases (still appears
+ to need some work).
+
+6/16/98
+- Added toggle and subtract multiselection modes.
+
+6/17/98
+- Fixed a bug that caused Direct3D's "Bad Object" error.
+
+6/19/98
+- Rectangular selection is now limited to visible layers
+- Added error reporting dialog
+- Fixed a bug in loading CogStrings.Uni
+- Added Copy/Paste for things and sectors
+
+6/20/98
+- Copied sectors now retain texture alignment.
+- Fixed "Enter" invoking Item Editor. Also, selecting a think in frame 
+  mode now reports its number of frames.
+- Fixed a bug in reading Cogstrings.Uni that gave "Access Violation" when
+  invoking Episode Editor
+- Added "Swap Grid Axis" function (Shift+G)
+- "Copy As Frame" now works fro frames as well
+
+6/21/98
+- Fixed bug in surface planarize.
+- Added clipping to software renderer to eliminate lockups and glitchy 
+  lines
+- Fixed bug in wireframe renderer not showing thing orientation
+- Fixed bug in exporting multimesh 3DOs. Now they work fine in the game.
+
+6/23/98
+- Altered texturing code and added "Flipped Texture" flag. Still needs a
+  little work.
+- Added template creator
+
+6/25/98
+- Worked out last kinks from stitcher and new texturing mechanism
+- Fixed some glitches in edge selection in software renderer
+
+6/27/98
+- Added an option to revert to old controls.
+
+JED 0.81 beta
+
+7/22/98
+- Added some flag descriptions
+- Fixed a bug in GOBbibg/GOOing.
+- Fixed a bug that put sectors created with K on 1st layer.
+
+7/24/98
+- Fixed minor bug in texturing
+
+7/25/98
+- Fixed a bug in loading default map settings
+
+7/27/98
+- "Save to JKL" now removes the JKL file from project directory if 
+  it was there, so that you don't get duplicate JKLs - on in project
+  directory and one in Project Directory\JKL\. Same thing with
+  Episode editor and COGSTRINGS.UNI
+- "GOB Project" now reports file duplicates when gobbing.
+
+Version 0.85
+- Fixed a bug in editing light and thing parameters
+- Added some OLE functions.
+- Changed 3DO preview a bit (fro the better, I hope).
+
+9/5/98
+- Added "Grid Move step" setting in Map Settings, that controls
+  how the grid moves with G+Mouse. For istance setting it to
+  0.5 will make grid take only X,Y,Z positions with X,Y and Z
+  which are multiples of 0.5: 0.5, 1, 1.5, etc.
+- Fixed a bug in 3D Preview thing selection in OpenGL mode
+- "Add Value", "Remove value" buttons on Item Editor now work
+  on multiselections. Be careful doing that though.
+- Fixed a bug causing duplicate objects in 3D preview
+
+9/11/98
+- Fixed a bug in undo that gave invalid adjoins at times.
+
+version 0.9
+10/27/98
+- The ghost objects (or objects with invalid or non-existing
+  model) will show up as white squares using all reneders now
+  (not just Direct3D RM).
+- Added some OLE functions.
+
+11/1/98
+- Fixed several bugs in 3D preview so that now it works with
+  3D acceleration.

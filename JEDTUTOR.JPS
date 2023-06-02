@@ -1,0 +1,35 @@
+Helpfile Summary for E:\PROJECTS\JEDHELP\JEDTUTOR\ JEDTUTOR
+
+
+===============*** Context Strings ***======================
+
+
+=== Format is: Title - ContextString (HelpContextID) ======
+Contents                        - Hlp_Contents             (10)*** Starting topic ***
+============================================================
+
+
+
+
+============================================================
+TOPIC NAME:   Contents                                                                                                                                                                                                                                                        
+*** This is the starting topic for the helpfile. ***
+============================================================
+CONTEXT ID STRING:          Hlp_Contents
+CONTEXT NUMBER:              10 
+Browse Sequence:            Browse:0005
+:Keywords:
+Contents
+
+List of Jump Numbers
+
+---------------There are Jumps TO this topic from...---------
+
+---------------Jumps to OTHER topics -----------------------
+Hotspot text...                                             
+               <Destination topic title>                        
+------------------------------------------------------------
+=============================================================
+
+
+

@@ -1,0 +1,15 @@
+"New Level"
+# Title must be first line.  A translated version is looked up in jkStrings.uni
+# Please use TABs for alignment!
+
+TYPE  1  # single-player
+
+SEQ   1
+
+# <lightpow> and <darkpow> are the inventory bin numbers for that power.
+
+# <line> <cd>  <level>  <type>   <file>         <lightpow>  <darkpow>   <gotoA>  <gotoB>
+
+10:      1     1        LEVEL    Hexagon.jkl   0           0           -1    -1    # Level 1: NewLevel
+
+end

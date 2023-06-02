@@ -1,0 +1,20 @@
+function MaskX86Exceptions: Pointer; 
+var dwOldMask : Pointer;
+begin
+asm 
+	fnstcw WORD PTR dwOldMask; 
+	mov eax, dwOldMask; 
+	or eax, $3f; 
+	mov WORD PTR dwOldMask+2, 
+	ax; fldcw WORD PTR dwOldMask+2; 
+end; 
+result := dwOldMask; 
+end; 
+
+procedure RestoreX86Mask(dwOldMask: Pointer); 
+begin 
+asm 
+	fnclex; 
+	fldcw WORD PTR dwOldMask; 
+end; 
+end; 
