@@ -126,6 +126,8 @@ Procedure TranslateLights(lev: TJKLevel; ltsel: TLTMultiSel; curlt: integer;
 
 Procedure RotateSectors(lev: TJKLevel; scsel: TSCMultiSel; axis: TVector;
   cx, cy, cz: double; angle: double);
+Procedure RotateSurfaces(level: TJKLevel; sfsel: TSFMultiSel; axis: TVector;
+  cx, cy, cz: double; angle: double);
 Procedure RotateThings(lev: TJKLevel; thsel: TTHMultiSel; axis: TVector;
   cx, cy, cz: double; angle: double; bRotatePYR: Boolean = False);
 Procedure RotateLights(lev: TJKLevel; ltsel: TLTMultiSel; axis: TVector;
@@ -134,6 +136,8 @@ Procedure RotateFrames(lev: TJKLevel; frsel: TFRMultisel; axis: TVector;
   cx, cy, cz: double; angle: double; bRotatePYR: Boolean = False);
 
 Procedure ScaleSectors(lev: TJKLevel; scsel: TSCMultiSel; const sd: TScaleData;
+  scaletx: boolean);
+Procedure ScaleSurfaces(level: TJKLevel; sfsel: TSFMultiSel; const sd: TScaleData;
   scaletx: boolean);
 Procedure ScaleThings(lev: TJKLevel; thsel: TTHMultiSel; const sd: TScaleData);
 Procedure ScaleLights(lev: TJKLevel; ltsel: TLTMultiSel; const sd: TScaleData);
@@ -4528,12 +4532,51 @@ var
 var
   i: integer;
 begin
-
   PrepareRotData(rd, axis, cx, cy, cz, angle);
-
   ClearVXMarks(lev);
   for i := 0 to scsel.count - 1 do
     RotSec(lev.sectors[scsel.getSC(i)]);
+end;
+
+Procedure RotateSurfaces(level: TJKLevel; sfsel: TSFMultiSel; axis: TVector;
+  cx, cy, cz: double; angle: double);
+var
+  rd: TRotateData;
+  sec: TJKSector;
+
+  Procedure RotSurf(surf: TJKSurface);
+  var
+    i, j: integer;
+  begin
+    SaveSecUndo(surf.Sector, ch_changed, sc_geo);
+    for i := 0 to surf.Vertices.count - 1 do
+      RotateVertex(surf.Vertices[i], rd);
+
+    if surf.adjoin <> nil then
+      begin
+        SaveSecUndo(surf.adjoin.sector, ch_changed, sc_geo);
+        for j := 0 to surf.Adjoin.Vertices.count - 1 do
+          RotateVertex(surf.Adjoin.Vertices[j], rd);
+      end;
+
+    RecalcSector(surf.Sector);
+    JedMain.SectorChanged(surf.Sector);
+    if surf.Adjoin <> nil then
+      JedMain.SectorChanged(surf.Adjoin.Sector);
+  end;
+
+var
+  i, sc, sf: integer;
+
+begin
+  PrepareRotData(rd, axis, cx, cy, cz, angle);
+  ClearVXMarks(level);
+  for i := 0 to sfsel.count - 1 do
+    begin
+      sfsel.GetSCSF(i, sc, sf);
+      var surf := level.sectors[sc].surfaces[sf];
+      RotSurf(surf);
+    end;
 end;
 
 procedure RotatePYR(var pitch, yaw, roll: double; const axis: TVector; const angle: double);
@@ -4686,8 +4729,10 @@ var
         for j := 0 to adjoin.Vertices.count - 1 do
           ScaleVertex(adjoin.Vertices[j], sd);
       end;
+
     RecalcSector(sec);
     JedMain.SectorChanged(sec);
+
     for i := 0 to sec.surfaces.count - 1 do
       with sec.surfaces[i] do
       begin
@@ -4699,9 +4744,64 @@ var
 
 begin
   ClearVXMarks(Level);
-
   for i := 0 to scsel.count - 1 do
     ScaleSec(lev.sectors[scsel.getSC(i)]);
+end;
+
+
+Procedure ScaleSurfaces(level: TJKLevel; sfsel: TSFMultiSel; const sd: TScaleData;
+  scaletx: boolean);
+var
+  i: integer;
+  sc, sf: integer;
+  surf: TJKSurface;
+
+  Procedure ScaleSurf(surf: TJKSurface);
+  var
+    i, j: integer;
+  begin
+    With surf do
+    begin
+      SaveSecUndo(Sector, ch_changed, sc_geo);
+
+      for i := 0 to Vertices.count - 1 do
+        ScaleVertex(Vertices[i], sd);
+
+      if scaletx then
+        begin
+          uscale := uscale / sd.sfactor;
+          vscale := vscale / sd.sfactor;
+        end;
+
+      if adjoin <> nil then
+        begin
+          SaveSecUndo(adjoin.sector, ch_changed, sc_geo);
+
+          if scaletx then
+            begin
+              adjoin.uscale := adjoin.uscale / sd.sfactor;
+              adjoin.vscale := adjoin.vscale / sd.sfactor;
+            end;
+          for j := 0 to adjoin.Vertices.count - 1 do
+            ScaleVertex(adjoin.Vertices[j], sd);
+        end;
+
+      RecalcSector(Sector);
+      JedMain.SectorChanged(Sector);
+      if adjoin <> nil then
+        JedMain.SectorChanged(adjoin.sector);
+    end;
+  end;
+
+begin
+  ClearVXMarks(Level);
+
+  for i := 0 to sfsel.count - 1 do
+  begin
+    sfsel.GetSCSF(i, sc, sf);
+    surf := level.sectors[sc].surfaces[sf];
+    ScaleSurf(surf);
+  end;
 end;
 
 Procedure ScaleXYZ(var x, y, z: double; const sd: TScaleData);
@@ -4829,23 +4929,22 @@ var
   tv: TTXVertex;
 begin
   for i := 0 to (surf.Vertices.count div 2) - 1 do
-  begin
-    n := surf.Vertices.count - i - 1;
-    vx := surf.Vertices[i];
-    surf.Vertices[i] := surf.Vertices[n];
-    surf.Vertices[n] := vx;
+    begin
+      n := surf.Vertices.count - i - 1;
+      vx := surf.Vertices[i];
+      surf.Vertices[i] := surf.Vertices[n];
+      surf.Vertices[n] := vx;
 
-    tv := surf.txvertices[i];
-    surf.txvertices[i] := surf.txvertices[n];
-    surf.txvertices[n] := tv;
-  end;
+      tv := surf.txvertices[i];
+      surf.txvertices[i] := surf.txvertices[n];
+      surf.txvertices[n] := tv;
+    end;
   surf.Recalc;
 
   if IsTXFlipped(surf) then
     BitSet(surf.FaceFlags, Integer(FF_SF_FLIP))
   else
     BitClear(surf.FaceFlags, Integer(FF_SF_FLIP));
-
 end;
 
 Procedure FlipThingsOverPlane(lev: TJKLevel; thsel: TTHMultiSel; pnorm: TVector;

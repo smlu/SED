@@ -6485,6 +6485,15 @@ begin
                 RotateSectors(Level, scsel, vec, cx, cy, cz, angle);
                 scsel.DeleteN(i);
             end;
+        MM_SF:
+            begin
+                StartUndoRec('Rotate surface(s)');
+                if axis <> rt_grid then
+                    CalcSurfCenter(level.sectors[Cur_SC].surfaces[Cur_SF], cx, cy, cz);
+                i := sfsel.AddSF(Cur_SC, Cur_SF);
+                RotateSurfaces(Level, sfsel, vec, cx, cy, cz, angle);
+                sfsel.DeleteN(i);
+            end;
         MM_TH:
             begin
                 th := Level.Things[Cur_TH];
@@ -6671,10 +6680,18 @@ begin
         MM_SC:
             begin
                 StartUndoRec('Scale sector(s)');
-                CalcSecCenter(Level.Sectors[Cur_SC], sd.cx, sd.cy, sd.cz);
+                CalcSecCenter(level.Sectors[Cur_SC], sd.cx, sd.cy, sd.cz);
                 i := scsel.AddSC(Cur_SC);
                 ScaleSectors(Level, scsel, sd, how and sc_ScaleTX <> 0);
                 scsel.DeleteN(i);
+            end;
+        MM_SF:
+            begin
+                StartUndoRec('Scale surface(s)');
+                CalcSurfCenter(level.sectors[Cur_SC].surfaces[Cur_SF], sd.cx, sd.cy, sd.cz);
+                i := sfsel.AddSF(Cur_SC, Cur_SF);
+                ScaleSurfaces(Level, sfsel, sd, how and sc_ScaleTX <> 0);
+                sfsel.DeleteN(i);
             end;
         MM_TH:
             begin
