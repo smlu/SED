@@ -553,6 +553,11 @@ end;
 procedure TToolbar.CBGridStepChange(Sender: TObject);
 begin
   CBValDouble(CBGridStep, JedMain.Renderer.GridStep, 0.0001, 10);
+
+//  var pos := CBGridStep.SelStart -1;
+//  CBGridStep.Text :=  DoubleToStr(JedMain.Renderer.GridStep);
+//  CBGridStep.SelStart := pos;
+
 end;
 
 procedure TToolbar.CBGridStepExit(Sender: TObject);
@@ -562,7 +567,7 @@ end;
 
 procedure TToolbar.CBGridLineChange(Sender: TObject);
 begin
-  CBValDouble(CBGridLine, JedMain.Renderer.GridLine, 0.01, 10);
+  CBValDouble(CBGridLine, JedMain.Renderer.GridLine, 0.001, 10);
   JedMain.Invalidate;
 end;
 
@@ -574,7 +579,7 @@ end;
 
 procedure TToolbar.CBGridDotChange(Sender: TObject);
 begin
-  CBValDouble(CBGridDot, JedMain.Renderer.GridDot, 0.005, 10);
+  CBValDouble(CBGridDot, JedMain.Renderer.GridDot, 0.0001, 10);
   JedMain.Invalidate;
 end;
 
