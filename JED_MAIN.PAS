@@ -2220,7 +2220,7 @@ begin
                 end; { < }
             190:
                 begin
-                    RotateTexture(st_up);
+                    ScaleTexture(st_up);
                     exit;
                 end; { > }
 
@@ -4139,7 +4139,7 @@ begin
 //                end;
                 surf.Recalc;
                 FindUVScales(surf);
-                if CompareValue(surf.normal.z, 0.6, CloseEnough) = GreaterThanValue then // If less LE 40ï¿½
+                if CompareValue(surf.normal.z, 0.6, CloseEnough) = GreaterThanValue then // If less LE 40°
                   surf.SurfFlags := surf.SurfFlags or SF_Floor;
             end;
         end;
