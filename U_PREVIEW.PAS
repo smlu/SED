@@ -748,6 +748,9 @@ begin
         MM_SC:
             FindCenter(Level.Sectors[JedMain.Cur_SC], cx, cy, cz);
         { MM_VX: with Level.Sectors[Cur_SC].Vertices[Cur_VX] do begin cx:=x; cy:=y; cz:=z; end; }
+        MM_SF,
+        MM_ED:
+            CalcSurfCenter(level.Sectors[JedMain.Cur_SC].surfaces[JedMain.Cur_SF], cx, cy, cz);
         MM_TH:
             with Level.Things[JedMain.Cur_TH] do
             begin
