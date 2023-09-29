@@ -4139,7 +4139,7 @@ begin
 //                end;
                 surf.Recalc;
                 FindUVScales(surf);
-                if CompareValue(surf.normal.z, 0.6, CloseEnough) = GreaterThanValue then // If less LE 40°
+                if CompareValue(surf.normal.z, 0.6, CloseEnough) = GreaterThanValue then // If less LE 40ï¿½
                   surf.SurfFlags := surf.SurfFlags or SF_Floor;
             end;
         end;
@@ -6345,57 +6345,71 @@ end;
 
 Procedure TJedMain.RotateTexture(how: Integer);
 var
-    nu, nv, u, v: TVector;
-    surf: TJKSurface;
-    du, dv, cosa, sina: double;
-    fv: Integer;
+    sc, sf: Integer;
+    cosa, sina: double;
 
+    procedure RotateUV(surf: TJKSurface; sina, cosa: double);
+    var
+        fv: Integer;
+        du, dv: double;
+        nu, nv, u, v: TVector;
+
+    begin
+        SaveSecUndo(surf.sector, ch_changed, sc_geo);
+
+        fv := 0;
+        if (surf.sector.num = Cur_SC) and (surf.num = Cur_SF) then
+          case Map_mode of
+            MM_ED:
+              fv := Cur_ED;
+            MM_SF:
+              fv := 0;
+          end;
+
+        CalcUVNormals(surf, u, v);
+
+        nv.dx := -sina * u.dx + cosa * v.dx;
+        nv.dy := -sina * u.dy + cosa * v.dy;
+        nv.dz := -sina * u.dz + cosa * v.dz;
+
+        nu.dx := cosa * u.dx + sina * v.dx;
+        nu.dy := cosa * u.dy + sina * v.dy;
+        nu.dz := cosa * u.dz + sina * v.dz;
+
+        UpdateSurfUVData(surf, nu, nv);
+        ArrangeTexture(surf, fv, nu, nv);
+        SectorChanged(surf.sector);
+    end;
 begin
     if not Preview3D.IsActive then
         exit;
 
-    fv := 0;
-    case Map_mode of
-        MM_ED:
-            fv := Cur_ED;
-        MM_SF:
-            fv := 0;
-    else
+    if (Map_mode <> MM_SF) and (Map_mode <> MM_ED) then
         SetMapMode(MM_SF);
-    end;
 
     case how of
         st_left:
             begin
-                cosa := cOS(-TXRotStep * PI / 180);
-                sina := SIN(-TXRotStep * PI / 180);
+                cosa := cOS(TXRotStep * PI / 180);
+                sina := SIN(TXRotStep * PI / 180);
             end;
         st_right:
             begin
-                cosa := cOS(TXRotStep * PI / 180);
-                sina := SIN(TXRotStep * PI / 180);
+                cosa := cOS(-TXRotStep * PI / 180);
+                sina := SIN(-TXRotStep * PI / 180);
             end;
     end;
 
     StartUndoRec('Rotate texture');
+    var n := sfsel.AddSF(Cur_SC, Cur_SF);
 
-    surf := Level.Sectors[Cur_SC].surfaces[Cur_SF];
+    for var i := 0 to sfsel.Count - 1 do
+    begin
+        sfsel.GetSCSF(i, sc, sf);
+        RotateUV(Level.Sectors[sc].surfaces[sf], sina, cosa);
+    end;
 
-    SaveSecUndo(surf.sector, ch_changed, sc_geo);
-
-    CalcUVNormals(surf, u, v);
-
-    nv.dx := -sina * u.dx + cosa * v.dx;
-    nv.dy := -sina * u.dy + cosa * v.dy;
-    nv.dz := -sina * u.dz + cosa * v.dz;
-
-    nu.dx := cosa * u.dx + sina * v.dx;
-    nu.dy := cosa * u.dy + sina * v.dy;
-    nu.dz := cosa * u.dz + sina * v.dz;
-
-    UpdateSurfUVData(surf, nu, nv);
-    ArrangeTexture(surf, fv, nu, nv);
-    SectorChanged(surf.sector);
+    sfsel.DeleteN(n);
 end;
 
 procedure TJedMain.PMsgDblClick(sender: TObject);
