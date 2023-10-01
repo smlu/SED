@@ -1832,7 +1832,6 @@ begin
         if (cog_type = ct) and (obj = lobj) then
         begin
           LBCogs.Items.AddObject(cog.name + '\' + Name, cog);
-          break;
         end;
   end;
 end;
@@ -1844,6 +1843,7 @@ begin
   i := LBCogs.ItemIndex;
   if i < 0 then
     exit;
+
   i := Level.Cogs.IndexOf(LBCogs.Items.Objects[i]);
   if i >= 0 then
     CogForm.GotoCOG(i);

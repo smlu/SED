@@ -68,14 +68,16 @@ begin
 
   With Level.Cogs[n] do
   begin
-    li.Caption := Name;
     s := '';
     for j := 0 to Vals.COunt - 1 do
     begin
       vl := Vals[j];
       s := Concat(s, ' ', vl.Name, '=', vl.AsString);
     end;
+    li.SubItems.BeginUpdate;
     li.SubItems[0] := s;
+    li.SubItems.EndUpdate;
+    LVCOGsChange(nil, nil, ctText);  // update grid view of  cog values
   end;
 end;
 
@@ -193,13 +195,16 @@ var
 begin
   if fe = nil then
     exit;
+
   fe.Clear;
+
   if LVCOGs.ItemFocused = nil then
     exit;
+
   n := LVCOGs.ItemFocused.Index;
   if n >= Level.Cogs.COunt then
     exit;
-  fe.Clear;
+
   With Level.Cogs[n] do
   begin
     Caption := Format('Placed Cogs - COG %d: %s', [n, Name]);
@@ -372,6 +377,10 @@ var
 begin
   if LVCOGs.ItemFocused = nil then
     exit;
+
+  if MsgBox('Are you sure you want to delete COG?', 'Delete COG', MB_YESNO) <> ID_YES then
+    exit;
+
   n := LVCOGs.ItemFocused.Index;
   lev_utils.DeleteCOG(Level, n);
   if n >= LVCOGs.Items.COunt then
@@ -474,7 +483,12 @@ begin
         obj := JedMain.GetCurObjForCog(v.cog_type);
         if obj <> nil then
           v.obj := obj;
+
+        var tr := SGVals.TopRow;
         UpdateCOG(n);
+        SGVals.TopRow := tr;
+        SGVals.Row    := i;
+        SGVals.SetFocus;
       end;
   else
     ShowMessage('It only works for sector/surface and thing entries');
