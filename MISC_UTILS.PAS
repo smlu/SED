@@ -1043,43 +1043,47 @@ begin
   Result := true;
   nval := 0;
   pf := Pchar(format);
+
   Repeat
     if ps^ = #0 then
       break;
+
     pp := StrScan(pf, '%');
     if pp = nil then
       break;
+
     pb := pf;
     while (pb^ in [' ', #9]) and (pb < pp) do
       inc(pb);
 
     if pp = pb then
-    begin
-      len := 0;
-      pv := ps;
-    end
-    else
-    begin
-      pe := pp - 1;
-      while (pe^ in [' ', #9]) and (pe > pb) do
-        dec(pe);
-      len := pe - pb + 1;
-      StrLCopy(tmp, pb, len);
-      pv := StrPos(ps, tmp);
-      if pv = nil then
       begin
-        pf := pp + 1;
-        if pf^ <> #0 then
-          inc(pf);
-        inc(nval);
-        continue;
+        len := 0;
+        pv := ps;
+      end
+    else
+      begin
+        pe := pp - 1;
+        while (pe^ in [' ', #9]) and (pe > pb) do
+          dec(pe);
+        len := pe - pb + 1;
+        StrLCopy(tmp, pb, len);
+        pv := StrPos(ps, tmp);
+        if pv = nil then
+        begin
+          pf := pp + 1;
+          if pf^ <> #0 then
+            inc(pf);
+          inc(nval);
+          continue;
+        end;
+        pv := pv + len;
       end;
-      pv := pv + len;
-    end;
 
     ptmp := @tmp[1];
     ps := PGetWord(pv, ptmp);
     inc(pp);
+
     a := 0;
     case pp^ of { format specifier }
       'd', 'D':
@@ -1126,14 +1130,18 @@ begin
     else
       a := 1;
     end;
+
     if a <> 0 then
       Result := false;
+
     pf := pp;
     if pf^ <> #0 then
       inc(pf);
     inc(nval);
   until false;
 {$R+}
+
+  Result := Result and (nval = Length(Vals));
 end;
 
 Function SScanf(const s: string; const format: String;
