@@ -781,6 +781,21 @@ begin
   fe.ONChange := FrameChange;
 end;
 
+
+Function IsUIEditProp(name: string): Boolean;
+  begin
+    Result := False;
+    if CompareText(Name, 'thingflags') = 0 then
+      Result := True
+    else if CurrentProject = IJIM then
+      begin
+        if CompareText(Name, 'light') = 0 then
+          Result := True
+        else if CompareText(Name, 'lightintensity') = 0 then
+          Result := True
+      end;
+  end;
+
 Procedure TItemEdit.LoadThing(thing: TJKThing);
 var
   i: integer;
@@ -811,7 +826,7 @@ begin
 
     for i := 0 to Vals.count - 1 do
       With Vals[i] do
-        if CompareText(Name, 'thingflags') = 0 then
+        if IsUIEditProp(Name) then
           fe.AddFieldStr('+' + Name, ID_TH_Last + i, AsString)
         else
           fe.AddFieldStr(Name, ID_TH_Last + i, AsString);
@@ -1003,6 +1018,7 @@ Procedure TItemEdit.ThingDblClk(Fi: TFieldInfo);
 var
   i: integer;
   f: longint;
+  c: TColorF;
 begin
   if Cur_Thing = nil then
     exit;
@@ -1021,12 +1037,27 @@ begin
           i := Fi.id - ID_TH_Last;
           if i >= Vals.count then
             exit;
-          if CompareText(Vals[i].name, 'thingflags') <> 0 then
+
+          if not IsUIEditProp(Vals[i].name) then
             exit;
-          ValHex(Fi.s, f);
-          var nf := FlagEdit.EditThingFlags(f);
-          bChanged := f <> nf;
-          Fi.s := Format('0x%x', [nf]);
+
+          if CompareText(Vals[i].name, 'thingflags') = 0 then
+            begin
+              ValHex(Fi.s, f);
+              var nf := FlagEdit.EditThingFlags(f);
+              bChanged := f <> nf;
+              Fi.s := Format('0x%x', [nf]);
+            end
+          else if (CompareText(Vals[i].name, 'light') = 0) or
+                  (CompareText(Vals[i].name, 'lightintensity') = 0) then
+          begin
+            ValColor(Fi.s, c);
+            c := DoPickColor(c);
+            var s:= ColorToStr(c, {withAlpha=} false, {bFormat=}true);
+            bChanged := s <> Fi.s;
+            Fi.s := s;
+          end;
+
         end;
       ID_Layer:
         Fi.s := ResPicker.PickLayer(Fi.s);
@@ -1533,7 +1564,7 @@ begin
 
   thsel.DeleteN(n);
 
-  if CompareText(s, 'thingflags') = 0 then
+  if IsUIEditProp(s) then
     fe.AddFieldStr('+' + s, ID_TH_Last + Cur_Thing.Vals.count - 1, v.AsString)
   else
     fe.AddFieldStr(s, ID_TH_Last + Cur_Thing.Vals.count - 1, v.AsString);
@@ -1796,7 +1827,8 @@ Function TItemEdit.DoPickColor(initColor: TColorF): TColorF;
   c: TColorF;
 begin
   Result := initColor;
-  initColor.Clamp; // make sure all coloe components has valid ranges 0.0 - 1.0
+  initColor.Clamp; // make sure all color components has valid ranges 0.0 - 1.0
+
   ColorDlg.Color := RGB(
     Round(initColor.r * 255),
     Round(initColor.g * 255),
@@ -1804,12 +1836,13 @@ begin
   if ColorDlg.Execute(self.Handle) then
   begin
     f := ColorDlg.Color;
-    if f = -1 then f :=0;
-    Result:= MakeColor(
+    if f = -1 then f := 0;
+    var a :=  Result.a;
+    Result := MakeColor(
       GetRValue(f) / 255,
       GetGValue(f) / 255,
-      GetBValue(f) / 255,
-      Result.a);
+      GetBValue(f) / 255);
+    Result.a := a;
   end;
 end;
 
