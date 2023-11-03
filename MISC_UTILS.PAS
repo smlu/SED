@@ -132,7 +132,11 @@ Function JKRound(d: Double): Double; { Rounds to 6 decimal points }
 Function UVRound(d: Single): Single; { Round to 2 decimal digits }
 
 Function DoubleToStr(d: Double): String;
-Function ColorToStr(c: TColorF; withAlpha: Boolean = true): String;
+
+{ Formats TColorF object to string
+  if bFormat = true then returned color string is in format (r/g/b[/a])
+  else r g b [a] - when withAlpha = true }
+Function ColorToStr(c: TColorF; withAlpha: Boolean = true; bFormat: Boolean = false): String;
 
 { handles the number -2147483648 ($80000000) properly.
   for some reason, StrToInt gets confused by it }
@@ -143,6 +147,8 @@ Function ValDword(const s: String; var d: Longint): boolean;
 Function ValDouble(const s: String; var d: Double): boolean;
 Function ValSingle(const s: String; var f: Single): boolean;
 Function ValVector(const s: string; var x, y, z: Double): boolean;
+
+{ Parses color from string in formats: (r/g/b), (r/g/b/a), 'r g b', 'r g b a' }
 Function ValColor(const s: string; var color: TColorF): boolean;
 
 Function PadRight(const s: string; tolen: Integer): String;
@@ -667,19 +673,27 @@ var
   w: string;
   p, a: Integer;
 begin
+  // First try to parse color formats (r/g/b/a), (r/g/b), 'r g b a'...
+  Result := True;
+  color.a := 0.0;
+  if StripSScan(s,'%l %l %l %l',[@color.r, @color.g, @color.b, @color.a]) or
+     StripSScan(s,'%l %l %l',[@color.r, @color.g, @color.b]) then
+    exit;
+
+  // Fallback to try parsing 'r g b a' format
   p := GetWord(s, 1, w);
-  val(w, color.r, a);
+  Val(w, color.r, a);
   Result := a = 0;
   p := GetWord(s, p, w);
-  val(w, color.g, a);
+  Val(w, color.g, a);
   Result := Result and (a = 0);
   p := GetWord(s, p, w);
-  val(w, color.b, a);
+  Val(w, color.b, a);
 
   // Try to get alpha from the string
   p := GetWord(s, p, w);
-  val(w, color.a, a);
-  if a <> 0 then color.a := 1.0;
+  Val(w, color.a, a);
+  if a <> 0 then color.a := 0.0;
 end;
 
 Function StrToDword(const s: String): Longint;
@@ -1284,19 +1298,29 @@ begin
     end; }
 end;
 
-Function ColorToStr(c: TColorF; withAlpha: Boolean): String;
+Function ColorToStr(c: TColorF; withAlpha: Boolean; bFormat: Boolean): String;
 begin
-  if withAlpha then
+  if bFormat then
     begin
-      Result := Sprintf('%1.3f %1.3f %1.3f %1.3f', [c.r, c.g, c.b, c.a]);
-      if Result = '' then
-        Result := '0 0 0 0';
+      if (c.a = 0) and (not withAlpha) then
+        Result := Sprintf('(%1.6f/%1.6f/%1.6f)', [c.r, c.g, c.b])
+      else
+        Result := Sprintf('(%1.6f/%1.6f/%1.6f/%1.6f)', [c.r, c.g, c.b, c.a]);
     end
   else
     begin
-      Result := Sprintf('%1.3f %1.3f %1.3f', [c.r, c.g, c.b]);
-      if Result = '' then
-        Result := '0 0 0';
+      if withAlpha then
+        begin
+          Result := Sprintf('%1.3f %1.3f %1.3f %1.3f', [c.r, c.g, c.b, c.a]);
+          if Result = '' then
+            Result := '0 0 0 0';
+        end
+      else
+        begin
+          Result := Sprintf('%1.3f %1.3f %1.3f', [c.r, c.g, c.b]);
+          if Result = '' then
+            Result := '0 0 0';
+        end;
     end;
 end;
 

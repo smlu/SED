@@ -636,23 +636,24 @@ begin
  GetNextLine(s);
  n:=StrToInt(GetWordN(s,3));
  i:=0;
- While (i<n) and (not EndOfSection) do
- begin
-  GetNextLine(s);
-  GetWord(s,1,w1);
-  if w1='END' then break;
-  lt:=NewLight;
-  With Lt do
-    if not SScanf(s,'%s %d %f %f %f %f %f %l %l %l %l %d',[@w1,@l,@x,@y,@z,@Intensity,@range,@RGBIntensity,@r,@g,@b,@Layer]) then
-      begin
-        SScanf(s,'%s %d %f %f %f %f %f',[@w1,@l,@x,@y,@z,@Intensity,@range]);
-        lt.rgbintensity:=lt.intensity;
-        lt.r:=1;
-        lt.g:=1;
-        lt.b:=1;
-      end;
-  Lights.Add(lt);
- end;
+ While ( i < n ) and (not EndOfSection) do
+   begin
+     GetNextLine(s);
+     GetWord(s,1,w1);
+     if w1='END' then break;
+
+     lt := NewLight;
+     With Lt do
+      if not SScanf(s,'%s %d %f %f %f %f %f %l %l %l %l %d', [@w1,@l,@x,@y,@z,@Intensity,@range,@RGBIntensity,@r,@g,@b,@Layer]) then
+          begin
+            SScanf(s,'%s %d %f %f %f %f %f', [@w1,@l,@x,@y,@z,@Intensity,@range]);
+            lt.rgbintensity := lt.intensity;
+            lt.r := 1;
+            lt.g := 1;
+            lt.b := 1;
+          end;
+     Lights.Add(lt);
+   end;
 end;
 
 Procedure LoadLayers;
@@ -1301,22 +1302,21 @@ begin
  Progress.Msg:='Loading Lights';
  ReadFmt('LTS %d',[@nl]);
   for i:=0 to nl-1 do
-  begin
-   l:=NewLight;
-   Lights.Add(l);
-  With l do
-    ReadFmt('%f %f %f %d %f %f %x %f %l %l %l %l',[@X,@Y,@Z,@Layer,@Intensity,@range,
-     @Flags,@RGBRange,@RGBIntensity,@R,@g,@b]);
+    begin
+      l:=NewLight;
+      Lights.Add(l);
+      With l do
+        ReadFmt('%f %f %f %d %f %f %x %f %l %l %l %l',[@X,@Y,@Z,@Layer,@Intensity,@range,
+         @Flags,@RGBRange,@RGBIntensity,@R,@g,@b]);
 
-  if kind = TProjectType.JKDF2 then
-  begin
-   l.rgbintensity:=l.intensity;
-   l.r:=1;
-   l.g:=1;
-   l.b:=1;
-  end;
-
-  end;
+      if kind = TProjectType.JKDF2 then
+        begin
+         l.rgbintensity := l.intensity;
+         l.r:=1;
+         l.g:=1;
+         l.b:=1;
+        end;
+    end;
 end;
 
 Procedure LoadLayers;

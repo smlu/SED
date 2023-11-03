@@ -247,15 +247,11 @@ begin
       ValSingle(w1,face.extraLight.a);
       face.extraLight := IntensityToColor(face.extraLight.a);
     end
-  else if IsClose(version, 2.2) then
+  else // version 2.2 (r/g/b) and version 2.3 (r/g/b/a)
     begin
       p:=GetWord(s,p,w1);
-      StripSScan(w1,'%l %l %l)',[@face.extraLight.r, @face.extraLight.g, @face.extraLight.b]);
-    end
-  else
-    begin // 2.3
-      p:=GetWord(s,p,w1);
-      StripSScan(w1,'%l %l %l %l)',[@face.extraLight.r, @face.extraLight.g, @face.extraLight.b, @face.extraLight.a]);
+      if not ValColor(w1, face.extraLight) then
+        PanMessage(mt_Error, SysUtils.Format('Extra light conversion error at line %d in file %s', [t.CurrentLine, t.GetFullName]));
     end;
 
   p:=GetWord(s,p,w1); {Nvert}
