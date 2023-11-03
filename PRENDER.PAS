@@ -141,6 +141,7 @@ T3DPMesh=class
   radius:single;
 
   sec: TJKSector;
+  extraLight: TColorF;
 
   Constructor Create;
   Constructor Cube(size: float; color: TColorF);
@@ -927,10 +928,10 @@ begin
       if not IsInFront(frustrum, m) then continue;
 
       var ambientLight := ColorWhite;
-      var tint:= ColorBlack;
+      var tint := ColorBlack;
       if (m.sec <> nil)then
         begin
-          ambientLight := m.sec.Ambient + m.sec.ExtraLight;
+          ambientLight := m.extraLight + m.sec.Ambient + m.sec.ExtraLight;
           ambientLight.a := 0;
           ambientLight.Normalize;
           tint := m.sec.Tint;
@@ -1590,7 +1591,7 @@ begin
  result.CalculateSphere;
 end;
 
-Function TNewPRenderer.ThingToMesh(th:TJKThing):T3DPMesh;
+Function TNewPRenderer.ThingToMesh(th: TJKThing):T3DPMesh;
 var i,j,k:integer;
     nv,nvx:integer;
     ttx:T3DPTexture;
@@ -1600,10 +1601,15 @@ var i,j,k:integer;
     poly:T3DPoly;
     vd:TVXDets;
 begin
-  result:=nil;
+  result := nil;
   if th.a3DO = nil then exit;
-  Result := T3DPMesh.Create;
-  Result.sec := th.Sec;
+
+  Result     := T3DPMesh.Create;
+  Result.sec := th.sec;
+
+  var thlight := th.light;
+  if thlight.a <= 0.01 then  // IJIM makes baked light from dynamic light when radius <= 0.01
+    Result.extraLight := thlight;
 
   const jkdf2Lights: Boolean = ((th.level <> nil) and (th.level.kind = JKDF2) or (CurrentProject = JKDF2))
     or not P3DColoredLights;

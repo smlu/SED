@@ -117,6 +117,7 @@ type
   TThing = class
     private
       Function GetFlags: longint;
+      Function GetLight: TColorF;
     public
 
       ID: integer; { Unique ID. Used in Undo }
@@ -133,6 +134,7 @@ type
       bbox: TThingBox;
 
       Property flags: longint read GetFlags;
+      Property light: TColorF read GetLight;
 
       Constructor Create;
       Destructor Destroy; override;
@@ -532,7 +534,32 @@ begin
     tfv := Templates.GetTPLField(name, 'thingflags');
 
   if (tfv <> nil) and (tfv.vtype = vt_flag) then
-    Result :=  tfv.int;
+    Result := tfv.int;
+end;
+
+Function TThing.GetLight: TColorF;
+  var tfv: TTPLValue;
+begin
+  Result := ColorBlack;
+  var i := vals.IndexOfName('light');
+  if i > -1 then
+    tfv := vals[i]
+  else
+    tfv := Templates.GetTPLField(name, 'light');
+
+  if (tfv <> nil) then
+    if (CurrentProject = IJIM) then
+      ValColor(tfv.s, Result)
+    else
+      begin
+        if tfv.vtype = vt_float then
+          Result := IntensityToColor(tfv.float)
+        else
+          begin
+            ValSingle(tfv.s, Result.a);
+            Result := IntensityToColor(Result.a);
+          end;
+      end;
 end;
 
 
