@@ -1827,7 +1827,7 @@ Function TItemEdit.DoPickColor(initColor: TColorF): TColorF;
   c: TColorF;
 begin
   Result := initColor;
-  initColor.Clamp; // make sure all color components has valid ranges 0.0 - 1.0
+  initColor.Normalize; // make sure all color components has valid ranges 0.0 - 1.0
 
   ColorDlg.Color := RGB(
     Round(initColor.r * 255),

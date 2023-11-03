@@ -25,8 +25,8 @@ Type
     class operator Divide(a: TColorF; b: single): TColorF;
     class operator Equal(a, b: TColorF): Boolean;
     class operator NotEqual(a, b: TColorF): Boolean;
-    Procedure Clamp; overload;
-    Procedure Clamp(min, max: TColorF); overload;
+    Procedure Normalize;
+    Procedure Clamp(min, max: TColorF);
     Procedure SetToZero;
     Function IsBrighter(c: TColorF): Boolean;
     Function ToJedColor: TJedColor;
@@ -175,17 +175,16 @@ Function StringListFind(const list: TStringList; const str: string; var index: I
 // Removes all entries in list that matches filter list
 Procedure StringListFilter(list: TStringList; const filter: TStringList);
 
-
 const
-  ColorBlack: TColorF = (r:0;g:0;b:0;a:1);
-  ColorBlue : TColorF  = (r:0;g:0;b:1;a:1);
-  ColorGreen : TColorF  = (r:0;g:1;b:0;a:1);
-  ColorCyan : TColorF  = (r:0;g:1;b:1;a:1);
-  ColorRed : TColorF  = (r:1;g:0;b:0;a:1);
-  ColorRedDark : TColorF  = (r:0.54;g:0;b:0;a:1);
-  ColorRedScarlet : TColorF  = (r:1;g:0.14;b:0;a:1);
-  ColorWhite: TColorF = (r:1;g:1;b:1;a:1);
-  ColorYellow: TColorF = (r:1;g:1;b:0;a:1);
+  ColorBlack: TColorF       = (r:0;g:0;b:0;a:1);
+  ColorBlue: TColorF        = (r:0;g:0;b:1;a:1);
+  ColorGreen: TColorF       = (r:0;g:1;b:0;a:1);
+  ColorCyan: TColorF        = (r:0;g:1;b:1;a:1);
+  ColorRed: TColorF         = (r:1;g:0;b:0;a:1);
+  ColorRedDark: TColorF     = (r:0.54;g:0;b:0;a:1);
+  ColorRedScarlet: TColorF  = (r:1;g:0.14;b:0;a:1);
+  ColorWhite: TColorF       = (r:1;g:1;b:1;a:1);
+  ColorYellow: TColorF      = (r:1;g:1;b:0;a:1);
 
 implementation
 
@@ -265,7 +264,7 @@ begin
   Result := not (a = b);
 end;
 
-Procedure TColorF.Clamp;
+Procedure TColorF.Normalize;
 begin
     r := ClampF_01(r);
     g := ClampF_01(g);

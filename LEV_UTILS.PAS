@@ -5709,7 +5709,7 @@ begin
       for v := 0 to surf.Vertices.count - 1 do
         With surf.txvertices[v] do
         begin
-          color.Clamp;
+          color.Normalize;
           vlight := vlight + color;
         end;
     end;

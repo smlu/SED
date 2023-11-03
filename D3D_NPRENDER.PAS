@@ -610,7 +610,7 @@ begin
 //              tu:=vxd.u;
 //              tv:=vxd.v;
 //              var lcolor := vxd.intensity + poly.extraLight;
-//              lcolor.Clamp;
+//              lcolor.Normalize;
 //              if (poly.faceflags and FF_Transluent) <> 0 then
 //                color := D3DRGBA(lcolor.r, lcolor.g, lcolor.b, lcolor.a)
 //              else

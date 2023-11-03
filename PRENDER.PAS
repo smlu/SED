@@ -932,7 +932,7 @@ begin
         begin
           ambientLight := m.sec.Ambient + m.sec.ExtraLight;
           ambientLight.a := 0;
-          ambientLight.Clamp;
+          ambientLight.Normalize;
           tint := m.sec.Tint;
         end;
 
@@ -1873,7 +1873,7 @@ begin
           end;
       end;
 
-      Result.Clamp;
+      Result.Normalize;
 end;
 
 Constructor T3DPMesh.Create;
