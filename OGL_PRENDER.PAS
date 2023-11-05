@@ -403,7 +403,7 @@ end;
 //    exit;
 //  for i := 0 to m.polys.count - 1 do
 //  begin
-//    surf := m.GetSurf(i);
+//    surf := m.GetPoly(i);
 ////    if surf.tx <> nil then
 ////    begin
 ////      case TOGLTexture(surf.tx).colorMode of
@@ -471,7 +471,7 @@ begin
   SetMatrix;
 
   { SetRenderMatrix; }
-  glgetIntegerv(GL_VIEWPORT, @vp);
+  glGetIntegerv(GL_VIEWPORT, @vp);
   glGetDoublev(GL_MODELVIEW_MATRIX, @mmx);
   glGetDoublev(GL_PROJECTION_MATRIX, @pmx);
 

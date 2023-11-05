@@ -147,7 +147,7 @@ T3DPMesh = class
   Constructor Create;
   Constructor Cube(size: float; color: TColorF);
   Destructor Destroy;override;
-  Function GetSurf(n:integer):T3DPoly;
+  Function GetPoly(n: integer): T3DPoly;
   Function AddPoly: T3DPoly;
   Procedure CalculateSphere;
 end;
@@ -829,8 +829,8 @@ begin
   fp.SetCoords(CamX+FrontPlane*fn.dx,CamY+FrontPlane*fn.dy,CamZ+FrontPlane*fn.dz);
 
   {Left plane}
-  getWorldLine(0,0,ax1,ay1,az1,ax2,ay2,az2);
-  getWorldLine(0,vheight,bx1,by1,bz1,bx2,by2,bz2);
+  GetWorldLine(0,0,ax1,ay1,az1,ax2,ay2,az2);
+  GetWorldLine(0,vheight,bx1,by1,bz1,bx2,by2,bz2);
 
   Vmult(bx1-ax1,by1-ay1,bz1-az1,
        ax2-ax1,ay2-ay1,az2-az1,
@@ -839,8 +839,8 @@ begin
   lp.SetCoords(ax1,ay1,az1);
 
   {Right plane}
-  getWorldLine(vwidth,0,ax1,ay1,az1,ax2,ay2,az2);
-  getWorldLine(vwidth,vheight,bx1,by1,bz1,bx2,by2,bz2);
+  GetWorldLine(vwidth,0,ax1,ay1,az1,ax2,ay2,az2);
+  GetWorldLine(vwidth,vheight,bx1,by1,bz1,bx2,by2,bz2);
 
   Vmult(ax2-ax1,ay2-ay1,az2-az1,
        bx1-ax1,by1-ay1,bz1-az1,
@@ -849,8 +849,8 @@ begin
   rp.SetCoords(ax1,ay1,az1);
 
   {Top plane}
-  getWorldLine(0,0,ax1,ay1,az1,ax2,ay2,az2);
-  getWorldLine(vwidth,0,bx1,by1,bz1,bx2,by2,bz2);
+  GetWorldLine(0,0,ax1,ay1,az1,ax2,ay2,az2);
+  GetWorldLine(vwidth,0,bx1,by1,bz1,bx2,by2,bz2);
 
   Vmult(ax2-ax1,ay2-ay1,az2-az1,
        bx1-ax1,by1-ay1,bz1-az1,
@@ -859,8 +859,8 @@ begin
   tp.SetCoords(ax1,ay1,az1);
 
   {Bottom plane}
-  getWorldLine(0,vheight,ax1,ay1,az1,ax2,ay2,az2);
-  getWorldLine(vwidth,vheight,bx1,by1,bz1,bx2,by2,bz2);
+  GetWorldLine(0,vheight,ax1,ay1,az1,ax2,ay2,az2);
+  GetWorldLine(vwidth,vheight,bx1,by1,bz1,bx2,by2,bz2);
 
   Vmult(bx1-ax1,by1-ay1,bz1-az1,
        ax2-ax1,ay2-ay1,az2-az1,
@@ -895,7 +895,7 @@ begin
 
       for var j:=0 to m.polys.count-1 do
         begin
-          var poly := m.GetSurf(j);
+          var poly := m.GetPoly(j);
           //if poly.geo = NotDrawn then continue;
           if poly.geo > geoMode then poly.geo := geoMode;
           if poly.light > lightMode then poly.light := lightMode;
@@ -922,7 +922,7 @@ end;
 
 Procedure TNewPRenderer.RenderThings(const [Ref] frustrum: TClipFrustum);
 begin
-  for var i:=0 to ThList.count-1 do
+  for var i:=0 to ThList.count - 1 do
     begin
       var m := ThList[i];
       if m=nil then continue;
@@ -932,7 +932,7 @@ begin
       var tint := ColorBlack;
       if (m.sec <> nil)then
         begin
-          ambientLight := m.extraLight + m.sec.Ambient + m.sec.ExtraLight;
+          ambientLight   := m.extraLight + m.sec.Ambient + m.sec.ExtraLight;
           ambientLight.a := 0;
           ambientLight.Normalize;
           tint := m.sec.Tint;
@@ -940,7 +940,7 @@ begin
 
       for var j:=0 to m.polys.count-1 do
         begin
-          var poly := m.GetSurf(j);
+          var poly := m.GetPoly(j);
           if poly.geo = NotDrawn then continue;
           if poly.geo > geoMode then poly.geo := geoMode;
           if poly.light > lightMode then poly.light := lightMode;
@@ -1058,14 +1058,14 @@ Procedure TNewPRenderer.RenderSelection(const [Ref] frustrum: TClipFrustum);
       if m = nil then exit;      
       if not IsInFront(frustrum, m) then exit;
       for var j := 0 to m.polys.count - 1 do
-        rdCache.AddPoly(m.GetSurf(j));
+        rdCache.AddPoly(m.GetPoly(j));
     end;
 
   Procedure AddMeshSurface(m: T3DPMesh; surfIdx: integer);
     begin
       if not IsInFront(frustrum, m) then exit;
       if surfIdx > m.polys.Count - 1 then exit;
-      rdCache.AddPoly(m.GetSurf(surfIdx));
+      rdCache.AddPoly(m.GetPoly(surfIdx));
     end;
 
   Procedure AddSectorMesh(secNum: integer);
@@ -1080,7 +1080,7 @@ Procedure TNewPRenderer.RenderSelection(const [Ref] frustrum: TClipFrustum);
       if not IsInFront(frustrum, m) then exit;
 
       if surfIdx >= m.polys.Count then exit;
-      rdCache.AddPoly(m.GetSurf(surfIdx));
+      rdCache.AddPoly(m.GetPoly(surfIdx));
     end;
 
   Procedure AddThingMesh(thNum: integer);
@@ -1302,93 +1302,95 @@ var
     m:T3DPMesh;
     lvec:TVector;
 
-Function GetIntersectingSurf(m:T3DPMesh;var cdist:double):Integer;
+Function GetIntersectingSurf(m: T3DPMesh; var cdist: double): Integer;
 var
-    a,b,c2:double;
-    ax,ay,az:double;
-    cv:TVector;
-    i:integer;
-    s:T3DPoly;
-    vxd:TVXDets;
-    dist:double;
+    a,b,c2: double;
+    ax,ay,az: double;
+    cv: TVector;
+    i: integer;
+    p: T3DPoly;
+    vxd: TVXDets;
+    dist: double;
 begin
- result:=-1;
- if m=nil then exit;
- cv.SetCoords(m.center.x-ax1,m.center.y-ay1,m.center.z-az1);
- c2:=sqr(cv.dx)+sqr(cv.dy)+sqr(cv.dz);
- a:=SMult(lvec.dx,lvec.dy,lvec.dz,cv.dx,cv.dy,cv.dz);
+ Result := -1;
+ if m = nil then exit;
+ cv.SetCoords(m.center.x - ax1, m.center.y - ay1, m.center.z - az1);
+ c2 := sqr(cv.dx) + sqr(cv.dy) + sqr(cv.dz);
+ a  := SMult(lvec.dx, lvec.dy, lvec.dz, cv.dx, cv.dy, cv.dz);
 
- if a<(-m.radius) then exit; {If behind the plane}
+ if a < (-m.radius) then exit; {If behind the plane}
 
- b:=sqrt(c2-sqr(a));
- if b>m.radius then exit; {if look line doesn't intersect bounding sphere}
+ b := sqrt(c2 - sqr(a));
+ if b > m.radius then exit; {if look line doesn't intersect bounding sphere}
 
- for i:=0 to m.polys.count-1 do
- begin
-  s:=m.getSurf(i);
-  if s.geo < Wireframe then continue;
+ for i := 0 to m.polys.count - 1 do
+   begin
+    p := m.GetPoly(i);
+    if p.geo < Wireframe then continue;
 
-  if SMult(s.normal.dx,s.normal.dy,s.normal.dz,lvec.dx,lvec.dy,lvec.dz)>0 then continue;
+    if SMult(p.normal.dx, p.normal.dy, p.normal.dz, lvec.dx, lvec.dy, lvec.dz) > 0 then continue;
 
-  if s.vxds.count=0 then continue;
-  vxd:=s.getVXD(0);
-  if Not PlaneLineXnNew(s.normal,vxd.X,vxd.y,vxd.z,ax1,ay1,az1,ax2,ay2,az2,ax,ay,az)
-   then continue;
+    if p.vxds.count = 0 then continue;
+    vxd := p.getVXD(0);
+    if Not PlaneLineXnNew(p.normal, vxd.X, vxd.y, vxd.z, ax1, ay1, az1, ax2, ay2, az2, ax, ay, az)
+     then continue;
 
-   {Debug version}
-{   if not IsPointOn3DPSurf(s,ax,ay,az) then continue;
-   dist:=SMult(ax-ax1,ay-ay1,az-az1,lvec.dx,lvec.dy,lvec.dz);
-  if dist<0 then continue;
-  if dist>cdist then continue;}
+     {Debug version}
+  {   if not IsPointOn3DPSurf(s,ax,ay,az) then continue;
+     dist:=SMult(ax-ax1,ay-ay1,az-az1,lvec.dx,lvec.dy,lvec.dz);
+    if dist<0 then continue;
+    if dist>cdist then continue;}
 
+    dist := SMult(ax - ax1, ay - ay1, az - az1, lvec.dx, lvec.dy, lvec.dz);
+    if dist < 0 then continue;
+    if dist > cdist then continue;
+    if not IsPointOn3DPSurf(p, ax, ay, az) then continue;
 
-
-   dist:=SMult(ax-ax1,ay-ay1,az-az1,lvec.dx,lvec.dy,lvec.dz);
-  if dist<0 then continue;
-  if dist>cdist then continue;
-  if not IsPointOn3DPSurf(s,ax,ay,az) then continue;
-
-
-  cdist:=dist;
-  result:=i;
- end
+    cdist  := dist;
+    Result := i;
+   end
 end;
 
 begin
- cdist:=1E100;
- result:=pk_nothing;
+ cdist := 1E100;
+ result := pk_nothing;
 
  //getWorldLine(0,0,ax1,ay1,az1,ax2,ay2,az2);
 
- getWorldLine(X,Y,ax1,ay1,az1,ax2,ay2,az2);
+ GetWorldLine(X,Y,ax1,ay1,az1,ax2,ay2,az2);
  lvec.SetCoords(ax2-ax1,ay2-ay1,az2-az1);
  Normalize(Lvec);
 
- for i:=0 to sclist.count-1 do
+ var frustum := GetCameraFrustum;
+
+ for i := 0 to sclist.count - 1 do
  begin
-  m:=sclist[i];
-  n:=GetIntersectingSurf(m,cdist);
-  if n=-1 then continue;
-  result:=pk_surface;
-  selSC:=Sectors[i];
-  selSF:=n;
-  for j:=0 to selSC.Surfaces.count-1 do
-   if selSC.surfaces[j].D3DID=n then
+  m := sclist[i];
+  n := GetIntersectingSurf(m, cdist);
+  if n = -1 then continue;
+
+  result := pk_surface;
+  selSC  := Sectors[i];
+  selSF  := n;
+  for j := 0 to selSC.Surfaces.count - 1 do
+   if selSC.surfaces[j].D3DID = n then
+     begin
+      SelSF := j;
+      break;
+     end;
+ end;
+
+ for i := 0 to thlist.count - 1 do
    begin
-    SelSF:=j;
-    break;
+    m := thlist[i];
+    if not IsInFront(frustum, m) then continue;
+
+    n := GetIntersectingSurf(m, cdist);
+    if n = -1 then continue;
+
+    result := pk_thing;
+    selTH  := Things[i];
    end;
- end;
-
- for i:=0 to thlist.count-1 do
- begin
-  m:=thlist[i];
-  n:=GetIntersectingSurf(m,cdist);
-  if n=-1 then continue;
-  result:=pk_thing;
-  selTH:=Things[i];
- end;
-
 end;
 
 
@@ -1481,91 +1483,91 @@ begin
  {getMem(vxs,sizeof(T3DPVertex)*s.vertices.count);}
 
   for var i:=0 to sec.surfaces.count-1 do
-  With sec.surfaces[i] do
-  begin
-    //if (sec.Flags and SECF_3DO) = 0
-      //then if (geo = 0) then begin D3DID:=-1; continue; end;
-
-    poly              := Result.AddPoly;
-    poly.faceflags    := FaceFlags;
-    poly.geo          := TGeoMode(geo);
-    poly.light        := TLightMode(light);
-    poly.ambientLight := sec.ExtraLight;
-    poly.extraLight   := ExtraLight;
-    poly.tint         := sec.Tint;
-
-    poly.normal := normal;
-    if BitTest(sec.Flags, SECF_3DO) then
-      poly.normal.SetCoords(-normal.dx, -normal.dy, -normal.dz);
-
-    // Make sky poly unlit
-    if BitTest(sec.Flags, SECF_3DO) or
-      BitTest(SurfFlags, SF_SkyHorizon) or
-      BitTest(SurfFlags, SF_SkyCeiling) then
-      poly.light := TLightMode.None;
-
-    if sec.level.kind = JKDF2 then // JKDF2 doesn't support tex clamping?
-      poly.faceflags := LongInt(poly.faceflags and not(FF_TexClampX or FF_TexClampY));
-
-    // Mark poly to render fog (IJIM)
-    if FlagsNotSet(SurfFlags, SF_SkyHorizon or SF_SkyCeiling) then
-      poly.faceflags := LongInt(poly.faceflags or FF_IJIM_FogEnabled);
-
-    // Mark poly as floor or has collision
-    const sfFloor = SF_Floor or SF_Collision;
-    if Adjoin <> nil then
+    With sec.surfaces[i] do
       begin
-        poly.faceflags := LongInt(poly.faceflags or FF_RD_Adjoin);
-        if ((AdjoinFlags and not SAF_Move) = AdjoinFlags) or BitTest(AdjoinFlags, SAF_NoPlayerMove) then
-          poly.faceflags := LongInt(poly.faceflags or FF_RD_SolidSurfaceWf);
-      end
-    else if BitTest(SurfFlags, sfFloor) then
-      poly.faceflags := LongInt(poly.faceflags or FF_RD_FloorWf)
-    else if BitTest(SurfFlags, SF_Collision) then
-      poly.faceflags := LongInt(poly.faceflags or FF_RD_SolidSurfaceWf);
+        //if (sec.Flags and SECF_3DO) = 0
+          //then if (geo = 0) then begin D3DID:=-1; continue; end;
 
-    // Mark poly as special
-    if IsSpecialSurface(sec.surfaces[i]) then
-      poly.faceflags := LongInt(poly.faceflags or FF_RD_SpecialSurfaceWf);
+        poly              := Result.AddPoly;
+        poly.faceflags    := FaceFlags;
+        poly.geo          := TGeoMode(geo);
+        poly.light        := TLightMode(light);
+        poly.ambientLight := sec.ExtraLight;
+        poly.extraLight   := ExtraLight;
+        poly.tint         := sec.Tint;
 
-    D3DID := Result.polys.count-1;
-    Try
-      poly.tx := nil;
-      if Length(Material) > 0 then
-        poly.tx := GetTexture(Material, sec.ColorMap);
-    except
-      on E:Exception do PanMessage(mt_warning,
-        Format('Cannot load %s for sector %d surface %d: %s',[Material,sec.num,i,e.message]));
-    end;
+        poly.normal := normal;
+        if BitTest(sec.Flags, SECF_3DO) then
+          poly.normal.SetCoords(-normal.dx, -normal.dy, -normal.dz);
 
-    if (poly.tx <> nil) and (poly.tx.ci.alphaBPP = 1) then
-      poly.faceflags := LongInt(poly.faceflags or FF_RD_AlphaRef);
+        // Make sky poly unlit
+        if BitTest(sec.Flags, SECF_3DO) or
+          BitTest(SurfFlags, SF_SkyHorizon) or
+          BitTest(SurfFlags, SF_SkyCeiling) then
+          poly.light := TLightMode.None;
 
-    var nvx := Vertices.Count;
-    var nv: integer;
-    //if nvx>24 then nvx:=24;
+        if sec.level.kind = JKDF2 then // JKDF2 doesn't support tex clamping?
+          poly.faceflags := LongInt(poly.faceflags and not(FF_TexClampX or FF_TexClampY));
 
-    for var j := 0 to nvx - 1 do
-      begin
-        if (sec.Flags and SECF_3DO)=0 then nv := j
-        else nv := nvx - j - 1;
+        // Mark poly to render fog (IJIM)
+        if FlagsNotSet(SurfFlags, SF_SkyHorizon or SF_SkyCeiling) then
+          poly.faceflags := LongInt(poly.faceflags or FF_IJIM_FogEnabled);
 
-        With TXVertices[nv] do
+        // Mark poly as floor or has collision
+        const sfFloor = SF_Floor or SF_Collision;
+        if Adjoin <> nil then
           begin
-            vd   := poly.AddVXD;
-            vd.x := Vertices[nv].x;
-            vd.y := Vertices[nv].y;
-            vd.z := Vertices[nv].z;
-            vd.intensity := color;
+            poly.faceflags := LongInt(poly.faceflags or FF_RD_Adjoin);
+            if ((AdjoinFlags and not SAF_Move) = AdjoinFlags) or BitTest(AdjoinFlags, SAF_NoPlayerMove) then
+              poly.faceflags := LongInt(poly.faceflags or FF_RD_SolidSurfaceWf);
+          end
+        else if BitTest(SurfFlags, sfFloor) then
+          poly.faceflags := LongInt(poly.faceflags or FF_RD_FloorWf)
+        else if BitTest(SurfFlags, SF_Collision) then
+          poly.faceflags := LongInt(poly.faceflags or FF_RD_SolidSurfaceWf);
 
-            if poly.tx <> nil then
+        // Mark poly as special
+        if IsSpecialSurface(sec.surfaces[i]) then
+          poly.faceflags := LongInt(poly.faceflags or FF_RD_SpecialSurfaceWf);
+
+        D3DID := Result.polys.count - 1;
+        Try
+          poly.tx := nil;
+          if Length(Material) > 0 then
+            poly.tx := GetTexture(Material, sec.ColorMap);
+        except
+          on E:Exception do PanMessage(mt_warning,
+            Format('Cannot load %s for sector %d surface %d: %s', [Material, sec.num, i ,e.message]));
+        end;
+
+        if (poly.tx <> nil) and (poly.tx.ci.alphaBPP = 1) then
+          poly.faceflags := LongInt(poly.faceflags or FF_RD_AlphaRef);
+
+        var nvx := Vertices.Count;
+        var nv: integer;
+        //if nvx>24 then nvx:=24;
+
+        for var j := 0 to nvx - 1 do
+          begin
+            if (sec.Flags and SECF_3DO) = 0 then nv := j
+            else nv := nvx - j - 1;
+
+            With TXVertices[nv] do
               begin
-                vd.u := u / poly.tx.width;
-                vd.v := v / poly.tx.height;
+                vd   := poly.AddVXD;
+                vd.x := Vertices[nv].x;
+                vd.y := Vertices[nv].y;
+                vd.z := Vertices[nv].z;
+                vd.intensity := color;
+
+                if poly.tx <> nil then
+                  begin
+                    vd.u := u / poly.tx.width;
+                    vd.v := v / poly.tx.height;
+                  end;
               end;
           end;
       end;
-  end;
 
   result.CalculateSphere;
 end;
@@ -1596,19 +1598,19 @@ begin
  With th do CreateRotMatrixs(mx,pch,yaw,rol);
  for var i := 0 to Result.polys.Count -1 do
     begin
-      with Result.GetSurf(i) do
-      for var j:=0 to vxds.Count-1 do
-      With GetVXD(j) do
-        begin
-          var ax:single := x;
-          var ay:single := y;
-          var az:single := z;
+      with Result.GetPoly(i) do
+        for var j:=0 to vxds.Count-1 do
+          With GetVXD(j) do
+            begin
+              var ax:single := x;
+              var ay:single := y;
+              var az:single := z;
 
-          MultVM3s(mx, ax, ay, az);
-          x:=th.x + ax;
-          y:=th.y + ay;
-          z:=th.z + az;
-        end;
+              MultVM3s(mx, ax, ay, az);
+              x:=th.x + ax;
+              y:=th.y + ay;
+              z:=th.z + az;
+            end;
     end;
 
  result.CalculateSphere;
@@ -2082,7 +2084,7 @@ end;
 Destructor T3DPMesh.Destroy;
 var i:integer;
 begin
-  for i:=0 to polys.count-1 do GetSurf(i).Free;
+  for i := 0 to polys.count - 1 do GetPoly(i).Free;
   polys.Free;
 end;
 
@@ -2092,9 +2094,9 @@ begin
   polys.add(Result);
 end;
 
-Function T3DPMesh.GetSurf(n:integer):T3DPoly;
+Function T3DPMesh.GetPoly(n:integer): T3DPoly;
 begin
-  Result:=T3DPoly(polys.List[n]);
+  Result := T3DPoly(polys.List[n]);
 end;
 
 Procedure T3DPMesh.CalculateSphere;
@@ -2104,54 +2106,54 @@ var i,j:integer;
     vxd:TVXDets;
     isempty:boolean;
 begin
- center.x:=0;
- center.y:=0;
- center.z:=0;
- radius:=0;
- isempty:=true;
+  center.x := 0;
+  center.y := 0;
+  center.z := 0;
+  radius   := 0;
+  isempty  := true;
 
- for i:=0 to polys.count-1 do
- begin
-  surf:=GetSurf(i);
-  for j:=0 to surf.vxds.count-1 do
+  for i := 0 to polys.count - 1 do
+    begin
+      surf := GetPoly(i);
+      for j := 0 to surf.vxds.count - 1 do
+        begin
+          vxd := surf.GetVXD(j);
+          if isempty then
+            begin
+              x1 := vxd.x; x2 := vxd.x;
+              y1 := vxd.y; y2 := vxd.y;
+              z1 := vxd.z; z2 := vxd.z;
+              isempty := false;
+              continue;
+            end;
+
+          if vxd.x < x1 then x1 := vxd.x;
+          if vxd.x > x2 then x2 := vxd.x;
+          if vxd.y < y1 then y1 := vxd.y;
+          if vxd.y > y2 then y2 := vxd.y;
+          if vxd.z < z1 then z1 := vxd.z;
+          if vxd.z > z2 then z2 := vxd.z;
+        end;
+    end;
+
+  if isempty then exit;
+
+  center.x := x1 + (x2 - x1) /2;
+  center.y := y1 + (y2 - y1) /2;
+  center.z := z1 + (z2 - z1) /2;
+
+  for i := 0 to polys.count - 1 do
   begin
-   vxd:=surf.GetVXD(j);
-   if isempty then
-   begin
-    x1:=vxd.x;x2:=vxd.x;
-    y1:=vxd.y;y2:=vxd.y;
-    z1:=vxd.z;z2:=vxd.z;
-    isempty:=false;
-    continue;
-   end;
-   if vxd.x<x1 then x1:=vxd.x;
-   if vxd.x>x2 then x2:=vxd.x;
-   if vxd.y<y1 then y1:=vxd.y;
-   if vxd.y>y2 then y2:=vxd.y;
-   if vxd.z<z1 then z1:=vxd.z;
-   if vxd.z>z2 then z2:=vxd.z;
+    surf := GetPoly(i);
+    for j := 0 to surf.vxds.count - 1 do
+      begin
+        vxd := surf.GetVXD(j);
+        x1 := sqr(vxd.x - center.x) + sqr(vxd.y - center.y) + sqr(vxd.z - center.z);
+        if x1 > radius then radius := x1;
+      end;
   end;
- end;
 
- if isempty then exit;
-
- center.x:=x1+(x2-x1)/2;
- center.y:=y1+(y2-y1)/2;
- center.z:=z1+(z2-z1)/2;
-
- for i:=0 to polys.count-1 do
- begin
-  surf:=GetSurf(i);
-  for j:=0 to surf.vxds.count-1 do
-   begin
-    vxd:=surf.GetVXD(j);
-    x1:=sqr(vxd.x-center.x)+sqr(vxd.y-center.y)+sqr(vxd.z-center.z);
-    if x1>radius then radius:=x1;
-   end;
- end;
-
-
- radius:=sqrt(radius);
+  radius := sqrt(radius);
 end;
 
 

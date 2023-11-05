@@ -844,7 +844,7 @@ end;
 // if m=nil then exit;
 // for i:=0 to m.polys.count-1 do
 //   begin
-//    surf:=m.GetSurf(i);
+//    surf:=m.GetPoly(i);
 //    SetRendererState(surf.faceflags);
 //
 //    TD3Dtexture(surf.tx).SetCurrent;

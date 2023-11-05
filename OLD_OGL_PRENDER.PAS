@@ -676,9 +676,9 @@ begin
   then if (geo=0) or (Material='') then begin D3DID:=-1; continue; end;
 
   nvx:=Vertices.Count;
-  if nvx>24 then nvx:=24;
+  if nvx > 24 then nvx := 24;
 
-  D3DID:=i;
+  D3DID := i;
   ttx:=nil;
   Try
    ttx:=LoadOGLTexture(Material,s.ColorMap);
