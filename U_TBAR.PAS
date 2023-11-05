@@ -111,7 +111,7 @@ var
 
 implementation
 
-uses GlobalVars, Misc_Utils, Jed_Main, FieldEdit, U_Options;
+uses GlobalVars, Misc_Utils, Jed_Main, FieldEdit, U_Options, U_Preview;
 
 {$R *.DFM}
 
@@ -307,6 +307,7 @@ begin
 
   LVLayers.SetFocus;
   JedMain.Invalidate;
+  Preview3D.ReloadLevel;
 end;
 
 procedure TToolbar.BNHideClick(Sender: TObject);
@@ -334,6 +335,7 @@ begin
   LVLayers.Items.EndUpdate;
   LVLayers.SetFocus;
   JedMain.Invalidate;
+  Preview3D.ReloadLevel;
 end;
 
 procedure TToolbar.LVLayersChange(Sender: TObject; Item: TListItem;
