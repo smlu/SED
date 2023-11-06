@@ -140,7 +140,6 @@ T3DPMesh = class
   center: T3DPVertex;
   radius: single;
 
-  objNum: integer; // the number of object to which this mesh belongs (i.e. sector/thing num)
   sec: TJKSector;
   extraLight: TColorF;
 
@@ -733,8 +732,8 @@ end;
 Procedure TNewPRenderer.DeleteSector(s:TJKSector);
 var i:integer;
 begin
- i:=sectors.indexof(s);
- if i<0 then exit;
+ i := sectors.indexof(s);
+ if i < 0 then exit;
  scList[i].Free;
  Sectors.Delete(i);
  scList.Delete(i);
@@ -1071,23 +1070,19 @@ begin
 end;
 
 Procedure TNewPRenderer.RenderSelection(const [Ref] frustrum: TClipFrustum);
-
-  Function GetMeshForObjNum(list: TMeshes; num: integer): T3DPMesh;
+  Function GetMesh(meshes: TMeshes; objects: TList; obj: TObject; objNum: integer): T3DPMesh;
   begin
     Result := nil;
     if P3DVisLayers then
       begin
-        for var i := 0 to list.Count - 1 do
-          if list[i].objNum = num then
-            begin
-              Result := list[i];
-              exit;
-            end;
+        var i := objects.IndexOf(obj);
+        if i < 0 then exit;
+        Result := meshes[i]
       end
     else
       begin
-        if num < list.Count then
-          Result := list[num];
+        if objNum < meshes.Count then
+          Result := meshes[objNum];
       end;
   end;
 
@@ -1108,12 +1103,12 @@ Procedure TNewPRenderer.RenderSelection(const [Ref] frustrum: TClipFrustum);
 
   Procedure AddSectorMesh(secNum: integer);
     begin
-      AddMesh(GetMeshForObjNum(SCList, secNum));
+      AddMesh(GetMesh(SCList, sectors, Level.Sectors[secNum], secNum));
     end;
 
   Procedure AddSectorSurface(secNum: integer; surfIdx: integer);
     begin
-      var m := GetMeshForObjNum(SCList, secNum);
+      var m := GetMesh(SCList, sectors, Level.Sectors[secNum], secNum);
       if m = nil then exit;
       if not IsInFront(frustrum, m) then exit;
 
@@ -1123,7 +1118,7 @@ Procedure TNewPRenderer.RenderSelection(const [Ref] frustrum: TClipFrustum);
 
   Procedure AddThingMesh(thNum: integer);
     begin
-      AddMesh(GetMeshForObjNum(THList, thNum));
+      AddMesh(GetMesh(THList, things, Level.Things[thNum], thNum));
     end;
 
 begin
@@ -1518,7 +1513,6 @@ var poly:T3DPoly;
 begin
   DisableFPUExceptions;
   Result        := T3DPMesh.Create;
-  Result.objNum := sec.num;
   Result.sec    := sec;
  {getMem(vxs,sizeof(T3DPVertex)*s.vertices.count);}
 
@@ -1631,7 +1625,6 @@ begin
  // Functions crates mesh for Things without 3DO models, e.g. ghost Thing
 
  Result        := T3DPMesh.Cube(0.015, MakeColor(0.89, 0.89, 0.89));
- Result.objNum := th.num;
  // assigning sector is skipped so colors won't apply
 
  // Translate and rotate object
@@ -1670,7 +1663,6 @@ begin
   if th.a3DO = nil then exit;
 
   Result        := T3DPMesh.Create;
-  Result.objNum := th.num;
   Result.sec    := th.sec;
 
   var thlight := th.light;
@@ -1784,7 +1776,6 @@ begin
  if (a3do = nil) then exit;
 
  Result        := T3DPMesh.Create;
- Result.objNum := th.num;
  Result.sec    := th.Sec;
 
  With th do CreateRotMatrixS(mx, pch, yaw, rol);
@@ -1890,8 +1881,6 @@ begin
 
   polys.Add(poly);
 end;
-
-
 
 Procedure TNewPRenderer.FlushCaches;
 begin
