@@ -1,7 +1,7 @@
 unit jed_plugins;
 
 interface
-  uses GlobalVars, misc_utils, J_Level;
+
 const
    CloseEnough=10e-5;
    {Get/SetLevelHeader flags}
@@ -18,8 +18,7 @@ const
    lh_GouraudDist=$400;
    lh_ppu=$800;
    lh_MasterCMP=$1000;
-   lh_Fog=$2000;
-   lh_all=$2FFF;
+   lh_all=$1FFF;
 
    {Get/SetSector flags}
    s_flags=1;
@@ -157,7 +156,7 @@ js_JEDDir=2;
 js_CDDir=3;
 js_GameDir=4;
 js_LevelFile=5;
-js_jedregkey=6; // deprecated, use js_confile
+js_jedregkey=6;
 js_LECLogo=7;
 js_recent1=8;
 js_recent2=9;
@@ -169,7 +168,6 @@ js_spgob=14;
 js_mp1gob=15;
 js_mp2gob=16;
 js_mp3gob=17;
-js_confile=18;
 
 {GetJEDWindow constants}
 jw_Main=0;
@@ -249,18 +247,18 @@ end;
   LODDist:array[0..3] of double;
   PerspDist, GouraudDist:double;
   PixelPerUnit:double;
-  MasterCMP:pchar;
-  {SED 0.1.0}
-  Fog: TFog;
+  MasterCMP:PAnsiChar;
  end;
 
  TJEDSectorRec=record
   Flags:longint;
-  Ambient:TColorF;
-  ExtraLight:TColorF;
-  ColorMap:pchar;
-  Tint:TColorF;
-  Sound:pchar;
+  Ambient:double;
+  extra:double;
+  ColorMap:PAnsiChar;
+  Tint_r,
+  Tint_g,
+  Tint_b:single;
+  Sound:PAnsiChar;
   snd_vol:double;
   layer:longint;
  end;
@@ -269,14 +267,14 @@ end;
   adjoinSC,AdjoinSF:longint;
   AdjoinFlags:Longint;
   SurfFlags,FaceFlags:Longint;
-  Material:PChar;
+  Material:PAnsiChar;
   geo,light,tex:longint;
-  ExtraLight:TColorF;
+  ExtraLight:double;
   uscale,vscale:single;
  end;
 
  TJEDThingRec=record
-  name:Pchar;
+  name:PAnsiChar;
   Sector:Longint;
   X,Y,Z:double;
   PCH,YAW,ROL:Double;
@@ -426,39 +424,39 @@ end;
 
   {Layers}
   Function NLayers:integer;virtual;stdcall;abstract;
-  Function GetLayerName(n:integer):pchar;virtual;stdcall;abstract;
-  Function AddLayer(name:Pchar):integer;virtual;stdcall;abstract;
+  Function GetLayerName(n:integer):PAnsiChar;virtual;stdcall;abstract;
+  Function AddLayer(name:PAnsiChar):integer;virtual;stdcall;abstract;
 
   {0.92}
 
   Function NTHingValues(th:integer):integer;virtual;stdcall;abstract;
-  Function GetThingValueName(th,n:Integer):pchar;virtual;stdcall;abstract;
-  Function GetThingValueData(th,n:integer):pchar;virtual;stdcall;abstract;
-  Procedure SetThingValueData(th,n:Integer;val:pchar);virtual;stdcall;abstract;
+  Function GetThingValueName(th,n:Integer):PAnsiChar;virtual;stdcall;abstract;
+  Function GetThingValueData(th,n:integer):PAnsiChar;virtual;stdcall;abstract;
+  Procedure SetThingValueData(th,n:Integer;val:PAnsiChar);virtual;stdcall;abstract;
 
   Procedure GetThingFrame(th,n:Integer;var x,y,z,pch,yaw,rol:double);virtual;stdcall;abstract;
   Procedure SetThingFrame(th,n:Integer;x,y,z,pch,yaw,rol:double);virtual;stdcall;abstract;
 
-  Function AddThingValue(th:integer;name,val:pchar):integer;virtual;stdcall;abstract;
-  Procedure InsertThingValue(th,n:Integer;name,val:pchar);virtual;stdcall;abstract;
+  Function AddThingValue(th:integer;name,val:PAnsiChar):integer;virtual;stdcall;abstract;
+  Procedure InsertThingValue(th,n:Integer;name,val:PAnsiChar);virtual;stdcall;abstract;
   Procedure DeleteThingValue(th,n:integer);virtual;stdcall;abstract;
 
   {COGs}
-  Function AddCOG(name:pchar):Integer;virtual;stdcall;abstract;
+  Function AddCOG(name:PAnsiChar):Integer;virtual;stdcall;abstract;
   Procedure DeleteCOG(n:integer);virtual;stdcall;abstract;
   Procedure UpdateCOG(cg:integer);virtual;stdcall;abstract;
 
-  Function GetCOGFileName(cg:integer):pchar;virtual;stdcall;abstract;
+  Function GetCOGFileName(cg:integer):PAnsiChar;virtual;stdcall;abstract;
   Function NCOGValues(cg:integer):integer;virtual;stdcall;abstract;
 
-  Function GetCOGValueName(cg,n:Integer):pchar;virtual;stdcall;abstract;
+  Function GetCOGValueName(cg,n:Integer):PAnsiChar;virtual;stdcall;abstract;
   Function GetCOGValueType(cg,n:Integer):integer;virtual;stdcall;abstract;
 
-  Function GetCOGValue(cg,n:Integer):pchar;virtual;stdcall;abstract;
-  Function SetCOGValue(cg,n:Integer;val:pchar):boolean;virtual;stdcall;abstract;
+  Function GetCOGValue(cg,n:Integer):PAnsiChar;virtual;stdcall;abstract;
+  Function SetCOGValue(cg,n:Integer;val:PAnsiChar):boolean;virtual;stdcall;abstract;
 
-  Function AddCOGValue(cg:integer;name,val:pchar;vtype:integer):integer;virtual;stdcall;abstract;
-  Procedure InsertCOGValue(cg,n:Integer;name,val:pchar;vtype:integer);virtual;stdcall;abstract;
+  Function AddCOGValue(cg:integer;name,val:PAnsiChar;vtype:integer):integer;virtual;stdcall;abstract;
+  Procedure InsertCOGValue(cg,n:Integer;name,val:PAnsiChar;vtype:integer);virtual;stdcall;abstract;
   Procedure DeleteCOGValue(cg,n:integer);virtual;stdcall;abstract;
 
  end;
@@ -489,8 +487,8 @@ end;
   Procedure GetCurFR(var th,fr:integer);virtual;stdcall;abstract;
   Procedure SetCurFR(th,fr:integer);virtual;stdcall;abstract;
 
-  Procedure NewLevel(kind:TProjectType);virtual;stdcall;abstract; // SED 0.1.0
-  Procedure LoadLevel(name:pchar);virtual;stdcall;abstract;
+  Procedure NewLevel(mots:boolean);virtual;stdcall;abstract;
+  Procedure LoadLevel(name:PAnsiChar);virtual;stdcall;abstract;
 
   {Different level editing functions}
 
@@ -532,7 +530,7 @@ end;
   Function UnAdjoin(sc,sf:integer):Boolean;virtual;stdcall;abstract;
   Function CreateCubicSector(x,y,z:double;const pnormal,edge:TJEDVector):integer;virtual;stdcall;abstract;
 
-  Procedure StartUndo(name:pchar);virtual;stdcall;abstract;
+  Procedure StartUndo(name:PAnsiChar);virtual;stdcall;abstract;
   Procedure SaveUndoForThing(n:integer;change:integer);virtual;stdcall;abstract;
   Procedure SaveUndoForLight(n:integer;change:integer);virtual;stdcall;abstract;
   Procedure SaveUndoForSector(n:integer;change:integer;whatpart:integer);virtual;stdcall;abstract;
@@ -572,69 +570,67 @@ end;
   Function FindSelectedLT(lt:integer):integer;virtual;stdcall;abstract;
 
 
-  Procedure SaveJED(name:pchar);virtual;stdcall;abstract;
-  Procedure SaveJKL(name:pchar);virtual;stdcall;abstract;
+  Procedure SaveJED(name:PAnsiChar);virtual;stdcall;abstract;
+  Procedure SaveJKL(name:PAnsiChar);virtual;stdcall;abstract;
   Procedure UpdateMap;virtual;stdcall;abstract;
-  Procedure SetPickerCMP(cmp:pchar);virtual;stdcall;abstract;
-  Function PickResource(what:integer;cur:pchar):pchar;virtual;stdcall;abstract;
+  Procedure SetPickerCMP(cmp:PAnsiChar);virtual;stdcall;abstract;
+  Function PickResource(what:integer;cur:PAnsiChar):PAnsiChar;virtual;stdcall;abstract;
   Function EditFlags(what:integer;flags:LongInt):LongInt;virtual;stdcall;abstract;
 
   Procedure ReloadTemplates;virtual;stdcall;abstract;
-  Procedure PanMessage(mtype:integer;msg:pchar);virtual;stdcall;abstract;
+  Procedure PanMessage(mtype:integer;msg:PAnsiChar);virtual;stdcall;abstract;
   Procedure SendKey(shift:integer;key:integer);virtual;stdcall;abstract;
-  Function ExecuteMenu(itemref:pchar):boolean;virtual;stdcall;abstract;
-  Function GetJEDSetting(name:pchar):variant;virtual;stdcall;abstract;
+  Function ExecuteMenu(itemref:PAnsiChar):boolean;virtual;stdcall;abstract;
+  Function GetJEDSetting(name:PAnsiChar):variant;virtual;stdcall;abstract;
   Function IsLayerVisible(n:integer):boolean;virtual;stdcall;abstract;
 
   procedure CheckConsistencyErrors;virtual;stdcall;abstract;
   procedure CheckResources;virtual;stdcall;abstract;
   Function NConsistencyErrors:integer;virtual;stdcall;abstract;
-  Function GetConsErrorString(n:integer):pchar;virtual;stdcall;abstract;
+  Function GetConsErrorString(n:integer):PAnsiChar;virtual;stdcall;abstract;
   Function GetConsErrorType(n:integer):integer;virtual;stdcall;abstract;
   Function GetConsErrorSector(n:integer):integer;virtual;stdcall;abstract;
   Function GetConsErrorSurface(n:integer):integer;virtual;stdcall;abstract;
   Function GetConsErrorThing(n:integer):integer;virtual;stdcall;abstract;
   Function GetConsErrorCog(n:integer):integer;virtual;stdcall;abstract;
   Function IsPreviewActive:boolean;virtual;stdcall;abstract;
-  Function GetJEDString(what:integer):pchar;virtual;stdcall;abstract;
-  Function GetIsMOTS:boolean;virtual;stdcall;abstract;     // deprecated
-  Procedure SetIsMOTS(mots:boolean);virtual;stdcall;abstract;  // deprecated
-  Function GetProjectType:TProjectType;virtual;stdcall;abstract;   // SED 0.1.0
-  Procedure SetProjectType(kind:TProjectType);virtual;stdcall;abstract;  // SED 0.1.0
+  Function GetJEDString(what:integer):PAnsiChar;virtual;stdcall;abstract;
+  Function GetIsMOTS:boolean;virtual;stdcall;abstract;
+  Procedure SetIsMOTS(mots:boolean);virtual;stdcall;abstract;
 
   {0.93}
   Function GetJedWindow(whichone:integer):integer;virtual;stdcall;abstract;
 
-  Function FileExtractExt(path:pchar):pchar;virtual;stdcall;abstract;
-  Function FileExtractPath(path:pchar):pchar;virtual;stdcall;abstract;
-  Function FileExtractName(path:pchar):pchar;virtual;stdcall;abstract;
-  Function FindProjectDirFile(name:pchar):pchar;virtual;stdcall;abstract;
-  Function IsFileContainer(path:pchar):boolean;virtual;stdcall;abstract;
-  Function IsFileInContainer(path:pchar):Boolean;virtual;stdcall;abstract;
+  Function FileExtractExt(path:PAnsiChar):PAnsiChar;virtual;stdcall;abstract;
+  Function FileExtractPath(path:PAnsiChar):PAnsiChar;virtual;stdcall;abstract;
+  Function FileExtractName(path:PAnsiChar):PAnsiChar;virtual;stdcall;abstract;
+  Function FindProjectDirFile(name:PAnsiChar):PAnsiChar;virtual;stdcall;abstract;
+  Function IsFileContainer(path:PAnsiChar):boolean;virtual;stdcall;abstract;
+  Function IsFileInContainer(path:PAnsiChar):Boolean;virtual;stdcall;abstract;
 
-  Function FileOpenDialog(fname:pchar;filter:pchar):pchar;virtual;stdcall;abstract;
+  Function FileOpenDialog(fname:PAnsiChar;filter:PAnsiChar):PAnsiChar;virtual;stdcall;abstract;
 
-  Function OpenFile(name:pchar):integer;virtual;stdcall;abstract;
-  Function OpenGameFile(name:pchar):integer;virtual;stdcall;abstract;
+  Function OpenFile(name:PAnsiChar):integer;virtual;stdcall;abstract;
+  Function OpenGameFile(name:PAnsiChar):integer;virtual;stdcall;abstract;
   Function ReadFile(handle:integer;buf:pointer;size:longint):integer;virtual;stdcall;abstract;
   Procedure SetFilePos(handle:integer;pos:longint);virtual;stdcall;abstract;
   Function GetFilePos(handle:integer):longint;virtual;stdcall;abstract;
   Function GetFileSize(handle:integer):longint;virtual;stdcall;abstract;
-  Function GetFileName(handle:integer):pchar;virtual;stdcall;abstract;
+  Function GetFileName(handle:integer):PAnsiChar;virtual;stdcall;abstract;
   Procedure CloseFile(handle:integer);virtual;stdcall;abstract;
 
-  Function OpenTextFile(name:pchar):integer;virtual;stdcall;abstract;
-  Function OpenGameTextFile(name:pchar):integer;virtual;stdcall;abstract;
-  Function GetTextFileName(handle:integer):pchar;virtual;stdcall;abstract;
-  Function ReadTextFileString(handle:integer):pchar;virtual;stdcall;abstract;
+  Function OpenTextFile(name:PAnsiChar):integer;virtual;stdcall;abstract;
+  Function OpenGameTextFile(name:PAnsiChar):integer;virtual;stdcall;abstract;
+  Function GetTextFileName(handle:integer):PAnsiChar;virtual;stdcall;abstract;
+  Function ReadTextFileString(handle:integer):PAnsiChar;virtual;stdcall;abstract;
   Function TextFileEof(handle:integer):boolean;virtual;stdcall;abstract;
   Function TextFileCurrentLine(handle:integer):integer;virtual;stdcall;abstract;
   Procedure CloseTextFile(handle:integer);virtual;stdcall;abstract;
 
-  Function OpenGOB(name:pchar):integer;virtual;stdcall;abstract;
+  Function OpenGOB(name:PAnsiChar):integer;virtual;stdcall;abstract;
   Function GOBNFiles(handle:integer):integer;virtual;stdcall;abstract;
-  Function GOBNFileName(handle:integer;n:integer):pchar;virtual;stdcall;abstract;
-  Function GOBNFullFileName(handle:integer;n:integer):pchar;virtual;stdcall;abstract;
+  Function GOBNFileName(handle:integer;n:integer):PAnsiChar;virtual;stdcall;abstract;
+  Function GOBNFullFileName(handle:integer;n:integer):PAnsiChar;virtual;stdcall;abstract;
   Function GOBGetFileSize(handle:integer;n:integer):longint;virtual;stdcall;abstract;
   Function GOBGetFileOffset(handle:integer;n:integer):longint;virtual;stdcall;abstract;
   Procedure CloseGOB(handle:integer);virtual;stdcall;abstract;

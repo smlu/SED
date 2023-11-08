@@ -596,6 +596,3 @@ DECLARE_INTERFACE_(IJED,IUnknown)
  STDMETHOD_(IJEDWFRenderer *,CreateWFRenderer)(THIS_ int wnd, int whichone) PURE;
 
 };
-
-
-

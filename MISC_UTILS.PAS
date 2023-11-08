@@ -29,8 +29,10 @@ Type
     Procedure Clamp(min, max: TColorF);
     Procedure SetToZero;
     Function IsBrighter(c: TColorF): Boolean;
-    Function ToJedColor: TJedColor;
     Function IsZero: Boolean;
+    Function ToJedColor: TJedColor;
+    Function RgbIntensity: single;
+    Function RgbaIntensity: single;
   end;
   PColorF=^TColorF;
 
@@ -86,6 +88,7 @@ Procedure BitClear(var val: Integer; flags: Integer);
 
 Function MakeColor(r, g, b: single; a: single = 1.0): TColorF; overload;
 Function MakeColor(c: TJedColor): TColorF; overload;
+Function MakeColor(intensity: single): TColorF; overload;
 Function EncodeARGB(color: TColorF): UInt32;
 Function EncodeABGR(color: TColorF): UInt32;
 Function DecodeABGR(abgr: UInt32): TColorF;
@@ -296,16 +299,26 @@ begin
   Result := (aa > ba);
 end;
 
- Function TColorF.ToJedColor: TJedColor;
- begin
-    Result.r := ClampI(Round(r * 255), 0, 255);
-    Result.g := ClampI(Round(g * 255), 0, 255);
-    Result.b := ClampI(Round(b * 255), 0, 255);
- end;
+Function TColorF.ToJedColor: TJedColor;
+begin
+  Result.r := ClampI(Round(r * 255), 0, 255);
+  Result.g := ClampI(Round(g * 255), 0, 255);
+  Result.b := ClampI(Round(b * 255), 0, 255);
+end;
 
- Function TColorF.IsZero: Boolean;
+Function TColorF.IsZero: Boolean;
 begin
   Result := Math.IsZero(r) and Math.IsZero(g) and Math.IsZero(b) and Math.IsZero(a);
+end;
+
+Function TColorF.RgbIntensity: single;
+begin
+  Result := (r + g + b) / 3;
+end;
+
+Function TColorF.RgbaIntensity: single;
+begin
+  Result := (r + g + b + a) / 4;
 end;
 
 Function TIntList.GetInt(n: Integer): Integer;
@@ -771,6 +784,11 @@ begin
   Result := MakeColor(c.r /255, c.g /255, c.b /255);
 end;
 
+Function MakeColor(intensity: single): TColorF; overload;
+begin
+  Result := MakeColor(intensity, intensity, intensity, 1.0);
+end;
+
 Function EncodeARGB(color: TColorF): UInt32;
 var
   br, bg, bb, ba: byte;
@@ -819,17 +837,17 @@ end;
 
 Function IntensityToColor(i: single): TColorF;
 begin
-  Result := MakeColor(i, i, i, 1.0);
+  Result := MakeColor(i);
 end;
 
 Function RgbToIntensity(rgb: TColorF): single;
 begin
-  Result := (rgb.r + rgb.g + rgb.b) / 3;
+  Result := rgb.RgbIntensity;
 end;
 
 Function RgbaToIntensity(rgba: TColorF): single;
 begin
-  Result := (rgba.r + rgba.g + rgba.b + rgba.a) / 4;
+  Result := rgba.RgbaIntensity;
 end;
 
 Function L2B(c:single):byte;

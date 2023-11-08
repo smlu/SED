@@ -1,14 +1,14 @@
-unit JED_COM;
+unit SED_COM;
 
 interface
-uses Windows, OLE2, J_Level, Geometry, ResourcePicker, jed_plugins, misc_utils,
-     globalVars, u_undo, Forms, sysUtils, classes, Render, ogl_render,
-     sft_render, values, u_multisel, menus;
+uses Windows, J_Level, ResourcePicker, sed_plugins, misc_utils, GlobalVars,
+     u_undo, Forms, SysUtils, classes, Render, ogl_render, sft_render, Geometry,
+     values, u_multisel, menus;
 
 type
 
-THandles=class(TList)
- oname:string;
+THandles = class(TList)
+ oname: string;
  Function GetItem(n:integer):TObject;
  Procedure SetItem(n:integer;v:TObject);
  Function GetItemNoNIL(n:integer):TObject;
@@ -23,11 +23,11 @@ THandles=class(TList)
 end;
 
 
-TJEDCOM=class(IJED)
+TSEDCOM = class(ISED)
 
   files,
   tfiles,
-  conts:THandles;
+  conts: THandles;
 
   Constructor Create;
 
@@ -36,7 +36,7 @@ TJEDCOM=class(IJED)
   function Release: Longint; override;
 
   Function GetVersion:double; override;
-  Function GetLevel:IJEDLevel;override; {IJEDLevel object}
+  Function GetLevel:ISEDLevel;override; {ISEDLevel object}
 
   Function GetMapMode:Integer;override;
   Procedure SetMapMode(mode:integer);override;
@@ -55,18 +55,18 @@ TJEDCOM=class(IJED)
   Procedure GetCurFR(var th,fr:integer);override;
   Procedure SetCurFR(th,fr:integer);override;
 
-  Procedure NewLevel(mots:boolean);override;
-  Procedure LoadLevel(name:PAnsiChar);override;
+  Procedure NewLevel(kind: integer); override;
+  Procedure LoadLevel(name: PChar); override;
 
   {Different level editing functions}
 
-  Procedure FindBBox(sec:integer;var box:TJEDBox);override;
-  Procedure FindBoundingSphere(sec:integer;var CX,CY,CZ,Radius:double);override;
-  Function FindCollideBox(sec:integer;const bbox:TJEDBox;cx,cy,cz:double;var cbox:TJEDBox):boolean;override;
-  Procedure FindSurfaceCenter(sc,sf:integer;var cx,cy,cz:double);override;
-  Procedure RotateVector(var vec:TJEDVector; pch,yaw,rol:double);override;
+  Procedure FindBBox(sec:integer;var box:TSEDBox);override;
+  Procedure FindBoundingSphere(sec:integer; var CX,CY,CZ,Radius:double);override;
+  Function FindCollideBox(sec:integer; const bbox:TSEDBox;cx,cy,cz:double;var cbox:TSEDBox):boolean;override;
+  Procedure FindSurfaceCenter(sc,sf:integer; var cx,cy,cz:double);override;
+  Procedure RotateVector(var vec:TSEDVector; pch,yaw,rol:double);override;
   Procedure RotatePoint(ax1,ay1,az1,ax2,ay2,az2:double;angle:double;var x,y,z:double);override;
-  Procedure GetJKPYR(const x,y,z:TJEDVector;var pch,yaw,rol:double);override;
+  Procedure GetJKPYR(const x,y,z:TSEDVector;var pch,yaw,rol:double);override;
   Function IsSurfaceConvex(sc,sf:integer):boolean;override;
   Function IsSurfacePlanar(sc,sf:integer):boolean;override;
   Function IsSectorConvex(sec:integer):boolean;override;
@@ -74,19 +74,19 @@ TJEDCOM=class(IJED)
   Function DoSectorsOverlap(sec1,sec2:integer):boolean;override;
   Function IsPointOnSurface(sc,sf:integer;x,y,z:double):boolean;override;
   Function FindSectorForThing(th:integer):Integer;override;
-  Function FindSectorForXYZ(X,Y,Z:double):integer;override;
+  Function FindSectorForXYZ(X,Y,Z:double):Integer;override;
   Function ExtrudeSurface(sc,sf:integer; by:double):integer;override;
-  Function CleaveSurface(sc,sf:integer; const cnormal:TJEDvector; cx,cy,cz:double):integer;override;
-  Function CleaveSector(sec:integer; const cnormal:TJEDvector; cx,cy,cz:double):integer;override;
-  Function CleaveEdge(sc,sf,ed:integer; const cnormal:TJEDvector; cx,cy,cz:double):boolean;override;
+  Function CleaveSurface(sc,sf:integer; const cnormal:TSEDVector; cx,cy,cz:double):integer;override;
+  Function CleaveSector(sec:integer; const cnormal:TSEDVector; cx,cy,cz:double):integer;override;
+  Function CleaveEdge(sc,sf,ed:integer; const cnormal:TSEDVector; cx,cy,cz:double):boolean;override;
   Function JoinSurfaces(sc1,sf1,sc2,sf2:Integer):boolean;override;
   Function PlanarizeSurface(sc,sf:integer):boolean;override;
   function MergeSurfaces(sc,sf1,sf2:integer):integer;override;
   function MergeSectors(sec1,sec2:integer):integer;override;
-  Procedure CalculateDefaultUVNormals(sc,sf:integer; orgvx:integer; var un,vn:TJEDVector);override;
-  Procedure CalcUVNormals(sc,sf:integer; var un,vn:TJEDVector);override;
-  Procedure ArrangeTexture(sc,sf:integer; orgvx:integer; const un,vn:TJEDvector);override;
-  Procedure ArrangeTextureBy(sc,sf:integer;const un,vn:TJEDvector;refx,refy,refz,refu,refv:double);override;
+  Procedure CalculateDefaultUVNormals(sc,sf:integer; orgvx:integer; var un,vn:TSEDVector);override;
+  Procedure CalcUVNormals(sc,sf:integer; var un,vn:TSEDVector);override;
+  Procedure ArrangeTexture(sc,sf:integer; orgvx:integer; const un,vn:TSEDVector);override;
+  Procedure ArrangeTextureBy(sc,sf:integer;const un,vn: TSEDVector; refx,refy,refz,refu,refv:double);override;
   Function IsTextureFlipped(sc,sf:integer):boolean;override;
   Procedure RemoveSurfaceReferences(sc,sf:integer);override;
   Procedure RemoveSectorReferences(sec:integer;surfs:boolean);override;
@@ -96,15 +96,16 @@ TJEDCOM=class(IJED)
   Function MakeAdjoin(sc,sf:integer):boolean;override;
   Function MakeAdjoinFromSectorUp(sc,sf:integer;firstsc:integer):boolean;override;
   Function UnAdjoin(sc,sf:integer):Boolean;override;
-  Function CreateCubicSector(x,y,z:double;const pnormal,edge:TJEDVector):integer;override;
+  Function CreateCubicSector(x,y,z:double;const pnormal,edge:TSEDVector):integer;override;
 
-  Procedure StartUndo(name:PAnsiChar);override;
+  Procedure StartUndo(name:PChar);override;
   Procedure SaveUndoForThing(n:integer;change:integer);override;
   Procedure SaveUndoForLight(n:integer;change:integer);override;
   Procedure SaveUndoForSector(n:integer;change:integer;whatpart:integer);override;
   Procedure ClearUndoBuffer;override;
   Procedure ApplyUndo;override;
-  {0.92}
+
+  {JED 0.92}
   Function GetApplicationHandle:Integer;override;
   Function JoinSectors(sec1,sec2:integer):boolean;override;
 
@@ -136,87 +137,83 @@ TJEDCOM=class(IJED)
   Function FindSelectedFR(th,fr:integer):integer;override;
   Function FindSelectedLT(lt:integer):integer;override;
 
-  Procedure SaveJED(name:PAnsiChar);override;
-  Procedure SaveJKL(name:PAnsiChar);override;
+  Procedure SaveSED(name:PChar);override;
+  Procedure SaveJKL(name:PChar);override;
   Procedure UpdateMap;override;
-  Procedure SetPickerCMP(cmp:PAnsiChar);override;
-  Function PickResource(what:integer;cur:PAnsiChar):PAnsiChar;override;
+  Procedure SetPickerCMP(cmp:PChar);override;
+  Function PickResource(what:integer;cur:PChar):PChar;override;
   Function EditFlags(what:integer;flags:LongInt):LongInt;override;
 
   Procedure ReloadTemplates;override;
-  Procedure PanMessage(mtype:integer;msg:PAnsiChar);override;
+  Procedure PanMessage(mtype:integer;msg:PChar);override;
   Procedure SendKey(shift:integer;key:integer);override;
-  Function ExecuteMenu(itemref:PAnsiChar):boolean;override;
-  Function GetJEDSetting(name:PAnsiChar):variant;override;
+  Function ExecuteMenu(itemref:PChar):boolean;override;
+  Function GetSEDSetting(name:PChar):variant;override;
   Function IsLayerVisible(n:integer):boolean;override;
 
   procedure CheckConsistencyErrors;override;
   procedure CheckResources;override;
   Function NConsistencyErrors:integer;override;
-  Function GetConsErrorString(n:integer):PAnsiChar;override;
+  Function GetConsErrorString(n:integer):PChar;override;
   Function GetConsErrorType(n:integer):integer;override;
+  Function GetConsErrorItemType(n: integer):integer;virtual;stdcall; // SED 0.1.0
   Function GetConsErrorSector(n:integer):integer;override;
   Function GetConsErrorSurface(n:integer):integer;override;
   Function GetConsErrorThing(n:integer):integer;override;
   Function GetConsErrorCog(n:integer):integer;override;
   Function IsPreviewActive:boolean;override;
-  Function GetJEDString(what:integer):PAnsiChar;override;
-{  Function GetProjectDir:String;
-  Function GetJEDDir:String;
-  Function GetLevelFile:String;, gobs, cddir, regbase, LEClogo, JKDIr, MotsDir,
-  defshape, recent}
-  Function GetIsMOTS:boolean;override;
-  Procedure SetIsMOTS(mots:boolean);override;
+  Function GetSEDString(what:integer):PChar;override;
 
-  {0.93}
-  Function GetJedWindow(whichone:integer):integer;override;
+  Function GetProjectType:integer;override;                // SED 0.1.0
+  Procedure SetProjectType(kind:integer);override;         // SED 0.1.0
 
-  Function FileExtractExt(path:PAnsiChar):PAnsiChar;override;
-  Function FileExtractPath(path:PAnsiChar):PAnsiChar;override;
-  Function FileExtractName(path:PAnsiChar):PAnsiChar;override;
-  Function FindProjectDirFile(name:PAnsiChar):PAnsiChar;override;
-  Function IsFileContainer(path:PAnsiChar):boolean;override;
-  Function IsFileInContainer(path:PAnsiChar):Boolean;override;
+  {JED 0.93}
+  Function GetJEDWindow(whichone:integer):integer;override;
 
-  Function FileOpenDialog(fname:PAnsiChar;filter:PAnsiChar):PAnsiChar;override;
+  Function FileExtractExt(path:PChar):PChar;override;
+  Function FileExtractPath(path:PChar):PChar;override;
+  Function FileExtractName(path:PChar):PChar;override;
+  Function FindProjectDirFile(name:PChar):PChar;override;
+  Function IsFileContainer(path:PChar):boolean;override;
+  Function IsFileInContainer(path:PChar):Boolean;override;
 
-
-  Function OpenFile(name:PAnsiChar):integer;override;
-  Function OpenGameFile(name:PAnsiChar):integer;override;
+  Function FileOpenDialog(fname:PChar;filter:PChar):PChar;override;
+  Function OpenFile(name:PChar):integer;override;
+  Function OpenGameFile(name:PChar):integer;override;
   Function ReadFile(handle:integer;buf:pointer;size:longint):integer;override;
   Procedure SetFilePos(handle:integer;pos:longint);override;
   Function GetFilePos(handle:integer):longint;override;
   Function GetFileSize(handle:integer):longint;override;
-  Function GetFileName(handle:integer):PAnsiChar;override;
+  Function GetFileName(handle:integer):PChar;override;
   Procedure CloseFile(handle:integer);override;
 
-  Function OpenTextFile(name:PAnsiChar):integer;override;
-  Function OpenGameTextFile(name:PAnsiChar):integer;override;
-  Function GetTextFileName(handle:integer):PAnsiChar;override;
-  Function ReadTextFileString(handle:integer):PAnsiChar;override;
+  Function OpenTextFile(name:PChar):integer;override;
+  Function OpenGameTextFile(name:PChar):integer;override;
+  Function GetTextFileName(handle:integer):PChar;override;
+  Function ReadTextFileString(handle:integer):PChar;override;
   Function TextFileEof(handle:integer):boolean;override;
   Function TextFileCurrentLine(handle:integer):integer;override;
   Procedure CloseTextFile(handle:integer);override;
 
-  Function OpenGOB(name:PAnsiChar):integer;override;
+  Function OpenGOB(name:PChar):integer;override;
   Function GOBNFiles(handle:integer):integer;override;
-  Function GOBNFileName(handle:integer;n:integer):PAnsiChar;override;
-  Function GOBNFullFileName(handle:integer;n:integer):PAnsiChar;override;
+  Function GOBNFileName(handle:integer;n:integer):PChar;override;
+  Function GOBNFullFileName(handle:integer;n:integer):PChar;override;
   Function GOBGetFileSize(handle:integer;n:integer):longint;override;
   Function GOBGetFileOffset(handle:integer;n:integer):longint;override;
   Procedure CloseGOB(handle:integer);override;
 
-  Function CreateWFRenderer(wnd:integer;whichone:integer):IJEDWFRenderer;override;
+  Function CreateWFRenderer(wnd:integer;whichone:integer):ISEDWFRenderer;override;
 
 end;
 
- TCOMLevel=class(IJEDLevel)
+ TSEDCOMLevel=class(ISEDLevel)
   function QueryInterface(iid: pointer; var obj): LongInt; override;
   function AddRef: Longint; override;
   function Release: Longint; override;
 
-  Procedure GetLevelHeader(var lh:TLevelHeader;rflags:integer);override;
-  Procedure SetLevelHeader(const lh:TLevelHeader;rflags:integer);override;
+  Procedure GetLevelHeader(var lh:TSEDLevelHeader;rflags:integer);override;
+  Procedure SetLevelHeader(const lh:TSEDLevelHeader;rflags:integer);override;
 
   Function NSectors:integer;override;
   Function NThings:integer;override;
@@ -227,8 +224,8 @@ end;
   Function AddSector:integer;override;
   Procedure DeleteSector(n:integer);override;
 
-  Procedure GetSector(sec:integer;var rec:TJEDSectorRec;what:integer);override;
-  Procedure SetSector(sec:integer;const rec:TJEDSectorRec;what:integer);override;
+  Procedure GetSector(sec:integer;var rec:TSEDSectorRec;what:integer);override;
+  Procedure SetSector(sec:integer;const rec:TSEDSectorRec;what:integer);override;
 
   Function SectorNVertices(sec:integer):integer;override;
   Function SectorNSurfaces(sec:integer):integer;override;
@@ -245,9 +242,9 @@ end;
   Procedure SectorUpdate(sec:integer);override;
 
   {Surfaces}
-  Procedure GetSurface(sc,sf:integer;var rec:TJEDSurfaceRec;rflags:integer);override;
-  Procedure SetSurface(sc,sf:integer;const rec:TJEDSurfaceRec;rflags:integer);override;
-  Procedure GetSurfaceNormal(sc,sf:integer;var n:TJEDVector);override;
+  Procedure GetSurface(sc,sf:integer;var rec:TSEDSurfaceRec;rflags:integer);override;
+  Procedure SetSurface(sc,sf:integer;const rec:TSEDSurfaceRec;rflags:integer);override;
+  Procedure GetSurfaceNormal(sc,sf:integer;var n:TSEDVector);override;
   Procedure SurfaceUpdate(sc,sf:integer;how:integer);override;
   Function SurfaceNVertices(sc,sf:integer):Integer;override;
   Function SurfaceGetVertexNum(sc,sf,vx:integer):integer;override;
@@ -257,62 +254,61 @@ end;
   Procedure SurfaceDeleteVertex(sc,sf:integer;n:integer);override;
   Procedure SurfaceGetVertexUV(sc,sf,vx:integer;var u,v:single);override;
   Procedure SurfaceSetVertexUV(sc,sf,vx:integer;u,v:single);override;
-  Procedure SurfaceGetVertexLight(sc,sf,vx:integer;var white,r,g,b:single);override;
-  Procedure SurfaceSetVertexLight(sc,sf,vx:integer;white,r,g,b:single);override;
+  Procedure SurfaceGetVertexLight(sc, sf, vx: integer; var color: TSEDColorF); override;
+  Procedure SurfaceSetVertexLight(sc, sf, vx: integer; const color: TSEDColorF); override;
 
-  {things}
+  {Things}
   Function AddThing:Integer;override;
   Procedure DeleteThing(th:integer);override;
-  Procedure GetThing(th:integer;var rec:TJEDThingRec;rflags:integer);override;
-  Procedure SetThing(th:integer;const rec:TJEDThingRec;rflags:integer);override;
+  Procedure GetThing(th:integer;var rec:TSEDThingRec;rflags:integer);override;
+  Procedure SetThing(th:integer;const rec:TSEDThingRec;rflags:integer);override;
   Procedure ThingUpdate(th:integer);override;
 
   {Lights}
   Function AddLight:Integer;override;
   Procedure DeleteLight(lt:integer);override;
-  Procedure GetLight(lt:integer;var rec:TJEDLightRec;rflags:integer);override;
-  Procedure SetLight(lt:integer;const rec:TJEDLightRec;rflags:integer);override;
+  Procedure GetLight(lt:integer;var rec:TSEDLightRec;rflags:integer);override;
+  Procedure SetLight(lt:integer;const rec:TSEDLightRec;rflags:integer);override;
 
   {Layers}
   Function NLayers:integer;override;
-  Function GetLayerName(n:integer):PAnsiChar;override;
-  Function AddLayer(name:PAnsiChar):integer;override;
+  Function GetLayerName(n:integer):PChar;override;
+  Function AddLayer(name:PChar):integer;override;
 
-  {0.92}
-
+  {JED 0.92}
   Function NTHingValues(th:integer):integer;override;
-  Function GetThingValueName(th,n:Integer):PAnsiChar;override;
-  Function GetThingValueData(th,n:integer):PAnsiChar;override;
-  Procedure SetThingValueData(th,n:Integer;val:PAnsiChar);override;
+  Function GetThingValueName(th,n:Integer):PChar;override;
+  Function GetThingValueData(th,n:integer):PChar;override;
+  Procedure SetThingValueData(th,n:Integer;val:PChar);override;
 
   Procedure GetThingFrame(th,n:Integer;var x,y,z,pch,yaw,rol:double);override;
   Procedure SetThingFrame(th,n:Integer;x,y,z,pch,yaw,rol:double);override;
 
-  Function AddThingValue(th:integer;name,val:PAnsiChar):integer;override;
-  Procedure InsertThingValue(th,n:Integer;name,val:PAnsiChar);override;
+  Function AddThingValue(th:integer;name,val:PChar):integer;override;
+  Procedure InsertThingValue(th,n:Integer;name,val:PChar);override;
   Procedure DeleteThingValue(th,n:integer);override;
 
   {COGs}
-  Function AddCOG(name:PAnsiChar):Integer;override;
+  Function AddCOG(name:PChar):Integer;override;
   Procedure DeleteCOG(n:integer);override;
   Procedure UpdateCOG(cg:integer);override;
 
-  Function GetCOGFileName(cg:integer):PAnsiChar;override;
+  Function GetCOGFileName(cg:integer):PChar;override;
   Function NCOGValues(cg:integer):integer;override;
 
-  Function GetCOGValueName(cg,n:Integer):PAnsiChar;override;
+  Function GetCOGValueName(cg,n:Integer):PChar;override;
   Function GetCOGValueType(cg,n:Integer):integer;override;
 
-  Function GetCOGValue(cg,n:Integer):PAnsiChar;override;
-  Function SetCOGValue(cg,n:Integer;val:PAnsiChar):boolean;override;
+  Function GetCOGValue(cg,n:Integer):PChar;override;
+  Function SetCOGValue(cg,n:Integer;val:PChar):boolean;override;
 
-  Function AddCOGValue(cg:integer;name,val:PAnsiChar;vtype:integer):integer;override;
-  Procedure InsertCOGValue(cg,n:Integer;name,val:PAnsiChar;vtype:integer);override;
+  Function AddCOGValue(cg:integer;name,val:PChar;vtype:integer):integer;override;
+  Procedure InsertCOGValue(cg,n:Integer;name,val:PChar;vtype:integer);override;
   Procedure DeleteCOGValue(cg,n:integer);override;
 
  end;
 
- TCOMWFRenderer=class(IJEDWFRenderer)
+ TCOMWFRenderer = class(ISEDWFRenderer)
   Rend:TRenderer;
   {OLE2 crap. ignore}
 
@@ -359,7 +355,7 @@ end;
   Function IsLineInRect(x1,y1,z1,x2,y2,z2:double):boolean;override;
   Function IsVertexInRect(X,Y,Z:double):boolean;override;
 
-  Function GetXYZonPlaneAt(scX,scY:integer;pnormal:TJedVector; pX,pY,pZ:double; var X,Y,Z:double):Boolean;override;
+  Function GetXYZonPlaneAt(scX,scY:integer;pnormal:TSEDVector; pX,pY,pZ:double; var X,Y,Z:double):Boolean;override;
   Function GetGridAt(scX,scY:integer;var X,Y,Z:double):boolean;override;
   Procedure GetNearestGridNode(iX,iY,iZ:double; Var X,Y,Z:double);override;
   Procedure ProjectPoint(x,y,z:double; Var WinX,WinY:integer);override;
@@ -372,42 +368,18 @@ end;
  end;
 
 
-
-Function GetJEDCOM:IJED;
+Function GetSEDCOM: ISED;
 
 implementation
 uses  Item_edit, u_MsgForm, u_Tools, JED_Main,lev_utils,JED_OLE, listRes,
       u_CogForm, FlagEditor, U_SCFEdit,U_Options, u_tbar, Cons_Checker, u_Preview,
-      Files,FileOperations,FileDialogs, System.Variants;
+      Files,FileOperations,FileDialogs;
 
-const tmpStrBufSize = 32;
-var jedcom:IJED;
-    olejedapp:TJEDApp;
-    comlevel:TCOMLevel;
+var com: ISED;
+    comlevel: TSEDCOMLevel;
+    tmpstr: string;
+    tmpastr: array[0..2047] of Char;
     ForeWnd:integer;
-    tmpastr:array[0..2047] of AnsiChar;
-    tmpstr: AnsiString;
-    aTmpStrs: array[0..tmpStrBufSize] of AnsiString;
-    tmpStrCurIdx: Uint = 0;
-
-Function CacheAString(str: PChar): PAnsiChar; overload;
-begin
-  if tmpStrCurIdx >= tmpStrBufSize then
-    tmpStrCurIdx := 0;
-  aTmpStrs[tmpStrCurIdx] := AnsiString(str);
-  Result := PAnsiChar(aTmpStrs[tmpStrCurIdx]);
-  Inc(tmpStrCurIdx);
-end;
-
-Function CacheAString(str: string): PAnsiChar; overload;
-begin
-  if tmpStrCurIdx >= tmpStrBufSize then
-    tmpStrCurIdx := 0;
-  aTmpStrs[tmpStrCurIdx] := AnsiString(str);
-  Result := PAnsiChar(aTmpStrs[tmpStrCurIdx]);
-  Inc(tmpStrCurIdx);
-end;
-
 
 Function THandles.GetItemNoNIL(n:integer):TObject;
 begin
@@ -463,10 +435,10 @@ begin
   TObject(List[i]).Free;
 end;
 
-Function GetJEDCOM:IJED;
+Function GetSEDCOM: ISED;
 begin
- if jedcom=nil then jedcom:=TJEDCOM.Create;
- result:=jedcom;
+ if com=nil then com:=TSEDCOM.Create;
+ result:=com;
 end;
 
 Procedure SaveCurApp;
@@ -481,7 +453,7 @@ begin
 end;
 
 
-Constructor TJEDCOM.Create;
+Constructor TSEDCOM.Create;
 begin
  files:=THandles.Create('file');
  tfiles:=THandles.Create('text file');
@@ -489,86 +461,81 @@ begin
 end;
 
 
-function TJEDCOM.QueryInterface(iid: pointer; var obj): LongInt;
+function TSEDCOM.QueryInterface(iid: pointer; var obj): LongInt;
 begin
  Result:= CLASS_E_CLASSNOTAVAILABLE;
 end;
 
-function TJEDCOM.AddRef: Longint;
+function TSEDCOM.AddRef: Longint;
 begin
  Result:=1;
 end;
 
-function TJEDCOM.Release: Longint;
+function TSEDCOM.Release: Longint;
 begin
  Result:=0;
 end;
 
-Function TJEDCOM.GetVersion:double;
+Function TSEDCOM.GetVersion:double;
 begin
- ValDouble(SedVernum,Result);
+ ValDouble(SedVerNum,Result);
  Result:=result*100;
 end;
 
-Function TJEDCOM.GetLevel:IJEDLevel; {IJEDLevel object}
+Function TSEDCOM.GetLevel: ISEDLevel; {ISEDLevel object}
 begin
- if comlevel=nil then comlevel:=TCOMLevel.Create;
+ if comlevel=nil then comlevel:=TSEDCOMLevel.Create;
  result:=comLevel;
 end;
 
 {Level}
 
-function TCOMLevel.QueryInterface(iid: pointer; var obj): LongInt;
+function TSEDCOMLevel.QueryInterface(iid: pointer; var obj): LongInt;
 begin
  Result:= CLASS_E_CLASSNOTAVAILABLE;
 end;
 
-function TCOmLevel.AddRef: Longint;
+function TSEDCOMLevel.AddRef: Longint;
 begin
  result:=1;
 end;
 
-function TCOmLevel.Release: Longint;
+function TSEDCOMLevel.Release: Longint;
 begin
  Result:=0;
 end;
 
-Procedure TCOMLevel.GetSector(sec:integer;var rec:TJEDSectorRec;what:integer);
+Procedure TSEDCOMLevel.GetSector(sec:integer;var rec:TSEDSectorRec;what:integer);
 begin
- with level.sectors[sec] do
- begin
-  if (what and s_flags)<>0 then rec.Flags:=flags;
-  if (what and s_ambient)<>0 then rec.Ambient:=Ambient.RgbIntensity;
-  if (what and s_extra)<>0 then rec.extra:=extraLight.RgbIntensity;
-  if (what and s_cmp)<>0 then rec.ColorMap:=CacheAString(ColorMap);
-  if (what and s_tint)<>0 then
-  begin
-   rec.Tint_r := Tint.r;
-   rec.Tint_g := Tint.g;
-   rec.Tint_b := Tint.b;
-  end;
-  if (what and s_sound)<>0 then rec.Sound:=CacheAString(Sound);
-  if (what and s_sndvol)<>0 then rec.snd_vol:=snd_vol;
-  if (what and s_layer)<>0 then rec.layer:=layer;
- end;
+  with level.sectors[sec] do
+    begin
+      if (what and s_flags)   <> 0 then rec.Flags      := flags;
+      if (what and s_ambient) <> 0 then rec.Ambient    := TSEDColorF(Ambient);
+      if (what and s_extra)   <> 0 then rec.ExtraLight := TSEDColorF(ExtraLight);
+      if (what and s_cmp)     <> 0 then rec.ColorMap   := PChar(ColorMap);
+      if (what and s_tint)    <> 0 then rec.Tint       := TSEDColorF(Tint);
+      if (what and s_sound)   <> 0 then rec.Sound      := PChar(Sound);
+      if (what and s_sndvol)  <> 0 then rec.snd_vol    := snd_vol;
+      if (what and s_layer)   <> 0 then rec.layer      := layer;
+    end;
 end;
 
-Procedure TCOMLevel.SetSector(sec:integer;const rec:TJEDSectorRec;what:integer);
+Procedure TSEDCOMLevel.SetSector(sec:integer;const rec:TSEDSectorRec;what:integer);
 begin
- with level.sectors[sec] do
- begin
-  if (what and s_flags)<>0 then Flags:=rec.flags;
-  if (what and s_ambient)<>0 then Ambient := MakeColor(rec.Ambient);
-  if (what and s_extra)<>0 then extraLight := MakeColor(rec.extra);
-  if (what and s_cmp)<>0 then ColorMap:=rec.ColorMap;
-  if (what and s_tint)<>0 then Tint := MakeColor(rec.tint_r,rec.tint_g,rec.tint_b);
-  if (what and s_sound)<>0 then Sound:=rec.Sound;
-  if (what and s_sndvol)<>0 then snd_vol:=rec.snd_vol;
-  if (what and s_layer)<>0 then layer:=rec.layer;
- end;
+  with level.sectors[sec] do
+    begin
+      if (what and s_flags)   <> 0 then Flags      := rec.flags;
+      if (what and s_ambient) <> 0 then Ambient    := TColorF(rec.Ambient);
+      if (what and s_extra)   <> 0 then ExtraLight := TColorF(rec.ExtraLight);
+      if (what and s_cmp)     <> 0 then ColorMap   := rec.ColorMap;
+      if (what and s_tint)    <> 0 then Tint       := TColorF(rec.Tint);
+      if (what and s_sound)   <> 0 then Sound      := rec.Sound;
+      if (what and s_sndvol)  <> 0 then snd_vol    := rec.snd_vol;
+      if (what and s_layer)   <> 0 then layer      := rec.layer;
+    end;
 end;
 
-Procedure TCOMLevel.GetLevelHeader(var lh:TLevelHeader;rflags:integer);
+Procedure TSEDCOMLevel.GetLevelHeader(var lh:TSEDLevelHeader;rflags:integer);
 begin
  with level.header do
  begin
@@ -596,20 +563,21 @@ begin
   end;
   if (rflags and lh_LODDist)<>0 then
   begin
-   lh.LODDist[0]:=LODDist[1];
-   lh.LODDist[1]:=LODDist[2];
-   lh.LODDist[2]:=LODDist[3];
-   lh.LODDist[3]:=LODDist[4];
+   lh.LODDist[0] := LODDist[1];
+   lh.LODDist[1] := LODDist[2];
+   lh.LODDist[2] := LODDist[3];
+   lh.LODDist[3] := LODDist[4];
   end;
   if (rflags and lh_PerspDist)<>0 then lh.PerspDist:=PerspDist;
   if (rflags and lh_GouraudDist)<>0 then lh.GouraudDist:=GouraudDist;
   if (rflags and lh_ppu)<>0 then lh.PixelPerUnit:=Level.PPUnit;
-  if (rflags and lh_MasterCMP)<>0 then lh.MasterCMP:=CacheAString(Level.MasterCMP);
+  if (rflags and lh_MasterCMP)<>0 then lh.MasterCMP := PChar(Level.MasterCMP);
+  if (rflags and lh_Fog) <> 0 then lh.Fog := TSEDFog(Fog);
 
  end;
 end;
 
-Procedure TCOMLevel.SetLevelHeader(const lh:TLevelHeader;rflags:integer);
+Procedure TSEDCOMLevel.SetLevelHeader(const lh:TSEDLevelHeader;rflags:integer);
 begin
  with level.header do
  begin
@@ -637,41 +605,42 @@ begin
   end;
   if (rflags and lh_LODDist)<>0 then
   begin
-   LODDist[1]:=lh.LODDist[0];
-   LODDist[2]:=lh.LODDist[1];
-   LODDist[3]:=lh.LODDist[2];
-   LODDist[4]:=lh.LODDist[3];
+   LODDist[1] := lh.LODDist[0];
+   LODDist[2] := lh.LODDist[1];
+   LODDist[3] := lh.LODDist[2];
+   LODDist[4] := lh.LODDist[3];
   end;
   if (rflags and lh_PerspDist)<>0 then PerspDist:=lh.PerspDist;
   if (rflags and lh_GouraudDist)<>0 then GouraudDist:=lh.GouraudDist;
   if (rflags and lh_ppu)<>0 then Level.ppunit:=lh.PixelPerUnit;
   if (rflags and lh_MasterCMP)<>0 then level.MasterCMP:=lh.MasterCMP;
+  if (rflags and lh_Fog) <> 0 then Fog := TFog(lh.Fog);
 
  end;
 end;
 
-Function TCOMLevel.NSectors:integer;
+Function TSEDCOMLevel.NSectors:integer;
 begin
  result:=level.sectors.count;
 end;
 
-Function TCOMLevel.NThings:integer;
+Function TSEDCOMLevel.NThings:integer;
 begin
  result:=level.things.count;
 end;
 
-Function TCOMLevel.NLights:integer;
+Function TSEDCOMLevel.NLights:integer;
 begin
  result:=level.lights.count;
 end;
 
-Function TCOMLevel.NCOgs:integer;
+Function TSEDCOMLevel.NCOgs:integer;
 begin
  result:=level.Cogs.Count;
 end;
 
 {Sectors}
-Function TCOMLevel.AddSector:integer;
+Function TSEDCOMLevel.AddSector:integer;
 var sec:TJKSector;
 begin
  sec:=Level.NewSector;
@@ -680,22 +649,22 @@ begin
  JedMain.SectorAdded(sec);
 end;
 
-Procedure TCOMLevel.DeleteSector(n:integer);
+Procedure TSEDCOMLevel.DeleteSector(n:integer);
 begin
  Lev_Utils.DeleteSector(Level,n);
 end;
 
-Function TCOMLevel.SectorNVertices(sec:integer):integer;
+Function TSEDCOMLevel.SectorNVertices(sec:integer):integer;
 begin
  result:=Level.Sectors[sec].vertices.count;
 end;
 
-Function TCOMLevel.SectorNSurfaces(sec:integer):integer;
+Function TSEDCOMLevel.SectorNSurfaces(sec:integer):integer;
 begin
  result:=Level.Sectors[sec].surfaces.count;
 end;
 
-Procedure TCOMLevel.SectorGetVertex(sec,vx:integer;var x,y,z:double);
+Procedure TSEDCOMLevel.SectorGetVertex(sec,vx:integer;var x,y,z:double);
 var v:TJKVertex;
 begin
  v:=Level.Sectors[sec].Vertices[vx];
@@ -704,7 +673,7 @@ begin
  z:=v.z;
 end;
 
-Procedure TCOMLevel.SectorSetVertex(sec,vx:integer;x,y,z:double);
+Procedure TSEDCOMLevel.SectorSetVertex(sec,vx:integer;x,y,z:double);
 var v:TJKVertex;
 begin
  v:=Level.Sectors[sec].Vertices[vx];
@@ -713,7 +682,7 @@ begin
  v.z:=z;
 end;
 
-Function TCOMLevel.SectorAddVertex(sec:integer;x,y,z:double):integer;
+Function TSEDCOMLevel.SectorAddVertex(sec:integer;x,y,z:double):integer;
 var v:TJKVertex;
 begin
  v:=Level.Sectors[sec].NewVertex;
@@ -723,12 +692,12 @@ begin
  result:=level.sectors[sec].vertices.count-1;
 end;
 
-Function TCOMLevel.SectorFindVertex(sec:integer;x,y,z:double):integer;
+Function TSEDCOMLevel.SectorFindVertex(sec:integer;x,y,z:double):integer;
 begin
  result:=Level.Sectors[sec].FindVX(x,y,z);
 end;
 
-Function TCOMLevel.SectorDeleteVertex(sec:integer;n:integer):integer;
+Function TSEDCOMLevel.SectorDeleteVertex(sec:integer;n:integer):integer;
 begin
  With Level.Sectors[sec] do
  begin
@@ -738,7 +707,7 @@ begin
  end;
 end;
 
-Function TCOMLevel.SectorAddSurface(sec:integer):integer;
+Function TSEDCOMLevel.SectorAddSurface(sec:integer):integer;
 begin
  With level.sectors[sec] do
  begin
@@ -746,7 +715,7 @@ begin
  end;
 end;
 
-Procedure TCOMLevel.SectorDeleteSurface(sc,sf:integer);
+Procedure TSEDCOMLevel.SectorDeleteSurface(sc,sf:integer);
 begin
  With level.sectors[sc] do
  begin
@@ -757,7 +726,7 @@ begin
  end;
 end;
 
-Procedure TCOMLevel.SectorUpdate(sec:integer);
+Procedure TSEDCOMLevel.SectorUpdate(sec:integer);
 var asec:TJKSector;
 begin
  asec:=Level.Sectors[sec];
@@ -765,8 +734,8 @@ begin
  JedMain.SectorChanged(asec);
 end;
 
-{Surfaces}
-Procedure TCOMLevel.GetSurface(sc,sf:integer;var rec:TJEDSurfaceRec;rflags:integer);
+  {Surfaces}
+Procedure TSEDCOMLevel.GetSurface(sc,sf:integer;var rec:TSEDSurfaceRec;rflags:integer);
 begin
  with level.sectors[sc].surfaces[sf] do
  begin
@@ -778,11 +747,11 @@ begin
   if (rflags and sf_adjoinflags)<>0 then rec.AdjoinFlags:=AdjoinFlags;
   if (rflags and sf_SurfFlags)<>0 then rec.SurfFlags:=SurfFlags;
   if (rflags and sf_FaceFlags)<>0 then rec.FaceFlags:=FaceFlags;
-  if (rflags and sf_Material)<>0 then rec.Material:=CacheAString(material);
+  if (rflags and sf_Material)<>0 then rec.Material:=PChar(material);
   if (rflags and sf_geo)<>0 then rec.geo:=geo;
   if (rflags and sf_light)<>0 then rec.light:=light;
   if (rflags and sf_tex)<>0 then rec.tex:=tex;
-  if (rflags and sf_ExtraLight)<>0 then rec.ExtraLight:=ExtraLight.RgbIntensity;
+  if (rflags and sf_ExtraLight)<>0 then rec.ExtraLight:=TSEDColorF(ExtraLight);
   if (rflags and sf_txscale)<>0 then
   begin
    rec.uscale:=uscale;
@@ -791,7 +760,7 @@ begin
  end;
 end;
 
-Procedure TCOMLevel.SetSurface(sc,sf:integer;const rec:TJEDSurfaceRec;rflags:integer);
+Procedure TSEDCOMLevel.SetSurface(sc,sf:integer;const rec:TSEDSurfaceRec;rflags:integer);
 begin
  with level.sectors[sc].surfaces[sf] do
  begin
@@ -807,7 +776,7 @@ begin
   if (rflags and sf_geo)<>0 then geo:=rec.geo;
   if (rflags and sf_light)<>0 then light:=rec.light;
   if (rflags and sf_tex)<>0 then tex:=rec.tex;
-  if (rflags and sf_ExtraLight)<>0 then ExtraLight := MakeColor(rec.ExtraLight);
+  if (rflags and sf_ExtraLight)<>0 then ExtraLight:=TColorF(rec.ExtraLight);
   if (rflags and sf_txscale)<>0 then
   begin
    uscale:=rec.uscale;
@@ -816,7 +785,7 @@ begin
  end;
 end;
 
-Procedure TCOMLevel.GetSurfaceNormal(sc,sf:integer;var n:TJEDVector);
+Procedure TSEDCOMLevel.GetSurfaceNormal(sc,sf:integer;var n:TSEDVector);
 begin
  With Level.Sectors[sc].surfaces[sf].normal do
  begin
@@ -826,7 +795,7 @@ begin
  end;
 end;
 
-Procedure TCOMLevel.SurfaceUpdate(sc,sf:integer;how:integer);
+Procedure TSEDCOMLevel.SurfaceUpdate(sc,sf:integer;how:integer);
 var surf:TJKSurface;
 begin
  surf:=Level.Sectors[sc].Surfaces[sf];
@@ -835,17 +804,17 @@ begin
  if how and su_sector<>0 then JedMain.SectorChanged(surf.sector);
 end;
 
-Function TCOMLevel.SurfaceNVertices(sc,sf:integer):Integer;
+Function TSEDCOMLevel.SurfaceNVertices(sc,sf:integer):Integer;
 begin
  Result:=Level.Sectors[sc].surfaces[sf].vertices.count;
 end;
 
-Function TCOMLevel.SurfaceGetVertexNum(sc,sf,vx:integer):integer;
+Function TSEDCOMLevel.SurfaceGetVertexNum(sc,sf,vx:integer):integer;
 begin
  Result:=Level.Sectors[sc].surfaces[sf].vertices[vx].num;
 end;
 
-Procedure TCOMLevel.SurfaceSetVertexNum(sc,sf,vx:integer;secvx:integer);
+Procedure TSEDCOMLevel.SurfaceSetVertexNum(sc,sf,vx:integer;secvx:integer);
 begin
  With Level.Sectors[sc] do
  begin
@@ -853,7 +822,7 @@ begin
  end;
 end;
 
-Function TCOMLevel.SurfaceAddVertex(sc,sf:integer;secvx:integer):Integer;
+Function TSEDCOMLevel.SurfaceAddVertex(sc,sf:integer;secvx:integer):Integer;
 begin
  With Level.Sectors[sc] do
  begin
@@ -861,7 +830,7 @@ begin
  end;
 end;
 
-Function TCOMLevel.SurfaceInsertVertex(sc,sf:integer;at:integer;secvx:integer):Integer;
+Function TSEDCOMLevel.SurfaceInsertVertex(sc,sf:integer;at:integer;secvx:integer):Integer;
 begin
  With Level.Sectors[sc] do
  begin
@@ -870,12 +839,12 @@ begin
  result:=at;
 end;
 
-Procedure TCOMLevel.SurfaceDeleteVertex(sc,sf:integer;n:integer);
+Procedure TSEDCOMLevel.SurfaceDeleteVertex(sc,sf:integer;n:integer);
 begin
  Level.Sectors[sc].surfaces[sf].DeleteVertex(n);
 end;
 
-Procedure TCOMLevel.SurfaceGetVertexUV(sc,sf,vx:integer;var u,v:single);
+Procedure TSEDCOMLevel.SurfaceGetVertexUV(sc,sf,vx:integer;var u,v:single);
 var tv:TTXVertex;
 begin
  tv:=Level.Sectors[sc].surfaces[sf].txvertices[vx];
@@ -883,7 +852,7 @@ begin
  v:=tv.v;
 end;
 
-Procedure TCOMLevel.SurfaceSetVertexUV(sc,sf,vx:integer;u,v:single);
+Procedure TSEDCOMLevel.SurfaceSetVertexUV(sc,sf,vx:integer;u,v:single);
 var tv:TTXVertex;
 begin
  tv:=Level.Sectors[sc].surfaces[sf].txvertices[vx];
@@ -891,29 +860,23 @@ begin
  tv.v:=v;
 end;
 
-Procedure TCOMLevel.SurfaceGetVertexLight(sc,sf,vx:integer;var white,r,g,b:single);
+Procedure TSEDCOMLevel.SurfaceGetVertexLight(sc, sf, vx: integer; var color: TSEDColorF);
+var tv:TTXVertex;
+begin
+ tv := Level.Sectors[sc].surfaces[sf].txvertices[vx];
+ color := TSEDColorF(tv.color);
+end;
+
+Procedure TSEDCOMLevel.SurfaceSetVertexLight(sc, sf, vx: integer; const color: TSEDColorF);
 var tv:TTXVertex;
 begin
  tv:=Level.Sectors[sc].surfaces[sf].txvertices[vx];
- white:=tv.color.a;
- r:=tv.color.r;
- g:=tv.color.g;
- b:=tv.color.g;
+ tv.color := TColorF(color);
 end;
 
-Procedure TCOMLevel.SurfaceSetVertexLight(sc,sf,vx:integer;white,r,g,b:single);
-var tv:TTXVertex;
-begin
- tv:=Level.Sectors[sc].surfaces[sf].txvertices[vx];
- tv.color.a:=white;
- tv.color.r:=r;
- tv.color.g:=g;
- tv.color.b:=g;
-end;
+{Things}
 
-{things}
-
-Function TCOMLevel.AddThing:Integer;
+Function TSEDCOMLevel.AddThing:Integer;
 var th:TJKThing;
 begin
  th:=Level.NewThing;
@@ -922,16 +885,16 @@ begin
  JedMain.ThingAdded(th);
 end;
 
-Procedure TCOMLevel.DeleteThing(th:integer);
+Procedure TSEDCOMLevel.DeleteThing(th:integer);
 begin
  Lev_Utils.DeleteThing(Level,th);
 end;
 
-Procedure TCOMLevel.GetThing(th:integer;var rec:TJEDThingRec;rflags:integer);
+Procedure TSEDCOMLevel.GetThing(th:integer;var rec:TSEDThingRec;rflags:integer);
 begin
  with level.things[th] do
  begin
-  if (rflags and th_name)<>0 then rec.name:=CacheAString(name);
+  if (rflags and th_name)<>0 then rec.name:=PChar(name);
   if (rflags and th_sector)<>0 then
   begin
    if sec=nil then rec.Sector:=-1
@@ -957,7 +920,7 @@ begin
  end;
 end;
 
-Procedure TCOMLevel.SetThing(th:integer;const rec:TJEDThingRec;rflags:integer);
+Procedure TSEDCOMLevel.SetThing(th:integer;const rec:TSEDThingRec;rflags:integer);
 begin
  with level.things[th] do
  begin
@@ -987,7 +950,7 @@ begin
  end;
 end;
 
-Procedure TCOMLevel.ThingUpdate(th:integer);
+Procedure TSEDCOMLevel.ThingUpdate(th:integer);
 begin
  Level.RenumThings;
  JedMain.ThingChanged(level.Things[th]);
@@ -995,7 +958,7 @@ end;
 
 {Lights}
 
-Function TCOMLevel.AddLight:Integer;
+Function TSEDCOMLevel.AddLight:Integer;
 var lt:TJedLight;
 begin
  lt:=Level.NewLight;
@@ -1003,12 +966,12 @@ begin
  JedMain.LevelChanged;
 end;
 
-Procedure TCOMLevel.DeleteLight(lt:integer);
+Procedure TSEDCOMLevel.DeleteLight(lt:integer);
 begin
  Lev_Utils.DeleteLight(Level,lt);
 end;
 
-Procedure TCOMLevel.GetLight(lt:integer;var rec:TJEDLightRec;rflags:integer);
+Procedure TSEDCOMLevel.GetLight(lt:integer;var rec:TSEDLightRec;rflags:integer);
 begin
  with level.lights[lt] do
  begin
@@ -1036,7 +999,7 @@ begin
  end;
 end;
 
-Procedure TCOMLevel.SetLight(lt:integer;const rec:TJEDLightRec;rflags:integer);
+Procedure TSEDCOMLevel.SetLight(lt:integer;const rec:TSEDLightRec;rflags:integer);
 begin
  with level.lights[lt] do
  begin
@@ -1064,73 +1027,73 @@ begin
  end;
 end;
 
-Function TCOMLevel.NLayers:integer;
+Function TSEDCOMLevel.NLayers:integer;
 begin
  Result:=Level.Layers.count;
 end;
 
-Function TCOMLevel.GetLayerName(n:integer):PAnsiChar;
+Function TSEDCOMLevel.GetLayerName(n:integer): PChar;
 begin
- Result:=CacheAString(Level.GetLayerName(n));
+ Result := PChar(Level.GetLayerName(n));
 end;
 
-Function TCOMLevel.AddLayer(name:PAnsiChar):integer;
+Function TSEDCOMLevel.AddLayer(name: PChar):integer;
 begin
- Result:=Level.AddLayer(name);
+ Result := Level.AddLayer(name);
 end;
 
 
 {0.92}
-Function TCOMLevel.NTHingValues(th:integer):integer;
+Function TSEDCOMLevel.NTHingValues(th:integer):integer;
 begin
- result:=Level.Things[th].Vals.count;
+  result:=Level.Things[th].Vals.count;
 end;
 
-Function TCOMLevel.GetThingValueName(th,n:Integer):PAnsiChar;
+Function TSEDCOMLevel.GetThingValueName(th,n:Integer): PChar;
 begin
- result:=CacheAString(Level.Things[th].Vals[n].Name);
+  result := PChar(Level.Things[th].Vals[n].Name);
 end;
 
-Function TCOMLevel.GetThingValueData(th,n:integer):PAnsiChar;
+Function TSEDCOMLevel.GetThingValueData(th,n: integer): PChar;
 begin
- result:=CacheAString(Level.Things[th].Vals[n].AsString);
+  result := PChar(Level.Things[th].Vals[n].AsString);
 end;
 
-Procedure TCOMLevel.SetThingValueData(th,n:Integer;val:PAnsiChar);
+Procedure TSEDCOMLevel.SetThingValueData(th,n: Integer; val: PChar);
+var v: TTPLValue;
+begin
+  v := Level.Things[th].Vals[n];
+  S2TPLVal(v.name + '=' + val,v);
+end;
+
+Procedure TSEDCOMLevel.GetThingFrame(th,n:Integer;var x,y,z,pch,yaw,rol:double);
+begin
+  Level.Things[th].Vals[n].GetFrame(x,y,z,pch,yaw,rol);
+end;
+
+Procedure TSEDCOMLevel.SetThingFrame(th,n: Integer; x,y,z, pch,yaw,rol: double);
+begin
+  Level.Things[th].Vals[n].SetFrame(x, y, z, pch, yaw, rol);
+end;
+
+
+Function TSEDCOMLevel.AddThingValue(th: integer; name,val: PChar): integer;
 var v:TTPLValue;
 begin
- v:=Level.Things[th].Vals[n];
- S2TPLVal(v.name+'='+val,v);
+  v:=TTplValue.Create;
+  S2TPLVal(name + '=' + val, v);
+  Result:=Level.Things[th].Vals.Add(v);
 end;
 
-Procedure TCOMLevel.GetThingFrame(th,n:Integer;var x,y,z,pch,yaw,rol:double);
-begin
- Level.Things[th].Vals[n].GetFrame(x,y,z,pch,yaw,rol);
-end;
-
-Procedure TCOMLevel.SetThingFrame(th,n:Integer;x,y,z,pch,yaw,rol:double);
-begin
- Level.Things[th].Vals[n].SetFrame(x,y,z,pch,yaw,rol);
-end;
-
-
-Function TCOMLevel.AddThingValue(th:integer;name,val:PAnsiChar):integer;
+Procedure TSEDCOMLevel.InsertThingValue(th,n: Integer; name,val: PChar);
 var v:TTPLValue;
 begin
- v:=TTplValue.Create;
- S2TPLVal(name+'='+val,v);
- Result:=Level.Things[th].Vals.Add(v);
+  v := TTplValue.Create;
+  S2TPLVal(name + '=' + val, v);
+  Level.Things[th].Vals.Insert(n, v);
 end;
 
-Procedure TCOMLevel.InsertThingValue(th,n:Integer;name,val:PAnsiChar);
-var v:TTPLValue;
-begin
- v:=TTplValue.Create;
- S2TPLVal(name+'='+val,v);
- Level.Things[th].Vals.Insert(n,v);
-end;
-
-Procedure TCOMLevel.DeleteThingValue(th,n:integer);
+Procedure TSEDCOMLevel.DeleteThingValue(th,n: integer);
 var v:TTPLValue;
 begin
  v:=Level.Things[th].Vals[n];
@@ -1140,7 +1103,7 @@ end;
 
 
 {COGs}
-Function TCOMLevel.AddCOG(name:PAnsiChar):Integer;
+Function TSEDCOMLevel.AddCOG(name: PChar): Integer;
 var cg:TCOG;
     cf:TCogFile;
     i:integer;
@@ -1166,48 +1129,48 @@ begin
  JedMain.LevelChanged;
 end;
 
-Procedure TCOMLevel.DeleteCOG(n:integer);
+Procedure TSEDCOMLevel.DeleteCOG(n: integer);
 var cog:TCOG;
 begin
  lev_utils.DeleteCOG(level,n);
 end;
 
-Procedure TCOMLevel.UpdateCOG(cg:integer);
+Procedure TSEDCOMLevel.UpdateCOG(cg: integer);
 begin
  COgForm.UpdateCOG(cg);
 end;
 
-Function TCOMLevel.GetCOGFileName(cg:integer):PAnsiChar;
+Function TSEDCOMLevel.GetCOGFileName(cg: integer): PChar;
 begin
- Result:=CacheAString(Level.COGS[cg].name);
+ Result := PChar(Level.COGS[cg].name);
 end;
 
-Function TCOMLevel.NCOGValues(cg:integer):integer;
+Function TSEDCOMLevel.NCOGValues(cg: integer): integer;
 begin
  Result:=Level.COGS[cg].vals.count;
 end;
 
-Function TCOMLevel.GetCOGValueName(cg,n:Integer):PAnsiChar;
+Function TSEDCOMLevel.GetCOGValueName(cg,n: Integer): PChar;
 begin
- Result:=CacheAString(Level.COGS[cg].vals[n].Name);
+ Result := PChar(Level.COGS[cg].vals[n].Name);
 end;
 
-Function TCOMLevel.GetCOGValueType(cg,n:Integer):integer;
+Function TSEDCOMLevel.GetCOGValueType(cg,n:Integer): integer;
 begin
- Result:=Integer(Level.COGS[cg].vals[n].cog_type);
+ Result := Integer(Level.COGS[cg].vals[n].cog_type);
 end;
 
-Function TCOMLevel.GetCOGValue(cg,n:Integer):PAnsiChar;
+Function TSEDCOMLevel.GetCOGValue(cg,n:Integer): PChar;
 begin
- Result:=CacheAString(Level.COGS[cg].vals[n].AsString);
+ Result := PChar(Level.COGS[cg].vals[n].AsString);
 end;
 
-Function TCOMLevel.SetCOGValue(cg,n:Integer;val:PAnsiChar):boolean;
+Function TSEDCOMLevel.SetCOGValue(cg,n: Integer; val: PChar): Boolean;
 begin
  Result:=Level.cogs[cg].Vals[n].JedVal(val);
 end;
 
-Function TCOMLevel.AddCOGValue(cg:integer;name,val:PAnsiChar;vtype:integer):integer;
+Function TSEDCOMLevel.AddCOGValue(cg:integer; name,val: PChar; vtype:integer): integer;
 var v:TCOGValue;
 begin
  v:=TCogValue.Create;
@@ -1218,7 +1181,7 @@ begin
  result:=Level.cogs[cg].Vals.Add(v);
 end;
 
-Procedure TCOMLevel.InsertCOGValue(cg,n:Integer;name,val:PAnsiChar;vtype:integer);
+Procedure TSEDCOMLevel.InsertCOGValue(cg,n:Integer; name,val: PChar; vtype:integer);
 var v:TCOGValue;
 begin
  v:=TCogValue.Create;
@@ -1229,7 +1192,7 @@ begin
  Level.cogs[cg].Vals.Insert(n,v);
 end;
 
-Procedure TCOMLevel.DeleteCOGValue(cg,n:integer);
+Procedure TSEDCOMLevel.DeleteCOGValue(cg,n: integer);
 var v:TCOGValue;
 begin
  v:=Level.Cogs[cg].Vals[n];
@@ -1238,218 +1201,220 @@ begin
 end;
 
 
-{JEDCOM}
+{SEDCOM}
 
-Function TJEDCOM.GetMapMode:Integer;
+Function TSEDCOM.GetMapMode:Integer;
 begin
  result:=JedMain.Map_Mode;
 end;
 
-Procedure TJEDCOM.SetMapMode(mode:integer);
+Procedure TSEDCOM.SetMapMode(mode:integer);
 begin
  JedMain.SetMapMode(Mode);
 end;
 
-Function TJEDCOM.GetCurSC:integer;
+Function TSEDCOM.GetCurSC:integer;
 begin
  Result:=JedMain.Cur_SC;
 end;
 
-Procedure TJEDCOM.SetCurSC(sc:integer);
+Procedure TSEDCOM.SetCurSC(sc:integer);
 begin
  JedMain.SetCurSC(sc);
 end;
 
-Function TJEDCOM.GetCurTH:integer;
+Function TSEDCOM.GetCurTH:integer;
 begin
  Result:=JedMain.Cur_TH;
 end;
 
-Procedure TJEDCOM.SetCurTH(th:integer);
+Procedure TSEDCOM.SetCurTH(th:integer);
 begin
  JedMain.SetCurTH(th);
 end;
 
-Function TJEDCOM.GetCurLT:integer;
+Function TSEDCOM.GetCurLT:integer;
 begin
  Result:=JedMain.Cur_LT;
 end;
 
-Procedure TJEDCOM.SetCurLT(lt:integer);
+Procedure TSEDCOM.SetCurLT(lt:integer);
 begin
  JedMain.SetCurLT(lt);
 end;
 
-Procedure TJEDCOM.GetCurVX(var sc,vx:integer);
+Procedure TSEDCOM.GetCurVX(var sc,vx:integer);
 begin
  sc:=JedMain.Cur_SC;
  vx:=JedMain.Cur_VX;
 end;
 
-Procedure TJEDCOM.SetCurVX(sc,vx:integer);
+Procedure TSEDCOM.SetCurVX(sc,vx:integer);
 begin
  JedMain.SetCurVX(sc,vx);
 end;
 
-Procedure TJEDCOM.GetCurSF(var sc,sf:integer);
+Procedure TSEDCOM.GetCurSF(var sc,sf:integer);
 begin
  sc:=JedMain.Cur_SC;
  sf:=JedMain.Cur_SF;
 end;
 
-Procedure TJEDCOM.SetCurSF(sc,sf:integer);
+Procedure TSEDCOM.SetCurSF(sc,sf:integer);
 begin
  JedMain.SetCurSF(sc,sf);
 end;
 
-Procedure TJEDCOM.GetCurED(var sc,sf,ed:integer);
+Procedure TSEDCOM.GetCurED(var sc,sf,ed:integer);
 begin
  sc:=JedMain.Cur_SC;
  sf:=JedMain.Cur_SF;
  ed:=JedMain.Cur_ED;
 end;
 
-Procedure TJEDCOM.SetCurED(sc,sf,ed:integer);
+Procedure TSEDCOM.SetCurED(sc,sf,ed:integer);
 begin
  JedMain.SetCurED(sc,sf,ed);
 end;
 
-Procedure TJEDCOM.GetCurFR(var th,fr:integer);
+Procedure TSEDCOM.GetCurFR(var th,fr:integer);
 begin
  th:=JedMain.Cur_TH;
  fr:=JedMain.Cur_FR;
 end;
 
-Procedure TJEDCOM.SetCurFR(th,fr:integer);
+Procedure TSEDCOM.SetCurFR(th,fr:integer);
 begin
  JedMain.SetCurFR(th,fr);
 end;
 
-Procedure TJEDCOM.NewLevel(mots:boolean);
+Procedure TSEDCOM.NewLevel(kind: integer);
 begin
- case mots of
-  true: JedMain.New1.Click;
-  false: JedMain.NewMotsProject1.Click;
+ case TProjectType(kind) of
+  TProjectType.JKDF2: JedMain.New1.Click;
+  TProjectType.MOTS: JedMain.NewMotsProject1.Click;
+  else
+    JedMain.NewIJIMProject.Click;
  end;
 end;
 
-Procedure TJEDCOM.LoadLevel(name:PAnsiChar);
+Procedure TSEDCOM.LoadLevel(name: PChar);
 begin
- JedMain.OpenProject(name,op_open);
+ JedMain.OpenProject(name, op_open);
 end;
 
 {Different level editing functions}
 
-Procedure TJEDCOM.FindBBox(sec:integer;var box:TJEDBox);
+Procedure TSEDCOM.FindBBox(sec:integer;var box:TSEDBox);
 begin
  lev_utils.FindBBox(Level.Sectors[sec],TBox(box));
 end;
 
-Procedure TJEDCOM.FindBoundingSphere(sec:integer;var CX,CY,CZ,Radius:double);
+Procedure TSEDCOM.FindBoundingSphere(sec:integer;var CX,CY,CZ,Radius:double);
 begin
  lev_utils.FindBSphere(level.Sectors[sec],cx,cy,cz,radius);
 end;
 
-Function TJEDCOM.FindCollideBox(sec:integer;const bbox:TJEDBox;cx,cy,cz:double;var cbox:TJEDBox):boolean;
+Function TSEDCOM.FindCollideBox(sec:integer;const bbox:TSEDBox;cx,cy,cz:double;var cbox:TSEDBox):boolean;
 begin
  Result:=lev_utils.FindCollideBox(level.Sectors[sec],TBox(bbox),cx,cy,cz,Tbox(cbox));
 end;
 
-Procedure TJEDCOM.FindSurfaceCenter(sc,sf:integer;var cx,cy,cz:double);
+Procedure TSEDCOM.FindSurfaceCenter(sc,sf:integer;var cx,cy,cz:double);
 begin
  lev_utils.CalcSurfCenter(level.sectors[sc].surfaces[sf],cx,cy,cz);
 end;
 
-Procedure TJEDCOM.RotateVector(var vec:TJEDVector; pch,yaw,rol:double);
+Procedure TSEDCOM.RotateVector(var vec:TSEDVector; pch,yaw,rol:double);
 begin
  lev_utils.RotateVector(TVector(vec),pch,yaw,rol);
 end;
 
-Procedure TJEDCOM.RotatePoint(ax1,ay1,az1,ax2,ay2,az2:double;angle:double;var x,y,z:double);
+Procedure TSEDCOM.RotatePoint(ax1,ay1,az1,ax2,ay2,az2:double;angle:double;var x,y,z:double);
 begin
  lev_utils.RotatePoint(ax1,ay1,az1,ax2,ay2,az2,angle,x,y,z);
 end;
 
-Procedure TJEDCOM.GetJKPYR(const x,y,z:TJEDVector;var pch,yaw,rol:double);
+Procedure TSEDCOM.GetJKPYR(const x,y,z:TSEDVector;var pch,yaw,rol:double);
 begin
  lev_utils.GetJKPYR(Tvector(x),Tvector(y),Tvector(z),pch,yaw,rol);
 end;
 
-Function TJEDCOM.IsSurfaceConvex(sc,sf:integer):boolean;
+Function TSEDCOM.IsSurfaceConvex(sc,sf:integer):boolean;
 begin
  result:=lev_utils.IsSurfConvex(Level.Sectors[sc].Surfaces[sf]);
 end;
 
-Function TJEDCOM.IsSurfacePlanar(sc,sf:integer):boolean;
+Function TSEDCOM.IsSurfacePlanar(sc,sf:integer):boolean;
 begin
  result:=lev_utils.IsSurfPlanar(Level.Sectors[sc].Surfaces[sf]);
 end;
 
-Function TJEDCOM.IsSectorConvex(sec:integer):boolean;
+Function TSEDCOM.IsSectorConvex(sec:integer):boolean;
 begin
  result:=lev_utils.IsSectorConvex(Level.Sectors[sec]);
 end;
 
-Function TJEDCOM.IsInSector(sec:integer;x,y,z:double):boolean;
+Function TSEDCOM.IsInSector(sec:integer;x,y,z:double):boolean;
 begin
  Result:=lev_utils.IsInSector(Level.Sectors[sec],x,y,z);
 end;
 
-Function TJEDCOM.DoSectorsOverlap(sec1,sec2:integer):boolean;
+Function TSEDCOM.DoSectorsOverlap(sec1,sec2:integer):boolean;
 begin
  result:=lev_utils.DoSectorsOverlap(Level.Sectors[sec1],Level.Sectors[sec2]);
 end;
 
-Function TJEDCOM.IsPointOnSurface(sc,sf:integer;x,y,z:double):boolean;
+Function TSEDCOM.IsPointOnSurface(sc,sf:integer;x,y,z:double):boolean;
 begin
  result:=lev_utils.IsPointOnSurface(Level.Sectors[sc].Surfaces[sf],x,y,z);
 end;
 
-Function TJEDCOM.FindSectorForThing(th:integer):Integer;
+Function TSEDCOM.FindSectorForThing(th:integer):Integer;
 begin
  result:=lev_utils.FindSectorForThing(Level.Things[th]);
 end;
 
-Function TJEDCOM.FindSectorForXYZ(X,Y,Z:double):integer;
+Function TSEDCOM.FindSectorForXYZ(X,Y,Z:double):integer;
 begin
  result:=lev_utils.FindSectorForXYZ(level,x,y,z);
 end;
 
-Function TJEDCOM.ExtrudeSurface(sc,sf:integer; by:double):integer;
+Function TSEDCOM.ExtrudeSurface(sc,sf:integer; by:double):integer;
 begin
  lev_utils.ExtrudeSurface(Level.Sectors[sc].Surfaces[sf],by);
  result:=level.Sectors.count-1;
 end;
 
-Function TJEDCOM.CleaveSurface(sc,sf:integer; const cnormal:TJEDvector; cx,cy,cz:double):integer;
+Function TSEDCOM.CleaveSurface(sc,sf:integer; const cnormal:TSEDVector; cx,cy,cz:double):integer;
 begin
  if lev_utils.CleaveSurface(Level.Sectors[sc].Surfaces[sf],Tvector(Cnormal),cx,cy,cz) then
  result:=Level.Sectors[sc].Surfaces.count-1 else result:=-1;
 end;
 
-Function TJEDCOM.CleaveSector(sec:integer; const cnormal:TJEDvector; cx,cy,cz:double):integer;
+Function TSEDCOM.CleaveSector(sec:integer; const cnormal:TSEDVector; cx,cy,cz:double):integer;
 begin
  if lev_utils.CleaveSector(Level.Sectors[sec],Tvector(Cnormal),cx,cy,cz) then
  result:=Level.Sectors.count-1 else result:=-1;
 end;
 
-Function TJEDCOM.CleaveEdge(sc,sf,ed:integer; const cnormal:TJEDvector; cx,cy,cz:double):boolean;
+Function TSEDCOM.CleaveEdge(sc,sf,ed:integer; const cnormal:TSEDVector; cx,cy,cz:double):boolean;
 begin
  result:=lev_utils.CleaveEdge(Level.Sectors[sc].Surfaces[sf],ed,Tvector(Cnormal),cx,cy,cz);
 end;
 
-Function TJEDCOM.JoinSurfaces(sc1,sf1,sc2,sf2:Integer):boolean;
+Function TSEDCOM.JoinSurfaces(sc1,sf1,sc2,sf2:Integer):boolean;
 begin
  result:=lev_utils.ConnectSurfaces(Level.Sectors[sc1].Surfaces[sf1],
                               Level.Sectors[sc2].Surfaces[sf2]);
 end;
 
-Function TJEDCOM.PlanarizeSurface(sc,sf:integer):boolean;
+Function TSEDCOM.PlanarizeSurface(sc,sf:integer):boolean;
 begin
  result:=lev_utils.FlattenSurface(Level.Sectors[sc].Surfaces[sf]);
 end;
 
-Function TJEDCOM.MergeSurfaces(sc,sf1,sf2:integer):integer;
+Function TSEDCOM.MergeSurfaces(sc,sf1,sf2:integer):integer;
 var surf:TJKSurface;
 begin
  surf:=lev_utils.MergeSurfaces(Level.Sectors[sc].Surfaces[sf1],
@@ -1457,7 +1422,7 @@ begin
  if surf=nil then result:=-1 else result:=surf.num;
 end;
 
-Function TJEDCOM.MergeSectors(sec1,sec2:integer):integer;
+Function TSEDCOM.MergeSectors(sec1,sec2:integer):integer;
 var sec:TJKSector;
 begin
  sec:=lev_utils.MergeSectors(Level.Sectors[sec1],
@@ -1465,92 +1430,92 @@ begin
  if sec=nil then result:=-1 else result:=sec.num;
 end;
 
-Procedure TJEDCOM.CalculateDefaultUVNormals(sc,sf:integer; orgvx:integer; var un,vn:TJEDVector);
+Procedure TSEDCOM.CalculateDefaultUVNormals(sc,sf:integer; orgvx:integer; var un,vn:TSEDVector);
 begin
  lev_utils.CalcDefaultUVNormals(Level.Sectors[sc].Surfaces[sf],
                                      orgvx,Tvector(un),Tvector(vn));
 end;
 
-Procedure TJEDCOM.CalcUVNormals(sc,sf:integer; var un,vn:TJEDVector);
+Procedure TSEDCOM.CalcUVNormals(sc,sf:integer; var un,vn:TSEDVector);
 begin
  lev_utils.CalcUVNormals(Level.Sectors[sc].Surfaces[sf],
                                      Tvector(un),Tvector(vn));
 end;
 
-Procedure TJEDCOM.ArrangeTexture(sc,sf:integer; orgvx:integer; const un,vn:TJEDvector);
+Procedure TSEDCOM.ArrangeTexture(sc,sf:integer; orgvx:integer; const un,vn:TSEDVector);
 begin
  lev_utils.ArrangeTexture(Level.Sectors[sc].Surfaces[sf],
                                      orgvx,Tvector(un),Tvector(vn));
 end;
 
-Procedure TJEDCOM.ArrangeTextureBy(sc,sf:integer;const un,vn:TJEDvector;refx,refy,refz,refu,refv:double);
+Procedure TSEDCOM.ArrangeTextureBy(sc,sf:integer;const un,vn:TSEDVector;refx,refy,refz,refu,refv:double);
 begin
  lev_utils.ArrangeTextureBy(Level.Sectors[sc].Surfaces[sf],
                                      Tvector(un),Tvector(vn),refx,refy,refz,refu,refv);
 end;
 
-Function TJEDCOM.IsTextureFlipped(sc,sf:integer):boolean;
+Function TSEDCOM.IsTextureFlipped(sc,sf:integer):boolean;
 begin
  result:=lev_utils.IsTXFlipped(Level.Sectors[sc].surfaces[sf]);
 end;
 
-Procedure TJEDCOM.RemoveSurfaceReferences(sc,sf:integer);
+Procedure TSEDCOM.RemoveSurfaceReferences(sc,sf:integer);
 begin
  lev_utils.RemoveSurfRefs(level,Level.Sectors[sc].surfaces[sf]);
 end;
 
-Procedure TJEDCOM.RemoveSectorReferences(sec:integer;surfs:boolean);
+Procedure TSEDCOM.RemoveSectorReferences(sec:integer;surfs:boolean);
 begin
  if surfs then lev_utils.RemoveSecRefs(level,Level.Sectors[sec],rs_surfs)
  else lev_utils.RemoveSecRefs(level,Level.Sectors[sec],0);
 end;
 
-Function TJEDCOM.StitchSurfaces(sc1,sf1,sc2,sf2:integer):boolean;
+Function TSEDCOM.StitchSurfaces(sc1,sf1,sc2,sf2:integer):boolean;
 begin
  Result:=lev_utils.StitchSurfaces(Level.Sectors[sc1].surfaces[sf1],
                                  Level.Sectors[sc2].surfaces[sf2]);
 end;
 
-Function TJEDCOM.FindCommonEdges(sc1,sf1,sc2,sf2:integer; var v11,v12,v21,v22:integer):boolean;
+Function TSEDCOM.FindCommonEdges(sc1,sf1,sc2,sf2:integer; var v11,v12,v21,v22:integer):boolean;
 begin
  Result:=lev_utils.FindCommonEdges(Level.Sectors[sc1].surfaces[sf1],
                                  Level.Sectors[sc2].surfaces[sf2],v11,v12,v21,v22);
 end;
 
-Function TJEDCOM.DoSurfacesOverlap(sc1,sf1,sc2,sf2:integer):boolean;
+Function TSEDCOM.DoSurfacesOverlap(sc1,sf1,sc2,sf2:integer):boolean;
 begin
  Result:=lev_utils.Do_Surf_Overlap(Level.Sectors[sc1].surfaces[sf1],
                                  Level.Sectors[sc2].surfaces[sf2]);
 end;
 
-Function TJEDCOM.MakeAdjoin(sc,sf:integer):boolean;
+Function TSEDCOM.MakeAdjoin(sc,sf:integer):boolean;
 begin
  Result:=lev_utils.MakeAdjoin(Level.Sectors[sc].surfaces[sf]);
 end;
 
-Function TJEDCOM.MakeAdjoinFromSectorUp(sc,sf:integer;firstsc:integer):boolean;
+Function TSEDCOM.MakeAdjoinFromSectorUp(sc,sf:integer;firstsc:integer):boolean;
 begin
  Result:=lev_utils.MakeAdjoinSCUp(Level.Sectors[sc].surfaces[sf],
                                       firstsc);
 end;
 
-Function TJEDCOM.UnAdjoin(sc,sf:integer):Boolean;
+Function TSEDCOM.UnAdjoin(sc,sf:integer):Boolean;
 begin
  Result:=lev_utils.UnAdjoin(Level.Sectors[sc].surfaces[sf]);
 end;
 
-Function TJEDCOM.CreateCubicSector(x,y,z:double;const pnormal,edge:TJEDVector):integer;
+Function TSEDCOM.CreateCubicSector(x,y,z:double;const pnormal,edge:TSEDVector):integer;
 begin
  lev_utils.CreateCube(level,x,y,z,Tvector(pnormal),TVector(edge));
  result:=Level.sectors.count-1;
 end;
 
-Procedure TJEDCOM.StartUndo(name:PAnsiChar);
+Procedure TSEDCOM.StartUndo(name: PChar);
 begin
  StartUndoRec(name);
 end;
 
-Procedure TJEDCOM.SaveUndoForThing(n:integer;change:integer);
+Procedure TSEDCOM.SaveUndoForThing(n:integer;change:integer);
 begin
  case change of
   0: SaveThingUndo(Level.Things[n],ch_changed);
@@ -1559,7 +1524,7 @@ begin
  end;
 end;
 
-Procedure TJEDCOM.SaveUndoForLight(n:integer;change:integer);
+Procedure TSEDCOM.SaveUndoForLight(n:integer;change:integer);
 begin
  case change of
   0: SaveLightUndo(Level.Lights[n],ch_changed);
@@ -1568,7 +1533,7 @@ begin
  end;
 end;
 
-Procedure TJEDCOM.SaveUndoForSector(n:integer;change:integer;whatpart:integer);
+Procedure TSEDCOM.SaveUndoForSector(n:integer;change:integer;whatpart:integer);
 var how:integer;
 begin
 how:=12;
@@ -1583,29 +1548,29 @@ if whatpart=3 then how:=12;
  end;
 end;
 
-Procedure TJEDCOM.ClearUndoBuffer;
+Procedure TSEDCOM.ClearUndoBuffer;
 begin
  u_undo.ClearUndoBuffer;
 end;
 
-Procedure TJEDCOM.ApplyUndo;
+Procedure TSEDCOM.ApplyUndo;
 begin
  u_undo.ApplyUndo;
 end;
 
 {0.92}
 
-Function TJEDCOM.GetApplicationHandle:Integer;
+Function TSEDCOM.GetApplicationHandle:Integer;
 begin
  result:=Application.Handle;
 end;
 
-Function TJEDCOM.JoinSectors(sec1,sec2:integer):boolean;
+Function TSEDCOM.JoinSectors(sec1,sec2:integer):boolean;
 begin
  result:=lev_utils.ConnectSectors(Level.Sectors[sec1],level.Sectors[sec2]);
 end;
 
-Function TJEDCOM.GetNMultiselected(what:integer):integer;
+Function TSEDCOM.GetNMultiselected(what:integer):integer;
 begin
  With JedMain do
  case what of
@@ -1619,7 +1584,7 @@ begin
  end;
 end;
 
-Procedure TJEDCOM.ClearMultiselection(what:integer);
+Procedure TSEDCOM.ClearMultiselection(what:integer);
 begin
  With JedMain do
  case what of
@@ -1634,7 +1599,7 @@ begin
  JedMain.Invalidate;
 end;
 
-Procedure TJEDCOM.RemoveFromMultiselection(what,n:integer);
+Procedure TSEDCOM.RemoveFromMultiselection(what,n:integer);
 begin
  With JedMain do
  case what of
@@ -1649,133 +1614,133 @@ begin
  JedMain.Invalidate;
 end;
 
-Function TJEDCOM.GetSelectedSC(n:integer):integer;
+Function TSEDCOM.GetSelectedSC(n:integer):integer;
 begin
  Result:=JedMain.scsel.GetSC(n);
 end;
 
-Function TJEDCOM.GetSelectedTH(n:integer):integer;
+Function TSEDCOM.GetSelectedTH(n:integer):integer;
 begin
  Result:=JedMain.thsel.GetTH(n);
 end;
 
-Function TJEDCOM.GetSelectedLT(n:integer):integer;
+Function TSEDCOM.GetSelectedLT(n:integer):integer;
 begin
  Result:=JedMain.ltsel.GetLT(n);
 end;
 
-Procedure TJEDCOM.GetSelectedSF(n:integer;var sc,sf:integer);
+Procedure TSEDCOM.GetSelectedSF(n:integer;var sc,sf:integer);
 begin
  JedMain.sfsel.GetSCSF(n,sc,sf);
 end;
 
-Procedure TJEDCOM.GetSelectedED(n:integer;var sc,sf,ed:integer);
+Procedure TSEDCOM.GetSelectedED(n:integer;var sc,sf,ed:integer);
 begin
  JedMain.edsel.GetSCSFED(n,sc,sf,ed);
 end;
 
-Procedure TJEDCOM.GetSelectedVX(n:integer;var sc,vx:integer);
+Procedure TSEDCOM.GetSelectedVX(n:integer;var sc,vx:integer);
 begin
  JedMain.vxsel.GetSCVX(n,sc,vx);
 end;
 
-Procedure TJEDCOM.GetSelectedFR(n:integer;var th,fr:integer);
+Procedure TSEDCOM.GetSelectedFR(n:integer;var th,fr:integer);
 begin
  JedMain.frsel.GetTHFR(n,th,fr);
 end;
 
-Function TJEDCOM.SelectSC(sc:integer):integer;
+Function TSEDCOM.SelectSC(sc:integer):integer;
 begin
  Result:=Nmask and JedMain.scsel.AddSC(sc);
 end;
 
-Function TJEDCOM.SelectSF(sc,sf:integer):integer;
+Function TSEDCOM.SelectSF(sc,sf:integer):integer;
 begin
  Result:=Nmask and JedMain.sfsel.AddSF(sc,sf);
 end;
 
-Function TJEDCOM.SelectED(sc,sf,ed:integer):integer;
+Function TSEDCOM.SelectED(sc,sf,ed:integer):integer;
 begin
  Result:=Nmask and JedMain.edsel.AddED(sc,sf,ed);
 end;
 
-Function TJEDCOM.SelectVX(sc,vx:integer):integer;
+Function TSEDCOM.SelectVX(sc,vx:integer):integer;
 begin
  Result:=Nmask and JedMain.vxsel.AddVX(sc,vx);
 end;
 
-Function TJEDCOM.SelectTH(th:integer):integer;
+Function TSEDCOM.SelectTH(th:integer):integer;
 begin
  Result:=Nmask and JedMain.thsel.AddTH(th);
 end;
 
-Function TJEDCOM.SelectFR(th,fr:integer):integer;
+Function TSEDCOM.SelectFR(th,fr:integer):integer;
 begin
  Result:=Nmask and JedMain.frsel.AddFR(th,fr);
 end;
 
-Function TJEDCOM.SelectLT(lt:integer):integer;
+Function TSEDCOM.SelectLT(lt:integer):integer;
 begin
  Result:=Nmask and JedMain.ltsel.AddLT(lt);
 end;
 
-Function TJEDCOM.FindSelectedSC(sc:integer):integer;
+Function TSEDCOM.FindSelectedSC(sc:integer):integer;
 begin
  Result:=JedMain.scsel.FindSC(sc);
 end;
 
-Function TJEDCOM.FindSelectedSF(sc,sf:integer):integer;
+Function TSEDCOM.FindSelectedSF(sc,sf:integer):integer;
 begin
  Result:=JedMain.sfsel.FindSF(sc,sf);
 end;
 
-Function TJEDCOM.FindSelectedED(sc,sf,ed:integer):integer;
+Function TSEDCOM.FindSelectedED(sc,sf,ed:integer):integer;
 begin
  Result:=JedMain.edsel.FindED(sc,sf,ed);
 end;
 
-Function TJEDCOM.FindSelectedVX(sc,vx:integer):integer;
+Function TSEDCOM.FindSelectedVX(sc,vx:integer):integer;
 begin
  Result:=JedMain.vxsel.FindVX(sc,vx);
 end;
 
-Function TJEDCOM.FindSelectedTH(th:integer):integer;
+Function TSEDCOM.FindSelectedTH(th:integer):integer;
 begin
  Result:=JedMain.thsel.FindTH(th);
 end;
 
-Function TJEDCOM.FindSelectedFR(th,fr:integer):integer;
+Function TSEDCOM.FindSelectedFR(th,fr:integer):integer;
 begin
  Result:=JedMain.frsel.FindFR(th,fr);
 end;
 
-Function TJEDCOM.FindSelectedLT(lt:integer):integer;
+Function TSEDCOM.FindSelectedLT(lt:integer):integer;
 begin
  Result:=JedMain.ltsel.FindLT(lt);
 end;
 
-Procedure TJEDCOM.SaveJED(name:PAnsiChar);
+Procedure TSEDCOM.SaveSED(name: PChar);
 begin
- JedMain.SaveToFile(name, 'jed')
+ JedMain.SaveToFile(name, 'jed');
 end;
 
-Procedure TJEDCOM.SaveJKL(name:PAnsiChar);
+Procedure TSEDCOM.SaveJKL(name: PChar);
 begin
  JedMain.SaveJKLto(name);
 end;
 
-Procedure TJEDCOM.UpdateMap;
+Procedure TSEDCOM.UpdateMap;
 begin
  JedMain.Invalidate;
 end;
 
-Procedure TJEDCOM.SetPickerCMP(cmp:PAnsiChar);
+Procedure TSEDCOM.SetPickerCMP(cmp: PChar);
 begin
  ResPicker.SetCMP(cmp);
 end;
 
-Function TJEDCOM.PickResource(what:integer;cur:PAnsiChar):PAnsiChar;
-const resstr:AnsiString='';
+Function TSEDCOM.PickResource(what:integer;cur: PChar): PChar;
+const resstr: AnsiString='';
 begin
 SaveCurApp;
 case what of
@@ -1797,11 +1762,11 @@ case what of
  pr_jklsmksan: resstr:=ResPicker.PickEpSeq(cur);
 else resstr:=cur;
 end;
- result:=PAnsiChar(resstr);
+ result:= PChar(resstr);
  RestoreCurApp;
 end;
 
-Function TJEDCOM.EditFlags(what:integer;flags:LongInt):LongInt;
+Function TSEDCOM.EditFlags(what:integer;flags:LongInt):LongInt;
 begin
 SaveCurApp;
 case what of
@@ -1818,12 +1783,12 @@ end;
  RestoreCurApp;
 end;
 
-Procedure TJEDCOM.ReloadTemplates;
+Procedure TSEDCOM.ReloadTemplates;
 begin
  JedMain.LoadTemplates;
 end;
 
-Procedure TJEDCOM.PanMessage(mtype:integer;msg:PAnsiChar);
+Procedure TSEDCOM.PanMessage(mtype: integer; msg: PChar);
 begin
  case mtype of
   0: misc_utils.PanMessage(mt_info,msg);
@@ -1832,7 +1797,7 @@ begin
  end;
 end;
 
-Procedure TJEDCOM.SendKey(shift:integer;key:integer);
+Procedure TSEDCOM.SendKey(shift:integer;key:integer);
 var st:TShiftState;
     akey:word;
 begin
@@ -1844,23 +1809,23 @@ begin
  JedMain.FormKeyDown(JedMain,akey,st);
 end;
 
-Function TJEDCOM.ExecuteMenu(itemref:PAnsiChar):boolean;
+Function TSEDCOM.ExecuteMenu(itemref: PChar):boolean;
 var nmi,mi:TMenuItem;
     cname:string;
     p,cpos:integer;
 
-Function GetNextItem(var s:string;pos:integer):integer;
-begin
- Result:=pos;
- While result<length(ItemRef) do
-  if ItemRef[result]<>'\' then inc(result) else break;
+  Function GetNextItem(var s:string; pos :integer):integer;
+  begin
+   Result:=pos;
+   While result<length(ItemRef) do
+    if ItemRef[result]<>'\' then inc(result) else break;
 
- if result=length(itemRef) then  s:=Copy(itemref,pos,Length(ItemRef))
- else s:=Copy(itemref,pos,result-pos);
+   if result=length(itemRef) then  s:=Copy(itemref,pos,Length(ItemRef))
+   else s:=Copy(itemref,pos,result-pos);
 
- inc(result);
+   inc(result);
 
-end;
+  end;
 
 var i:integer;s:string;
 begin
@@ -1910,41 +1875,49 @@ begin
  Result:=true;
 end;
 
-Function TJEDCOM.GetJEDSetting(name:PAnsiChar):variant;
+Function TSEDCOM.GetSEDSetting(name: PChar): variant;
 begin
- Result:=GetSetting(name);
- if VarIsStr(Result) then
-    Result := AnsiString(String(Result));
+ Result := GetSetting(name); // TODO: verify, might breake plugin due to returned string
 end;
 
-Function TJEDCOM.IsLayerVisible(n:integer):boolean;
+Function TSEDCOM.IsLayerVisible(n: integer):boolean;
 begin
  Result:=ToolBar.IsLayerVisible(n);
 end;
 
-Procedure TJEDCOM.CheckConsistencyErrors;
+Procedure TSEDCOM.CheckConsistencyErrors;
 begin
  Consistency.Check;
  Consistency.Hide;
 end;
 
-Procedure TJEDCOM.CheckResources;
+Procedure TSEDCOM.CheckResources;
 begin
  Consistency.CheckResources;
  Consistency.Hide;
 end;
 
-Function TJEDCOM.NConsistencyErrors:integer;
+Function TSEDCOM.NConsistencyErrors:integer;
 begin
  result:=Consistency.NErrors;
 end;
 
-Function TJEDCOM.GetConsErrorString(n:integer):PAnsiChar;
+Function TSEDCOM.GetConsErrorString(n:integer): PChar;
+
 begin
- result:=CacheAString(Consistency.ErrorText(n));
+ result:= PChar(Consistency.ErrorText(n));
 end;
 
-Function TJEDCOM.GetConsErrorType(n:integer):integer;
+Function TSEDCOM.GetConsErrorType(n:integer):integer;
+var obj:TConsistencyError;
+begin
+ result:=-1;
+ obj:=Consistency.ErrorObject(n);
+ if obj=nil then exit;
+ result:=integer(obj.etype);
+end;
+
+Function TSEDCOM.GetConsErrorItemType(n:integer):integer;
 var obj:TConsistencyError;
 begin
  result:=-1;
@@ -1953,7 +1926,7 @@ begin
  result:=integer(obj.itype);
 end;
 
-Function TJEDCOM.GetConsErrorSector(n:integer):integer;
+Function TSEDCOM.GetConsErrorSector(n:integer):integer;
 var obj:TConsistencyError;
 begin
  result:=-1;
@@ -1962,7 +1935,7 @@ begin
  else if obj.itype=itSurface then Result:=TJKSurface(obj.item).sector.num;
 end;
 
-Function TJEDCOM.GetConsErrorSurface(n:integer):integer;
+Function TSEDCOM.GetConsErrorSurface(n:integer):integer;
 var obj:TConsistencyError;
 begin
  result:=-1;
@@ -1970,7 +1943,7 @@ begin
  if obj.itype=itSurface then Result:=TJKSurface(obj.item).num;
 end;
 
-Function TJEDCOM.GetConsErrorThing(n:integer):integer;
+Function TSEDCOM.GetConsErrorThing(n:integer):integer;
 var obj:TConsistencyError;
 begin
  result:=-1;
@@ -1978,117 +1951,119 @@ begin
  if obj.itype=itThing then Result:=TJKThing(obj.item).num;
 end;
 
-Function TJEDCOM.GetConsErrorCog(n:integer):integer;
+Function TSEDCOM.GetConsErrorCog(n:integer):integer;
 var obj:TConsistencyError;
 begin
  result:=-1;
+ if n >= Consistency.NErrors then exit;
  obj:=Consistency.ErrorObject(n);
  if obj.itype=itCog then Result:=J_Level.Level.COGS.IndexOf(obj.item);
 end;
 
-Function TJEDCOM.IsPreviewActive:boolean;
+Function TSEDCOM.IsPreviewActive:boolean;
 begin
  Result:=Preview3D.IsActive;
 end;
 
-Function TJEDCOM.GetJEDString(what:integer):PAnsiChar;
+Function TSEDCOM.GetSEDString(what: integer): PChar;
+  begin
+    case what of
+      SS_ProjectDir:  result := PChar(ProjectDir);
+      SS_SEDDir:      result := PChar(BaseDir);
+      SS_CDDir:       result := PChar(CDDir);
+      SS_GameDir:     result := PChar(GameDir);
+      SS_LevelFile:   result := PChar(JedMain.LevelFile);
+      SS_ConfigFile:  result := PChar(GetConfigFilePath());
+      SS_LECLogoJK:   result := PChar(LECLogoJK);
+      SS_Recent1:     result := PChar(Recent1);
+      SS_Recent2:     result := PChar(Recent2);
+      SS_Recent3:     result := PChar(Recent3);
+      SS_Recent4:     result := PChar(Recent4);
+      SS_Res1gob:     result := PChar(Res1_Gob);
+      SS_Res2gob:     result := PChar(Res2_Gob);
+      SS_SPGOB:       result := PChar(sp_Gob);
+      SS_MP1GOB:      result := PChar(mp1_Gob);
+      SS_MP2GOB:      result := PChar(mp2_Gob);
+      SS_MP3GOB:      result := PChar(mp3_Gob);
+      SS_LECLogoIJIM: result := PChar(LECLogoIJIM);
+  else
+    begin
+      tmpastr[0] := #0;
+       result := @tmpastr[0];
+    end;
+end;
+
+end;
+
+Function TSEDCOM.GetProjectType:integer;
 begin
-case what of
- js_ProjectDir: result:=CacheAString(ProjectDir);
- js_JEDDir: result:=CacheAString(BaseDir);
- js_CDDir: result:=CacheAString(CDDir);
- js_GameDir: result:=CacheAString(GameDir);
- js_LevelFile: result:=CacheAString(JedMain.LevelFile);
- js_jedregkey: result:=CacheAString(GetConfigFilePath()); // was RegBase (removed)
- js_LECLogo: result:=CacheAString(LECLogoJK);
- js_recent1: result:=CacheAString(Recent1);
- js_recent2: result:=CacheAString(Recent2);
- js_recent3: result:=CacheAString(Recent3);
- js_recent4: result:=CacheAString(Recent4);
- js_res1gob: result:=CacheAString(Res1_Gob);
- js_res2gob: result:=CacheAString(Res2_Gob);
- js_spgob: result:=CacheAString(sp_Gob);
- js_mp1gob: result:=CacheAString(mp1_Gob);
- js_mp2gob: result:=CacheAString(mp2_Gob);
- js_mp3gob: result:=CacheAString(mp3_Gob);
-else begin
-      tmpastr[0]:=#0;
-      result:=@tmpastr[0];
-     end;
+ Result:=integer(GlobalVars.CurrentProject);
 end;
 
-end;
-
-
-Function TJEDCOM.GetIsMOTS:boolean;
+Procedure TSEDCOM.SetProjectType(kind:integer);
 begin
- Result:= (GlobalVars.CurrentProject = TProjectType.MOTS);
+ SetProjectType(kind);
 end;
 
-Procedure TJEDCOM.SetIsMOTS(mots:boolean);
- var kind: TProjectType;
+Function TSEDCOM.GetJEDWindow(whichone:integer):integer;
 begin
- kind := TProjectType.JKDF2;
- if mots then kind := TProjectType.MOTS;
- U_Options.SetProjectType(kind);
+  case whichone of
+   sw_Main: result:=JedMain.Handle;
+   sw_ConsChecker: Result:=Consistency.Handle;
+   sw_ItemEdit: Result:=ItemEdit.Handle;
+   sw_PlacedCogs: Result:=CogForm.Handle;
+   sw_MsgWindow: result:=MsgForm.Handle;
+   sw_3DPreview: result:=Preview3D.Handle;
+   sw_ToolWindow: result:=ToolForm.Handle;
+  else result:=0;
+  end;
 end;
 
-Function TJEDCOM.GetJedWindow(whichone:integer):integer;
+Function TSEDCOM.FileExtractExt(path: PChar): PChar;
 begin
-case whichone of
- jw_Main: result:=JedMain.Handle;
- jw_ConsChecker: Result:=Consistency.Handle;
- jw_ItemEdit: Result:=ItemEdit.Handle;
- jw_PlacedCogs: Result:=CogForm.Handle;
- jw_MsgWindow: result:=MsgForm.Handle;
- jw_3DPreview: result:=Preview3D.Handle;
- jw_ToolWindow: result:=ToolForm.Handle;
-else result:=0;
-end;
+  Result := PChar(ExtractExt(path));
 end;
 
-Function TJEDCOM.FileExtractExt(path:PAnsiChar):PAnsiChar;
+Function TSEDCOM.FileExtractPath(path: PChar): PChar;
 begin
- result:=CacheAString(ExtractExt(path));
+  Result := PChar(ExtractPath(path));
 end;
 
-Function TJEDCOM.FileExtractPath(path:PAnsiChar):PAnsiChar;
+Function TSEDCOM.FileExtractName(path: PChar): PChar;
 begin
- result:=CacheAString(ExtractPath(path));
+  Result := PChar(ExtractName(path));
 end;
 
-Function TJEDCOM.FileExtractName(path:PAnsiChar):PAnsiChar;
+Function TSEDCOM.FindProjectDirFile(name: PChar): PChar;
 begin
- result:=CacheAString(ExtractName(path));
+  Result := PChar(FindProjDirFile(name));
 end;
 
-Function TJEDCOM.FindProjectDirFile(name:PAnsiChar):PAnsiChar;
+Function TSEDCOM.IsFileContainer(path: PChar): Boolean;
 begin
- result:=CacheAString(FindProjDirFile(name));
+ result := IsContainer(path);
 end;
 
-Function TJEDCOM.IsFileContainer(path:PAnsiChar):boolean;
-begin
- result:=IsContainer(path);
-end;
-
-Function TJEDCOM.IsFileInContainer(path:PAnsiChar):Boolean;
+Function TSEDCOM.IsFileInContainer(path: PChar): Boolean;
 begin
  result:=IsInContainer(path);
 end;
 
-Function TJEDCOM.FileOpenDialog(fname:PAnsiChar;filter:PAnsiChar):PAnsiChar;
+Function TSEDCOM.FileOpenDialog(fname: PChar; filter: PChar): PChar;
 begin
- SaveCurApp;
- GetFileOpen.FileName:=fname;
- GetFileOpen.Filter:=filter;
- if GetFileOpen.Execute then result:=CacheAString(GetFileOpen.FileName)
- else result:=nil;
- RestoreCurApp;
+  SaveCurApp;
+  GetFileOpen.FileName:=fname;
+  GetFileOpen.Filter:=filter;
+  if GetFileOpen.Execute then
+    begin
+        result := PChar(GetFileOpen.FileName)
+    end
+  else result := nil;
+  RestoreCurApp;
 end;
 
 
-Function TJEDCOM.OpenFile(name:PAnsiChar):integer;
+Function TSEDCOM.OpenFile(name: PChar):integer;
 begin
 try
  result:=files.NewHandle(OpenFileRead(name,0));
@@ -2097,133 +2072,135 @@ except
 end;
 end;
 
-Function TJEDCOM.OpenGameFile(name:PAnsiChar):integer;
+Function TSEDCOM.OpenGameFile(name: PChar): integer;
 begin
 try
- result:=files.NewHandle(FileOperations.OpenGameFile(name));
+ result := files.NewHandle(FileOperations.OpenGameFile(name));
 except
  on Exception do result:=-1;
 end;
 end;
 
-Function TJEDCOM.ReadFile(handle:integer;buf:pointer;size:longint):integer;
+Function TSEDCOM.ReadFile(handle:integer;buf:pointer;size:longint):integer;
 begin
  result:=TFile(files.GetItemNoNIL(handle)).Fread(buf^,size);
 end;
 
-Procedure TJEDCOM. SetFilePos(handle:integer;pos:longint);
+Procedure TSEDCOM. SetFilePos(handle:integer;pos:longint);
 begin
  TFile(files.GetItemNoNIL(handle)).FSeek(pos);
 end;
 
-Function TJEDCOM.GetFilePos(handle:integer):longint;
+Function TSEDCOM.GetFilePos(handle:integer):longint;
 begin
  Result:=TFile(files.GetItemNoNIL(handle)).FPos;
 end;
 
-Function TJEDCOM.GetFileSize(handle:integer):longint;
+Function TSEDCOM.GetFileSize(handle:integer):longint;
 begin
  result:=TFile(files.GetItemNoNIL(handle)).FSize;
 end;
 
-Function TJEDCOM.GetFileName(handle:integer):PAnsiChar;
+Function TSEDCOM.GetFileName(handle:integer): PChar;
 begin
- Result:=CacheAString(TFile(files.GetItemNoNIL(handle)).GetFullName);
+ tmpstr := TFile(files.GetItemNoNIL(handle)).GetFullName;  // GetFullName returns tmp string
+ Result := PChar(tmpstr);
 end;
 
-Procedure TJEDCOM.CloseFile(handle:integer);
+Procedure TSEDCOM.CloseFile(handle:integer);
 begin
  files.FreeHandle(handle);
 end;
 
-Function TJEDCOM.OpenTextFile(name:PAnsiChar):integer;
+Function TSEDCOM.OpenTextFile(name: PChar): integer;
 begin
-try
- result:=tfiles.NewHandle(TTextFile.CreateRead(OpenFileRead(name,0)));
-except
- on Exception do result:=-1;
-end;
+  try
+   result := tfiles.NewHandle(TTextFile.CreateRead(OpenFileRead(name,0)));
+  except
+   on Exception do result := -1;
+  end;
 end;
 
-Function TJEDCOM.OpenGameTextFile(name:PAnsiChar):integer;
+Function TSEDCOM.OpenGameTextFile(name: PChar): integer;
 begin
-try
- result:=tfiles.NewHandle(TTextFile.CreateRead(FileOperations.OpenGameFile(name)));
-except
- on Exception do result:=-1;
-end;
+  try
+    result := tfiles.NewHandle(TTextFile.CreateRead(FileOperations.OpenGameFile(name)));
+  except
+   on Exception do result := -1;
+  end;
 end;
 
-Function TJEDCOM.GetTextFileName(handle:integer):PAnsiChar;
+Function TSEDCOM.GetTextFileName(handle: integer): PChar;
 begin
- result := CacheAString(TTextFile(tfiles.GetItemNoNIL(handle)).GetFullName);
+  tmpstr := TTextFile(tfiles.GetItemNoNIL(handle)).GetFullName;  // GetFullName returns tmp string
+  Result := PChar(tmpstr);
 end;
 
-Function TJEDCOM.ReadTextFileString(handle:integer):PAnsiChar;
+Function TSEDCOM.ReadTextFileString(handle: integer): PChar;
   var tmpstr: string;
 begin
  TTextFile(tfiles.GetItemNoNIL(handle)).Readln(tmpstr);
- result:=CacheAString(tmpstr);
+ result := PChar(tmpstr);
 end;
 
-Function TJEDCOM.TextFileEof(handle:integer):boolean;
+Function TSEDCOM.TextFileEof(handle: integer):boolean;
 begin
- result:=TTextFile(tfiles.GetItemNoNIL(handle)).eof;
+  Result := TTextFile(tfiles.GetItemNoNIL(handle)).eof;
 end;
 
-Function TJEDCOM.TextFileCurrentLine(handle:integer):integer;
+Function TSEDCOM.TextFileCurrentLine(handle:integer): integer;
 begin
  result:=TTextFile(tfiles.GetItemNoNIL(handle)).CurrentLine;
 end;
 
-Procedure TJEDCOM.CloseTextFile(handle:integer);
+Procedure TSEDCOM.CloseTextFile(handle: integer);
 begin
  tfiles.FreeHandle(handle);
 end;
 
-Function TJEDCOM.OpenGOB(name:PAnsiChar):integer;
+Function TSEDCOM.OpenGOB(name: PChar):integer;
 begin
 try
- result:=conts.NewHandle(OpenContainer(name));
+ result := conts.NewHandle(OpenContainer(name));
 except
  on Exception do result:=-1;
 end;
 end;
 
-Function TJEDCOM.GOBNFiles(handle:integer):integer;
+Function TSEDCOM.GOBNFiles(handle:integer):integer;
 begin
- result:=TContainerFile(conts.GetItemNoNIL(handle)).Files.Count;
+ Result:=TContainerFile(conts.GetItemNoNIL(handle)).Files.Count;
 end;
 
-Function TJEDCOM.GOBNFileName(handle:integer;n:integer):PAnsiChar;
+Function TSEDCOM.GOBNFileName(handle:integer;n:integer): PChar;
 begin
- result:=CacheAString(TContainerFile(conts.GetItemNoNIL(handle)).Files[n]);
+ Result := PChar(TContainerFile(conts.GetItemNoNIL(handle)).Files[n]);
 end;
 
-Function TJEDCOM.GOBNFullFileName(handle:integer;n:integer):PAnsiChar;
+Function TSEDCOM.GOBNFullFileName(handle:integer; n:integer): PChar;
 var cf:TContainerFile;
 begin
  cf:=TContainerFile(conts.GetItemNoNIL(handle));
- tmpstr:=cf.Name+'>'+cf.Files[n];
- result:=PAnsiChar(tmpstr);
+ tmpstr := cf.Name + '>' + cf.Files[n];
+ Result := PChar(tmpstr)
 end;
 
-Function TJEDCOM.GOBGetFileOffset(handle:integer;n:integer):longint;
+Function TSEDCOM.GOBGetFileOffset(handle: integer;n:integer): longint;
 begin
  result:=TFileInfo(TContainerFile(conts.GetItemNoNIL(handle)).Files.Objects[n]).offs;
 end;
 
-Function TJEDCOM.GOBGetFileSize(handle:integer;n:integer):longint;
+Function TSEDCOM.GOBGetFileSize(handle:integer;n:integer): longint;
 begin
  result:=TFileInfo(TContainerFile(conts.GetItemNoNIL(handle)).Files.Objects[n]).size;
 end;
 
-Procedure TJEDCOM.CloseGOB(handle:integer);
+Procedure TSEDCOM.CloseGOB(handle:integer);
 begin
  conts.FreeHandle(handle);
 end;
 
-Function TJEDCOM.CreateWFRenderer(wnd:integer;whichone:integer):IJEDWFRenderer;
+Function TSEDCOM.CreateWFRenderer(wnd:integer;whichone:integer):ISEDWFRenderer;
 begin
  try
   result:=TCOMWFRenderer.Create(wnd,whichone);
@@ -2477,7 +2454,7 @@ begin
  Result:=Rend.IsVertexInRect(x,y,z);
 end;
 
-function TCOMWFRenderer.GetXYZonPlaneAt(scX,scY:integer;pnormal:TJedVector; pX,pY,pZ:double; var X,Y,Z:double):Boolean;
+function TCOMWFRenderer.GetXYZonPlaneAt(scX,scY:integer;pnormal:TSEDVector; pX,pY,pZ:double; var X,Y,Z:double):Boolean;
 begin
  result:=Rend.GetXYZonPlaneAt(scX,scY,Tvector(pnormal),pX,pY,pZ,X,Y,Z);
 end;

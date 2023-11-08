@@ -5,10 +5,10 @@ interface
 uses
     Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
     ComCtrls, StdCtrls, Menus, GlobalVars, J_Level, misc_utils, ExtCtrls,
-    Render, OGL_render, FileOperations, lev_utils, Geometry,
-    Buttons, Math, Containers, Files, U_templates, Prefab, ListRes,
-    sft_render, u_multisel, jed_plugins, values, shellApi, U_copypaste,
-    FileCtrl, u_undo, JED_COM, tbar_tools, u_3dos, System.ImageList, Vcl.ImgList, Types;
+    Render, OGL_render, FileOperations, lev_utils, Geometry, Buttons, Math,
+    Containers, Files, U_templates, Prefab, ListRes, sft_render, u_multisel,
+    jed_plugins, sed_plugins, values, shellApi, U_copypaste, FileCtrl, u_undo,
+    SED_COM, JED_COM, tbar_tools, u_3dos, System.ImageList, Vcl.ImgList, Types;
 
 Const
     { Map modes }
@@ -4139,7 +4139,7 @@ begin
 //                end;
                 surf.Recalc;
                 FindUVScales(surf);
-                if CompareValue(surf.normal.z, 0.6, CloseEnough) = GreaterThanValue then // If less LE 40°
+                if CompareValue(surf.normal.z, 0.6, CloseEnough) = GreaterThanValue then // If less LE 40ï¿½
                   surf.SurfFlags := surf.SurfFlags or SF_Floor;
             end;
         end;
@@ -8105,45 +8105,57 @@ begin
 end;
 
 Procedure LoadDLLPlugin(const dll: string);
-var
-    hlib: Integer;
-
-    Procedure CallLoad(hmod: Integer);
+    Procedure CallLoad(hmod: HMODULE );
     var
-        lf: TJEDPluginLoad;
-        lfstd: TJEDPluginLoadStdCall;
+        sedpl:    TSEDPluginLoad;
+        sedplstd: TSEDPluginLoadStdCall;
+        jedpl:    TJEDPluginLoad;
+        jedplstd: TJEDPluginLoadStdCall;
     begin
         try
-            lfstd := GetProcAddress(hlib, 'JEDPluginLoadStdCall');
-            { lfstd:=GetProcAddress(hlib,'@JEDPluginLoadStdcall$qqsp4IJED'); }
-
-            if Assigned(lfstd) then
+            sedplstd := GetProcAddress(hmod, 'SEDPluginLoadStdCall');
+            if Assigned(sedplstd) then
             begin
-                if not lfstd(getJEDCOM) then
-                    PanMessage(mt_warning,
-                      'Plug-in returned a error in initialization ' + dll);
+                if not sedplstd(GetSEDCOM) then
+                    PanMessageFmt(mt_warning, 'Plug-in %s returned error while executing!', [dll]);
                 exit;
             end;
 
-            lf := GetProcAddress(hlib, 'JEDPluginLoad');
-            if not Assigned(lf) then
+            sedpl := GetProcAddress(hmod, 'SEDPluginLoad');
+            if Assigned(sedpl) then
             begin
-                PanMessage(mt_warning, 'The DLL ' + dll +
-                  ' is not a JED plug-in: no JEDPluginLoadStdCall or JEDPluginLoad function');
+                if not sedpl(GetSEDCOM) then
+                    PanMessageFmt(mt_warning, 'Plug-in %s returned error while executing!', [dll]);
                 exit;
             end;
-            if not lf(getJEDCOM) then
-                PanMessage(mt_warning,
-                  'Plug-in returned a error in initialization ' + dll);
+
+            {Fallback to lagacy JED plugin}
+            jedplstd := GetProcAddress(hmod, 'JEDPluginLoadStdCall');
+            //lfstd:=GetProcAddress(hmod,'@JEDPluginLoadStdcall$qqsp4IJED');
+            if Assigned(jedplstd) then
+            begin
+                if not jedplstd(GetJEDCOM) then
+                    PanMessageFmt(mt_warning, 'Plug-in %s returned error while executing!', [dll]);
+                exit;
+            end;
+
+            jedpl := GetProcAddress(hmod, 'JEDPluginLoad');
+            if not Assigned(jedpl) then
+              begin
+                  PanMessageFmt(mt_warning, 'The DLL %s is not a SED or JED plug-in: No load function found!', [dll]);
+                  exit;
+              end;
+
+            if not jedpl(GetJEDCOM) then
+                PanMessageFmt(mt_warning, 'Plug-in %s returned error while executing!', [dll]);
         Except
             On E: Exception do
-                PanMessage(mt_warning, 'Exception raised by ' + dll + ' ' +
-                  E.message);
+                PanMessageFmt(mt_warning, 'Exception raised by %s: %s', [dll, E.message]);
         end;
     end;
 
 begin
-    hlib := GetModuleHandle(PChar(dll));
+    var hlib := GetModuleHandle(PChar(dll));
     if hlib <> 0 then
     begin
         CallLoad(hlib);

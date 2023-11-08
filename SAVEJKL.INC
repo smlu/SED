@@ -994,7 +994,7 @@ begin {SaveToJKL}
     end;
 
   WriteS('SECTION: COPYRIGHT');
-  var logo: String := LECLogo;
+  var logo: String := LECLogoJK;
   if kind = TProjectType.IJIM then logo := LECLogoIJIM;
   WriteS(logo);
   WriteS('');

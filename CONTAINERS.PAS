@@ -278,7 +278,7 @@ end;
 Procedure TLFDCreator.PrepareHeader(newfiles:TStringList);
 var i:Integer;
     pe:^TLFDEntry;
-    name,ext:AnsiString;
+    name,ext: AnsiString;
 begin
  pes:=TList.Create;
  cf.FSeek(sizeof(TLFDEntry)*newfiles.count+sizeof(TLFDEntry));
@@ -402,7 +402,7 @@ var i:integer;
     buf:Array[0..255] of AnsiChar;
     len:Integer;
     ple:^TLabEntry;
-    aName:AnsiString;
+    aName: AnsiString;
 begin
  pes:=TList.Create;
  Lh.magic:='LABN';

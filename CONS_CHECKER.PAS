@@ -23,13 +23,13 @@ Const
 
 
 type
-  ItemType = (itNone = 0, itSector = 1, itSurface = 2, itThing = 3, itCog = 4);
-  ErrorType = (etNormal = 0, etError = 1, etWarning = 2);
+  CCItemType = (itNone = 0, itSector = 1, itSurface = 2, itThing = 3, itCog = 4);
+  CCErrorType = (etNormal = 0, etWarning = 1, etError = 2);
 
   TConsistencyError = class
-    itype: ItemType;
+    itype: CCItemType;
     item: TObject;
-    etype: ErrorType;
+    etype: CCErrorType;
   end;
 
   TConsistency = class(TForm)
@@ -53,7 +53,7 @@ type
   private
     { Private declarations }
     Procedure ClearErrors;
-    Procedure AddItem(Const Text: String; itm: TObject; et: ErrorType);
+    Procedure AddItem(Const Text: String; itm: TObject; et: CCErrorType);
     Procedure AddNormal(Const Text: String; itm: TObject);
     Procedure AddError(Const Text: String; itm: TObject);
     Procedure AddWarning(Const Text: String; itm: TObject);
@@ -156,7 +156,7 @@ begin
   AddItem(Text, itm, etWarning);
 end;
 
-Procedure TConsistency.AddItem(Const Text: String; itm: TObject; et: ErrorType);
+Procedure TConsistency.AddItem(Const Text: String; itm: TObject; et: CCErrorType);
 var
   ce: TConsistencyError;
   ni: Integer;
