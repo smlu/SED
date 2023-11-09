@@ -30,7 +30,7 @@ const
 
 type
   TGeoMode   = (NotDrawn, Vertex, Wireframe, Solid, Texture);
-  TLightMode = (None = 0, Lit = 1, Diffuse = 2, Gouraud = 3, Gouraud2 = 4, Gouraud3 = 5, VertexDiffuseOnly = -1); // VertexOnly - is internal type, to not be used in the game
+  TLightMode = (None = 0, Lit = 1, Diffuse = 2, Gouraud = 3, Gouraud2 = 4, Gouraud3 = 5, VertexDiffuseOnly = -1); // VertexDiffuseOnly - is internal type, to not be used in the game
 
   TVector2d = record
     x, y: double;

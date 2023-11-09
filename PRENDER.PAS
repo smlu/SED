@@ -1932,6 +1932,8 @@ end;
 Function T3DPoly.GetLitColor(color: TColorF): TColorF;
 begin
     Result := ColorWhite;
+    Result.a := color.a;  // IJIM sets alpha also in cases when lmode is fully lit or none
+
     if light = VertexDiffuseOnly then
       Result := color
     else if (light >= TLightMode.Diffuse) and (not P3DFullLit) then
@@ -1945,11 +1947,10 @@ begin
           begin
             var a := Result.a;
             Result := Result + color;
+
             if a >= 1.0 then
               Result.a := color.a;
-          end
-        else
-          Result.a := color.a;
+          end;
 
         if (CurrentProject <> IJIM) then
           begin

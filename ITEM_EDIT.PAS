@@ -574,11 +574,6 @@ begin
           end;
         end;
       ID_SF_EXTRA_LIGHT:
-//        begin
-//          Result := ValDouble(s, d);
-//          if Result then
-//            ExtraLight := d;
-//        end;
         begin
           if CurrentProject = IJIM then
             Result := ValColor(s, c)
@@ -588,7 +583,19 @@ begin
               c := MakeColor(d, d, d, d);
             end;
           if Result then
-            ExtraLight := c;
+            begin
+              ExtraLight := c;
+
+              { Update vertex intesity alpha }
+              if CurrentProject = IJIM then
+                begin
+                  for var j := 0 to Vertices.Count - 1 do
+                    begin
+                      With TXVertices[j] do
+                      color.a := ExtraLight.a;
+                    end;
+                end;
+            end;
         end;
       ID_UScale:
         begin
