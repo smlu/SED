@@ -57,8 +57,8 @@ Private
  d3didxs:  TArray<WORD>;
  Function GetD3DPalette(const pal:TCMPPal):IDirectDrawPalette;
  Procedure SetRendererState(const faceflags: longint);
- Procedure RenderWiredPolys(const [Ref] polys: TArray<T3DPoly>; count: Integer);
- Procedure RenderSolidPolys(const [Ref] polys: TArray<T3DPoly>; count: Integer);
+ Procedure DrawWiredPolys(const [Ref] polys: TArray<T3DPoly>; count: Integer);
+ Procedure DrawSolidPolys(const [Ref] polys: TArray<T3DPoly>; count: Integer);
 end;
 
 PTD3D5PRenderer = ^TD3D5PRenderer;
@@ -365,7 +365,7 @@ begin
       begin
 
         DXCheck(Id3dDev.SetRenderState(D3DRENDERSTATE_BLENDENABLE, Integer(TRUE)), 'Setting render state: Enable blend');
-        DXCheck(Id3dDev.SetRenderState(D3DRENDERSTATE_TEXTUREMAPBLEND, Integer(D3DTBLEND_MODULATE)), 'Setting render state: Set texture blend to D3DTBLEND_MODULATE');
+        DXCheck(Id3dDev.SetRenderState(D3DRENDERSTATE_TEXTUREMAPBLEND, Integer(D3DTBLEND_MODULATEALPHA)), 'Setting render state: Set texture blend to D3DTBLEND_MODULATE');
 
         DXCheck(Id3dDev.SetRenderState(D3DRENDERSTATE_SRCBLEND, Integer(D3DBLEND_SRCALPHA)), 'Setting render state: Set src blend to SRCALPHA');
         DXCheck(Id3dDev.SetRenderState(D3DRENDERSTATE_DESTBLEND, Integer(D3DBLEND_INVSRCALPHA)), 'Setting render state: Set dest blend to INVSRCALPHA');
@@ -563,9 +563,9 @@ begin
     count := Length(polys);
 
   if geoMode <= Wireframe then
-    RenderWiredPolys(polys, count)
+    DrawWiredPolys(polys, count)
   else
-    RenderSolidPolys(polys, count);
+    DrawSolidPolys(polys, count);
 
 
 //  var maxDxVerts   := Length(d3dvxs);
@@ -677,7 +677,7 @@ begin
 //    end;
 end;
 
-Procedure TD3D5PRenderer.RenderWiredPolys(const [Ref] polys: TArray<T3DPoly>; count: Integer);
+Procedure TD3D5PRenderer.DrawWiredPolys(const [Ref] polys: TArray<T3DPoly>; count: Integer);
   var
     res: HRESULT;
     lfv: array [0..3] of TD3DLVERTEX;
@@ -723,7 +723,7 @@ begin
   end;
 end;
 
-Procedure TD3D5PRenderer.RenderSolidPolys(const [Ref] polys: TArray<T3DPoly>; count: Integer);
+Procedure TD3D5PRenderer.DrawSolidPolys(const [Ref] polys: TArray<T3DPoly>; count: Integer);
 begin
   var maxDxVerts   := Length(d3dvxs);
   var numDxVerts   := 0;
@@ -1127,14 +1127,13 @@ var
 
     {  ddsd.ddpfPixelFormat.dwZBufferBitDepth:=8;
       ddsd.ddpfPixelFormat.dwAlphaBitDepth:=8;}
-      //if mf.mh.ci.mode = RGBA then
+//      if mf.Info.ci.mode = RGBA then
 //        begin
 //          ddsd.ddpfPixelFormat.dwRGBBitCount:=32;
 //          ddsd.ddpfPixelFormat.dwRBitMask := $ff0000;
 //          ddsd.ddpfPixelFormat.dwGBitMask := $ff00;
 //          ddsd.ddpfPixelFormat.dwBBitMask := $ff;
 //          ddsd.ddpfPixelFormat.dwRGBAlphaBitMask:= $ff000000;
-//
 //        end;
   //    else
   //      begin
