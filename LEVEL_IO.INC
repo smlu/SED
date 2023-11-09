@@ -149,7 +149,8 @@ begin
   p := LowerCase(w2).IndexOf('.mat');
   if p = -1 then
   begin
-    PanMessageFmt(mt_warning, 'Invalid entry in materials section at index: %d', [i]);
+    PanMessageFmt(mt_warning, 'Invalid mat filename: ''%s'' at index %d', [w2, i]);
+    mats.Add(w1); // Add it to the list anyway so the surface mat indices won't break
     inc(i);
     continue;
   end;
