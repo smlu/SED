@@ -76,26 +76,26 @@ type
     Function GetUV(): TTXVertex;
   end;
 
-  TJedLight = class
+  TSedLight = class
     ID: integer; { Unique ID. Used in Undo }
-
-    X, Y, Z: double;
-    mark: integer;
-    Intensity: double;
-    Range: double;
-    layer: integer;
     flags: longint;
-    R, G, B: Single;
-    rgbintensity: Single;
-    rgbrange: double;
+    mark: integer;
+    layer: integer;
+
+    color: TColorF;
+    intensity: double;
+    range: double;
+
+    position: TVector;
+
     Constructor Create;
-    Procedure Assign(l: TJedLight);
+    Procedure Assign(l: TSedLight);
   end;
 
-  TJedLights = class(TList)
-    Function GetItem(n: integer): TJedLight;
-    Procedure SetItem(n: integer; v: TJedLight);
-    Property Items[n: integer]: TJedLight read GetItem write SetItem; default;
+  TSedLights = class(TList)
+    Function GetItem(n: integer): TSedLight;
+    Procedure SetItem(n: integer; v: TSedLight);
+    Property Items[n: integer]: TSedLight read GetItem write SetItem; default;
   end;
 
   TJKVertices = class(TVertices)
@@ -204,7 +204,7 @@ type
     ColorMap: String;
     Tint: TColorF;
     Sound: string;
-    snd_vol: double;
+    soundVolume: double;
     Thrust: TVector;
 
     level: TJKLevel;
@@ -264,7 +264,7 @@ type
     cogs: TCOGs;
     templates: TTemplates;
     things: TThings;
-    lights: TJedLights;
+    lights: TSedLights;
     layers: TStringList;
     h3donodes: THNodes;
 
@@ -293,7 +293,7 @@ type
 
     Function NewSector: TJKSector;
     Function NewThing: TJKThing;
-    Function NewLight: TJedLight;
+    Function NewLight: TSedLight;
     Function New3DONode: THNode;
 
     Function GetThingByID(ID: integer): integer;
@@ -343,35 +343,31 @@ uses ProgressDialog, lev_utils, cog_utils, ListRes, U_CogForm,
 
 { Lights }
 
-Constructor TJedLight.Create;
+Constructor TSedLight.Create;
 begin
   Range := 2;
-  Intensity := 10;
-  R := 1;
-  G := 1;
-  B := 1;
-  rgbintensity := 10;
+  intensity := 10;
+  color := ColorWhite;
 end;
 
-Procedure TJedLight.Assign(l: TJedLight);
+Procedure TSedLight.Assign(l: TSedLight);
 begin
-  Intensity    := l.Intensity;
-  Range        := l.Range;
-  R            := l.R;
-  G            := l.G;
-  B            := l.G;
-  rgbintensity := l.rgbintensity;
+  flags        := l.flags;
+  intensity    := l.intensity;
+  range        := l.range;
+  color        := l.color;
+  position     := l.position;
   layer        := l.layer;
 end;
 
-Function TJedLights.GetItem(n: integer): TJedLight;
+Function TSedLights.GetItem(n: integer): TSedLight;
 begin
   if (n < 0) or (n >= count) then
     raise EListError.CreateFmt('Light Index is out of bounds: %d', [n]);
-  Result := TJedLight(List[n]);
+  Result := TSedLight(List[n]);
 end;
 
-Procedure TJedLights.SetItem(n: integer; v: TJedLight);
+Procedure TSedLights.SetItem(n: integer; v: TSedLight);
 begin
   if (n < 0) or (n >= count) then
     raise EListError.CreateFmt('Light Index is out of bounds: %d', [n]);
@@ -829,17 +825,17 @@ end;
 
 Procedure TJKSector.Assign(Sec: TJKSector);
 begin
-  flags      := Sec.flags;
-  Ambient    := Sec.Ambient;
-  ExtraLight := Sec.ExtraLight;
-  PointLight := Sec.PointLight;
-  ColorMap   := Sec.ColorMap;
-  Tint       := Sec.Tint;
-  Sound      := Sec.Sound;
-  snd_vol    := Sec.snd_vol;
-  thrust     := Sec.Thrust;
-  CollideBox := Sec.CollideBox;
-  layer      := Sec.layer;
+  flags       := Sec.flags;
+  Ambient     := Sec.Ambient;
+  ExtraLight  := Sec.ExtraLight;
+  PointLight  := Sec.PointLight;
+  ColorMap    := Sec.ColorMap;
+  Tint        := Sec.Tint;
+  Sound       := Sec.Sound;
+  soundVolume := Sec.soundVolume;
+  thrust      := Sec.Thrust;
+  CollideBox  := Sec.CollideBox;
+  layer       := Sec.layer;
 end;
 
 { TJKLevel Methods }
@@ -920,9 +916,9 @@ begin
   Result.ID := getNewID;
 end;
 
-Function TJKLevel.NewLight: TJedLight;
+Function TJKLevel.NewLight: TSedLight;
 begin
-  Result := TJedLight.Create;
+  Result := TSedLight.Create;
   Result.ID := getNewID;
 end;
 
@@ -982,7 +978,7 @@ begin
   self.templates := TTemplates.Create;
   Things := TThings.Create;
   Cogs := TCOGs.Create;
-  Lights := TJedLights.Create;
+  Lights := TSedLights.Create;
   Layers := TStringList.Create;
   h3donodes := THNodes.Create;
 end;

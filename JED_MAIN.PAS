@@ -600,7 +600,7 @@ var
     surf: TJKSurface;
     v: TJKVertex;
     th: TJKThing;
-    LT: TJedLight;
+    LT: TSedLight;
     i: Integer;
 begin
     for i := 0 to Level.Things.Count - 1 do
@@ -707,9 +707,9 @@ begin
     Level.Lights.Add(LT);
     With LT do
     begin
-        X := 0;
-        Y := 0;
-        z := 0.5;
+        position.x := 0;
+        position.y := 0;
+        position.z := 0.5;
     end;
 
     for i := 0 to sec.surfaces.Count - 1 do
@@ -1083,7 +1083,7 @@ var
     sec: TJKSector;
     surf: TJKSurface;
     thing: TJKThing;
-    light: TJedLight;
+    light: TSedLight;
     en: TVector;
     dx, dy, dz, pch, yaw, rol: double;
     bbox, cbox: TBox;
@@ -1169,12 +1169,13 @@ begin
         begin
             With clLight do
                 renderer.SetColor(CL_Front, r, g, b);
+
             For th := 0 to Level.Lights.Count - 1 do
             begin
                 light := Level.Lights[th];
                 if ToolBar.IsLayerVisible(light.Layer) then
                     With light do
-                        renderer.DrawVertex(X, Y, z);
+                        renderer.DrawVertex(position.x, position.y, position.z);
             end;
         end;
 
@@ -1182,6 +1183,7 @@ begin
         begin
             With clFrame do
                 renderer.SetColor(CL_Front, r, g, b);
+
             renderer.SetPointSize(4);
             for th := 0 to Level.Things.Count - 1 do
             begin
@@ -1320,11 +1322,12 @@ begin
         MM_LT:
             begin
                 With clMSel do
-                    renderer.SetColor(CL_Front, r, g, b);
+                  renderer.SetColor(CL_Front, r, g, b);
+
                 for s := 0 to ltsel.Count - 1 do
-                    With Level.Lights[ltsel.getLT(s)] do
+                  With Level.Lights[ltsel.getLT(s)] do
                     begin
-                        renderer.DrawVertex(X, Y, z);
+                        renderer.DrawVertex(position.x, position.y, position.z);
                     end;
             end;
     end;
@@ -1482,8 +1485,8 @@ begin
                     if Cur_LT < Level.Lights.Count then
                         With Level.Lights[Cur_LT] do
                         begin
-                            renderer.DrawVertex(X, Y, z);
-                            renderer.DrawCircle(X, Y, z, range);
+                            renderer.DrawVertex(position.x, position.y, position.z);
+                            renderer.DrawCircle(position.x, position.y, position.z, range);
                         end;
                 end;
 
@@ -2800,7 +2803,7 @@ Var
     v1, v2: TJKVertex;
     sec: TJKSector;
     thing: TJKThing;
-    light: TJedLight;
+    light: TSedLight;
     obj: TObject;
     fx, fy, fz, pch, yaw, rol: double;
 begin
@@ -2820,6 +2823,7 @@ begin
     end
     else
         csel := -1;
+
     if csel = -1 then
     begin
         renderer.BeginPick(X, Y);
@@ -2896,9 +2900,9 @@ begin
                 for th := 0 to Level.Lights.Count - 1 do
                 begin
                     light := Level.Lights[th];
-                    If ToolBar.IsLayerVisible(light.Layer) then
+                    if ToolBar.IsLayerVisible(light.Layer) then
                         With light do
-                            renderer.PickVertex(X, Y, z, th);
+                            renderer.PickVertex(position.x, position.y, position.z, th);
                 end;
             MM_Extra:
                 for s := 0 to ExtraObjs.Count - 1 do
@@ -2934,7 +2938,7 @@ begin
             MM_ED:
                 begin
                     VX := renderer.Selected[csel];
-                    s := VX div 65536;
+                    s  := VX div 65536;
                     SF := VX mod 1024;
                     ED := (VX mod 65536) div 1024;
                     SetCurED(s, SF, ED);
@@ -3223,7 +3227,7 @@ begin
                 for i := 0 to Level.Lights.Count - 1 do
                     With Level.Lights[i] do
                         if ToolBar.IsLayerVisible(Layer) then
-                            if renderer.IsVertexInRect(X, Y, z) then
+                            if renderer.IsVertexInRect(position.x, position.y, position.z) then
                                 DO_SelLT(i);
             end;
         MM_FR:
@@ -3295,7 +3299,7 @@ var
     surf: TJKSurface;
     VX: TJKVertex;
     th: TJKThing;
-    LT: TJedLight;
+    LT: TSedLight;
     vl: TTPLValue;
     EX: TObject;
     pch, yaw, rol: double;
@@ -3374,11 +3378,11 @@ begin
             begin
                 LT := Level.Lights[Cur_LT];
                 With LT do
-                begin
-                    rx := X;
-                    ry := Y;
-                    rz := z;
-                end;
+                  begin
+                      rx := position.x;
+                      ry := position.y;
+                      rz := position.z;
+                  end;
             end;
         MM_Extra:
             begin
@@ -4852,7 +4856,7 @@ end;
 Procedure TJedMain.AddLightsAt(X, Y: Integer);
 var
     lx, ly, lz: double;
-    LT, nlt: TJedLight;
+    LT, nlt: TSedLight;
     nlts, i: Integer;
 begin
     If not GetXYZAt(X, Y, lx, ly, lz) then
@@ -4863,9 +4867,9 @@ begin
     if Level.Lights.Count = 0 then
     begin
         LT := Level.NewLight;
-        LT.X := lx;
-        LT.Y := ly;
-        LT.z := lz;
+        LT.position.x := lx;
+        LT.position.y := ly;
+        LT.position.z := lz;
         Level.Lights.Add(LT);
         SaveLightUndo(LT, ch_added);
         { SaveSelLightsUndo('Add light',ch_added); }
@@ -4875,9 +4879,9 @@ begin
 
     with Level.Lights[Cur_LT] do
     begin
-        lx := lx - X;
-        ly := ly - Y;
-        lz := lz - z;
+        lx := lx - position.x;
+        ly := ly - position.y;
+        lz := lz - position.z;
     end;
 
     ltsel.AddLT(Cur_LT);
@@ -4889,9 +4893,9 @@ begin
         LT := Level.Lights[ltsel.getLT(i)];
         nlt := Level.NewLight;
         nlt.Assign(LT);
-        nlt.X := LT.X + lx;
-        nlt.Y := LT.Y + ly;
-        nlt.z := LT.z + lz;
+        nlt.position.x := LT.position.x + lx;
+        nlt.position.y := LT.position.y + ly;
+        nlt.position.z := LT.position.z + lz;
         Level.Lights.Add(nlt);
         SaveLightUndo(nlt, ch_added);
     end;
@@ -5523,9 +5527,9 @@ begin
         MM_LT:
             With Level.Lights[Cur_LT] do
             begin
-                cx := X;
-                cy := Y;
-                cz := z;
+                cx := position.x;
+                cy := position.y;
+                cz := position.z;
             end;
     else
         exit;
@@ -5683,9 +5687,9 @@ begin
         MM_LT:
             With Level.Lights[Cur_LT] do
             begin
-                rx := X;
-                ry := Y;
-                rz := z;
+                rx := position.x;
+                ry := position.y;
+                rz := position.z;
             end;
     else
         exit;
@@ -6467,7 +6471,7 @@ var
     cx, cy, cz, a: double;
     sec: TJKSector;
     th: TJKThing;
-    LT: TJedLight;
+    LT: TSedLight;
 begin
 
     case axis of
@@ -6528,9 +6532,9 @@ begin
                 LT := Level.Lights[Cur_LT];
                 if axis <> rt_grid then
                 begin
-                    cx := LT.X;
-                    cy := LT.Y;
-                    cz := LT.z;
+                    cx := LT.position.x;
+                    cy := LT.position.y;
+                    cz := LT.position.z;
                 end;
 
                 StartUndoRec('Rotate light(s)');
@@ -6607,9 +6611,9 @@ begin
 
                 With Level.Lights[Cur_LT] do
                 begin
-                    cx := X;
-                    cy := Y;
-                    cz := z;
+                    cx := position.x;
+                    cy := position.y;
+                    cz := position.z;
                 end;
 
                 case how of
@@ -6726,9 +6730,9 @@ begin
                 i := ltsel.AddLT(Cur_LT);
                 With Level.Lights[Cur_LT] do
                 begin
-                    sd.cx := X;
-                    sd.cy := Y;
-                    sd.cz := z;
+                    sd.cx := position.x;
+                    sd.cy := position.y;
+                    sd.cz := position.z;
                 end;
                 ScaleLights(Level, ltsel, sd);
                 ltsel.DeleteN(i);
@@ -8563,17 +8567,17 @@ begin
         MM_LT:
             with Level.Lights[Cur_LT] do
             begin
-                cx := X;
-                cy := Y;
-                cz := z;
+                cx := position.x;
+                cy := position.y;
+                cz := position.z;
             end;
         MM_FR:
             if Cur_FR = -1 then
                 with Level.Lights[Cur_LT] do
                 begin
-                    cx := X;
-                    cy := Y;
-                    cz := z;
+                    cx := position.x;
+                    cy := position.y;
+                    cz := position.z;
                 end
             else
                 Level.Things[Cur_TH].Vals[Cur_FR].GetFrame(cx, cy, cz,
@@ -9178,8 +9182,8 @@ end;
 Procedure TJedMain.BringLightToSurf(LT, sc, SF: Integer);
 var
     surf: TJKSurface;
-    light: TJedLight;
-    X, Y, z, l: double;
+    light: TSedLight;
+    x, y, z, l: double;
 begin
     StartUndoRec('Bring light to Surface');
     surf := Level.Sectors[sc].surfaces[SF];
@@ -9189,9 +9193,9 @@ begin
     z := z + surf.normal.dz * 0.001;
     light := Level.Lights[LT];
     SaveLightUndo(light, ch_changed);
-    light.X := X;
-    light.Y := Y;
-    light.z := z;
+    light.position.x := x;
+    light.position.y := y;
+    light.position.z := z;
     LevelChanged;
 end;
 

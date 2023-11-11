@@ -304,7 +304,7 @@ begin
     Result := QTestInt(num, S.num) and QTestInt(NSurfs, S.surfaces.count) and
       QTestFlags(Flags, S.Flags) and QTestColor(extra_l, S.ExtraLight) and
       QTestStr(ColorMap, S.ColorMap) and QTestColor(tint, S.Tint) and
-      QTestStr(sound, S.sound) and QTestDouble(sound_vol, S.snd_vol) and
+      QTestStr(sound, S.sound) and QTestDouble(sound_vol, S.soundVolume) and
       QTestStr(Layer, S.Level.GetLayerName(S.Layer));
 end;
 

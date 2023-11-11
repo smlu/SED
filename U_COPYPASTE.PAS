@@ -3,17 +3,17 @@ unit U_copypaste;
 interface
 uses J_Level, U_Multisel, Lev_Utils, values;
 
-Procedure CopySectors(Lev:TJKLevel;scsel:TSCMultiSel;Cur_SC:integer);
-Procedure CopyThings(Lev:TJKLevel;thsel:TTHMultiSel;Cur_TH:integer);
-Procedure CopyLights(Lev:TJKLevel;ltsel:TLTMultiSel;Cur_LT:integer);
+Procedure CopySectors(Lev:TJKLevel; scsel: TSCMultiSel; Cur_SC: Integer);
+Procedure CopyThings(Lev:TJKLevel; thsel: TTHMultiSel; Cur_TH: Integer);
+Procedure CopyLights(Lev:TJKLevel; ltsel: TLTMultiSel; Cur_LT: Integer);
 
-Function CanPasteSectors:Boolean;
-Function CanPasteThings:Boolean;
-Function CanPasteLights:Boolean;
+Function CanPasteSectors: Boolean;
+Function CanPasteThings: Boolean;
+Function CanPasteLights: Boolean;
 
-Function PasteSectors(Lev:TJKLevel;atX,atY,atZ:Double):Integer; {Returns first pasted Sector}
-Function PasteThings(Lev:TJKLevel;atX,atY,atZ:Double):Integer; {Returns first pasted Object}
-Function PasteLights(Lev:TJKLevel;atX,atY,atZ:Double):Integer; {Returns first pasted Object}
+Function PasteSectors(Lev: TJKLevel; atX,atY,atZ: Double): Integer; {Returns first pasted Sector}
+Function PasteThings(Lev: TJKLevel; atX,atY,atZ: Double): Integer; {Returns first pasted Object}
+Function PasteLights(Lev: TJKLevel; atX,atY,atZ: Double): Integer; {Returns first pasted Object}
 
 implementation
 uses U_undo, Clipbrd, WIndows;
@@ -195,32 +195,37 @@ begin
   end;
 end;
 
-Procedure CopyLights(Lev:TJKLevel;ltsel:TLTMultiSel;Cur_LT:integer);
-var hg:integer;
-    i,n:integer;
-    rx,ry,rz:double;
-    pg:pointer;
-    light:TJedLight;
-    clp:TClipboard;
-    PL:^TlightRec;
+Procedure CopyLights(Lev: TJKLevel; ltsel: TLTMultiSel; Cur_LT: Integer);
+var hg: Integer;
+    i,n: Integer;
+    rx,ry,rz: double;
+    pg: pointer;
+    light: TSedLight;
+    clp: TClipboard;
+    PL: ^TlightRec;
 begin
-  n:=ltsel.AddLT(Cur_LT);
+  n := ltsel.AddLT(Cur_LT);
 
-  With Lev.Lights[Cur_LT] do begin rx:=x; ry:=y; rz:=z; end;
+  With Lev.Lights[Cur_LT] do
+    begin
+      rx := position.x;
+      ry := position.y;
+      rz := position.z;
+    end;
 
-  hg:=GlobalAlloc(GMEM_MOVEABLE or GMEM_SHARE,sizeof(integer)+ltsel.Count*GetLightRecSize);
-  pg:=GlobalLock(hg);
+  hg := GlobalAlloc(GMEM_MOVEABLE or GMEM_SHARE,sizeof(integer)+ltsel.Count*GetLightRecSize);
+  pg := GlobalLock(hg);
   Integer(pg^) := ltsel.count;
   inc(PAnsiChar(pg),sizeof(Integer));
 
-  for i:=0 to ltsel.count-1 do
+  for i := 0 to ltsel.count - 1 do
     begin
       light:=Lev.Lights[ltsel.getLT(i)];
-      pl:=pg;
+      pl := pg;
       GetLight(light,Pl^);
-      pl^.x:=pl^.x-rx;
-      pl^.y:=pl^.y-ry;
-      pl^.z:=pl^.z-rz;
+      pl^.position.x :=pl^.position.x - rx;
+      pl^.position.y :=pl^.position.y - ry;
+      pl^.position.z :=pl^.position.z - rz;
       inc(PAnsiChar(pg), GetLightRecSize);
     end;
 
@@ -231,42 +236,42 @@ begin
   Clp.Close;
 
   ltsel.DeleteN(n);
-
 end;
 
-Function PasteLights(Lev:TJKLevel;atX,atY,atZ:Double):Integer; {Returns first pasted Object}
-var hg:integer;
-    pg:Pointer;
-    i,n:integer;
-    light:TJedLight;
-    clp:TClipboard;
+Function PasteLights(Lev: TJKLevel; atX,atY,atZ: Double): Integer; {Returns first pasted Object}
+var hg: Integer;
+    pg: Pointer;
+    i,n: Integer;
+    light: TSedLight;
+    clp: TClipboard;
 begin
-  Result:=-1;
-  Clp:=Clipboard;
+  Result := -1;
+  Clp := Clipboard;
   Clp.Open;
   try
-   hg:=Clp.GetAsHandle(CF_JKLights);
-   if hg=0 then exit;
-   pg:=GlobalLock(hg);
-   n:=Integer(pg^);
+   hg := Clp.GetAsHandle(CF_JKLights);
+   if hg = 0 then exit;
+
+   pg := GlobalLock(hg);
+   n  := Integer(pg^);
    inc(PAnsiChar(pg), sizeof(integer));
 
-   Result:=Lev.Lights.count;
+   Result := Lev.Lights.count;
 
-   for i:=0 to n-1 do
+   for i := 0 to n - 1 do
      begin
-      light:=lev.NewLight;
-      SetLight(light,TLightRec(pg^));
+      light := lev.NewLight;
+      SetLight(light, TLightRec(pg^));
       inc(PAnsiChar(pg), GetLightRecSize);
 
-      light.x:=light.x+atX;
-      light.y:=light.y+atY;
-      light.z:=light.z+atZ;
+      light.position.x := light.position.x + atX;
+      light.position.y := light.position.y + atY;
+      light.position.z := light.position.z + atZ;
       Lev.Lights.Add(light);
      end;
   finally
-   GlobalUnlock(hg);
-   Clp.Close;
+    GlobalUnlock(hg);
+    Clp.Close;
   end;
 end;
 

@@ -28,10 +28,9 @@ Type
     Procedure Normalize;
     Procedure Clamp(min, max: TColorF);
     Procedure SetToZero;
-    Function IsBrighter(c: TColorF): Boolean;
     Function IsZero: Boolean;
     Function ToJedColor: TJedColor;
-    Function RgbIntensity: single;
+    Function Intensity: single;
     Function RgbaIntensity: single;
   end;
   PColorF=^TColorF;
@@ -291,14 +290,6 @@ begin
   a := 0.0;
 end;
 
-Function TColorF.IsBrighter(c: TColorF): Boolean;
- var aa, ba: single;
-begin
-  aa := (r + g + b + a) / 4.0;
-  ba := (c.r + c.g + c.b + c.a) / 4.0;
-  Result := (aa > ba);
-end;
-
 Function TColorF.ToJedColor: TJedColor;
 begin
   Result.r := ClampI(Round(r * 255), 0, 255);
@@ -311,7 +302,7 @@ begin
   Result := Math.IsZero(r) and Math.IsZero(g) and Math.IsZero(b) and Math.IsZero(a);
 end;
 
-Function TColorF.RgbIntensity: single;
+Function TColorF.Intensity: single;
 begin
   Result := (r + g + b) / 3;
 end;
@@ -842,7 +833,7 @@ end;
 
 Function RgbToIntensity(rgb: TColorF): single;
 begin
-  Result := rgb.RgbIntensity;
+  Result := rgb.Intensity;
 end;
 
 Function RgbaToIntensity(rgba: TColorF): single;

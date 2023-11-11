@@ -148,8 +148,8 @@ type
 
   TOLELight=class(TAutoObject)
    olelev:TOLELevel;
-   lt:TJedLight;
-   Constructor Create(olev:TOLELevel;alt:TJedLight);
+   lt:TSedLight;
+   Constructor Create(olev:TOLELevel;alt:TSedLight);
    Function GetRange:double;
    Procedure SetRange(d:double);
    Function GetLayer:integer;
@@ -761,12 +761,12 @@ end;
 
 Function TOLESector.GetVol:double;
 begin
- Result:=sec.snd_vol;
+ Result:=sec.soundVolume;
 end;
 
 Procedure TOLESector.SetVol(vol:double);
 begin
- sec.snd_vol:=vol;
+ sec.soundVolume:=vol;
 end;
 
 Function TOLESector.GetLayer:Integer;
@@ -1394,7 +1394,7 @@ end;
 
 {Light}
 
-Constructor TOLELight.Create(olev:TOLELevel;alt:TJedLight);
+Constructor TOLELight.Create(olev:TOLELevel;alt:TSedLight);
 begin
  Inherited Create;
  Olelev:=olev;
@@ -1443,32 +1443,32 @@ end;
 
 Function TOLELight.GetR:double;
 begin
- Result:=lt.r;
+ Result:=lt.color.r;
 end;
 
 Function TOLELight.GetG:double;
 begin
- Result:=lt.g;
+ Result:=lt.color.g;
 end;
 
 Function TOLELight.GetB:double;
 begin
- Result:=lt.b;
+ Result:=lt.color.b;
 end;
 
 Function TOLELight.GetX:double;
 begin
- Result:=lt.x;
+ Result:=lt.position.x;
 end;
 
 Function TOLELight.GetY:double;
 begin
- Result:=lt.y;
+ Result:=lt.position.y;
 end;
 
 Function TOLELight.GetZ:double;
 begin
- Result:=lt.z;
+ Result:=lt.position.z;
 end;
 
 Function TOLELight.GetInt:double;
@@ -1478,48 +1478,48 @@ end;
 
 Function TOLELight.GetRGBInt:double;
 begin
- Result:=lt.RGBIntensity;
+ Result:=lt.intensity;
 end;
 
 
 Procedure TOLELight.GetXYZ(var x,y,z:double);
 begin
- x:=lt.x;
- y:=lt.y;
- z:=lt.z;
+ x:=lt.position.x;
+ y:=lt.position.y;
+ z:=lt.position.z;
 end;
 
 Procedure TOLELight.SetXYZ(x,y,z:double);
 begin
- lt.x:=x;
- lt.y:=y;
- lt.z:=z;
+ lt.position.x:=x;
+ lt.position.y:=y;
+ lt.position.z:=z;
 end;
 
 Procedure TOLELight.GetRGB(var r,g,b:double);
 begin
- r:=lt.r;
- g:=lt.g;
- b:=lt.b;
+ r:=lt.color.r;
+ g:=lt.color.g;
+ b:=lt.color.b;
 end;
 
 Procedure TOLELight.SetRGB(r,g,b:double);
 begin
- lt.r:=r;
- lt.g:=g;
- lt.b:=b;
+ lt.color.r:=r;
+ lt.color.g:=g;
+ lt.color.b:=b;
 end;
 
 Procedure TOLELight.GetIntensity(var white,rgb:double);
 begin
  white:=Lt.Intensity;
- rgb:=Lt.RGBIntensity;
+ rgb:=Lt.Intensity;
 end;
 
 Procedure TOLELight.SetIntensity(white,rgb:double);
 begin
  Lt.Intensity:=white;
- Lt.RGBIntensity:=rgb;
+ Lt.Intensity:=rgb;
 end;
 
 {COG}
@@ -1741,7 +1741,7 @@ end;
 
 Function TOLELevel.GetLight(n:integer):variant;
 var lt:TOLELight;
-    light:TJedLight;
+    light:TSedLight;
 begin
  Light:=Level.Lights[n];
 
@@ -1822,7 +1822,7 @@ begin
 end;
 
 Function TOLELevel.AddLight:Integer;
-var lt:TJedLight;
+var lt:TSedLight;
 begin
  lt:=Level.NewLight;
  Result:=Level.lights.Add(lt);

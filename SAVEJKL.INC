@@ -734,7 +734,7 @@ begin
   if BitTest(Flags, SECF_CollideBox) then With CollideBox do
     WriteFmt('COLLIDEBOX'#9'%.8f %.8f %.8f %.8f %.8f %.8f',[X1,Y1,Z1,X2,Y2,Z2]);
 
-  if Sound <> '' then WriteFmt('SOUND'#9'%s %.6f',[Sound,Snd_vol]);
+  if Sound <> '' then WriteFmt('SOUND'#9'%s %.6f',[Sound,soundVolume]);
   if (kind = TProjectType.IJIM) and not Thrust.IsZero() then
     WriteFmt('THRUST'#9'%.8f'#9'%.8f'#9'%.8f',[Thrust.x,Thrust.y,Thrust.z]);
 
@@ -890,10 +890,20 @@ var i,j:integer;
 begin
  WriteFmt('Editor lights %d',[Lights.Count]);
  WriteS('');
- WriteS('#num:	type:	X:		Y:		Z:		intensity:	range:');
+
+ if kind = JKDF2 then
+  WriteS('#num:  flags:  layer:  x:    y:    z:    range:  intensity:')
+ else
+  WriteS('#num:  flags:  layer:  x:    y:    z:    range:  intensity:  r:    g:    b:');
+
  For i:=0 to Lights.Count-1 do
  With Lights[i] do
-  WriteFmt('%d: 0 %.8f %.8f %.8f %.8f %.8f %.8f %.8f %.8f %.8f %d',[i,x,y,z,intensity,range,RGBIntensity,r,g,b,Layer]);
+   if kind = JKDF2 then
+    WriteFmt('%d: %x %d %.8f %.8f %.8f %.8f %.8f',
+      [i, flags, layer, position.x,position.y,position.z, range, intensity])
+   else
+    WriteFmt('%d: %x %d %.8f %.8f %.8f %.8f %.8f %.8f %.8f %.8f',
+      [i, flags, layer, position.x,position.y,position.z, range, intensity, color.r,color.g, color.b]);
 end;
 
 Procedure WriteLayers;

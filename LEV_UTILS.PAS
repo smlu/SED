@@ -1328,14 +1328,14 @@ end;
 Procedure TranslateLights(lev: TJKLevel; ltsel: TLTMultiSel; curlt: integer;
   dx, dy, dz: double);
 
-  procedure MoveLT(light: TJedLight);
+  procedure MoveLT(light: TSedLight);
   begin
     SaveLightUndo(light, ch_changed);
     With light do
     begin
-      x := x + dx;
-      y := y + dy;
-      z := z + dz;
+      position.x := position.x + dx;
+      position.y := position.y + dy;
+      position.z := position.z + dz;
     end;
     JedMain.LevelChanged;
   end;
@@ -4626,14 +4626,14 @@ Procedure RotateLights(lev: TJKLevel; ltsel: TLTMultiSel; axis: TVector;
 var
   rd: TRotateData;
   i: integer;
-  lt: TJedLight;
+  lt: TSedLight;
 begin
   PrepareRotData(rd, axis, cx, cy, cz, angle);
   for i := 0 to ltsel.count - 1 do
   begin
     lt := lev.Lights[ltsel.GetLT(i)];
     SaveLightUndo(lt, ch_changed);
-    RotateXYZ(lt.x, lt.y, lt.z, rd);
+    RotateXYZ(lt.position.x, lt.position.y, lt.position.z, rd);
     JedMain.LevelChanged;
   end;
 end;
@@ -4852,13 +4852,13 @@ Procedure ScaleLights(lev: TJKLevel; ltsel: TLTMultiSel; const sd: TScaleData);
 var
   rd: TRotateData;
   i: integer;
-  lt: TJedLight;
+  lt: TSedLight;
 begin
   for i := 0 to ltsel.count - 1 do
   begin
     lt := lev.Lights[ltsel.GetLT(i)];
     SaveLightUndo(lt, ch_changed);
-    ScaleXYZ(lt.x, lt.y, lt.z, sd);
+    ScaleXYZ(lt.position.x, lt.position.y, lt.position.z, sd);
     JedMain.LevelChanged;
   end;
 end;
@@ -4968,13 +4968,13 @@ Procedure FlipLightsOverPlane(lev: TJKLevel; ltsel: TLTMultiSel; pnorm: TVector;
 var
   rd: TRotateData;
   i: integer;
-  lt: TJedLight;
+  lt: TSedLight;
 begin
   for i := 0 to ltsel.count - 1 do
   begin
     lt := lev.Lights[ltsel.GetLT(i)];
     SaveLightUndo(lt, ch_changed);
-    FlipXYZ(lt.x, lt.y, lt.z, pnorm, cx, cy, cz);
+    FlipXYZ(lt.position.x, lt.position.y, lt.position.z, pnorm, cx, cy, cz);
     JedMain.LevelChanged;
   end;
 end;
@@ -5716,7 +5716,7 @@ begin
     // TODO: Check if sector.extra light has to be applied.
     vlight := vlight / nv;
     sflight := sflight / sec.surfaces.count;
-    if vlight.IsBrighter(sflight) then
+    if vlight.Intensity > sflight.Intensity then
       sec.ambient := vlight
     else
       sec.ambient := sflight;
@@ -5728,7 +5728,7 @@ var
   l, s, sf, v: integer;
   surf: TJKSurface;
   cv, v0: TJKVertex;
-  lt: TJedLight;
+  lt: TSedLight;
   dist: double;
   sec: TJKSector;
   nv: integer;
@@ -5868,7 +5868,7 @@ begin { CalcLighting }
     for l := 0 to lev.Lights.count - 1 do
       With lev.Lights[l] do
       begin
-        Mark := FindSectorForXYZ(lev, x, y, z);
+        Mark := FindSectorForXYZ(lev, position.x, position.y, position.z);
       end;
 
     { Calc lights }
@@ -5892,8 +5892,8 @@ begin { CalcLighting }
             { Check if the light is in front of surface }
 
             With surf do
-              if SMult(normal.dx, normal.dy, normal.dz, lt.x - v0.x,
-                lt.y - v0.y, lt.z - v0.z) < 0.001 then
+              if SMult(normal.dx, normal.dy, normal.dz, lt.position.x - v0.x,
+                lt.position.y - v0.y, lt.position.z - v0.z) < 0.001 then
                 continue;
 
             for v := 0 to surf.Vertices.count - 1 do
@@ -5901,29 +5901,30 @@ begin { CalcLighting }
               { Check distance from the point to light }
               cv := surf.Vertices[v];
 
-              dist := sqrt(sqr(lt.x - cv.x) + sqr(lt.y - cv.y) +
-                sqr(lt.z - cv.z));
+              dist := sqrt(sqr(lt.position.x - cv.x) + sqr(lt.position.y - cv.y) +
+                sqr(lt.position.z - cv.z));
               if dist >= lt.range then
                 continue;
 
               { if light and vertex aren't in the same sector }
               { Check if the light is blocked }
               if (s <> lt.Mark) and (lt.flags and LF_NoBlock = 0) then
-                if IsBlocked(lt.x, lt.y, lt.z, cv.x, cv.y, cv.z) then
+                if IsBlocked(lt.position.x, lt.position.y, lt.position.z, cv.x, cv.y, cv.z) then
                   continue;
 
               { Light vertex }
 
               With surf.txvertices[v] do
               begin
-                color.a := color.a + lt.Intensity *
-                  sqr((lt.range - dist) / lt.range);
-                color.r := color.r + lt.RGBIntensity * lt.r *
-                  sqr((lt.range - dist) / lt.range);
-                color.g := color.g + lt.RGBIntensity * lt.g *
-                  sqr((lt.range - dist) / lt.range);
-                color.b := color.b + lt.RGBIntensity * lt.b *
-                  sqr((lt.range - dist) / lt.range);
+                  var intf := lt.Intensity * sqr((lt.range - dist) / lt.range);
+                  if CurrentProject = JKDF2 then
+                     color := MakeColor(color.Intensity + intf)
+                  else
+                    begin
+                      color.r := color.r + lt.color.r * intf;
+                      color.g := color.g + lt.color.g * intf;
+                      color.b := color.b + lt.color.b * intf;
+                    end;
               end;
               { Intensity:=Intensity+lt.Intensity*(lt.range-dist)/lt.range; }
             end;
@@ -6063,7 +6064,7 @@ var
 
   lvec: TVector;
   vx: TJKVertex;
-  lt: TJedLight;
+  lt: TSedLight;
 
   lsec: TJKSector;
   D, dist, dist2, range2: double;
@@ -6104,7 +6105,7 @@ var
 
       { Check if ray intersects the surface }
 
-      if IsSurfCrossed(surf, lt.x, lt.y, lt.z, vx.x, vx.y, vx.z) then
+      if IsSurfCrossed(surf, lt.position.x, lt.position.y, lt.position.z, vx.x, vx.y, vx.z) then
       begin
         result := CanReach(surf.adjoin.sector);
         if result then
@@ -6139,7 +6140,7 @@ begin
   for l := 0 to lev.Lights.count - 1 do
     With lev.Lights[l] do
     begin
-      Mark := FindSectorForXYZ(lev, x, y, z);
+      Mark := FindSectorForXYZ(lev, position.x, position.y, position.z);
       if Mark = -1 then
         PanMessageFmt(mt_warning, 'Light %d is not in any sector', [l])
       else
@@ -6183,7 +6184,7 @@ begin
         { if a surface doesn't face the light, skip it }
 
         With surf.normal do
-          D := SMult(lt.x - vx.x, lt.y - vx.y, lt.z - vx.z, dx, dy, dz);
+          D := SMult(lt.position.x - vx.x, lt.position.y - vx.y, lt.position.z - vx.z, dx, dy, dz);
         if D <= 0 then
           continue;
 
@@ -6197,7 +6198,7 @@ begin
             end; }
 
           vx := surf.Vertices[v];
-          lvec.SetCoords(lt.x - vx.x, lt.y - vx.y, lt.z - vx.z);
+          lvec.SetCoords(lt.position.x - vx.x, lt.position.y - vx.y, lt.position.z - vx.z);
 
           dist2 := sqr(lvec.dx) + sqr(lvec.dy) + sqr(lvec.dz);
           if dist2 >= range2 then
@@ -6219,15 +6220,18 @@ begin
           With surf.txvertices[v] do
           begin
             { Intensity:=Intensity+dist2*lt.Intensity;
-              r:=r+lt.RGBIntensity*dist2*lt.r;
-              g:=g+lt.RGBIntensity*dist2*lt.g;
-              b:=b+lt.RGBIntensity*dist2*lt.b; }
-            color.a := color.a + lt.Intensity *
-              sqr((lt.range - dist) / lt.range);
-            color.r := color.r + lt.RGBIntensity * lt.r * sqr((lt.range - dist) / lt.range);
-            color.g := color.g + lt.RGBIntensity * lt.g * sqr((lt.range - dist) / lt.range);
-            color.b := color.b + lt.RGBIntensity * lt.b * sqr((lt.range - dist) / lt.range);
-
+              r:=r+lt.Intensity*dist2*lt.r;
+              g:=g+lt.Intensity*dist2*lt.g;
+              b:=b+lt.Intensity*dist2*lt.b; }
+            var intf := lt.Intensity * sqr((lt.range - dist) / lt.range);
+            if CurrentProject = JKDF2 then
+               color := MakeColor(color.Intensity + intf)
+            else
+              begin
+                color.r := color.r + lt.color.r * intf;
+                color.g := color.g + lt.color.g * intf;
+                color.b := color.b + lt.color.b * intf;
+              end;
           end;
 
         end; { for vx }

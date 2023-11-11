@@ -53,7 +53,7 @@ var
       With sec do
       begin
         // TODO: parse version 2 with RGB colors for Ambient & ExtraLight, and IJIM light intensity, force etc...
-        if not ReadFmt('%s %s %f %x %l %l %l %l %l %d', [@ColorMap, @Sound, @snd_vol,
+        if not ReadFmt('%s %s %f %x %l %l %l %l %l %d', [@ColorMap, @Sound, @soundVolume,
           @Flags, @Ambient.a, @ExtraLight.a, @tint.r, @tint.g, @tint.b, @Layer]) then
           raise Exception.Create('Failed to parse template sector info');
 
@@ -250,7 +250,7 @@ begin
 
       // TODO: Write Ambient & ExtraLIght as RGB, store IJIM light intensity, force etc ...
       WriteFmt('%s %.6f %x %.6f %.6f %.6f %.6f %.6f %d',
-        [st, snd_vol, Flags, RgbToIntensity(Ambient), RgbToIntensity(ExtraLight), tint.r, tint.g, tint.b, Layer]);
+        [st, soundVolume, Flags, RgbToIntensity(Ambient), RgbToIntensity(ExtraLight), tint.r, tint.g, tint.b, Layer]);
 
       WriteFmt('VXS %d', [Vertices.count]);
       for vx := 0 to Vertices.count - 1 do

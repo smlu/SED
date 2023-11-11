@@ -149,7 +149,7 @@ begin
   p := LowerCase(w2).IndexOf('.mat');
   if p = -1 then
   begin
-    PanMessageFmt(mt_warning, 'Invalid mat filename: ''%s'' at index %d', [w2, i]);
+    PanMessageFmt(mt_warning, 'Invalid mat filename: ''%s'' at index %d line %d', [w2, i, t.curline]);
     mats.Add(w1); // Add it to the list anyway so the surface mat indices won't break
     inc(i);
     continue;
@@ -429,8 +429,8 @@ Try
       else // IJIM
         begin
           SScanf(s,'EXTRA LIGHT %l %l %l',[@ExtraLight.r, @ExtraLight.g, @ExtraLight.b]);
-          ExtraLight.a := 0.0;
         end;
+        ExtraLight.a := 0.0;
     end
   else if w1='AVERAGE' then
   begin
@@ -442,7 +442,7 @@ Try
     else if w1 = 'FALLOFF' then
       SScanf(s,'AVERAGE LIGHT FALLOFF %f %f',[@PointLight.Falloff.x, @PointLight.Falloff.y])
   end
-  else if w1='SOUND' then SScanf(s,'SOUND %s %f',[@Sound,@Snd_vol])
+  else if w1='SOUND' then SScanf(s,'SOUND %s %f',[@Sound,@soundVolume])
   else if w1='COLORMAP' then ColorMap:=GetCmp(StrToInt(GetWordN(s,2)))
  { else if w1='CENTER' then SScanf(s,'CENTER %f %f %f',[@Cx,@Cy,@Cz])
   else if w1='RADIUS' then SScanf(s,'RADIUS %f',[@rad])}
@@ -630,12 +630,12 @@ begin
 end;
 
 Procedure LoadLights;
-var i,n,l:integer;
-    lt:TJEDLight;
+var i,n:integer;
+    lt:TSEDLight;
 begin
  CurSection:='';
  GetNextLine(s);
- n:=StrToInt(GetWordN(s,3));
+ n:=StrToInt(GetWordN(s,3)); // editor lights
  i:=0;
  While ( i < n ) and (not EndOfSection) do
    begin
@@ -645,13 +645,14 @@ begin
 
      lt := NewLight;
      With Lt do
-      if not SScanf(s,'%s %d %f %f %f %f %f %l %l %l %l %d', [@w1,@l,@x,@y,@z,@Intensity,@range,@RGBIntensity,@r,@g,@b,@Layer]) then
+      if not SScanf(s,'%s %x %d %f %f %f %f %f %l %l %l',
+        [@w1, @flags, @Layer, @position.x,@position.y,@position.z, @range, @intensity, @color.r,@color.g,@color.b]) then
           begin
-            SScanf(s,'%s %d %f %f %f %f %f', [@w1,@l,@x,@y,@z,@Intensity,@range]);
-            lt.rgbintensity := lt.intensity;
-            lt.r := 1;
-            lt.g := 1;
-            lt.b := 1;
+            {fallback to jkdf2}
+            if not SScanf(s,'%s %x %d %f %f %f %f %f', 
+              [@w1, @flags, @Layer, @position.x,@position.y,@position.z, @range, @intensity]) then
+              PanMessageFmt(mt_warning, 'Corrupted entry in light section at line %d', [t.curline]);
+            lt.color := ColorWhite;
           end;
      Lights.Add(lt);
    end;
@@ -967,7 +968,7 @@ Try
   if Sound='' then st:=st+' -' else st:=st+' '+Sound;
 
   WriteFmt('%s %.6f %x %.6f %.6f %.6f %.6f %.6f %d',
-   [st,snd_vol,Flags,RgbToIntensity(Ambient),RgbToIntensity(ExtraLight),tint.r,tint.g,tint.b,Layer]);
+   [st,soundVolume,Flags,RgbToIntensity(Ambient),RgbToIntensity(ExtraLight),tint.r,tint.g,tint.b,Layer]);
 
   WriteFmt('VXS %d',[vertices.count]);
   for vx:=0 to vertices.count-1 do
@@ -1019,11 +1020,11 @@ Try
  WriteS('END');
  WriteS('');
  WriteS('SEC: LIGHTS');
- WriteFmt('LTS %d',[Lights.count]);
+ WriteFmt('LTS %d',[Lights.count]); // TODO: Make new format JED/SED format due to fields rgbRange and RGBIntensity being removed
   for i:=0 to Lights.count-1 do
-  With Lights[i] do
-    WriteFmt('%.6f %.6f %.6f %d %.6f %.6f %x %.6f %.6f %.4f %.4f %.4f',
-      [X,Y,Z,Layer,Intensity,range,Flags,RGBRange,RGBIntensity,R,g,b]);
+    With Lights[i] do
+      WriteFmt('%.6f %.6f %.6f %d %.6f %.6f %x %.4f %.4f %.4f',
+        [position.x,position.y,position.z,Layer,Intensity,range,Flags, color.r,color.g,color.b]);
  WriteS('END');
  WriteS('');
  WriteS('SEC: COGS');
@@ -1093,10 +1094,10 @@ begin
  PanMessage(mt_error,Format(' Error at line %d: %s',[t.curline,s]));
 end;
 
-Procedure ReadFmt(const fmt:string;v:array of pointer);
+Function ReadFmt(const fmt:string;v:array of pointer): Boolean;
 begin
  t.Readln(st);
- SScanf(st,fmt,v);
+ Result := SScanf(st,fmt,v);
 end;
 
 Procedure ReadS(Var s:string);
@@ -1160,7 +1161,7 @@ end;
  With Sec do
  begin
   ReadFmt('%s %s %f %x %l %l %l %l %l %d',
-   [@ColorMap,@Sound,@snd_vol,@Flags,@Ambient.a,@ExtraLight.a,@tint.r,@tint.g,@tint.b,@Layer]);
+   [@ColorMap,@Sound,@soundVolume,@Flags,@Ambient.a,@ExtraLight.a,@tint.r,@tint.g,@tint.b,@Layer]);
 
   Ambient := IntensityToColor(Ambient.a);
   ExtraLight := IntensityToColor(ExtraLight.a);
@@ -1297,8 +1298,10 @@ end;
 
 Procedure LoadLights;
 var nl:integer;
-    l:TJedLight;
+    l:TSEDLight;
     i:integer;
+    rgbRange: double;
+    RGBIntensity: single;
 begin
  Progress.Msg:='Loading Lights';
  ReadFmt('LTS %d',[@nl]);
@@ -1307,15 +1310,14 @@ begin
       l:=NewLight;
       Lights.Add(l);
       With l do
-        ReadFmt('%f %f %f %d %f %f %x %f %l %l %l %l',[@X,@Y,@Z,@Layer,@Intensity,@range,
-         @Flags,@RGBRange,@RGBIntensity,@R,@g,@b]);
-
+        if not ReadFmt('%f %f %f %d %f %f %x %l %l %l',[@position.x,@position.y,@position.z,@layer,@intensity,@range,
+           @flags,@color.r,@color.g,@color.b]) then
+          if not ReadFmt('%f %f %f %d %f %f %x %f %l %l %l %l',[@position.x,@position.y,@position.z,@layer,@intensity,@range,
+           @flags,@RGBRange,@RGBIntensity,@color.r,@color.g,@color.b]) then
+            PanMessageFmt(mt_warning, 'Corrupted entry in light section at line %d', [t.curline]);
       if kind = TProjectType.JKDF2 then
         begin
-         l.rgbintensity := l.intensity;
-         l.r:=1;
-         l.g:=1;
-         l.b:=1;
+         l.color := ColorWhite;
         end;
     end;
 end;

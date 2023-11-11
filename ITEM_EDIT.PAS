@@ -20,40 +20,38 @@ Const
   ID_SEC_SOUND_VOLUME        = 9;
   ID_SEC_THRUST              = 10;
 
-  ID_AdjFlags = 0;
-  ID_Material = 1;
-  ID_SurfFlags = 2;
-  ID_FaceFlags = 3;
-  ID_geo = 4;
-  ID_lightmode = 5;
-  ID_tex = 6;
-  ID_SF_EXTRA_LIGHT = 7;
-  ID_Adjoin = 8;
-  ID_UScale = 9;
-  ID_VScale = 10;
-  ID_Layer = 15;
+  ID_SURF_ADJOINFLAGS = 0;
+  ID_SURF_MATERIAL    = 1;
+  ID_SURF_SURFFLAGS   = 2;
+  ID_SURF_FACEFLAGS   = 3;
+  ID_SURF_GEOMODE     = 4;
+  ID_SURF_LIGHTMODE   = 5;
+  ID_SURF_TEXMODE     = 6;
+  ID_SURF_EXTRA_LIGHT = 7;
+  ID_SURF_ADJOIN      = 8;
+  ID_SURF_USCALE      = 9;
+  ID_SURF_VSCALE      = 10;
 
-  ID_SECTOR     = 0;
-  ID_NAME       = 1;
+  ID_TH_SECTOR  = 0;
+  ID_TH_NAME    = 1;
   ID_X          = 2;
   ID_Y          = 3;
   ID_Z          = 4;
-  ID_VERT_COLOR = 5;
-  ID_PCH        = 6;
-  ID_YAW        = 7;
-  ID_ROL        = 8;
-  ID_TH_Last    = 20;
+  ID_PCH        = 5;
+  ID_YAW        = 6;
+  ID_ROL        = 7;
+  ID_TH_LAST    = 20;
 
-  ID_INTENSITY     = 0;
-  ID_RANGE         = 1;
-  ID_RGBRange      = 10;
-  ID_RGB_INTENSITY = 11;
-  ID_RGB           = 12;
-  ID_LIGHT_FLAGS   = 14;
+  ID_LT_INTENSITY = 0;
+  ID_LT_RANGE     = 1;
+  ID_LT_COLOR     = 12;
+  ID_LT_FLAGS     = 14;
 
-  Thing_fields = 9;
+  ID_VERT_COLOR  = 0;
+  ID_LAYER       = 15;
 
-  ID_EDGELEN = 2;
+  NUM_THING_FIELDS = 9;
+  ID_ED_LENGTH = 2;
 
 type
   TItemEdit = class(TForm)
@@ -86,7 +84,7 @@ type
     Cur_Surf: TJKSurface;
     Cur_VX: TJKVertex;
     Cur_Thing: TJKThing;
-    Cur_Light: TJedLight;
+    Cur_Light: TSedLight;
     Cur_Frame: TTPlValue;
     cedge: integer;
     Procedure ResetEdit;
@@ -202,12 +200,12 @@ begin
     fe.AddFieldColor('+Tint', ID_SEC_TINT, Tint, (*withAlpha=*) false);
 
     fe.AddFieldStr('+Sound', ID_SEC_SOUND, Sound);
-    fe.AddFieldFloat('Volume', ID_SEC_SOUND_VOLUME, Snd_Vol);
+    fe.AddFieldFloat('Volume', ID_SEC_SOUND_VOLUME, soundVolume);
     if CurrentProject = IJIM then
       fe.AddFieldStr('Thrust', ID_SEC_THRUST,
         Sprintf('%1.6f %1.6f %1.6f', [Thrust.x, Thrust.y, Thrust.z]));
 
-    fe.AddFieldStr('+Layer', ID_Layer, Level.GetLayerName(Layer));
+    fe.AddFieldStr('+Layer', ID_LAYER, Level.GetLayerName(Layer));
 
     // TODO: add field for IM point light
 
@@ -332,7 +330,7 @@ begin
       begin
         Result := ValDouble(s, d);
         if Result then
-          sec.Snd_Vol := d;
+          sec.soundVolume := d;
         exit;
       end;
     ID_SEC_THRUST:
@@ -349,7 +347,7 @@ begin
         if (sec.flags <> flags) then
           ItemEdit.UpdateSectorField(ID_SEC_FLAGS);
       end;
-    ID_Layer:
+    ID_LAYER:
       begin
         Result := true;
         sec.Layer := Toolbar.AddLayer(s);
@@ -450,7 +448,7 @@ begin
 //            [GetRValue(f) / 255, GetGValue(f) / 255, GetBValue(f) / 255]);
 //        end;
       end;
-    ID_Layer:
+    ID_LAYER:
       begin
         var s := ResPicker.PickLayer(Fi.s);
         changed := s <> Fi.s;
@@ -473,31 +471,31 @@ begin
 
   With surf do
   begin
-    fe.AddFieldHex('+Surface Flags', ID_SurfFlags, SurfFlags);
-    fe.AddFieldHex('+Face Flags', ID_FaceFlags, FaceFlags);
+    fe.AddFieldHex('+Surface Flags', ID_SURF_SURFFLAGS, SurfFlags);
+    fe.AddFieldHex('+Face Flags', ID_SURF_FACEFLAGS, FaceFlags);
 
-    fe.AddFieldStr('+Material', ID_Material, Material);
+    fe.AddFieldStr('+Material', ID_SURF_MATERIAL, Material);
 
-    fe.AddFieldInt('+Gometry', ID_geo, geo);
-    fe.AddFieldInt('+Lighting', ID_lightmode, Light);
+    fe.AddFieldInt('+Gometry', ID_SURF_GEOMODE, geo);
+    fe.AddFieldInt('+Lighting', ID_SURF_LIGHTMODE, Light);
     if CurrentProject <> IJIM then
-      fe.AddFieldInt('+Texture', ID_tex, tex);
+      fe.AddFieldInt('+Texture', ID_SURF_TEXMODE, tex);
 
     if Adjoin = nil then
       ast := '-1'
     else
       ast := Format('%d %d', [Adjoin.Sector.Num, Adjoin.Num]);
-    fe.AddFieldStr('Adjoin', ID_Adjoin, ast);
-    fe.AddFieldHex('+Adjoin Flags', ID_AdjFlags, AdjoinFlags);
+    fe.AddFieldStr('Adjoin', ID_SURF_ADJOIN, ast);
+    fe.AddFieldHex('+Adjoin Flags', ID_SURF_ADJOINFLAGS, AdjoinFlags);
 
     { fe.AddFieldInt('LIGHT',ID_light,Light); }
     if CurrentProject = IJIM then
-      fe.AddFieldColor('+Extra Light', ID_SF_EXTRA_LIGHT, ExtraLight, (*withAlpha=*)true)
+      fe.AddFieldColor('+Extra Light', ID_SURF_EXTRA_LIGHT, ExtraLight, (*withAlpha=*)true)
     else
-      fe.AddFieldFloat('Extra Light', ID_SF_EXTRA_LIGHT, RgbaToIntensity(ExtraLight));
+      fe.AddFieldFloat('Extra Light', ID_SURF_EXTRA_LIGHT, RgbaToIntensity(ExtraLight));
 
-    fe.AddFieldFloat('U Scale', ID_UScale, uscale);
-    fe.AddFieldFloat('V Scale', ID_VScale, vscale);
+    fe.AddFieldFloat('U Scale', ID_SURF_USCALE, uscale);
+    fe.AddFieldFloat('V Scale', ID_SURF_VSCALE, vscale);
   end;
 
   if not Visible then
@@ -525,42 +523,42 @@ begin
 
   With surf do
     case id of
-      ID_Material:
+      ID_SURF_MATERIAL:
         begin
           Result := true;
           Material := s;
         end;
-      ID_geo:
+      ID_SURF_GEOMODE:
         begin
           Result := ValInt(s, i);
           if Result then
             geo := i;
         end;
-      ID_tex:
+      ID_SURF_TEXMODE:
         begin
           Result := ValInt(s, i);
           if Result then
             tex := i;
         end;
-      ID_lightmode:
+      ID_SURF_LIGHTMODE:
         begin
           Result := ValInt(s, i);
           if Result then
             Light := i;
         end;
-      ID_AdjFlags:
+      ID_SURF_ADJOINFLAGS:
         begin
           Result := ValHex(s, f);
           if Result then
             AdjoinFlags := f;
         end;
-      ID_SurfFlags:
+      ID_SURF_SURFFLAGS:
         begin
           Result := ValHex(s, f);
           if Result then
             SurfFlags := f;
         end;
-      ID_FaceFlags:
+      ID_SURF_FACEFLAGS:
         begin
           Result := ValHex(s, f);
           f := f and not FF_DoubleSided; // Remove 0x01 flag
@@ -573,7 +571,7 @@ begin
               RecalcAll;
           end;
         end;
-      ID_SF_EXTRA_LIGHT:
+      ID_SURF_EXTRA_LIGHT:
         begin
           if CurrentProject = IJIM then
             Result := ValColor(s, c)
@@ -597,7 +595,7 @@ begin
                 end;
             end;
         end;
-      ID_UScale:
+      ID_SURF_USCALE:
         begin
           Result := ValSingle(s, sl);
           if Result then
@@ -606,7 +604,7 @@ begin
             RecalcAll;
           end
         end;
-      ID_VScale:
+      ID_SURF_VSCALE:
         begin
           Result := ValSingle(s, sl);
           if Result then
@@ -615,7 +613,7 @@ begin
             RecalcAll;
           end
         end;
-      ID_Adjoin:
+      ID_SURF_ADJOIN:
         begin
           i := GetWord(s, 1, w);
           if w = '' then
@@ -673,7 +671,7 @@ var
   c: TColorF;
 begin
   case Fi.id of
-    ID_Material:
+    ID_SURF_MATERIAL:
       begin
         if Cur_Surf = nil then
           exit;
@@ -682,44 +680,44 @@ begin
           ResPicker.SetCMP(Level.sectors[cur_surf.sector.num].COlormap); }
         Fi.s := ResPicker.PickMAT(Fi.s);
       end;
-    ID_geo:
+    ID_SURF_GEOMODE:
       begin
         ValDword(Fi.s, f);
         f := SCFieldPicker.PickGeo(f);
         Fi.s := IntToStr(f);
       end;
-    ID_tex:
+    ID_SURF_TEXMODE:
       begin
         ValDword(Fi.s, f);
         f := SCFieldPicker.PickTex(f);
         Fi.s := IntToStr(f);
       end;
-    ID_lightmode:
+    ID_SURF_LIGHTMODE:
       begin
         ValDword(Fi.s, f);
         f := SCFieldPicker.PickLightMode(f);
         Fi.s := IntToStr(f);
       end;
-    ID_AdjFlags:
+    ID_SURF_ADJOINFLAGS:
       begin
         ValHex(Fi.s, f);
         f := FlagEdit.EditAdjoinFlags(f);
         Fi.s := Format('0x%x', [f]);
       end;
-    ID_SurfFlags:
+    ID_SURF_SURFFLAGS:
       begin
         ValHex(Fi.s, f);
         f := FlagEdit.EditSurfaceFlags(f);
         Fi.s := Format('0x%x', [f]);
       end;
-    ID_FaceFlags:
+    ID_SURF_FACEFLAGS:
       begin
         ValHex(Fi.s, f);
         f := FlagEdit.EditFaceFlags(f);
         f := f and not FF_DoubleSided; // Remove 0x01 flag
         Fi.s := Format('0x%x', [f]);
       end;
-    ID_SF_EXTRA_LIGHT:
+    ID_SURF_EXTRA_LIGHT:
       begin
         if CurrentProject = IJIM then
         begin
@@ -818,25 +816,25 @@ begin
   Cur_Thing := thing;
   With thing do
   begin
-    fe.AddFieldStr('+Name', ID_NAME, Name);
+    fe.AddFieldStr('+Name', ID_TH_NAME, Name);
     if sec = nil then
-      fe.AddFieldInt('Sector', ID_SECTOR, -1)
+      fe.AddFieldInt('Sector', ID_TH_SECTOR, -1)
     else
-      fe.AddFieldInt('Sector', ID_SECTOR, sec.Num);
+      fe.AddFieldInt('Sector', ID_TH_SECTOR, sec.Num);
     fe.AddFieldFloat('x', ID_X, x);
     fe.AddFieldFloat('y', ID_Y, y);
     fe.AddFieldFloat('z', ID_Z, z);
     fe.AddFieldFloat('Pitch', ID_PCH, pch);
     fe.AddFieldFloat('Yaw', ID_YAW, yaw);
     fe.AddFieldFloat('Roll', ID_ROL, rol);
-    fe.AddFieldStr('+Layer', ID_Layer, Level.GetLayerName(Layer));
+    fe.AddFieldStr('+Layer', ID_LAYER, Level.GetLayerName(Layer));
 
     for i := 0 to Vals.count - 1 do
       With Vals[i] do
         if IsUIEditProp(Name) then
-          fe.AddFieldStr('+' + Name, ID_TH_Last + i, AsString)
+          fe.AddFieldStr('+' + Name, ID_TH_LAST + i, AsString)
         else
-          fe.AddFieldStr(Name, ID_TH_Last + i, AsString);
+          fe.AddFieldStr(Name, ID_TH_LAST + i, AsString);
   end;
   fe.DoneAdding;
   AddCogs(ct_thg, Cur_Thing);
@@ -898,12 +896,12 @@ begin
 
   With Cur_Thing do
     case i of
-      ID_NAME:
+      ID_TH_NAME:
         begin
           Result := true;
           name := s;
         end;
-      ID_SECTOR:
+      ID_TH_SECTOR:
         begin
           Result := ValInt(s, i);
           if not Result then
@@ -956,11 +954,11 @@ begin
             exit;
           rol := d;
         end;
-      ID_Layer:
+      ID_LAYER:
         Layer := Toolbar.AddLayer(s);
-      { ID_TH_Last..ID_TH_Last+100:
+      { ID_TH_LAST..ID_TH_LAST+100:
         begin
-        i:=Id-ID_TH_Last;
+        i:=Id-ID_TH_LAST;
         if i>=Vals.Count then exit;
         Vals[i].Val(s);
         Result:=true;
@@ -982,7 +980,7 @@ begin
   StartUndoRec('Change thing(s)');
   { JedMain.SaveSelThingsUndo('Change thing(s)',ch_changed); }
 
-  if (Fi.id < ID_TH_Last) then
+  if (Fi.id < ID_TH_LAST) then
   begin
 
     Result := ValTHField(Fi.s, Cur_Thing, Fi.id);
@@ -1000,9 +998,9 @@ begin
   begin
     { Find which number of the value it is. i.e. - for multiple values
       with the same name, like "frame" }
-    fname := Cur_Thing.Vals[Fi.id - ID_TH_Last].name;
+    fname := Cur_Thing.Vals[Fi.id - ID_TH_LAST].name;
     n := 0;
-    for i := Fi.id - ID_TH_Last - 1 downto 0 do
+    for i := Fi.id - ID_TH_LAST - 1 downto 0 do
     begin
       if CompareText(Cur_Thing.Vals[i].name, fname) = 0 then
         inc(n);
@@ -1033,15 +1031,15 @@ begin
   var bChanged := False;
   With Cur_Thing do
     case Fi.id of
-      ID_NAME:
+      ID_TH_NAME:
         begin
           var tmpl := ResPicker.PickThing(Fi.s);
           bChanged := CompareText(Fi.s, tmpl) <> 0;
           Fi.s := tmpl;
         end;
-      ID_TH_Last .. ID_TH_Last + 100:
+      ID_TH_LAST .. ID_TH_LAST + 100:
         begin
-          i := Fi.id - ID_TH_Last;
+          i := Fi.id - ID_TH_LAST;
           if i >= Vals.count then
             exit;
 
@@ -1066,7 +1064,7 @@ begin
           end;
 
         end;
-      ID_Layer:
+      ID_LAYER:
         Fi.s := ResPicker.PickLayer(Fi.s);
     end;
   if bChanged then
@@ -1184,7 +1182,7 @@ begin
   o := JedMain.ExtraObjs[ex];
   if o is TExtraVertex then
   begin
-    fe.AddFieldStr('Name', ID_NAME, TExtraVertex(o).name);
+    fe.AddFieldStr('Name', ID_TH_NAME, TExtraVertex(o).name);
     fe.AddFieldFloat('x', ID_X, TExtraVertex(o).x);
     fe.AddFieldFloat('y', ID_Y, TExtraVertex(o).y);
     fe.AddFieldFloat('z', ID_Y, TExtraVertex(o).z);
@@ -1192,9 +1190,9 @@ begin
   end;
 
   if o is TExtraLine then
-    fe.AddFieldStr('Name', ID_NAME, TExtraLine(o).name);
+    fe.AddFieldStr('Name', ID_TH_NAME, TExtraLine(o).name);
   if o is TExtraPolygon then
-    fe.AddFieldStr('Name', ID_NAME, TExtraPolygon(o).name);
+    fe.AddFieldStr('Name', ID_TH_NAME, TExtraPolygon(o).name);
 
   if not Visible then
     Show;
@@ -1361,21 +1359,18 @@ begin
   Cur_Light := Level.Lights[nLight];
   With Cur_Light do
   begin
-
-    fe.AddFieldFloat('Intensity', ID_INTENSITY, Intensity);
-    fe.AddFieldFloat('Range', ID_RANGE, Range);
-    fe.AddFieldFloat('x', ID_X, x);
-    fe.AddFieldFloat('y', ID_Y, y);
-    fe.AddFieldFloat('z', ID_Z, z);
-    fe.AddFieldHex('+Flags', ID_LIGHT_FLAGS, Flags);
-
+    fe.AddFieldHex('+Flags', ID_LT_FLAGS, Flags);
+    fe.AddFieldFloat('Range', ID_LT_RANGE, Range);
+    fe.AddFieldFloat('Intensity', ID_LT_INTENSITY, Intensity);
     if CurrentProject <> JKDF2 then
     begin
-      fe.AddFieldStr('+RGB', ID_RGB, Sprintf('%1.3f %1.3f %1.3f', [r, g, b]));
-      { fe.AddFieldFloat('RGBRange',ID_RGBRANGE,RGBRange); }
-      fe.AddFieldFloat('RGBIntensity', ID_RGB_INTENSITY, RGBIntensity);
+      fe.AddFieldColor('+Color', ID_LT_COLOR, color, (*withAlpha=*) false);
     end;
-    fe.AddFieldStr('+Layer', ID_Layer, Level.GetLayerName(Layer));
+
+    fe.AddFieldFloat('x', ID_X, position.x);
+    fe.AddFieldFloat('y', ID_Y, position.y);
+    fe.AddFieldFloat('z', ID_Z, position.z);
+    fe.AddFieldStr('+Layer', ID_LAYER, Level.GetLayerName(Layer));
 
   end;
   if not Visible then
@@ -1388,36 +1383,31 @@ end;
 Procedure TItemEdit.LightDblClk(Fi: TFieldInfo);
 var
   r, g, b: single;
-  f: TColor;
+  c: TColorF;
   fl: longint;
 begin
   if Cur_Light = nil then
     exit;
   With Cur_Light do
     case Fi.id of
-      ID_Layer:
+      ID_LAYER:
         Fi.s := ResPicker.PickLayer(Fi.s);
-      ID_LIGHT_FLAGS:
+      ID_LT_FLAGS:
         begin
           ValHex(Fi.s, fl);
           fl := FlagEdit.EditLightFlags(fl);
           Fi.s := Format('0x%x', [fl]);
         end;
-      ID_RGB:
+      ID_LT_COLOR:
         begin
-          SScanf(Fi.s, '%l %l %l', [@r, @g, @b]);
-          ColorDlg.Color := RGB(Round(r * 255), Round(g * 255), Round(b * 255));
-          if ColorDlg.Execute then
-          begin
-            f := ColorDlg.Color;
-            Fi.s := Sprintf('%1.3f %1.3f %1.3f',
-              [GetRValue(f) / 255, GetGValue(f) / 255, GetBValue(f) / 255]);
-          end;
+          ValColor(Fi.s, c);
+          c := DoPickColor(c);
+          Fi.s := ColorToStr(c, (*withAlpha=*)false);
         end;
     end;
 end;
 
-Function ValLTField(const s: string; Cur_Light: TJedLight; id: integer)
+Function ValLTField(const s: string; Cur_Light: TSedLight; id: integer)
   : boolean;
 var
   d: double;
@@ -1438,54 +1428,44 @@ begin
         begin
           if not ValDouble(s, d) then
             exit;
-          x := d;
+          position.x := d;
         end;
       ID_Y:
         begin
           if not ValDouble(s, d) then
             exit;
-          y := d;
+          position.y := d;
         end;
       ID_Z:
         begin
           if not ValDouble(s, d) then
             exit;
-          z := d;
+          position.z := d;
         end;
-      ID_INTENSITY:
+      ID_LT_INTENSITY:
         begin
           if not ValDouble(s, d) then
             exit;
           Intensity := d;
         end;
-      ID_RANGE:
+      ID_LT_RANGE:
         begin
           if not ValDouble(s, d) then
             exit;
           Range := d;
         end;
-      ID_LIGHT_FLAGS:
+      ID_LT_FLAGS:
         begin
           if not ValHex(s, f) then
             exit;
           Flags := f;
         end;
-      ID_Layer:
+      ID_LAYER:
         Layer := Toolbar.AddLayer(s);
-      ID_RGB:
+      ID_LT_COLOR:
         begin
-          if not SScanf(s, '%l %l %l', [@ar, @ag, @ab]) then
+          if not ValColor(s, color) then
             exit;
-          r := ar;
-          g := ag;
-          b := ab;
-        end;
-      { ID_RGBRange: begin if not ValDouble(fi.s,d) then exit; RGBRange:=d; end; }
-      ID_RGB_INTENSITY:
-        begin
-          if not ValDouble(s, d) then
-            exit;
-          RGBIntensity := d;
         end;
     end;
   Result := true;
@@ -1496,7 +1476,7 @@ Function TItemEdit.LightChange(Fi: TFieldInfo): boolean;
 var
   i: integer;
   ltsl: TLTMultiSel;
-  lt: TJedLight;
+  lt: TSedLight;
 begin
 
   { JedMain.SaveSelLightsUndo('Change light(s)',ch_changed); }
@@ -1572,9 +1552,9 @@ begin
   thsel.DeleteN(n);
 
   if IsUIEditProp(s) then
-    fe.AddFieldStr('+' + s, ID_TH_Last + Cur_Thing.Vals.count - 1, v.AsString)
+    fe.AddFieldStr('+' + s, ID_TH_LAST + Cur_Thing.Vals.count - 1, v.AsString)
   else
-    fe.AddFieldStr(s, ID_TH_Last + Cur_Thing.Vals.count - 1, v.AsString);
+    fe.AddFieldStr(s, ID_TH_LAST + Cur_Thing.Vals.count - 1, v.AsString);
   fe.DoneAdding;
 end;
 
@@ -1620,9 +1600,9 @@ var
 begin
   if Cur_Thing = nil then
     exit;
-  if SGFields.Row < Thing_fields then
+  if SGFields.Row < NUM_THING_FIELDS then
     exit;
-  vn := SGFields.Row - Thing_fields;
+  vn := SGFields.Row - NUM_THING_FIELDS;
 
   fname := Cur_Thing.Vals[vn].name;
 
@@ -1756,7 +1736,7 @@ begin
 
   fe.AddFieldInt('Starting VX', -1, v1.Num);
   fe.AddFieldInt('Ending VX', -1, v2.Num);
-  fe.AddFieldFloat('Length', ID_EDGELEN,
+  fe.AddFieldFloat('Length', ID_ED_LENGTH,
     sqrt(sqr(v2.x - v1.x) + sqr(v2.y - v1.y) + sqr(v2.z - v1.z)));
 
   if not Visible then
@@ -1787,7 +1767,7 @@ begin
   for i := 0 to fe.FieldCount - 1 do
   begin
     Fi := fe.Fields[i];
-    if Fi.id = ID_NAME then
+    if Fi.id = ID_TH_NAME then
     begin
       ThingDblClk(Fi);
       fe.DeactivateHandler;
@@ -1806,7 +1786,7 @@ begin
   for i := 0 to fe.FieldCount - 1 do
   begin
     Fi := fe.Fields[i];
-    if Fi.id = ID_Material then
+    if Fi.id = ID_SURF_MATERIAL then
     begin
       SurfaceDblClk(Fi);
       fe.DeactivateHandler;

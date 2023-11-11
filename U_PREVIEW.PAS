@@ -740,7 +740,7 @@ end;
 
 procedure TPreview3D.SetCameraToItem1Click(Sender: TObject);
 var
-    cx, cy, cz, cpch, cyaw, a: double;
+    cx, cy, cz, cpch, cyaw, crol: double;
 begin
     cpch := 0;
     cyaw := 0;
@@ -763,22 +763,25 @@ begin
         MM_LT:
             with Level.Lights[JedMain.Cur_LT] do
             begin
-                cx := X;
-                cy := Y;
-                cz := z;
+                cx := position.X;
+                cy := position.Y;
+                cz := position.z;
             end;
         MM_FR:
-            if JedMain.Cur_FR = -1 then
-                with Level.Lights[JedMain.Cur_LT] do
-                begin
-                    cx := X;
-                    cy := Y;
-                    cz := z;
-                end
-            else
-                Level.Things[JedMain.Cur_TH].Vals[JedMain.Cur_FR].GetFrame(cx, cy, cz,
-                  cpch, cyaw, a);
+          if JedMain.Cur_FR = -1 then
+            with Level.Things[JedMain.Cur_TH] do
+              begin
+                cx := x;
+                cy := y;
+                cz := z;
+                cpch := pch;
+                cyaw := yaw;
+              end;
+          else
+            Level.Things[JedMain.Cur_TH].Vals[JedMain.Cur_FR]
+              .GetFrame(cx, cy, cz, cpch, cyaw, crol);
     end;
+
     SetCam(cx, cy, cz, cpch, cyaw);
 end;
 
