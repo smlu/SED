@@ -5678,7 +5678,7 @@ begin
           For v := 0 to txvertices.count - 1 do
             with txvertices[v] do
             begin
-              color.a := 0;
+              // Note: do not change alpha;
               color.r := 0;
               color.g := 0;
               color.b := 0;

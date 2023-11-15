@@ -79,10 +79,10 @@ MM_LT = 5; {Lights}
 MM_FR = 6; {frames}
 
 {SurfaceUpdate "how" constant}
-su_texture   = 1;
-su_floorflag = 2;
-su_sector    = 4;
-su_all       = 7;
+su_texture    = 1;
+su_floorflag  = 2;
+su_sector     = 4;
+su_all        = $FF;
 
 {Undo change constants}
 uc_changed  = 0;

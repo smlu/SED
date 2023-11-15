@@ -1593,6 +1593,8 @@ begin
                 vd.y := Vertices[nv].y;
                 vd.z := Vertices[nv].z;
                 vd.intensity := color;
+                if CurrentProject = IJIM then
+                  vd.intensity.a := ExtraLight.a;
 
                 if poly.tx <> nil then
                   begin

@@ -583,16 +583,6 @@ begin
           if Result then
             begin
               ExtraLight := c;
-
-              { Update vertex intesity alpha }
-              if CurrentProject = IJIM then
-                begin
-                  for var j := 0 to Vertices.Count - 1 do
-                    begin
-                      With TXVertices[j] do
-                      color.a := ExtraLight.a;
-                    end;
-                end;
             end;
         end;
       ID_SURF_USCALE:
