@@ -509,14 +509,16 @@ Procedure TSEDCOMLevel.SectorGet(sec:integer;var rec:TSEDSectorRec;what:integer)
 begin
   with level.sectors[sec] do
     begin
-      if (what and s_flags)   <> 0 then rec.flags       := flags;
-      if (what and s_ambient) <> 0 then rec.ambient     := TSEDColor(Ambient);
-      if (what and s_extra)   <> 0 then rec.extraLight  := TSEDColor(ExtraLight);
-      if (what and s_cmp)     <> 0 then rec.colorMap    := PChar(ColorMap);
-      if (what and s_tint)    <> 0 then rec.tint        := TSEDColor(Tint);
-      if (what and s_sound)   <> 0 then rec.sound       := PChar(Sound);
-      if (what and s_sndvol)  <> 0 then rec.soundVolume := soundVolume;
-      if (what and s_layer)   <> 0 then rec.layer       := layer;
+      if (what and s_flags)      <> 0 then rec.flags       := flags;
+      if (what and s_ambient)    <> 0 then rec.ambient     := TSEDColor(ambient);
+      if (what and s_extra)      <> 0 then rec.extraLight  := TSEDColor(extraLight);
+      if (what and s_pointlight) <> 0 then rec.pointLight  := TSEDPointLight(pointLight);
+      if (what and s_cmp)        <> 0 then rec.colorMap    := PChar(colormap);
+      if (what and s_tint)       <> 0 then rec.tint        := TSEDColor(tint);
+      if (what and s_sound)      <> 0 then rec.sound       := PChar(sound);
+      if (what and s_sndvol)     <> 0 then rec.soundVolume := soundVolume;
+      if (what and s_thrust)     <> 0 then rec.thrust      := TSEDVector3(thrust);
+      if (what and s_layer)      <> 0 then rec.layer       := layer;
     end;
 end;
 
@@ -524,14 +526,16 @@ Procedure TSEDCOMLevel.SectorSet(sec:integer;const rec:TSEDSectorRec;what:intege
 begin
   with level.sectors[sec] do
     begin
-      if (what and s_flags)   <> 0 then flags       := rec.flags;
-      if (what and s_ambient) <> 0 then ambient     := TColorF(rec.Ambient);
-      if (what and s_extra)   <> 0 then extraLight  := TColorF(rec.ExtraLight);
-      if (what and s_cmp)     <> 0 then colorMap    := rec.ColorMap;
-      if (what and s_tint)    <> 0 then tint        := TColorF(rec.Tint);
-      if (what and s_sound)   <> 0 then sound       := rec.Sound;
-      if (what and s_sndvol)  <> 0 then soundVolume := rec.soundVolume;
-      if (what and s_layer)   <> 0 then layer       := rec.layer;
+      if (what and s_flags)      <> 0 then flags       := rec.flags;
+      if (what and s_ambient)    <> 0 then ambient     := TColorF(rec.Ambient);
+      if (what and s_extra)      <> 0 then extraLight  := TColorF(rec.ExtraLight);
+      if (what and s_pointlight) <> 0 then pointLight  := TPointLight(rec.pointLight);
+      if (what and s_cmp)        <> 0 then colormap    := rec.ColorMap;
+      if (what and s_tint)       <> 0 then tint        := TColorF(rec.Tint);
+      if (what and s_sound)      <> 0 then sound       := rec.Sound;
+      if (what and s_sndvol)     <> 0 then soundVolume := rec.soundVolume;
+      if (what and s_thrust)     <> 0 then thrust      := TVector(rec.thrust);
+      if (what and s_layer)      <> 0 then layer       := rec.layer;
     end;
 end;
 

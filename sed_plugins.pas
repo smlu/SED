@@ -29,15 +29,17 @@ lh_Fog         = $2000;
 lh_all         = $2FFF;
 
 {Get/SetSector flags}
-s_flags   = 1;
-s_ambient = 2;
-s_extra   = 4;
-s_cmp     = 8;
-s_tint    = $10;
-s_sound   = $20;
-s_sndvol  = $40;
-s_layer   = $80;
-s_all     = $FF;
+s_flags      = 1;
+s_ambient    = 2;
+s_extra      = 4;
+s_pointlight = 8;
+s_cmp        = $10;
+s_tint       = $20;
+s_sound      = $40;
+s_sndvol     = $80;
+s_thrust     = $100;
+s_layer      = $200;
+s_all        = $FFFF;
 
 {Get/SetSurface flags}
 sf_adjoin      = 1;
@@ -243,6 +245,13 @@ TSEDBox = record
   p2: TSEDVector3;
 end;
 
+TSEDPointLight = record
+  color: TSEDColor;
+  position: TSEDVector3;
+  minRange: double;  // minimum light range at which light will still illuminate
+  maxRange: double;  // maximum light intensity range before it starts to falloff
+end;
+
 TSEDFog = record
   enabled: Boolean;
   color: TSEDColor;
@@ -270,10 +279,12 @@ TSEDSectorRec = record
   flags: longint;
   ambient: TSEDColor;
   extraLight: TSEDColor;
+  pointLight: TSEDPointLight;
   colorMap: PChar;
   tint: TSEDColor;
   sound: PChar;
   soundVolume: double;
+  thrust: TSEDVector3;
   layer: longint;
 end;
 
