@@ -237,7 +237,7 @@ begin
           exit;
         end;
         With TJKSUrface(obj) do
-          result := Format('%d %d', [Sector.num, num]);
+          result := Format('%d %d', [sector.num, num]);
         exit;
       end;
   end;
@@ -260,8 +260,8 @@ begin
       result := IntToStr(TJKSector(obj).num);
     ct_srf:
       With TJKSUrface(obj) do
-        result := IntToStr(Sector.Level.GetGlobalSFN(Sector.num,
-          Sector.Surfaces.IndexOf(obj)));
+        result := IntToStr(sector.Level.GetGlobalSFN(sector.num,
+          sector.Surfaces.IndexOf(obj)));
     ct_thg:
       result := IntToStr(TJKThing(obj).num);
   else

@@ -280,7 +280,7 @@ begin
       exit
     else
     begin
-      LoadCmpPal(Level.sectors[0].ColorMap, pal);
+      LoadCmpPal(Level.sectors[0].colormap, pal);
       exit;
     end;
   LoadCmpPal(Level.MasterCMP, pal);

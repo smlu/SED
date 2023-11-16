@@ -303,7 +303,7 @@ begin
   With fi do
     Result := QTestInt(num, S.num) and QTestInt(NSurfs, S.surfaces.count) and
       QTestFlags(Flags, S.Flags) and QTestColor(extra_l, S.ExtraLight) and
-      QTestStr(ColorMap, S.ColorMap) and QTestColor(tint, S.Tint) and
+      QTestStr(ColorMap, S.colormap) and QTestColor(tint, S.Tint) and
       QTestStr(sound, S.sound) and QTestDouble(sound_vol, S.soundVolume) and
       QTestStr(Layer, S.Level.GetLayerName(S.Layer));
 end;
@@ -331,8 +331,8 @@ begin
     Result := QTestInt(num, W.num) and QTestStr(material, W.material) and
       QTestInt(AdjoinSC, getSCnum(W.adjoin)) and
       QTestInt(AdjoinSF, getSFnum(W.adjoin)) and
-      QTestFlags(AdjoinFlags, W.AdjoinFlags) and
-      QTestFlags(SurfFlags, W.SurfFlags) and QTestFlags(FaceFlags, W.FaceFlags)
+      QTestFlags(AdjoinFlags, W.adjoinflags) and
+      QTestFlags(SurfFlags, W.surfflags) and QTestFlags(FaceFlags, W.FaceFlags)
       and QTestInt(geo, W.geo) and QTestInt(light, W.light) and
       QTestInt(tex, W.tex) and QTestColor(extra_l, W.ExtraLight) and
       QTestStr(Layer, W.sector.Level.GetLayerName(W.sector.Layer));

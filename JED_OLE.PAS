@@ -741,12 +741,12 @@ end;
 
 Function TOLESector.GetCMP:string;
 begin
- Result:=sec.ColorMap;
+ Result:=sec.colormap;
 end;
 
 Procedure TOLESector.SetCMP(const cmp:string);
 begin
- sec.ColorMap:=cmp;
+ sec.colormap:=cmp;
 end;
 
 Function TOLESector.GetSound:String;
@@ -944,27 +944,27 @@ end;
 
 Procedure TOLESurface.UpdateSector;
 begin
- JedMain.SectorChanged(surf.Sector);
+ JedMain.SectorChanged(surf.sector);
 end;
 
 Function TOLESurface.GetAdjFlags:integer;
 begin
- Result:=surf.AdjoinFlags;
+ Result:=surf.adjoinflags;
 end;
 
 Procedure TOLESurface.SetAdjFlags(f:integer);
 begin
- surf.AdjoinFlags:=f;
+ surf.adjoinflags:=f;
 end;
 
 Function TOLESurface.GetSurfFlags:Integer;
 begin
- Result:=surf.SurfFlags;
+ Result:=surf.surfflags;
 end;
 
 Procedure TOLESurface.SetSurfFlags(f:integer);
 begin
- surf.SurfFlags:=f;
+ surf.surfflags:=f;
 end;
 
 Function TOLESurface.GetFaceFlags:Integer;
@@ -999,7 +999,7 @@ end;
 
 Function TOLESurface.GetAdjoinSC:Integer;
 begin
- if surf.adjoin=nil then result:=-1 else result:=surf.adjoin.Sector.num;
+ if surf.adjoin=nil then result:=-1 else result:=surf.adjoin.sector.num;
 end;
 
 Function TOLESurface.GetAdjoinSF:Integer;
@@ -1035,27 +1035,27 @@ end;
 
 Procedure TOLESurface.GetAdjoin(var sc,sf:integer);
 begin
- if surf.Adjoin=nil then begin sc:=-1; sf:=-1; end
- else begin sc:=surf.adjoin.Sector.num; sf:=surf.adjoin.num; end;
+ if surf.adjoin=nil then begin sc:=-1; sf:=-1; end
+ else begin sc:=surf.adjoin.sector.num; sf:=surf.adjoin.num; end;
 end;
 
 Procedure TOLESurface.SetAdjoin(sc,sf:integer);
 begin
- if (sc<0) or (sf<0) then surf.Adjoin:=nil else
- surf.Adjoin:=Level.Sectors[sc].Surfaces[sf];
+ if (sc<0) or (sf<0) then surf.adjoin:=nil else
+ surf.adjoin:=Level.Sectors[sc].Surfaces[sf];
 end;
 
 Procedure TOLESurface.GetFlags(var AdjoinFlags, SurfFlags, FaceFlags:Longint);
 begin
- AdjoinFlags:=surf.AdjoinFlags;
- SurfFlags:=surf.SurfFlags;
+ AdjoinFlags:=surf.adjoinflags;
+ SurfFlags:=surf.surfflags;
  FaceFlags:=surf.FaceFlags;
 end;
 
 Procedure TOLESurface.SetFlags(AdjoinFlags, SurfFlags, FaceFlags:Longint);
 begin
- surf.AdjoinFlags:=AdjoinFlags;
- surf.SurfFlags:=SurfFlags;
+ surf.adjoinflags:=AdjoinFlags;
+ surf.surfflags:=SurfFlags;
  surf.FaceFlags:=FaceFlags;
 end;
 
@@ -1075,12 +1075,12 @@ end;
 
 Function TOLESurface.GetMAT:string;
 begin
- Result:=surf.Material;
+ Result:=surf.material;
 end;
 
 Procedure TOLESurface.SetMat(const mat:string);
 begin
- surf.Material:=mat;
+ surf.material:=mat;
 end;
 
 Function TOLESurface.GetExtra:double; deprecated

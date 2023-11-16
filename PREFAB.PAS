@@ -53,14 +53,14 @@ var
       With sec do
       begin
         // TODO: parse version 2 with RGB colors for Ambient & ExtraLight, and IJIM light intensity, force etc...
-        if not ReadFmt('%s %s %f %x %l %l %l %l %l %d', [@ColorMap, @Sound, @soundVolume,
+        if not ReadFmt('%s %s %f %x %l %l %l %l %l %d', [@colormap, @Sound, @soundVolume,
           @Flags, @Ambient.a, @ExtraLight.a, @tint.r, @tint.g, @tint.b, @Layer]) then
           raise Exception.Create('Failed to parse template sector info');
 
         Ambient    := IntensityToColor(Ambient.a);
         ExtraLight := IntensityToColor(ExtraLight.a);
-        if ColorMap = '-' then
-          ColorMap := '';
+        if colormap = '-' then
+          colormap := '';
         if Sound = '-' then
           Sound := '';
 
@@ -239,10 +239,10 @@ begin
     begin
       // TODO: Add version no. 2 to the end of SEC line
       WriteFmt('SEC %s', [Prefabs[i]]);
-      if ColorMap = '' then
+      if colormap = '' then
         st := '-'
       else
-        st := ColorMap;
+        st := colormap;
       if Sound = '' then
         st := st + ' -'
       else

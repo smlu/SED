@@ -447,7 +447,7 @@ begin
   if (what and s_flags)<>0 then rec.Flags:=flags;
   if (what and s_ambient)<>0 then rec.Ambient:=Ambient.Intensity;
   if (what and s_extra)<>0 then rec.extra:=extraLight.Intensity;
-  if (what and s_cmp)<>0 then rec.ColorMap:=CacheAString(ColorMap);
+  if (what and s_cmp)<>0 then rec.ColorMap:=CacheAString(colormap);
   if (what and s_tint)<>0 then
   begin
    rec.Tint_r := Tint.r;
@@ -466,7 +466,7 @@ begin
   if (what and s_flags)<>0 then Flags:=rec.flags;
   if (what and s_ambient)<>0 then Ambient := MakeColor(rec.Ambient);
   if (what and s_extra)<>0 then extraLight := MakeColor(rec.extra);
-  if (what and s_cmp)<>0 then ColorMap:=rec.ColorMap;
+  if (what and s_cmp)<>0 then colormap:=rec.ColorMap;
   if (what and s_tint)<>0 then Tint := MakeColor(rec.tint_r,rec.tint_g,rec.tint_b);
   if (what and s_sound)<>0 then Sound:=rec.Sound;
   if (what and s_sndvol)<>0 then soundVolume:=rec.snd_vol;

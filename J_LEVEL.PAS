@@ -156,11 +156,11 @@ type
   end;
 
   TJKSurface = class(TPolygon)
-    SurfFlags: longint;
-    Adjoin: TJKSurface;
-    AdjoinFlags: longint;
-    Material: String;
-    Sector: TJKSector;
+    surfflags: longint;
+    adjoin: TJKSurface;
+    adjoinflags: longint;
+    material: String;
+    sector: TJKSector;
 //    geo, light, tex: integer;
 //    ExtraLight: TColorF;
     mark, D3DID: integer;

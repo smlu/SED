@@ -788,10 +788,10 @@ var sec: TJKSector;
 
     Procedure SetAdjoinParamBasedOnAdjoin(srf, adjoin: TJKSurface);
     begin
-      srf.SurfFlags   := adjoin.SurfFlags;
-      srf.FaceFlags   := adjoin.FaceFlags;
+      srf.surfflags   := adjoin.surfFlags;
+      srf.faceflags   := adjoin.faceflags;
       srf.geo         := adjoin.geo;
-      srf.AdjoinFlags := adjoin.AdjoinFlags;
+      srf.adjoinflags := adjoin.adjoinflags;
     end;
   begin
     for i:=0 to sec.surfaces.count-1 do
@@ -805,10 +805,10 @@ var sec: TJKSector;
         sc := Level.GetSectorByID(surf.nadj);
         if sc = -1 then continue;
 
-        if sc>=Level.Sectors.Count then continue;
-        asec := Level.Sectors[sc];
+        if sc>=Level.sectors.Count then continue;
+        asec := Level.sectors[sc];
 
-        if sf >= aSec.Surfaces.Count then continue;
+        if sf >= aSec.surfaces.Count then continue;
         asurf := asec.surfaces[sf];
 
         {  if (asurf.adjoin<>nil) and (asurf.adjoin.sector<>sec) then continue;}
