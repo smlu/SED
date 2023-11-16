@@ -12,11 +12,14 @@ const
   // Sector flags
   SECF_Underwater   = $2;         // sector underwater
   SECF_CollideBox   = $1000;      // sector uses collide box info
-  SECF_3DO          = 1 shl 31;   // SED flag
 
   // IJIM Sector flags
   SECF_IJIM_UseThrust = $8;      // sector uses thrust field
   SECF_IJIM_Aetherim  = $100;    // sector is in aetherium
+
+  // SED sector flags (not used in the game)
+  SECF_3DO            = 1 shl 30;   // marks 3DO sec mesh
+  SECF_NOAMBINETLIGHT = 1 shl 31;   // marks sector to not use ambient light when calculating  lights
 
   // Surface flags
   SF_Floor        = $1;

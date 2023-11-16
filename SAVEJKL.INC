@@ -696,7 +696,10 @@ begin
   FindBBox(Sectors[s],bbox);
   FindBSphere(Sectors[s],CX,CY,CZ,Rad);
 
-  Flags:=Flags and (not SECF_3DO);
+  // Remove SED flags
+  // Note: SECF_NOAMBINETLIGHT is left set so the correct
+  //       light logic is preserved the next time level is loaded into editor
+  BitClear(Flags, SECF_3DO);
 
 //  if FindCollideBox(Sectors[s],bbox,CX,CY,CZ,cbox) then
 //  Flags:=Flags or $1000 else Flags:=Flags and (not $1000);

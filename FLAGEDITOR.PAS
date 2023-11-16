@@ -298,7 +298,8 @@ begin
 
   SetNameDesc(12, '0x1000 - Collide box', 'Sector has collision box set. (auto set)');
   SetNameDesc(14, '0x4000 - Seen', 'Sector has been seen by camera. (engine flag)');
-  SetNameDesc(31, 'Preview as 3DO', 'Show inverted in 3D preview. (SED flag)');
+  SetNameDesc(30, 'Preview as 3DO', 'Show inverted in 3D preview. (SED flag)');
+  SetNameDesc(31, 'No Ambient Light', 'Don''t set ambient light when calculating light(s). (SED flag)');
 
   Bits[7].Enabled := false; // disable setting flag 0x80 - Adjoins off
 

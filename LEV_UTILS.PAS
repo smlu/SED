@@ -5697,6 +5697,8 @@ begin
   for s := 0 to scs.count - 1 do
   begin
     sec := lev.sectors[scs.getSC(s)];
+    if BitMaskTest(sec.flags, SECF_NOAMBINETLIGHT) then // skip calculating ambient light
+      continue;
 
     vlight.SetToZero;
     sflight.SetToZero;
