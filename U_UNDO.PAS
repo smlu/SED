@@ -37,13 +37,15 @@ end;
 PSFVX = ^TSFVX;
 
 TSecRec = record
-  Flags: longint;
-  Ambient: TColorF;
-  ExtraLight: TColorF;
+  flags: longint;
+  ambient: TColorF;
+  extraLight: TColorF;
+  pointLight: TPointLight;
   ColorMap: array[0..31] of char;
   Tint: TColorF;
   Sound: array[0..63] of char;
-  snd_vol: double;
+  soundVolume: double;
+  thrust: TVector;
   layer: Integer;
   nvxs,nsfs: Integer;
 end;
@@ -126,7 +128,7 @@ Procedure SetCOG(cog: TCog; var crec: TCogRec);
 
 Function GetSecRecSize: Integer;
 Procedure GetSec(sec: TJKSector; var srec: TSecRec);
-Procedure SetSec(sec: TJKSector; var srec: TSecRec);
+Procedure SetSec(var sec: TJKSector; srec: TSecRec);
 Procedure GetSurf(surf: TJKSurface; var sfrec: TSurfRec);
 Function GetSurfRecSize: Integer;
 Procedure SetSurf(surf: TJKSurface; var sfrec: TSurfRec);
@@ -300,33 +302,37 @@ Procedure GetSec(sec: TJKSector; var srec: TSecRec);
 begin
   with sec do
     begin
-      srec.flags      := Flags;
-      srec.Ambient    := Ambient;
-      srec.ExtraLight := ExtraLight;
-      srec.tint       := Tint;
+      srec.flags      := flags;
+      srec.ambient    := ambient;
+      srec.extraLight := extraLight;
+      srec.pointLight := pointLight;
+      srec.tint       := tint;
 
-      StrLCopy(srec.ColorMap, PChar(Colormap), Length(srec.colormap) - 1);
-      StrLCopy(srec.Sound, PChar(Sound), Length(srec.Sound) - 1);
+      StrLCopy(srec.colorMap, PChar(colormap), Length(srec.colormap) - 1);
+      StrLCopy(srec.sound, PChar(sound), Length(srec.sound) - 1);
 
-      srec.snd_vol := soundVolume;
-      srec.layer   := Layer;
-      srec.nvxs    := Vertices.count;
-      srec.nsfs    := Surfaces.count;
+      srec.soundVolume := soundVolume;
+      srec.thrust      := thrust;
+      srec.layer       := Layer;
+      srec.nvxs        := vertices.count;
+      srec.nsfs        := surfaces.count;
     end;
 end;
 
-Procedure SetSec(sec: TJKSector; var srec: TSecRec);
+Procedure SetSec(var sec: TJKSector; srec: TSecRec);
 begin
   with sec do
     begin
-      Flags      := srec.flags;
-      Ambient    := srec.Ambient;
-      ExtraLight := srec.ExtraLight;
-      ColorMap   := srec.Colormap;
-      Tint       := srec.tint;
-      sound      := Srec.Sound;
-      soundVolume    := srec.snd_vol;
-      layer      := srec.layer;
+      flags       := srec.flags;
+      ambient     := srec.ambient;
+      extraLight  := srec.extraLight;
+      pointLight  := srec.pointLight;
+      colormap    := srec.colormap;
+      tint        := srec.tint;
+      sound       := Srec.sound;
+      soundVolume := srec.soundVolume;
+      thrust      := srec.thrust;
+      layer       := srec.layer;
     end;
 end;
 
