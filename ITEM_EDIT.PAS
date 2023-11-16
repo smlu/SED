@@ -8,17 +8,18 @@ uses
   Values, u_multisel, u_undo;
 
 Const
-  ID_SEC_FLAGS               = 0;
-  ID_SEC_AMBIENT             = 1;
-  ID_SEC_EXTRA_LIGHT         = 2;
-  ID_SEC_POINT_LIGHT_COLOR   = 3;
-  ID_SEC_POINT_LIGHT_POS     = 4;
-  ID_SEC_POINT_LIGHT_FALLOFF = 5;
-  ID_SEC_COLORMAP            = 6;
-  ID_SEC_TINT                = 7;
-  ID_SEC_SOUND               = 8;
-  ID_SEC_SOUND_VOLUME        = 9;
-  ID_SEC_THRUST              = 10;
+  ID_SEC_FLAGS                 = 0;
+  ID_SEC_AMBIENT               = 1;
+  ID_SEC_EXTRA_LIGHT           = 2;
+  ID_SEC_POINT_LIGHT_COLOR     = 3;
+  ID_SEC_POINT_LIGHT_POS       = 4;
+  ID_SEC_POINT_LIGHT_MIN_RANGE = 5;
+  ID_SEC_POINT_LIGHT_MAX_RANGE = 6;
+  ID_SEC_COLORMAP              = 7;
+  ID_SEC_TINT                  = 8;
+  ID_SEC_SOUND                 = 9;
+  ID_SEC_SOUND_VOLUME          = 10;
+  ID_SEC_THRUST                = 11;
 
   ID_SURF_ADJOINFLAGS = 0;
   ID_SURF_MATERIAL    = 1;
@@ -184,17 +185,19 @@ begin
       begin
         fe.AddFieldColor('+Ambient', ID_SEC_AMBIENT, Ambient, (*withAlpha=*) false);
         fe.AddFieldColor('+Extra Light', ID_SEC_EXTRA_LIGHT, ExtraLight, (*withAlpha=*) false);
-        fe.AddFieldColor('+Avg. Light Intensity', ID_SEC_POINT_LIGHT_COLOR, PointLight.Color, (*withAlpha=*) false);
-        fe.AddFieldStr('Avg. Light Position', ID_SEC_POINT_LIGHT_POS,
+        fe.AddFieldColor('+Point Light Color', ID_SEC_POINT_LIGHT_COLOR, PointLight.Color, (*withAlpha=*) false);
+        fe.AddFieldStr('Point Light Position', ID_SEC_POINT_LIGHT_POS,
           Sprintf('%1.6f %1.6f %1.6f', [PointLight.Position.x, PointLight.Position.y, PointLight.Position.z]));
-        fe.AddFieldStr('Avg. Light Falloff', ID_SEC_POINT_LIGHT_FALLOFF,
-          Sprintf('%1.6f %1.6f', [PointLight.Falloff.x, PointLight.Falloff.y]));
+        fe.AddFieldStr('Point Light Min Range', ID_SEC_POINT_LIGHT_MIN_RANGE,
+          Sprintf('%1.6f', [PointLight.minRange]));
+        fe.AddFieldStr('Point Light Max Range', ID_SEC_POINT_LIGHT_MAX_RANGE,
+          Sprintf('%1.6f', [PointLight.maxRange]));
       end
     else
       begin
-        fe.AddFieldFloat('Ambient', ID_SEC_AMBIENT, RgbToIntensity(Ambient));
-        fe.AddFieldFloat('Extra Light', ID_SEC_EXTRA_LIGHT, RgbToIntensity(ExtraLight));
-        fe.AddFieldStr('+Colormap', ID_SEC_COLORMAP, Colormap);
+        fe.AddFieldFloat('Ambient', ID_SEC_AMBIENT, RgbToIntensity(ambient));
+        fe.AddFieldFloat('Extra Light', ID_SEC_EXTRA_LIGHT, RgbToIntensity(extraLight));
+        fe.AddFieldStr('+Colormap', ID_SEC_COLORMAP, colormap);
       end;
 
     fe.AddFieldColor('+Tint', ID_SEC_TINT, Tint, (*withAlpha=*) false);
@@ -307,8 +310,10 @@ begin
       end;
     ID_SEC_POINT_LIGHT_POS:
       Result := SScanf(s, '%f %f %f', [@sec.PointLight.Position.x, @sec.PointLight.Position.y, @sec.PointLight.Position.z]);
-    ID_SEC_POINT_LIGHT_FALLOFF:
-      Result := SScanf(s, '%f %f', [@sec.PointLight.Falloff.x, @sec.PointLight.Falloff.y]);
+    ID_SEC_POINT_LIGHT_MIN_RANGE:
+      Result := SScanf(s, '%f %f', [@sec.PointLight.minRange]);
+     ID_SEC_POINT_LIGHT_MAX_RANGE:
+      Result := SScanf(s, '%f %f', [@sec.PointLight.maxRange]);
     ID_SEC_COLORMAP:
       Begin
         Result := true;

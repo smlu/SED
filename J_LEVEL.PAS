@@ -188,31 +188,33 @@ type
     Property Items[n: integer]: TJKSurface read GetItem write SetItem; default;
   end;
 
-  TSectorPointLight = record
-    Color: TColorF;
-    Position: T3DPoint;
-    Falloff: TVector2d;
+  TPointLight = record
+    color: TColorF;
+    position: T3DPoint;
+    minRange: double;  // minimum light range at which light will still illuminate
+    maxRange: double;  // maximum light intensity range before it starts to falloff
   end;
 
   TJKSector = class { (TPolygons) }
     ID: integer; { Unique ID. Used in Undo }
     num: integer;
     flags: longint;
-    Ambient: TColorF;
-    ExtraLight: TColorF;
-    PointLight: TSectorPointLight;
-    ColorMap: String;
-    Tint: TColorF;
-    Sound: string;
+    ambient: TColorF;
+    extraLight: TColorF;
+    pointLight: TPointLight;
+    colormap: String;
+    tint: TColorF;
+    sound: string;
     soundVolume: double;
-    Thrust: TVector;
+    thrust: TVector;
 
     level: TJKLevel;
     surfaces: TSurfaces;
-    Vertices: TJKVertices;
-    CollideBox: TBox;
+    vertices: TJKVertices;
+    collideBox: TBox;
     layer: integer;
     mark: integer;
+
     Procedure Assign(Sec: TJKSector);
     Constructor Create(owner: TJKLevel);
     Destructor Destroy; override;

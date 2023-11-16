@@ -440,7 +440,7 @@ Try
     else if w1 = 'POSITION' then
       SScanf(s,'AVERAGE LIGHT POSITION %f %f %f',[@PointLight.Position.x, @PointLight.Position.y, @PointLight.Position.z])
     else if w1 = 'FALLOFF' then
-      SScanf(s,'AVERAGE LIGHT FALLOFF %f %f',[@PointLight.Falloff.x, @PointLight.Falloff.y])
+      SScanf(s,'AVERAGE LIGHT FALLOFF %f %f',[@PointLight.minRange, @PointLight.maxRange])
   end
   else if w1='SOUND' then SScanf(s,'SOUND %s %f',[@Sound,@soundVolume])
   else if w1='COLORMAP' then ColorMap:=GetCmp(StrToInt(GetWordN(s,2)))
