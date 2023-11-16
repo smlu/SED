@@ -922,21 +922,21 @@ begin
           //if poly.geo = NotDrawn then continue;
           if poly.geo > geoMode then poly.geo := geoMode;
           if poly.light > lightMode then poly.light := lightMode;
-          if BitTest(poly.faceflags, alphaAdjoinMask) then//(poly.faceflags and alphaAdjoinMask) = alphaAdjoinMask then
+          if BitMaskTest(poly.faceflags, alphaAdjoinMask) then//(poly.faceflags and alphaAdjoinMask) = alphaAdjoinMask then
             begin
               rdAlphaAdjoinsPolys.Add(poly);
             end
           else if poly.geo <> NotDrawn then
             begin
               rdCache.AddPoly(poly);
-              if highlightSolidFloor and BitTest(poly.faceflags, FF_RD_FloorWf) then
+              if highlightSolidFloor and BitMaskTest(poly.faceflags, FF_RD_FloorWf) then
                 rdFloorPolys.Add(poly)
             end;
 
-          if highlightSolidSurface and BitTest(poly.faceflags, FF_RD_SolidSurfaceWf) then
+          if highlightSolidSurface and BitMaskTest(poly.faceflags, FF_RD_SolidSurfaceWf) then
             rdSolidSurfacePolys.Add(poly);
 
-          if highlightSpecialSurface and BitTest(poly.faceflags, FF_RD_SpecialSurfaceWf) then
+          if highlightSpecialSurface and BitMaskTest(poly.faceflags, FF_RD_SpecialSurfaceWf) then
             rdSpecialSurfacePolys.Add(poly);
         end;
     end;
@@ -974,10 +974,10 @@ begin
           poly.ambientLight := ambientLight;
           poly.tint := tint;
 
-          if highlightSpecialSurface and BitTest(poly.faceflags, FF_RD_SpecialSurfaceWf) then
+          if highlightSpecialSurface and BitMaskTest(poly.faceflags, FF_RD_SpecialSurfaceWf) then
             rdSpecialSurfacePolys.Add(poly);
 
-          var isTransluent := BitTest(poly.faceflags, FF_Transluent);
+          var isTransluent := BitMaskTest(poly.faceflags, FF_Transluent);
           if poly.tx <> nil then
             isTransluent := isTransluent or (poly.tx.ci.mode = RGBA);
 
@@ -1531,20 +1531,20 @@ begin
         poly.tint         := sec.Tint;
 
         poly.normal := normal;
-        if BitTest(sec.Flags, SECF_3DO) then
+        if BitMaskTest(sec.Flags, SECF_3DO) then
           poly.normal.SetCoords(-normal.dx, -normal.dy, -normal.dz);
 
         // Make sky poly unlit
-        if BitTest(sec.Flags, SECF_3DO) or
-          BitTest(SurfFlags, SF_SkyHorizon) or
-          BitTest(SurfFlags, SF_SkyCeiling) then
+        if BitMaskTest(sec.Flags, SECF_3DO) or
+          BitMaskTest(SurfFlags, SF_SkyHorizon) or
+          BitMaskTest(SurfFlags, SF_SkyCeiling) then
           poly.light := TLightMode.None;
 
         if sec.level.kind = JKDF2 then // JKDF2 doesn't support tex clamping?
           poly.faceflags := LongInt(poly.faceflags and not(FF_TexClampX or FF_TexClampY));
 
         // Mark poly to render fog (IJIM)
-        if FlagsNotSet(SurfFlags, SF_SkyHorizon or SF_SkyCeiling) then
+        if BitTest(SurfFlags, SF_SkyHorizon or SF_SkyCeiling) = 0 then
           poly.faceflags := LongInt(poly.faceflags or FF_IJIM_FogEnabled);
 
         // Mark poly as floor or has collision
@@ -1552,12 +1552,12 @@ begin
         if Adjoin <> nil then
           begin
             poly.faceflags := LongInt(poly.faceflags or FF_RD_Adjoin);
-            if ((AdjoinFlags and not SAF_Move) = AdjoinFlags) or BitTest(AdjoinFlags, SAF_NoPlayerMove) then
+            if ((AdjoinFlags and not SAF_Move) = AdjoinFlags) or BitMaskTest(AdjoinFlags, SAF_NoPlayerMove) then
               poly.faceflags := LongInt(poly.faceflags or FF_RD_SolidSurfaceWf);
           end
-        else if BitTest(SurfFlags, sfFloor) then
+        else if BitMaskTest(SurfFlags, sfFloor) then
           poly.faceflags := LongInt(poly.faceflags or FF_RD_FloorWf)
-        else if BitTest(SurfFlags, SF_Collision) then
+        else if BitMaskTest(SurfFlags, SF_Collision) then
           poly.faceflags := LongInt(poly.faceflags or FF_RD_SolidSurfaceWf);
 
         // Mark poly as special

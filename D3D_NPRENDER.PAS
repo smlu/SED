@@ -109,7 +109,7 @@ begin
   result := D3DENUMRET_OK;
   var pd3drd: PTD3D5PRenderer := arg;
 
-  if BitTest(ddsd.ddpfPixelFormat.dwFlags, DDPF_PALETTEINDEXED8) then
+  if BitMaskTest(ddsd.ddpfPixelFormat.dwFlags, DDPF_PALETTEINDEXED8) then
     pd3drd.PalettedTextures := true
   else if ((ddsd.ddpfPixelFormat.dwFlags and DDPF_RGB) <> 0)
     and (ddsd.ddpfPixelFormat.dwRGBBitCount >= 24) then
@@ -153,10 +153,10 @@ end;
 
 Function GetZBufferBits(flags:integer):integer;
 begin
- if BitTest(Flags, DDBD_16) then begin result:=16; exit; end;
- if BitTest(Flags, DDBD_8)  then begin result:=8; exit; end;
- if BitTest(Flags, DDBD_32) then begin result:=32; exit; end;
- if BitTest(Flags, DDBD_24) then begin result:=24; exit; end;
+ if BitMaskTest(Flags, DDBD_16) then begin result:=16; exit; end;
+ if BitMaskTest(Flags, DDBD_8)  then begin result:=8; exit; end;
+ if BitMaskTest(Flags, DDBD_32) then begin result:=32; exit; end;
+ if BitMaskTest(Flags, DDBD_24) then begin result:=24; exit; end;
 end;
 
 Function EnumZBufferPFCallback(lpDDPixFmt: PDDPixelFormat; lpContext:PDDPixelFormat):HRESULT;
@@ -768,7 +768,7 @@ begin
               dcSpecular:=0;
 
               var lcolor := poly.GetLitColor(vxd.intensity);
-              if BitTest(poly.faceflags, FF_Transluent) then
+              if BitMaskTest(poly.faceflags, FF_Transluent) then
                 color := D3DRGBA(lcolor.r, lcolor.g, lcolor.b, lcolor.a)
               else
                 color := D3DRGB(lcolor.r, lcolor.g, lcolor.b);

@@ -2707,15 +2707,15 @@ end;
 Function GetSurfResScale(surfflags: integer): double;
 begin
   Result := 1;
-  if BitTest(surfflags, SF_EIGHTHRES) then
+  if BitMaskTest(surfflags, SF_EIGHTHRES) then
     Result := 0.125
-  else if BitTest(surfflags, SF_QUATERRES) then
+  else if BitMaskTest(surfflags, SF_QUATERRES) then
     Result := 0.25
-  else if BitTest(surfflags, SF_HALFRES) then
+  else if BitMaskTest(surfflags, SF_HALFRES) then
     Result := 0.5
-  else if BitTest(surfflags, SF_DOUBLERES) then
+  else if BitMaskTest(surfflags, SF_DOUBLERES) then
     Result := 2.0
-  else if BitTest(surfflags, SF_QUADRUPLERES) then
+  else if BitMaskTest(surfflags, SF_QUADRUPLERES) then
     Result := 4.0;
 end;
 

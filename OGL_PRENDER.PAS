@@ -339,7 +339,7 @@ begin
     SetRendererState(fflags);
 
     var setUV := solidDraw and (tex <> nil);
-    var hasAlpha := solidDraw and BitTest(poly.faceflags, FF_Transluent);
+    var hasAlpha := solidDraw and BitMaskTest(poly.faceflags, FF_Transluent);
 
     glBegin(drawMode);
       if (poly.vxds.count <= 3) or not solidDraw then

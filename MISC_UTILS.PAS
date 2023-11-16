@@ -80,10 +80,10 @@ Type
 
 function LambdaNotifyEvent(Owner: TComponent; Proc: TProc<TObject>): TNotifyEvent;
 
-Function BitTest(flags, mask: LongInt): Boolean;
-Function FlagsNotSet(flags, mask: LongInt): Boolean;
+Function BitTest(flags, mask: LongInt): Integer;    // tests if any of mask bit is set. Returns set bits of the mask
 Procedure BitSet(var val: Integer; flags: Integer);
 Procedure BitClear(var val: Integer; flags: Integer);
+Function BitMaskTest(flags, mask: LongInt): Boolean;  // tests if all bits of mask are set
 
 Function MakeColor(r, g, b: single; a: single = 1.0): TColorF; overload;
 Function MakeColor(c: TJedColor): TColorF; overload;
@@ -692,6 +692,7 @@ begin
   Result := Result and (a = 0);
   p := GetWord(s, p, w);
   Val(w, color.b, a);
+  Result := Result and (a = 0);
 
   // Try to get alpha from the string
   p := GetWord(s, p, w);
@@ -719,14 +720,9 @@ begin
     Raise EConvertError.Create(s + ' is not a valid number');
 end;
 
-Function BitTest(flags, mask: LongInt): Boolean;
+Function BitTest(flags, mask: LongInt): Integer;
 begin;
-  Result := (flags and mask) = mask;
-end;
-
-Function FlagsNotSet(flags, mask: LongInt): Boolean;
-begin;
-  Result := (flags and mask) = 0;
+  Result := (flags and mask);
 end;
 
 Procedure BitSet(var val: Integer; flags: Integer);
@@ -737,6 +733,11 @@ end;
 Procedure BitClear(var val: Integer; flags: Integer);
 begin
   val := val and (not flags);
+end;
+
+Function BitMaskTest(flags, mask: LongInt): Boolean;
+begin;
+  Result := (flags and mask) = mask;
 end;
 
 Function DwordToStr(d: Longint): String;

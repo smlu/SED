@@ -731,7 +731,7 @@ begin
   With BBox do
     WriteFmt('BOUNDBOX'#9'%.8f %.8f %.8f %.8f %.8f %.8f',[X1,Y1,Z1,X2,Y2,Z2]);
 
-  if BitTest(Flags, SECF_CollideBox) then With CollideBox do
+  if BitMaskTest(Flags, SECF_CollideBox) then With CollideBox do
     WriteFmt('COLLIDEBOX'#9'%.8f %.8f %.8f %.8f %.8f %.8f',[X1,Y1,Z1,X2,Y2,Z2]);
 
   if Sound <> '' then WriteFmt('SOUND'#9'%s %.6f',[Sound,soundVolume]);
