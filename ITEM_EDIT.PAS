@@ -972,7 +972,7 @@ var
   fname: string;
   n: integer;
 begin
-  StartUndoRec('Change thing(s)');
+  StartUndoRec('Change Thing(s)');
   { JedMain.SaveSelThingsUndo('Change thing(s)',ch_changed); }
 
   if (Fi.id < ID_TH_LAST) then
@@ -1348,31 +1348,43 @@ end;
 Procedure TItemEdit.LoadLight(nLight: integer);
 begin
   Caption := Format('Light %d', [nLight]);
+
   ResetEdit;
   if nLight >= Level.Lights.count then
     exit;
+
   Cur_Light := Level.Lights[nLight];
   With Cur_Light do
-  begin
-    fe.AddFieldHex('+Flags', ID_LT_FLAGS, Flags);
-    fe.AddFieldFloat('Range', ID_LT_RANGE, Range);
-    fe.AddFieldFloat('Intensity', ID_LT_INTENSITY, Intensity);
-    if CurrentProject <> JKDF2 then
     begin
-      fe.AddFieldColor('+Color', ID_LT_COLOR, color, (*withAlpha=*) false);
+      fe.AddFieldHex('+Flags', ID_LT_FLAGS, Flags);
+      fe.AddFieldFloat('Range', ID_LT_RANGE, Range);
+      fe.AddFieldFloat('Intensity', ID_LT_INTENSITY, Intensity);
+      if CurrentProject <> JKDF2 then
+      begin
+        fe.AddFieldColor('+Color', ID_LT_COLOR, color, (*withAlpha=*) false);
+      end;
+
+      fe.AddFieldFloat('x', ID_X, position.x);
+      fe.AddFieldFloat('y', ID_Y, position.y);
+      fe.AddFieldFloat('z', ID_Z, position.z);
+      fe.AddFieldStr('+Layer', ID_LAYER, Level.GetLayerName(Layer));
     end;
 
-    fe.AddFieldFloat('x', ID_X, position.x);
-    fe.AddFieldFloat('y', ID_Y, position.y);
-    fe.AddFieldFloat('z', ID_Z, position.z);
-    fe.AddFieldStr('+Layer', ID_LAYER, Level.GetLayerName(Layer));
+  if CurrentProject = IJIM then
+    begin
+      BNAsFrame.Caption  := '&Set to Sector(s)';
+      BNAsFrame.Hint     := 'Set light as point light to selected Sector(s)';
+      BNAsFrame.ShowHint := True;
+      BNAsFrame.Visible  := True;
+      PNButtons.Visible  := True;
+    end;
 
-  end;
   if not Visible then
     Show;
+
   fe.DoneAdding;
   fe.OnDblClick := LightDblClk;
-  fe.ONChange := LightChange;
+  fe.ONChange   := LightChange;
 end;
 
 Procedure TItemEdit.LightDblClk(Fi: TFieldInfo);
@@ -1476,7 +1488,7 @@ begin
 
   { JedMain.SaveSelLightsUndo('Change light(s)',ch_changed); }
 
-  StartUndoRec('Change light(s)');
+  StartUndoRec('Change Light(s)');
 
   Result := ValLTField(Fi.s, Cur_Light, Fi.id);
 
@@ -1493,11 +1505,14 @@ end;
 Procedure TItemEdit.ResetEdit;
 begin
   fe.Clear;
-  PNButtons.Visible := false;
-  BNAdd.Visible := false;
-  BNRemove.Visible := false;
-  BNAsFrame.Visible := false;
-  BNPaste.Visible := false;
+  PNButtons.Visible  := false;
+  BNAdd.Visible      := false;
+  BNRemove.Visible   := false;
+  BNAsFrame.Visible  := false;
+  BNAsFrame.Caption  := '&Copy as Frame';
+  BNAsFrame.Hint     := '';
+  BNAsFrame.ShowHint := false;
+  BNPaste.Visible    := false;
   LBCogs.Items.Clear;
   LBText.Caption := '';
 end;
@@ -1521,7 +1536,7 @@ begin
   if not InputQuery('Value name', 'Enter value name', s) then
     exit;
 
-  StartUndoRec('Add thing value(s)');
+  StartUndoRec('Add Thing value(s)');
   thsel := JedMain.thsel;
 
   n := thsel.AddTH(JedMain.Cur_TH);
@@ -1611,7 +1626,7 @@ begin
   thsel := JedMain.thsel;
   tmp := thsel.AddTH(JedMain.Cur_TH);
 
-  StartUndoRec('Remove thing value(s)');
+  StartUndoRec('Remove Thing value(s)');
   for i := 0 to thsel.count - 1 do
   begin
     RemoveTHValue(Level.Things[thsel.GetTH(i)], fname, n);
@@ -1646,6 +1661,28 @@ begin
         if Cur_Frame = nil then
           exit;
         Cur_Frame.GetFrame(tx, ty, tz, tpch, tyaw, trol);
+      end;
+    MM_LT: // handle light set light to sector light (IJIM)
+      begin
+          StartUndoRec('Set Light to Sector(s)');
+          var scsl := JedMain.scsel;
+          var si := scsl.AddSC(JedMain.Cur_SC);
+          var lt := Level.Lights[JedMain.Cur_LT];
+          for var i := 0 to scsl.count - 1 do
+            begin
+              var sec := Level.Sectors[scsl.getSC(i)];
+              SaveSecUndo(sec, ch_changed, sc_val);
+              with sec.PointLight do
+                begin
+                  Color := lt.color;
+                  Position := T3DPoint(lt.position);
+                  minRange := lt.Range;
+                  maxRange := lt.Range / 4; // in IJIM levels the light max range is at 1/4 of min range
+                end;
+              JedMain.SectorChanged(sec);
+            end;
+          scsl.DeleteN(si);
+        exit;
       end;
   end;
 
