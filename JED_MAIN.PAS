@@ -3304,9 +3304,15 @@ var
     EX: TObject;
     pch, yaw, rol: double;
 begin
+    rx := 0;
+    ry := 0;
+    rz := 0;
     case Map_mode of
         MM_SC:
             begin
+                if (Cur_SC < 0) or (Cur_SC >= Level.Sectors.Count) then
+                  exit;
+
                 sec := Level.Sectors[Cur_SC];
                 With sec.vertices[0] do
                 begin
@@ -3317,6 +3323,11 @@ begin
             end;
         MM_SF:
             begin
+                if (Cur_SC < 0) or (Cur_SC >= Level.Sectors.Count) then
+                  exit;
+                if (Cur_SF < 0) or (Cur_SF >= Level.Sectors[Cur_SC].surfaces.Count) then
+                  exit;
+
                 surf := Level.Sectors[Cur_SC].surfaces[Cur_SF];
                 With surf.vertices[0] do
                 begin
@@ -3327,6 +3338,11 @@ begin
             end;
         MM_VX:
             begin
+                if (Cur_SC < 0) or (Cur_SC >= Level.Sectors.Count) then
+                  exit;
+                if (Cur_VX < 0) or (Cur_SC >= Level.Sectors[Cur_SC].vertices.Count) then
+                  exit;
+
                 VX := Level.Sectors[Cur_SC].vertices[Cur_VX];
                 With VX do
                 begin
@@ -3336,18 +3352,30 @@ begin
                 end;
             end;
         MM_ED:
-            With Level.Sectors[Cur_SC].surfaces[Cur_SF] do
             begin
-                VX := vertices[Cur_ED];
-                With VX do
+                if (Cur_SC < 0) or (Cur_SC >= Level.Sectors.Count) then
+                      exit;
+                if (Cur_SF < 0) or (Cur_SF >= Level.Sectors[Cur_SC].surfaces.Count) then
+                  exit;
+                if (Cur_ED < 0) or (Cur_SF >= Level.Sectors[Cur_SC].surfaces[Cur_SF].vertices.Count) then
+                  exit;
+
+                With Level.Sectors[Cur_SC].surfaces[Cur_SF] do
                 begin
-                    rx := X;
-                    ry := Y;
-                    rz := z;
+                    VX := vertices[Cur_ED];
+                    With VX do
+                    begin
+                        rx := X;
+                        ry := Y;
+                        rz := z;
+                    end;
                 end;
             end;
         MM_TH:
             begin
+                if (Cur_TH < 0) or (Cur_TH >= Level.Things.Count ) then
+                  exit;
+
                 th := Level.Things[Cur_TH];
                 With th do
                 begin
@@ -3358,6 +3386,9 @@ begin
             end;
         MM_FR:
             begin
+                if (Cur_TH < 0) or (Cur_TH >= Level.Things.Count ) then
+                  exit;
+
                 if Cur_FR = -1 then
                 begin
                     th := Level.Things[Cur_TH];
@@ -3376,6 +3407,9 @@ begin
             end;
         MM_LT:
             begin
+                if (Cur_LT < 0) or (Cur_LT >= Level.Lights.Count ) then
+                  exit;
+
                 LT := Level.Lights[Cur_LT];
                 With LT do
                   begin
@@ -3386,13 +3420,8 @@ begin
             end;
         MM_Extra:
             begin
-                if (Cur_EX < -1) or (ExtraObjs.Count = 0) then
-                  begin
-                    rx := 0;
-                    ry := 0;
-                    rz := 0;
-                    exit;
-                  end;
+                if (Cur_EX < 0) or (ExtraObjs.Count = 0) then
+                  exit;
 
                 EX := ExtraObjs[Cur_EX];
                 if EX is TVertex then
@@ -3417,12 +3446,6 @@ begin
                         rz := z;
                     end;
             end;
-    else
-        begin
-            rx := 0;
-            ry := 0;
-            rz := 0;
-        end;
     end;
 end;
 
@@ -4762,14 +4785,15 @@ begin
             Scale := 0.5;
         end;
 
-        Cur_SC := 0;
-        Cur_SF := 0;
-        Cur_TH := 0;
-        Cur_VX := 0;
-        Cur_LT := 0;
+        Cur_SC := IfThen(Level.sectors.Count = 0, -1, 0);
+        Cur_SF := IfThen(Level.sectors.Count = 0, -1, 0);
+        Cur_TH := IfThen(Level.things.Count  = 0, -1, 0);
+        Cur_VX := IfThen(Level.sectors.Count = 0, -1, 0);
+        Cur_LT := IfThen(Level.lights.Count  = 0, -1, 0);
+
         ToolBar.CBGridStep.Text := DoubleToStr(DefGridStep);
         ToolBar.CBGridLine.Text := DoubleToStr(DefGridLine);
-        ToolBar.CBGridDot.Text := DoubleToStr(DefGridDot);
+        ToolBar.CBGridDot.Text  := DoubleToStr(DefGridDot);
         ToolBar.EnableSnapToGrid(DefSnapToGrid);
         ToolBar.CBGridSize.Text := DoubleToStr(DefGridSize);
     end;

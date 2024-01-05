@@ -1176,7 +1176,7 @@ var
   sc, sf: integer;
 begin
   ClearVXMarks(lev);
-  if cursc >= 0 then
+  if (cursc >= 0) and (cursf >= 0) then
     MoveSurf(Level.sectors[cursc].surfaces[cursf]);
   for i := 0 to sfsel.count - 1 do
   begin
@@ -1205,6 +1205,9 @@ var
   i: integer;
   sc, sf, ed: integer;
 begin
+  if (cursc < 0) or (cursf < 0) or (cured < 0) then
+    exit;
+
   ClearVXMarks(lev);
   MoveED(lev.sectors[cursc].surfaces[cursf], cured);
   for i := 0 to edsel.count - 1 do
@@ -1233,6 +1236,9 @@ var
   i: integer;
   sc, vx: integer;
 begin
+  if (cursc < 0) or (curvx < 0) then
+    exit;
+
   ClearVXMarks(lev);
   MoveVX(lev.sectors[cursc].Vertices[curvx]);
   for i := 0 to vxsel.count - 1 do
@@ -1255,6 +1261,9 @@ Procedure TranslateThingKeepFrame(lev: TJKLevel; curth: integer;
 var
   thing: TJKThing;
 begin
+  if curth < 0 then
+    exit;
+
   thing := Level.Things[curth];
   SaveThingUndo(thing, ch_changed);
   With thing do
@@ -1300,7 +1309,7 @@ Procedure TranslateThings(lev: TJKLevel; thsel: TTHMultiSel; curth: integer;
 var
   i: integer;
 begin
-  if thsel.FindTH(curth) = -1 then
+  if (curth >= 0) and (thsel.FindTH(curth) = -1) then
     MoveTH(lev.Things[curth]);
   for i := 0 to thsel.count - 1 do
     MoveTH(lev.Things[thsel.GetTH(i)]);
@@ -1313,6 +1322,9 @@ var
   i, n: integer;
   x, y, z, pch, yaw, rol: double;
 begin
+  if (th < 0) then
+    exit;
+
   n := frsel.AddFR(th, fr);
   for i := 0 to frsel.count - 1 do
   begin
@@ -1343,7 +1355,7 @@ Procedure TranslateLights(lev: TJKLevel; ltsel: TLTMultiSel; curlt: integer;
 var
   i: integer;
 begin
-  if ltsel.FindLT(curlt) = -1 then
+  if (curlt >= 0) and (ltsel.FindLT(curlt) = -1) then
     MoveLT(lev.Lights[curlt]);
   for i := 0 to ltsel.count - 1 do
     MoveLT(lev.Lights[ltsel.GetLT(i)]);
@@ -4609,7 +4621,6 @@ begin
   begin
     th := lev.Things[thsel.GetTH(i)];
     SaveThingUndo(th, ch_changed);
-
 
     if bRotatePYR then
       begin
