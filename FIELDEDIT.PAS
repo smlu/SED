@@ -47,11 +47,20 @@ type
     Function GetCurField: TFieldInfo;
     Procedure changed(row: Integer);
     Procedure CallDoneEdit;
+    procedure SetNameColWidth(width: Integer);
+    Function GetNameColWidth: Integer;
+    procedure SetDefaultColWidth(width: Integer);
+    Function GetDefaultColWidth: Integer;
+
   Public
     FieldCount: Integer;
     ONDblClick: TFEHandler;
     ONChange: TFEChangeHandler;
     OnDoneEdit: TDoneEdit;
+
+    Property NameColWidth: Integer read GetNameColWidth write SetNameColWidth;
+    Property DefaultColWidth: Integer read GetDefaultColWidth write SetDefaultColWidth;
+
     Constructor Create(aGrid: TStringGrid);
     Destructor Destroy; override;
     Procedure Clear;
@@ -71,6 +80,7 @@ type
     Procedure AddFieldColor(const Name: string; id: Integer;
       const V: TColorF; withAlpha: Boolean = true);
     Procedure AddFieldStr(const Name: string; id: Integer; const V: string);
+    Procedure AddFieldLabel(const Name: string);
     Function GetFieldByID(id: Integer): TFieldInfo;
     procedure KeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
     Procedure DoneAdding;
@@ -206,6 +216,8 @@ Procedure TFieldEdit.Clear;
 var
   i: Integer;
 begin
+  Grid.ColWidths[0] := Grid.DefaultColWidth;
+  Grid.ColWidths[1] := Grid.DefaultColWidth;
   For i := 0 to FieldCount - 1 do
   begin
     Grid.Cells[0, i] := '';
@@ -259,6 +271,7 @@ begin
       CanSelect := false
     else
       CanSelect := true;
+
     Fi := Fields[oldRow];
     if Fi.s <> Fi.olds then
       changed(oldRow);
@@ -344,10 +357,10 @@ begin
   Fi.id := id;
   Fi.vtype := vartype;
   Grid.Cells[0, FieldCount] := Name;
+
   fl.Add(Fi);
   Inc(FieldCount);
   Grid.RowCount := FieldCount;
-  { Grid.row:=0; Grid.col:=1; }
   Result := Fi;
 end;
 
@@ -360,6 +373,21 @@ begin
   end;
 end;
 
+procedure TFieldEdit.SetNameColWidth(width: Integer);
+begin
+        Grid.ColWidths[0] := width;
+        var dw := Grid.DefaultColWidth - width;
+        if dw > 0 then
+          Grid.ColWidths[1] := Grid.DefaultColWidth + dw
+        else
+           Grid.ColWidths[1] := Grid.DefaultColWidth;
+end;
+
+Function TFieldEdit.GetNameColWidth: Integer;
+begin
+  Result := Grid.ColWidths[0];
+end;
+
 Procedure TFieldEdit.AddFieldInt(const Name: string; id, V: Integer);
 begin
   With AddField(Name, id, vtInteger) do
@@ -367,6 +395,16 @@ begin
     olds := IntToStr(V);
     s := olds;
   end;
+end;
+
+procedure TFieldEdit.SetDefaultColWidth(width: Integer);
+begin
+  Grid.DefaultColWidth := width;
+end;
+
+Function TFieldEdit.GetDefaultColWidth: Integer;
+begin
+  Result := Grid.DefaultColWidth;
 end;
 
 Procedure TFieldEdit.AddFieldFloat(const Name: string; id: Integer; V: Double);
@@ -396,6 +434,11 @@ begin
     olds := V;
     s := olds;
   end;
+end;
+
+Procedure TFieldEdit.AddFieldLabel(const Name: string);
+begin
+  AddField(Name, -1, vtString);
 end;
 
 Procedure TFieldEdit.DeactivateHandler;

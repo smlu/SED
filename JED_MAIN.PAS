@@ -1102,7 +1102,7 @@ begin
         With clGrid do
             renderer.SetColor(CL_Front, r, g, b);
 
-        ps := 1;// * Screen.PixelsPerInch / 96;
+        ps := 1;// * DpiScale(1, Screen.PixelsPerInch);
         renderer.SetPointSize(ps);
         renderer.DrawGrid;
 

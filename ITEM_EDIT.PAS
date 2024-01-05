@@ -78,6 +78,9 @@ type
     procedure CBOnTopClick(Sender: TObject);
     procedure LBCogsDblClick(Sender: TObject);
     procedure BNPasteClick(Sender: TObject);
+    procedure FormBeforeMonitorDpiChanged(Sender: TObject; OldDPI,
+      NewDPI: Integer);
+
   private
     citemtype: integer;
     fe: TFieldEdit;
@@ -91,6 +94,9 @@ type
     Procedure ResetEdit;
     Procedure WMNCDblClck(var msg: TMessage); message WM_NCLBUTTONDBLCLK;
     Function DoPickColor(initColor: TColorF): TColorF;
+    procedure SetNameColWidth(width: Integer); overload;
+    procedure SetNameColWidth(width, dpi: Integer); overload;
+
   public
     { Public declarations }
     Procedure UpdateSectorField(id: Integer);
@@ -167,6 +173,7 @@ begin
     end;
   end;
 end;
+
 Procedure TItemEdit.LoadSector(sec: TJKSector);
 var
   i: integer;
@@ -175,22 +182,25 @@ begin
   Caption := Format('Sector %d', [sec.Num]);
   ResetEdit;
 
+  SetNameColWidth(100);
   LBText.Caption := Format('%d Surfaces %d Vertices',
     [sec.surfaces.count, sec.vertices.count]);
+
   With sec do
   begin
     fe.AddFieldHex('+Flags', ID_SEC_FLAGS, Flags);
-
     if CurrentProject = IJIM then
       begin
         fe.AddFieldColor('+Ambient', ID_SEC_AMBIENT, Ambient, (*withAlpha=*) false);
         fe.AddFieldColor('+Extra Light', ID_SEC_EXTRA_LIGHT, ExtraLight, (*withAlpha=*) false);
-        fe.AddFieldColor('+Point Light Color', ID_SEC_POINT_LIGHT_COLOR, PointLight.Color, (*withAlpha=*) false);
-        fe.AddFieldStr('Point Light Position', ID_SEC_POINT_LIGHT_POS,
+
+        fe.AddFieldLabel('Point Light');
+        fe.AddFieldColor('    +Color', ID_SEC_POINT_LIGHT_COLOR, PointLight.Color, (*withAlpha=*) false);
+        fe.AddFieldStr('    Position', ID_SEC_POINT_LIGHT_POS,
           Sprintf('%1.6f %1.6f %1.6f', [PointLight.Position.x, PointLight.Position.y, PointLight.Position.z]));
-        fe.AddFieldStr('Point Light Min Range', ID_SEC_POINT_LIGHT_MIN_RANGE,
+        fe.AddFieldStr('    Min Range', ID_SEC_POINT_LIGHT_MIN_RANGE,
           Sprintf('%1.6f', [PointLight.minRange]));
-        fe.AddFieldStr('Point Light Max Range', ID_SEC_POINT_LIGHT_MAX_RANGE,
+        fe.AddFieldStr('    Max Range', ID_SEC_POINT_LIGHT_MAX_RANGE,
           Sprintf('%1.6f', [PointLight.maxRange]));
       end
     else
@@ -198,9 +208,8 @@ begin
         fe.AddFieldFloat('Ambient', ID_SEC_AMBIENT, RgbToIntensity(ambient));
         fe.AddFieldFloat('Extra Light', ID_SEC_EXTRA_LIGHT, RgbToIntensity(extraLight));
         fe.AddFieldStr('+Colormap', ID_SEC_COLORMAP, colormap);
+        fe.AddFieldColor('+Tint', ID_SEC_TINT, Tint, (*withAlpha=*) false);
       end;
-
-    fe.AddFieldColor('+Tint', ID_SEC_TINT, Tint, (*withAlpha=*) false);
 
     fe.AddFieldStr('+Sound', ID_SEC_SOUND, Sound);
     fe.AddFieldFloat('Volume', ID_SEC_SOUND_VOLUME, soundVolume);
@@ -441,17 +450,6 @@ begin
         var s := ColorToStr(c, (*withAlpha=*)false);
         changed := s <> Fi.s;
         Fi.s := s;
-//        With c do
-//          SScanf(Fi.s, '%f %f %f', [@r, @g, @b]);
-//        With Tint do
-//          ColorDlg.Color := RGB(Round(r * 255), Round(g * 255),
-//            Round(b * 255));
-//        if ColorDlg.Execute then
-//        begin
-//          f := ColorDlg.Color;
-//          Fi.s := Sprintf('%.3f %.3f %.3f',
-//            [GetRValue(f) / 255, GetGValue(f) / 255, GetBValue(f) / 255]);
-//        end;
       end;
     ID_LAYER:
       begin
@@ -470,8 +468,9 @@ var
 begin
   Caption := Format('Sector %d Surface %d', [surf.Sector.Num, surf.Num]);
   ResetEdit;
-  LBText.Caption := Format('%d Vertices', [surf.vertices.count]);
 
+  SetNameColWidth(100);
+  LBText.Caption := Format('%d Vertices', [surf.vertices.count]);
   Cur_Surf := surf;
 
   With surf do
@@ -733,6 +732,7 @@ var
   fm: TForm;
 begin
   ResetEdit;
+  SetNameColWidth(100);
 
   if fr < 0 then
   begin
@@ -802,13 +802,16 @@ var
 begin
   Caption := Format('Thing %d', [thing.Num]);
   ResetEdit;
-  BNAdd.Visible := true;
-  BNRemove.Visible := true;
+
+  SetNameColWidth(100);
+  BNAdd.Visible     := true;
+  BNRemove.Visible  := true;
   BNAsFrame.Visible := true;
-  BNPaste.Visible := true;
+  BNPaste.Visible   := true;
   PNButtons.Visible := true;
 
   Cur_Thing := thing;
+
   With thing do
   begin
     fe.AddFieldStr('+Name', ID_TH_NAME, Name);
@@ -1143,7 +1146,9 @@ begin
   Caption := Format('Sector %d vertex %d', [vx.Sector.Num, vx.Num]);
   ResetEdit;
 
+  SetNameColWidth(100);
   Cur_VX := vx;
+
   With vx do
   begin
     fe.AddFieldFloat('x', ID_X, x);
@@ -1172,6 +1177,8 @@ var
 begin
   Caption := Format(JedMain.ExtraObjsName + ' %d', [ex]);
   ResetEdit;
+
+  SetNameColWidth(100);
   fe.ONChange := nil;
 
   o := JedMain.ExtraObjs[ex];
@@ -1348,8 +1355,9 @@ end;
 Procedure TItemEdit.LoadLight(nLight: integer);
 begin
   Caption := Format('Light %d', [nLight]);
-
   ResetEdit;
+  SetNameColWidth(100);
+
   if nLight >= Level.Lights.count then
     exit;
 
@@ -1520,6 +1528,24 @@ end;
 procedure TItemEdit.FormActivate(Sender: TObject);
 begin
   JedMain.EditObject;
+end;
+
+procedure TItemEdit.FormBeforeMonitorDpiChanged(Sender: TObject; OldDPI,
+  NewDPI: Integer);
+begin
+   var uw := DpiUnscale(fe.NameColWidth, OldDPI);
+   if uw <> fe.DefaultColWidth then
+     SetNameColWidth(uw, NewDPI);
+end;
+
+procedure TItemEdit.SetNameColWidth(width: Integer);
+begin
+  SetNameColWidth(width, Screen.PixelsPerInch);
+end;
+
+procedure TItemEdit.SetNameColWidth(width, dpi: Integer);
+begin
+  fe.NameColWidth := DpiScale(width, dpi);
 end;
 
 procedure TItemEdit.BNAddClick(Sender: TObject);
@@ -1763,6 +1789,7 @@ begin
     [surf.Sector.Num, surf.Num, edge]);
   ResetEdit;
 
+  SetNameColWidth(100);
   v1 := surf.vertices[edge];
   v2 := surf.vertices[surf.NextVX(edge)];
 

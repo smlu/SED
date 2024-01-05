@@ -103,6 +103,9 @@ Function ClampF(v: Single; min: Single; max: Single): single;
 Function ClampF_01(v: Single): single;
 Function ClampI(v: Integer; min: Integer; max: Integer): Integer;
 
+Function DpiScale(const val, dpi: Integer): Integer;
+Function DpiUnscale(const val, dpi: Integer): Integer;
+
 Function MsgBox(Txt, Caption: String; flags: Integer): Integer;
 Function GetWord(const s: string; p: Integer; var w: string): Integer;
 Function GetWordN(const s: String; n: Integer): String;
@@ -873,6 +876,16 @@ begin
   Result := v;
   if v < min then Result:= min
   else if v > max then Result:= max;
+end;
+
+Function DpiScale(const val, dpi: Integer): Integer;
+begin
+    Result := MulDiv(val, dpi, USER_DEFAULT_SCREEN_DPI);
+end;
+
+Function DpiUnscale(const val, dpi: Integer): Integer;
+begin
+    Result := MulDiv(val, USER_DEFAULT_SCREEN_DPI, dpi);
 end;
 
 Function MsgBox(Txt, Caption: String; flags: Integer): Integer;

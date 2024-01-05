@@ -43,7 +43,7 @@ end;
 TMeshes=class(TList)
  Function GetItem(n:integer):TMesh;
  Procedure SetItem(n:integer;v:TMesh);
-Property Items[n:integer]:TMesh read GetItem write SetItem; default;
+ Property Items[n:integer]:TMesh read GetItem write SetItem; default;
 end;
 
 

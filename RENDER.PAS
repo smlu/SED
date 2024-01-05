@@ -499,7 +499,7 @@ end;
 
 Function TRenderer.DpiFactor: double;
 begin
-  Result := (Screen.PixelsPerInch / 96);
+  Result := Screen.PixelsPerInch / USER_DEFAULT_SCREEN_DPI;
 end;
 
 Function TRenderer.DpiScale: double;
