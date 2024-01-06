@@ -78,8 +78,6 @@ type
     procedure CBOnTopClick(Sender: TObject);
     procedure LBCogsDblClick(Sender: TObject);
     procedure BNPasteClick(Sender: TObject);
-    procedure FormBeforeMonitorDpiChanged(Sender: TObject; OldDPI,
-      NewDPI: Integer);
 
   private
     citemtype: integer;
@@ -1528,14 +1526,6 @@ end;
 procedure TItemEdit.FormActivate(Sender: TObject);
 begin
   JedMain.EditObject;
-end;
-
-procedure TItemEdit.FormBeforeMonitorDpiChanged(Sender: TObject; OldDPI,
-  NewDPI: Integer);
-begin
-   var uw := DpiUnscale(fe.NameColWidth, OldDPI);
-   if uw <> fe.DefaultColWidth then
-     SetNameColWidth(uw, NewDPI);
 end;
 
 procedure TItemEdit.SetNameColWidth(width: Integer);
