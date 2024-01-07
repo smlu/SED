@@ -40,6 +40,8 @@ type
     BNCheck: TButton;
     SBHelp: TSpeedButton;
     BNCheckRes: TButton;
+    LBLTotal: TLabel;
+    LBLTotalCnt: TLabel;
     procedure ErrorsDblClick(Sender: TObject);
     procedure BNCloseClick(Sender: TObject);
     procedure BNCheckClick(Sender: TObject);
@@ -288,7 +290,9 @@ begin { Check }
       if surf.vertices.Count < 3 then
         AddError('Less than 3 vertices in a surface!', surf);
       if not IsClose(vlen(surf.normal), 1) then
+      begin
         AddWarning('Incorrect normal - surface must be invalid!', surf);
+      end;
       if surf.adjoin <> nil then
       begin
         if surf.adjoin.adjoin <> surf then
@@ -424,6 +428,7 @@ begin { Check }
       end;
   end;
 
+  LBLTotalCnt.Caption := IntToStr(NErrors);
   if Errors.ItemIndex <= 0 then
     Errors.ItemIndex := 0
   else
@@ -533,6 +538,8 @@ begin
     Mats.Free;
     Wavs.Free;
     Cogs.Free;
+
+    LBLTotalCnt.Caption := IntToStr(NErrors);
     if Errors.ItemIndex <= 0 then
       Errors.ItemIndex := 0
     else
