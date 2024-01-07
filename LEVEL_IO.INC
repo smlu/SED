@@ -361,184 +361,199 @@ begin
  end;
 
 Procedure LoadSectors;
-var i,j,n:integer;
-    nvx:integer;
-    jsec:TJKSector;
-    jvx:TJKVertex;
-    jsurf:TJKSurface;
-    Tsurf:TTempSurf;
-    SCVXList:TIntList;
-    bsurf,nsurfs:integer;
-    isurf:integer;
-    igvx,ilvx:integer;
-    txvx:TTempTXVertex;
-    itxvx:integer;
-    vxInt:TVXIntensity;
+  var i,j,numSecs: integer;
+      nvx: integer;
+      jsec: TJKSector;
+      jvx: TJKVertex;
+      jsurf: TJKSurface;
+      tsurf: TTempSurf;
+      //scvxList: TIntList;
+      bsurf,nsurfs: integer;
+      isurf: integer;
+      igvx,ilvx: integer;
+      txvx: TTempTXVertex;
+      itxvx: integer;
+      vxInt: TVXIntensity;
 
-Procedure SetJVX(sv:TTempVertex;dv:TJKVertex);
-begin
- dv.x:=sv.x;
- dv.y:=sv.y;
- dv.z:=sv.z;
-end;
+  Procedure SetJVX(sv: TTempVertex; dv: TJKVertex);
+  begin
+   dv.x:=sv.x;
+   dv.y:=sv.y;
+   dv.z:=sv.z;
+  end;
 begin
 
 Try
  CurSection:='';
  GetNextLine(s);
- n:=StrToInt(GetWordN(s,3));
- SCVXList:=TIntList.Create;
- Progress.Msg:='Loading Sectors';
- For i:=0 to n-1 do
- begin
-  DO_Progress;
-  GetNextLine(s); {Sector N}
-  SCVXList.Clear;
-  Jsec:=NewSector;
-  Sectors.Add(Jsec);
+ numSecs  := StrToInt(GetWordN(s, 3));
+ //scvxList := TIntList.Create;
+ Progress.Msg := 'Loading Sectors';
 
-  // TODO: In case of a broken section this can loop forever.
-  //       Fix: jump out after n sec.
-  Repeat
-  GetNextLine(s);
-  w1:=getWordN(s,1);
-
-  With JSec do
-  if w1='FLAGS' then SScanf(s,'FLAGS'#9'%x',[@Flags])
-  else if w1='AMBIENT' then
-    begin
-      if header.Version = 1 then // JKDF2 & MOTS
-        begin
-          SScanf(s,'AMBIENT LIGHT %l',[@Ambient.a]);
-          Ambient := IntensityToColor(Ambient.a);
-        end
-      else // IJIM
-        begin
-          SScanf(s,'AMBIENT LIGHT %l %l %l',[@Ambient.r, @Ambient.g, @Ambient.b]);
-        end;
-      Ambient.a := 0.0;
-    end
-  else if w1='EXTRA' then
-    //SScanf(s,'EXTRA LIGHT %f',[@ExtraLight])
-    begin
-      if header.Version = 1 then // JKDF2 & MOTS
-        begin
-          SScanf(s,'EXTRA LIGHT %l',[@ExtraLight.a]);
-          ExtraLight := IntensityToColor(ExtraLight.a);
-        end
-      else // IJIM
-        begin
-          SScanf(s,'EXTRA LIGHT %l %l %l',[@ExtraLight.r, @ExtraLight.g, @ExtraLight.b]);
-        end;
-        ExtraLight.a := 0.0;
-    end
-  else if w1='AVERAGE' then
-  begin
-    w1 :=  getWordN(s,3);
-    if w1 = 'INTENSITY' then
-      SScanf(s,'AVERAGE LIGHT INTENSITY %l %l %l',[@PointLight.Color.r, @PointLight.Color.g, @PointLight.Color.b])
-    else if w1 = 'POSITION' then
-      SScanf(s,'AVERAGE LIGHT POSITION %f %f %f',[@PointLight.Position.x, @PointLight.Position.y, @PointLight.Position.z])
-    else if w1 = 'FALLOFF' then
-      SScanf(s,'AVERAGE LIGHT FALLOFF %f %f',[@PointLight.minRange, @PointLight.maxRange])
-  end
-  else if w1='SOUND' then SScanf(s,'SOUND %s %f',[@Sound,@soundVolume])
-  else if w1='COLORMAP' then ColorMap:=GetCmp(StrToInt(GetWordN(s,2)))
- { else if w1='CENTER' then SScanf(s,'CENTER %f %f %f',[@Cx,@Cy,@Cz])
-  else if w1='RADIUS' then SScanf(s,'RADIUS %f',[@rad])}
-  else if w1='COLLIDEBOX' then
-    With CollideBox do SScanf(s,'COLLIDEBOX %f %f %f %f %f %f',[@x1,@y1,@z1,@x2,@y2,@z2])
-  else if w1='TINT' then SScanf(s,'TINT %l %l %l',[@Tint.r,@Tint.g,@tint.b])
-  else if w1='THRUST' then SScanf(s,'THRUST %f %f %f',[@Thrust.x,@Thrust.y,@Thrust.z]);
-
-  if w1='VERTICES' then
-  begin
-   nvx:=StrToInt(GetWordN(s,2));
-   for j:=0 to nvx-1 do GetNextLine(s);
-   continue;
-  end;
-
- if w1='SURFACES' then
+ For i := 0 to numSecs - 1 do
    begin
-    SScanf(s,'SURFACES %d %d',[@bsurf,@nsurfs]);
-    for isurf:=bsurf to bsurf+nsurfs-1 do
-      begin
-       Tsurf:= TTempSurf(GSurfList[isurf]);
-       jsurf:= jsec.NewSurface;
-       jsec.surfaces.Add(jsurf);
-       jsurf.material   := GetMat(TSurf.nmat);
-       jsurf.SurfFlags  := Tsurf.SurfFlags;
-       jsurf.FaceFlags  := Tsurf.FaceFlags;
-       jsurf.geo        := tSurf.geo;
-       Jsurf.Light      := tSurf.light;
-       Jsurf.tex        := TSurf.tex;
-       Jsurf.nAdj       := TSurf.nAdj;
-       jsurf.ExtraLight := tSurf.ExtraLight;
-       //jsurf.normal     := Tsurf.normal;
+    DO_Progress;
+    GetNextLine(s); {Sector N}
+    //scvxList.Clear;
+    jsec := NewSector;
+    Sectors.Add(Jsec);
 
-       // Remove FF_DoubleSided flag since world geometry is always culled
-       jsurf.FaceFlags := jsurf.FaceFlags and not FF_DoubleSided;
+    // TODO: In case of a broken section this can loop forever.
+    //       Fix: jump out after n sec.
+    Repeat
+      GetNextLine(s);
+      w1 := GetWordN(s, 1);
 
-       // TODO: Remove because scales are calculated after this section is parsed
-       //if CurrentProject <>IJIM then
-       //begin
-//       if tsurf.SurfFlags and SF_DOUBLERES<>0 then begin jsurf.uscale:=2; jsurf.vscale:=2; end
-//       else if tsurf.SurfFlags and SF_HALFRES<>0 then begin jsurf.uscale:=0.5; jsurf.vscale:=0.5; end
-//       else if tsurf.SurfFlags and SF_EIGHTHRES<>0 then begin jsurf.uscale:=0.125; jsurf.vscale:=0.125; end;
-       //end;
+      With JSec do
+      if w1='FLAGS' then SScanf(s,'FLAGS'#9'%x',[@Flags])
+      else if w1='AMBIENT' then
+        begin
+          if header.Version = 1 then // JKDF2 & MOTS
+            begin
+              SScanf(s,'AMBIENT LIGHT %l',[@Ambient.a]);
+              Ambient := IntensityToColor(Ambient.a);
+            end
+          else // IJIM
+            begin
+              SScanf(s,'AMBIENT LIGHT %l %l %l',[@Ambient.r, @Ambient.g, @Ambient.b]);
+            end;
+          Ambient.a := 0.0;
+        end
+      else if w1='EXTRA' then
+        //SScanf(s,'EXTRA LIGHT %f',[@ExtraLight])
+        begin
+          if header.Version = 1 then // JKDF2 & MOTS
+            begin
+              SScanf(s,'EXTRA LIGHT %l',[@ExtraLight.a]);
+              ExtraLight := IntensityToColor(ExtraLight.a);
+            end
+          else // IJIM
+            begin
+              SScanf(s,'EXTRA LIGHT %l %l %l',[@ExtraLight.r, @ExtraLight.g, @ExtraLight.b]);
+            end;
+            ExtraLight.a := 0.0;
+        end
+      else if w1='AVERAGE' then
+        begin
+          w1 :=  getWordN(s,3);
+          if w1 = 'INTENSITY' then
+            SScanf(s,'AVERAGE LIGHT INTENSITY %l %l %l',[@PointLight.Color.r, @PointLight.Color.g, @PointLight.Color.b])
+          else if w1 = 'POSITION' then
+            SScanf(s,'AVERAGE LIGHT POSITION %f %f %f',[@PointLight.Position.x, @PointLight.Position.y, @PointLight.Position.z])
+          else if w1 = 'FALLOFF' then
+            SScanf(s,'AVERAGE LIGHT FALLOFF %f %f',[@PointLight.minRange, @PointLight.maxRange])
+        end
+      else if w1='SOUND' then SScanf(s,'SOUND %s %f',[@Sound,@soundVolume])
+      else if w1='COLORMAP' then ColorMap:=GetCmp(StrToInt(GetWordN(s,2)))
+     { else if w1='CENTER' then SScanf(s,'CENTER %f %f %f',[@Cx,@Cy,@Cz])
+      else if w1='RADIUS' then SScanf(s,'RADIUS %f',[@rad])}
+      else if w1='COLLIDEBOX' then
+        With CollideBox do SScanf(s,'COLLIDEBOX %f %f %f %f %f %f',[@x1,@y1,@z1,@x2,@y2,@z2])
+      else if w1='TINT' then SScanf(s,'TINT %l %l %l',[@Tint.r,@Tint.g,@tint.b])
+      else if w1='THRUST' then SScanf(s,'THRUST %f %f %f',[@Thrust.x,@Thrust.y,@Thrust.z]);
 
-       var matSize := TSize.Create(1,1);
-       if (kind = IJIM) and (not jsurf.Material.IsEmpty) then
-         try
-          matSize := jsurf.GetMaterialSize;
-         except on E:Exception do PanMessage(mt_warning,
-            Format('Cannot load %s for sector %d surface %d: %s' +
-            '  Imported surface will have invalid UV coords!'
-            , [jsurf.Material, jsurf.Sector.num, isurf - bsurf, e.message]));
-         end;
+      if w1='VERTICES' then
+        begin
+         nvx := StrToInt(GetWordN(s, 2));
+         for j:=0 to nvx - 1 do GetNextLine(s);
+            continue;
+        end;
 
-       for j:=0 to TSurf.vxs.count-1 do
-       begin
-        igvx:=TSurf.vxs[j]; {global index of vertex}
-        ilvx:=SCVXList.IndexOf(igvx); {local index}
-        if ilvx=-1 then {not found}
-          begin
-           jvx:=jsec.NewVertex;
-           SetJVX(GVXList[igvx],jvx);
-      {     jsec.vertices.Add(jvx);}
-           SCVXList.Add(igvx);
-           jsurf.AddVertex(jvx);
-          end;
-        if ilvx<>-1 then jsurf.addVertex(jsec.vertices[ilvx]);
+      if w1='SURFACES' then
+        begin
+          SScanf(s,'SURFACES %d %d',[@bsurf,@nsurfs]);
+          for isurf := bsurf to bsurf + nsurfs - 1 do
+            begin
+             tsurf := TTempSurf(GSurfList[isurf]);
+             jsurf := jsec.NewSurface;
+             jsec.surfaces.Add(jsurf);
 
-        {Add texture vertices}
-        itxvx:=tSurf.tvxs[j];
-        if (itxvx<0) or (itxvx>=GTXVXList.Count) then itxvx:=0;
-        txvx:=TTempTXVertex(GTXVXList[itxvx]);
-        With Jsurf.Txvertices[j] do
-          begin
-            u := txvx.u * matSize.Width;
-            v := txvx.v * matSize.Height;
-            vxInt   := TVXIntensity(tSurf.Intensities[j]);
-            color.a := vxInt.a;
-            color.r := vxInt.r;
-            color.g := vxInt.g;
-            color.b := vxInt.b;
-          end;
-       end;
-      end;
-     break;
-    end;
-  until false;
- end;
- SCVXList.Free;
+             jsurf.material   := GetMat(TSurf.nmat);
+             jsurf.SurfFlags  := tsurf.SurfFlags;
+             jsurf.FaceFlags  := tsurf.FaceFlags;
+             jsurf.geo        := tsurf.geo;
+             Jsurf.Light      := tsurf.light;
+             Jsurf.tex        := tsurf.tex;
+             Jsurf.nAdj       := tsurf.nAdj;
+             jsurf.ExtraLight := tsurf.ExtraLight;
+             //jsurf.normal     := tsurf.normal;
 
+             // Remove FF_DoubleSided flag since world geometry is always culled
+             jsurf.FaceFlags := jsurf.FaceFlags and not FF_DoubleSided;
+
+             // TODO: Remove because scales are calculated after this section is parsed
+             //if CurrentProject <>IJIM then
+             //begin
+      //       if tsurf.SurfFlags and SF_DOUBLERES<>0 then begin jsurf.uscale:=2; jsurf.vscale:=2; end
+      //       else if tsurf.SurfFlags and SF_HALFRES<>0 then begin jsurf.uscale:=0.5; jsurf.vscale:=0.5; end
+      //       else if tsurf.SurfFlags and SF_EIGHTHRES<>0 then begin jsurf.uscale:=0.125; jsurf.vscale:=0.125; end;
+             //end;
+
+             var matSize := TSize.Create(1, 1);
+             if (kind = IJIM) and (not jsurf.Material.IsEmpty) then
+               try
+                matSize := jsurf.GetMaterialSize;
+               except on E:Exception do PanMessage(mt_warning,
+                  Format('Cannot load %s for sector %d surface %d: %s' +
+                  '  Imported surface will have invalid UV coords!'
+                  , [jsurf.Material, jsurf.Sector.num, isurf - bsurf, e.message]));
+               end;
+
+             for j := 0 to tsurf.vxs.count - 1 do
+               begin
+                igvx := tsurf.vxs[j]; {global index of vertex}
+//                ilvx := scvxList.IndexOf(igvx); {local index}
+//                if ilvx = -1 then {not found}
+//                  begin
+//                   jvx := jsec.NewVertex;
+//                   SetJVX(GVXList[igvx], jvx);
+//              {     jsec.vertices.Add(jvx);}
+//                   scvxList.Add(igvx);
+//                   jsurf.AddVertex(jvx);
+//                  end
+//                else
+//                  jsurf.AddVertex(jsec.vertices[ilvx]);
+
+                with TTempVertex(GVXList[igvx]) do
+                  jvx := jsec.AddVertex(x, y, z);
+
+                if jsurf.vertices.indexOf(jvx) <> - 1 then
+                  continue;
+
+                var jsvxi := jsurf.AddVertex(jvx);
+
+
+                {Add texture vertices}
+                itxvx := tsurf.tvxs[j];
+                if ( itxvx < 0 ) or (itxvx >= GTXVXList.Count) then itxvx := 0;
+                txvx := TTempTXVertex(GTXVXList[itxvx]);
+
+                With jsurf.Txvertices[jsvxi] do
+                  begin
+                    u := txvx.u * matSize.Width;
+                    v := txvx.v * matSize.Height;
+                    vxInt   := TVXIntensity(tsurf.Intensities[j]);
+                    color.a := vxInt.a;
+                    color.r := vxInt.r;
+                    color.g := vxInt.g;
+                    color.b := vxInt.b;
+                  end;
+               end; // for j := 0 to tsurf.vxs.count - 1 do
+            end; // for isurf := bsurf to bsurf + nsurfs - 1 do
+
+          break;  // break out of repeat loop
+        end; // if w1='SURFACES' then
+
+    until false; // repeat
+   end; //  For i := 0 to numSecs - 1 do
+
+ //scvxList.Free;
  Except
   on e:Exception do;
  end;
 end;
 
-Function GetSurfByN(n:integer):TJKSurface;
+Function GetSurfByN(n:integer): TJKSurface;
 var i,ns:integer;
 begin
  result:=nil;
