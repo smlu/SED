@@ -753,33 +753,37 @@ begin
             CalcSurfCenter(level.Sectors[JedMain.Cur_SC].surfaces[JedMain.Cur_SF], cx, cy, cz);
         MM_TH:
             with Level.Things[JedMain.Cur_TH] do
-            begin
-                cx := X;
-                cy := Y;
-                cz := z;
-                cpch := pch;
-                cyaw := yaw;
-            end;
+              begin
+                  cx := X;
+                  cy := Y;
+                  cz := z;
+                  cpch := pch;
+                  cyaw := yaw;
+              end;
         MM_LT:
             with Level.Lights[JedMain.Cur_LT] do
-            begin
-                cx := position.X;
-                cy := position.Y;
-                cz := position.z;
-            end;
-        MM_FR:
-          if JedMain.Cur_FR = -1 then
-            with Level.Things[JedMain.Cur_TH] do
               begin
-                cx := x;
-                cy := y;
-                cz := z;
-                cpch := pch;
-                cyaw := yaw;
+                  cx := position.X;
+                  cy := position.Y;
+                  cz := position.z;
               end;
-          else
-            Level.Things[JedMain.Cur_TH].Vals[JedMain.Cur_FR]
-              .GetFrame(cx, cy, cz, cpch, cyaw, crol);
+        MM_FR:
+          begin
+            if JedMain.Cur_FR = -1 then
+              with Level.Things[JedMain.Cur_TH] do
+                begin
+                  cx := x;
+                  cy := y;
+                  cz := z;
+                  cpch := pch;
+                  cyaw := yaw;
+                end
+            else
+              Level.Things[JedMain.Cur_TH].Vals[JedMain.Cur_FR]
+                .GetFrame(cx, cy, cz, cpch, cyaw, crol);
+          end;
+        else
+          exit;
     end;
 
     SetCam(cx, cy, cz, cpch, cyaw);
