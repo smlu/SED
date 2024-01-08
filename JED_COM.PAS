@@ -1687,7 +1687,7 @@ begin
 case what of
  js_ProjectDir: result:=CacheAString(ProjectDir);
  js_JEDDir: result:=CacheAString(BaseDir);
- js_CDDir: result:=CacheAString(CDDir);
+ js_CDDir: result:=CacheAString(GameDir);
  js_GameDir: result:=CacheAString(GameDir);
  js_LevelFile: result:=CacheAString(JedMain.LevelFile);
  js_jedregkey: result:=CacheAString(GetConfigFilePath()); // was RegBase (removed)

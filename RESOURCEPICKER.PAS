@@ -1182,9 +1182,7 @@ var
   sl: TStringList;
 begin
   ClearGroups;
-  AddDirGroup(CDDir + 'Resource\Video\', 'Resource\Video on CD', '*.smk;*.san');
-  AddDirGroup(GameDir + 'Resource\Video\', 'Resource\Video on HD',
-    '*.smk;*.san');
+  AddDirGroup(GameDir + 'Resource\Video\', 'Resource\Video on HD',  '*.smk;*.san');
   AddProjDirGroup('*.jkl;*.smk;*.san');
   ResetGroups('');
   ChangeResName(seq);

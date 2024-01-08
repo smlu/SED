@@ -138,13 +138,8 @@ Const
 Var
   BaseDir: String;
   ProjectDir: String;
-  CDDir: String;
-  JKDir, MOTSDir: String;
-  JKCDDir: String = 'D:\GAMEDATA\';
-  MOTSCDDir: String = 'D:\GAMEDATA\';
-  IJIMDir: String;
+  JKDir, MOTSDir, IJIMDir: String;
   IJIMExe: String;
-
   GameDir: String;
 
   //IsMots: boolean;

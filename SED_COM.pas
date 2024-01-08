@@ -1972,7 +1972,6 @@ Function TSEDCOM.GetSEDString(what: integer): PChar;
     case what of
       SS_ProjectDir:  result := PChar(ProjectDir);
       SS_SEDDir:      result := PChar(BaseDir);
-      SS_CDDir:       result := PChar(CDDir);
       SS_GameDir:     result := PChar(GameDir);
       SS_LevelFile:   result := PChar(JedMain.LevelFile);
       SS_ConfigFile:  result := PChar(GetConfigFilePath());

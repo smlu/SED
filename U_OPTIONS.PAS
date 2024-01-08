@@ -12,8 +12,6 @@ type
   TOptions = class(TForm)
     Pages: TPageControl;
     JK: TTabSheet;
-    Label2: TLabel;
-    CBCD: TDriveComboBox;
     Label1: TLabel;
     Panel1: TPanel;
     BNOK: TButton;
@@ -41,8 +39,6 @@ type
     Label7: TLabel;
     Label8: TLabel;
     Label9: TLabel;
-    Label10: TLabel;
-    CBMOTSCD: TDriveComboBox;
     CBColored: TCheckBox;
     RGAPI: TRadioGroup;
     Label11: TLabel;
@@ -69,9 +65,6 @@ type
     BtnBrowseMotsDir: TButton;
     GBJKDF2: TGroupBox;
     GBMOTS: TGroupBox;
-    GamePages: TPageControl;
-    DFPage: TTabSheet;
-    IJIMPage: TTabSheet;
     BtnBrowseIJIMDir: TButton;
     IJIMDirEdit: TEdit;
     Label13: TLabel;
@@ -83,6 +76,7 @@ type
     Label15: TLabel;
     CBSaveEditorLights: TCheckBox;
     CBSaveEditorLayers: TCheckBox;
+    GBIJIM: TGroupBox;
     procedure BNOKClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure SBHelpClick(Sender: TObject);
@@ -107,7 +101,6 @@ type
   public
     Function SetOptions(curPage: TTabSheet): boolean;
     Function IsVarChanged(var v): boolean;
-    Function CheckForJKCD: boolean;
     { Public declarations }
   end;
 
@@ -163,12 +156,9 @@ type
 const
   NoConfile: boolean = false;
 
-  RegValues: array [0 .. 86] of TRegValue = (
+  RegValues: array [0 .. 84] of TRegValue = (
     (d_type: dt_str; Section: 'JKDF2'; Name: 'Dir'; data: @JKDir; onExit: false),
-    (d_type: dt_str; Section: 'JKDF2'; Name: 'CD_Dir'; data: @JKCDDir; onExit: false),
-
     (d_type: dt_str; Section: 'MOTS'; Name: 'Dir'; data: @MOTSDir; onExit: false),
-    (d_type: dt_str; Section: 'MOTS'; Name: 'CD_Dir'; data: @MOTSCDDir; onExit: false),
 
     (d_type: dt_str; Section: 'IJIM'; Name: 'Dir'; data: @IJIMDir; onExit: false),
     (d_type: dt_str; Section: 'IJIM'; Name: 'Exe'; data: @IJIMExe; onExit: false),
@@ -263,7 +253,6 @@ const
     (d_type: dt_int; Section: 'Editor'; Name: 'Tbar.W'; data: @TbarPos.W; onExit: true),
     (d_type: dt_int; Section: 'Editor'; Name: 'Tbar.H'; data: @TbarPos.H; onExit: true),
     (d_type: dt_bool; Section: 'Editor'; Name: 'Tbar.OnTop'; data: @TbOnTop; onExit: true));
-
 
 Function GetSetting(const name: string): variant;
 var
@@ -545,9 +534,7 @@ Procedure TOptions.InitControls;
 begin
   vGamma := TValInput.Create(EBGamma);
   NewCtl(@JKDir, dt_str, JkDirEdit);
-  NewCtl(@JKCDDir, dt_str, CBCD);
   NewCtl(@MOTSDir, dt_str, MotsDirEdit);
-  NewCtl(@MOTSCDDir, dt_str, CBMOTSCD);
   NewCtl(@IJIMDir, dt_str, IJIMDirEdit);
   NewCtl(@IJIMExe, dt_str, IJIMExeEdit);
   NewCtl(@D3DDevice, dt_str, LBDevices);
@@ -779,13 +766,6 @@ end;
 
 Procedure TOptions.OnSetData;
 begin
-  if JKCDDir = '' then
-    JKCDDir := 'D';
-  JKCDDir := JKCDDir[1] + ':\GAMEDATA\';
-  if MOTSCDDir = '' then
-    MOTSCDDir := 'D';
-  MOTSCDDir := MOTSCDDir[1] + ':\GAMEDATA\';
-
   if JKDir <> '' then
     if JKDir[Length(JKDir)] <> '\' then
       JKDir := JKDir + '\';
@@ -809,61 +789,6 @@ begin
   { LoadToolBar(JedMain.PtoolBar,'op'); }
 end;
 
-Function TOptions.CheckForJKCD: boolean;
-var
-  sr: TSearchRec;
-
-  Function IsMOTSCD: boolean;
-  begin
-    result := FindFirst(MOTSCDDir + 'Resource\video\S1l1ocs.san',
-      faAnyfile, sr) = 0;
-    FindClose(sr);
-    result := result and (sr.size > 15 * 1024 * 1024);
-    result := result and (FindFirst(MOTSCDDir + 'Resource\video\S2l1ecs.san',
-      faAnyfile, sr) = 0);
-    FindClose(sr);
-    result := result and (sr.size > 13 * 1024 * 1024);
-    result := result and (FindFirst(MOTSCDDir + 'Resource\video\Jkmintro.san',
-      faAnyfile, sr) = 0);
-    FindClose(sr);
-    result := result and (sr.size > 15 * 1024 * 1024);
-  end;
-
-  Function IsCD1: boolean;
-  begin
-    result := FindFirst(JKCDDir + 'Resource\video\01-02a.smk',
-      faAnyfile, sr) = 0;
-    FindClose(sr);
-    result := result and (sr.size > 30 * 1024 * 1024);
-    result := result and (FindFirst(JKCDDir + 'Resource\video\03-04a.smk',
-      faAnyfile, sr) = 0);
-    FindClose(sr);
-    result := result and (sr.size > 30 * 1024 * 1024);
-  end;
-
-  Function IsCD2: boolean;
-  begin
-    result := FindFirst(JKCDDir + 'Resource\video\33-34a.smk',
-      faAnyfile, sr) = 0;
-    FindClose(sr);
-    result := result and (sr.size > 30 * 1024 * 1024);
-    result := result and (FindFirst(JKCDDir + 'Resource\video\41-42a.smk',
-      faAnyfile, sr) = 0);
-    FindClose(sr);
-    result := result and (sr.size > 20 * 1024 * 1024);
-  end;
-
-var
-  cd1, cd2, motscd: boolean;
-begin
-  cd1 := IsCD1;
-  cd2 := IsCD2;
-  motscd := IsMOTSCD;
-  CurrentProject := JKDF2;
-  if motscd then CurrentProject := MOTS;
-  result := (cd1 <> cd2) or motscd;
-end;
-
 procedure TOptions.FormCreate(Sender: TObject);
 var
   Reg: TRegistry;
@@ -881,14 +806,12 @@ begin
       then
       begin
         JKDir := Reg.ReadString('Install Path');
-        JKCDDir := Reg.ReadString('CD Path') + '\GAMEDATA\';
       end;
       if Reg.OpenKey
         ('\SOFTWARE\LucasArts Entertainment Company LLC\Mysteries of the Sith\v1.0',
         false) then
       begin
         MOTSDir := Reg.ReadString('Install Path');
-        MOTSCDDir := Reg.ReadString('CD Path') + '\GAMEDATA\';
       end;
       Reg.Free;
     except
@@ -920,26 +843,11 @@ begin
       WriteConfigFile(false);
   end;
 
+  CurrentProject := JKDF2;
+  if MOTSDir <> '' then
+       CurrentProject := MOTS;
   if IJIMDir <> '' then
-    begin
        CurrentProject := IJIM;
-    end
-  else
-    begin
-      { Check for JK CD }
-      While not CheckForJKCD do
-      begin
-        MsgBox('Cannot find JK data - Insert JK CD', 'Error', mb_ok);
-        if not SetOptions(JK) then
-          begin
-            SaveSettings := false;
-            Application.Terminate;
-            exit;
-          end
-        else
-          WriteConfigFile(false);
-      end;
-    end;
   OnSetData;
 end;
 
@@ -999,10 +907,6 @@ begin
     result := JKDir + 'Episode\' + name
   else if FileExists(JKDir + 'Resource\' + name) then
     result := JKDir + 'Resource\' + name
-  else if FileExists(JKCDDir + 'Episode\' + name) then
-    result := JKCDDir + 'Episode\' + name
-  else if FileExists(JKCDDir + 'Resource\' + name) then
-    result := JKCDDir + 'Resource\' + name;
 end;
 
 Function FindGoo(const name: string): String;
@@ -1012,12 +916,6 @@ begin
     result := MOTSDir + 'Episode\' + name
   else if FileExists(MOTSDir + 'Resource\' + name) then
     result := MOTSDir + 'Resource\' + name
-  else if FileExists(MOTSCDDir + 'Episode\' + name) then
-    result := MOTSCDDir + 'Episode\' + name
-  else if FileExists(MOTSCDDir + 'Resource\' + name) then
-    result := MOTSCDDir + 'Resource\' + name
-  else if FileExists(JKCDDir + 'MININSTALL\' + name) then
-    result := JKCDDir + 'MININSTALL\' + name;
 end;
 
 Function FindGobIJIM(const name: string): String;
@@ -1031,16 +929,16 @@ end;
 
 Function SetProjectType(kind: TProjectType): boolean;
 begin
-  CurrentProject := kind;
-  Level.kind     := kind;
-  Level.header.version := 1;
-  Level.ppunit := DefaultPixelPerUnit;
+  CurrentProject          := kind;
+  Level.kind              := kind;
+  Level.header.version    := 1;
+  Level.ppunit            := DefaultPixelPerUnit;
   ToolForm.BNDoor.visible := true;
+
   case kind of
-    TProjectType.JKDF2:
+    JKDF2:
       begin
-        CDDir := JKCDDir;
-        GameDir := JKDir;
+        GameDir  := JKDir;
         res1_gob := FindGobJK('Res1hi.gob');
         if res1_gob = '' then
           res1_gob := FindGobJK('Res1low.gob');
@@ -1048,52 +946,49 @@ begin
         begin
           PanMessage(mt_info,
             'Check JK directory setting - it appears to be wrong');
-          res1_gob := CDDir + 'MININSTALL\Res1low.gob';
         end;
         Res2_gob := FindGobJK('Res2.gob');
-        sp_gob := FindGobJK('Jk1.gob');
-        mp1_gob := FindGobJK('Jk1mp.gob');
-        mp2_gob := FindGobJK('Jk1ctf.gob');
-        mp3_gob := '';
+        sp_gob   := FindGobJK('Jk1.gob');
+        mp1_gob  := FindGobJK('Jk1mp.gob');
+        mp2_gob  := FindGobJK('Jk1ctf.gob');
+        mp3_gob  := '';
         result := (GameDir <> '') and (res1_gob <> '') and (Res2_gob <> '') and
           (mp1_gob <> '') and (mp2_gob <> '');
         if not result then
           PanMessage(mt_warning,
             'Some resources weren''t found! Check ''Dark Forces II'' settings in Options');
       end;
-    TProjectType.MOTS:
+    MOTS:
       begin
-        GameDir := MOTSDir;
-        CDDir := MOTSCDDir;
+        GameDir  := MOTSDir;
         res1_gob := FindGoo('JKMsndLO.goo');
         Res2_gob := FindGoo('Jkmres.goo');
-        sp_gob := FindGoo('Jkm.goo');
-        mp1_gob := FindGoo('Jkm_mp.goo');
-        mp2_gob := FindGoo('Jkm_kfy.goo');
-        mp3_gob := FindGoo('JKM_SABER.GOO');
-        result := (GameDir <> '') and (res1_gob <> '') and (Res2_gob <> '') and
+        sp_gob   := FindGoo('Jkm.goo');
+        mp1_gob  := FindGoo('Jkm_mp.goo');
+        mp2_gob  := FindGoo('Jkm_kfy.goo');
+        mp3_gob  := FindGoo('JKM_SABER.GOO');
+        result   := (GameDir <> '') and (res1_gob <> '') and (Res2_gob <> '') and
           (mp1_gob <> '') and (mp2_gob <> '') and (mp3_gob <> '');
         if not result then
           PanMessage(mt_warning,
-            'Some resources weren''t found! Check the ''Mysteries of the Sith'' settings in Options');
+            'Some resources weren''t found! Check ''Mysteries of the Sith'' settings in Options');
       end
     else // IJIM
       begin
         Level.header.version := 3;
         ToolForm.BNDoor.visible := false;
-        CDDir := '';
         GameDir := IJIMDir;
         res1_gob := FindGobIJIM('CD1.GOB');
         if res1_gob = '' then
-        begin
-          PanMessage(mt_info,
-            'Infernal Machine install directory is missing CD1.GOB');
-        end;
+          begin
+            PanMessage(mt_info,
+              'Infernal Machine install directory is missing CD1.GOB');
+          end;
         Res2_gob := FindGobIJIM('CD2.GOB');
-        sp_gob := '';
-        mp1_gob := '';
-        mp2_gob := '';
-        mp3_gob := '';
+        sp_gob   := '';
+        mp1_gob  := '';
+        mp2_gob  := '';
+        mp3_gob  := '';
         result := (GameDir <> '') and (res1_gob <> '') and (Res2_gob <> '');
         if not result then
           PanMessage(mt_warning,

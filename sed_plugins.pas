@@ -164,22 +164,21 @@ cei_cog     = 4;
 {GetSEDString constants}
 SS_ProjectDir  = 1;
 SS_SEDDir      = 2;
-SS_CDDir       = 3;
-SS_GameDir     = 4;
-SS_LevelFile   = 5;
-SS_ConfigFile  = 6; // ex js_jedregkey
-SS_LECLogoJK   = 7;
-SS_Recent1     = 8;
-SS_Recent2     = 9;
-SS_Recent3     = 10;
-SS_Recent4     = 11;
-SS_Res1gob     = 12;
-SS_Res2gob     = 13;
-SS_SPGOB       = 14;
-SS_MP1GOB      = 15;
-SS_MP2GOB      = 16;
-SS_MP3GOB      = 17;
-SS_LECLogoIJIM = 18;
+SS_GameDir     = 3;
+SS_LevelFile   = 4;
+SS_ConfigFile  = 5; // ex js_jedregkey
+SS_LECLogoJK   = 6;
+SS_Recent1     = 7;
+SS_Recent2     = 8;
+SS_Recent3     = 9;
+SS_Recent4     = 10;
+SS_Res1gob     = 11;
+SS_Res2gob     = 12;
+SS_SPGOB       = 13;
+SS_MP1GOB      = 14;
+SS_MP2GOB      = 15;
+SS_MP3GOB      = 16;
+SS_LECLogoIJIM = 17;
 
 {GetJEDWindow constants}
 sw_Main         =0;
