@@ -1690,7 +1690,7 @@ begin
     AddKBItem(MiEdit, 'Assign Thing to Sector', 'A', [ssShift]);
     AddKBItem(MiEdit, 'Unadjoin', 'A', [ssAlt]);
     AddKBItem(MiEdit, 'Adjoin', 'A', []);
-    AddKBItem(MiEdit, 'Join surfaces', 'J', []);
+    AddKBItem(MiEdit, 'Join sectors/surfaces', 'J', []);
     AddKBItem(MiEdit, 'Rotate Thing Pitch'#9'Ctrl+Shift+Mouse Wheel', #0, []);
     AddKBItem(MiEdit, 'Rotate Thing Yaw'#9'Ctrl+Mouse Wheel', #0, []);
     AddKBItem(MiEdit, 'Rotate Thing Roll'#9'Ctrl+Alt+Mouse Wheel', #0, []);

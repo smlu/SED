@@ -820,12 +820,12 @@ begin
   if i <> -1 then
     Result := Vertices[i]
   else
-  begin
-    Result := NewVertex;
-    Result.X := X;
-    Result.Y := Y;
-    Result.Z := Z;
-  end;
+    begin
+      Result := NewVertex;
+      Result.X := X;
+      Result.Y := Y;
+      Result.Z := Z;
+    end;
 end;
 
 Procedure TJKSector.Assign(Sec: TJKSector);

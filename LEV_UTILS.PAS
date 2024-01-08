@@ -665,50 +665,56 @@ begin
   if surf.Vertices.count < 3 then exit;
   
   With surf.Vertices[0] do
-  begin
-    x1 := x;
-    y1 := y;
-    z1 := z;
-  end;
+    begin
+      x1 := x;
+      y1 := y;
+      z1 := z;
+    end;
+
   With surf.Vertices[1] do
-  begin
-    x2 := x;
-    y2 := y;
-    z2 := z;
-  end;
+    begin
+      x2 := x;
+      y2 := y;
+      z2 := z;
+    end;
+
   n := 2;
   cmax := 0;
   cmn := 2;
   While n < surf.Vertices.count do
   begin
     With surf.Vertices[n] do
-    begin
-      x3 := x;
-      y3 := y;
-      z3 := z;
-    end;
+      begin
+        x3 := x;
+        y3 := y;
+        z3 := z;
+      end;
+
     VMult(x2 - x1, y2 - y1, z2 - z1, x3 - x1, y3 - y1, z3 - z1, normal.dx,
       normal.dy, normal.dz);
+
     cs := sqrt(sqr(normal.dx) + sqr(normal.dy) + sqr(normal.dz));
     if cs > 0.01 then
       break;
+
     { if not IsOnLine(X1,Y1,Z1,X2,Y2,Z2,X3,Y3,Z3) then break; }
     if cs > cmax then
-    begin
-      cmax := cs;
-      cmn := n;
-    end;
+      begin
+        cmax := cs;
+        cmn := n;
+      end;
     inc(n);
   end;
 
   if n >= surf.Vertices.count then
   begin
     With surf.Vertices[cmn] do
-    begin
-      x3 := x;
-      y3 := y;
-      z3 := z;
-    end;
+      begin
+        x3 := x;
+        y3 := y;
+        z3 := z;
+      end;
+
     VMult(x2 - x1, y2 - y1, z2 - z1, x3 - x1, y3 - y1, z3 - z1, normal.dx,
       normal.dy, normal.dz);
     cs := sqrt(sqr(normal.dx) + sqr(normal.dy) + sqr(normal.dz));
@@ -716,11 +722,11 @@ begin
   end;
 
   if cs <> 0 then
-  begin
-    normal.dx := normal.dx / cs;
-    normal.dy := normal.dy / cs;
-    normal.dz := normal.dz / cs;
-  end;
+    begin
+      normal.dx := normal.dx / cs;
+      normal.dy := normal.dy / cs;
+      normal.dz := normal.dz / cs;
+    end;
 end;
 
 (* Function FindTri(surf:TJKSurface;nv1:integer;var nv2,nv3:integer):boolean;
@@ -1365,7 +1371,7 @@ Procedure SetAdjoinParams(sf: TJKSurface);
 begin
   sf.SurfFlags := 0;
   sf.FaceFlags := 0;
-  sf.geo := 0;
+  sf.geo       := 0;
   sf.AdjoinFlags := SAF_Visible or SAF_Move;
   if CurrentProject <> IJIM then
     BitSet(sf.AdjoinFlags, SAF_AllowSoundPass);
@@ -1373,9 +1379,9 @@ end;
 
 Procedure ClearAdjoinParams(sf: TJKSurface);
 begin
-  sf.SurfFlags := 4;
+  sf.SurfFlags := SF_Collision;
   sf.FaceFlags := 0;
-  sf.geo := 4;
+  sf.geo       := 4;
   if sf.material = '' then
     sf.material := 'dflt.mat';
 end;
@@ -1428,11 +1434,11 @@ begin
   CalcSurfRect(surf, v1, v2, v3, v4, by);
 
   for v := 0 to 3 do
-  begin
-    { nvx:=nsec.NewVertex;
-      nvx.Assign(surf.vertices[v]); }
-    asurf.AddVertex(nsec.Vertices[v]);
-  end;
+    begin
+      { nvx:=nsec.NewVertex;
+        nvx.Assign(surf.vertices[v]); }
+      asurf.AddVertex(nsec.Vertices[v]);
+    end;
   nsec.surfaces.Add(asurf);
 
   { SysAdjoinSurfaces(surf,asurf); }
@@ -1462,9 +1468,9 @@ begin
   nvx.z := v4.z + (-surf.normal.dz) * by;
 
   for v := 0 to 3 do
-  begin
-    osurf.AddVertex(nsec.Vertices[7 - v]);
-  end;
+    begin
+      osurf.AddVertex(nsec.Vertices[7 - v]);
+    end;
 
   nsec.surfaces.Add(osurf);
   osurf.NewRecalcAll;
@@ -1713,63 +1719,63 @@ begin
     FillChar(cd^, sizeof(TCleaveData) * vc, 0);
 
     for sf := 0 to vc - 1 do
-    begin
-      cd1 := @cd^[sf];
-      cd2 := @cd^[NextIdx(sf, vc)];
-      v1 := surf.Vertices[sf];
-      v2 := surf.Vertices[NextIdx(sf, vc)];
+      begin
+        cd1 := @cd^[sf];
+        cd2 := @cd^[NextIdx(sf, vc)];
+        v1 := surf.Vertices[sf];
+        v2 := surf.Vertices[NextIdx(sf, vc)];
 
-      if (v1.Mark = 0) or (v1.Mark <> -v2.Mark) then
-        continue;
+        if (v1.Mark = 0) or (v1.Mark <> -v2.Mark) then
+          continue;
 
-      PlaneLineXn(cnormal, D, v1.x, v1.y, v1.z, v2.x, v2.y, v2.z, ax, ay, az);
-      cd1^.vx := surf.sector.AddVertex(ax, ay, az);
-    end;
+        PlaneLineXn(cnormal, D, v1.x, v1.y, v1.z, v2.x, v2.y, v2.z, ax, ay, az);
+        cd1^.vx := surf.sector.AddVertex(ax, ay, az);
+      end;
 
     nleft := 0;
     nright := 0;
     for sf := 0 to vc - 1 do
       With surf.Vertices[sf] do
-      begin
-        if Mark = 1 then
-          inc(nright);
-        if Mark = -1 then
-          inc(nleft);
-      end;
+        begin
+          if Mark = 1 then
+            inc(nright);
+          if Mark = -1 then
+            inc(nleft);
+        end;
 
     if (nleft = 0) or (nright = 0) then
       exit;
 
-    nsf := surf.sector.newsurface;
+    nsf := surf.sector.NewSurface;
     nsf.Assign(surf);
 
     { vxs:=TJKVertices.Create; }
 
     for sf := 0 to surf.Vertices.count - 1 do
       With cd^[sf] do
-      begin
-        v1 := surf.Vertices[sf];
-        if (v1.Mark = 1) or (v1.Mark = 0) then
-          nsf.AddVertex(v1);
-        if vx <> nil then
-          nsf.AddVertex(vx);
-      end;
+        begin
+          v1 := surf.Vertices[sf];
+          if (v1.Mark = 1) or (v1.Mark = 0) then
+            nsf.AddVertex(v1);
+          if vx <> nil then
+            nsf.AddVertex(vx);
+        end;
+
     surf.sector.surfaces.Add(nsf);
     nsf.NewRecalcAll;
 
     vxs := surf.Vertices;
-
     surf.Vertices := TJKVertices.Create;
 
     for sf := 0 to vxs.count - 1 do
       With cd^[sf] do
-      begin
-        v1 := vxs[sf];
-        if (v1.Mark = -1) or (v1.Mark = 0) then
-          surf.Vertices.Add(v1);
-        if vx <> nil then
-          surf.InsertVertex(surf.Vertices.count, vx);
-      end;
+        begin
+          v1 := vxs[sf];
+          if (v1.Mark = -1) or (v1.Mark = 0) then
+            surf.Vertices.Add(v1);
+          if vx <> nil then
+            surf.InsertVertex(surf.Vertices.count, vx);
+        end;
 
     { surf.sector.surfaces.Add(nsf);
       nsf.RecalcAll; }
@@ -1783,30 +1789,32 @@ begin
         rvec.dx, rvec.dy, rvec.dz);
 
     For i := surf.Vertices.count - 1 downto 0 do
-    begin
-      v0 := surf.Vertices[surf.PrevVX(i)];
-      v1 := surf.Vertices[i];
-      v2 := surf.Vertices[surf.NextVX(i)];
-      if (v0.Mark <> 0) or (v1.Mark <> 0) or (v2.Mark <> 0) then
-        continue;
-      if (SMult(v2.x - v1.x, v2.y - v1.y, v2.z - v1.z, rvec.dx, rvec.dy,
-        rvec.dz) < 0) or (SMult(v1.x - v0.x, v1.y - v0.y, v1.z - v0.z, rvec.dx,
-        rvec.dy, rvec.dz) < 0) then
-        surf.Vertices.Delete(i);
-    end;
+      begin
+        v0 := surf.Vertices[surf.PrevVX(i)];
+        v1 := surf.Vertices[i];
+        v2 := surf.Vertices[surf.NextVX(i)];
+        if (v0.Mark <> 0) or (v1.Mark <> 0) or (v2.Mark <> 0) then
+          continue;
+
+        if (SMult(v2.x - v1.x, v2.y - v1.y, v2.z - v1.z, rvec.dx, rvec.dy,
+          rvec.dz) < 0) or (SMult(v1.x - v0.x, v1.y - v0.y, v1.z - v0.z, rvec.dx,
+          rvec.dy, rvec.dz) < 0) then
+          surf.Vertices.Delete(i);
+      end;
 
     For i := nsf.Vertices.count - 1 downto 0 do
-    begin
-      v0 := nsf.Vertices[nsf.PrevVX(i)];
-      v1 := nsf.Vertices[i];
-      v2 := nsf.Vertices[nsf.NextVX(i)];
-      if (v0.Mark <> 0) or (v1.Mark <> 0) or (v2.Mark <> 0) then
-        continue;
-      if (SMult(v2.x - v1.x, v2.y - v1.y, v2.z - v1.z, rvec.dx, rvec.dy,
-        rvec.dz) > 0) or (SMult(v1.x - v0.x, v1.y - v0.y, v1.z - v0.z, rvec.dx,
-        rvec.dy, rvec.dz) > 0) then
-        nsf.Vertices.Delete(i);
-    end;
+      begin
+        v0 := nsf.Vertices[nsf.PrevVX(i)];
+        v1 := nsf.Vertices[i];
+        v2 := nsf.Vertices[nsf.NextVX(i)];
+        if (v0.Mark <> 0) or (v1.Mark <> 0) or (v2.Mark <> 0) then
+          continue;
+
+        if (SMult(v2.x - v1.x, v2.y - v1.y, v2.z - v1.z, rvec.dx, rvec.dy,
+          rvec.dz) > 0) or (SMult(v1.x - v0.x, v1.y - v0.y, v1.z - v0.z, rvec.dx,
+          rvec.dy, rvec.dz) > 0) then
+          nsf.Vertices.Delete(i);
+      end;
 
     For sf := 0 to vc - 1 do
       With cd^[sf] do
@@ -1818,30 +1826,32 @@ begin
           asurf := surf.sector.surfaces[i];
           if (asurf = surf) then
             continue;
+
           SaveTXData(asurf, 0, txd1);
           sfchange := false;
           for j := asurf.Vertices.count - 1 downto 0 do
-          begin
-            v1 := asurf.Vertices[j];
-            v2 := asurf.Vertices[NextIdx(j, asurf.Vertices.count)];
-            if (v1 = vxs[sf]) and (v2 = vxs[NextIdx(sf, vxs.count)]) then
             begin
-              sfchange := true;
-              asurf.InsertVertex(asurf.NextVX(j), vx);
-              InsertVXTintoSurf(asurf.adjoin, vxs[sf],
-                vxs[NextIdx(sf, vxs.count)], vx);
-            end;
+              v1 := asurf.Vertices[j];
+              v2 := asurf.Vertices[NextIdx(j, asurf.Vertices.count)];
+              if (v1 = vxs[sf]) and (v2 = vxs[NextIdx(sf, vxs.count)]) then
+                begin
+                  sfchange := true;
+                  asurf.InsertVertex(asurf.NextVX(j), vx);
+                  InsertVXTintoSurf(asurf.adjoin, vxs[sf],
+                    vxs[NextIdx(sf, vxs.count)], vx);
+                end;
 
-            if (v2 = vxs[sf]) and (v1 = vxs[NextIdx(sf, vxs.count)]) then
-            begin
-              sfchange := true;
-              asurf.InsertVertex(NextIdx(j, asurf.Vertices.count), vx);
-              InsertVXTintoSurf(asurf.adjoin, vxs[sf],
-                vxs[NextIdx(sf, vxs.count)], vx);
+              if (v2 = vxs[sf]) and (v1 = vxs[NextIdx(sf, vxs.count)]) then
+                begin
+                  sfchange := true;
+                  asurf.InsertVertex(NextIdx(j, asurf.Vertices.count), vx);
+                  InsertVXTintoSurf(asurf.adjoin, vxs[sf],
+                    vxs[NextIdx(sf, vxs.count)], vx);
+                end;
+
+              if sfchange then
+                ApplyTXData(asurf, txd1);
             end;
-            if sfchange then
-              ApplyTXData(asurf, txd1);
-          end;
         end;
       end;
 
@@ -1857,7 +1867,6 @@ begin
 
     ApplyTXData(surf, txd);
     ApplyTXData(nsf, txd);
-
     result := nsf;
 
   finally
@@ -2098,7 +2107,7 @@ begin
 
   SplitVertices(sec.Vertices, cnormal, cx, cy, cz);
 
-  nleft := 0;
+  nleft  := 0;
   nright := 0;
   For i := 0 to sec.Vertices.count - 1 do
     With sec.Vertices[i] do
