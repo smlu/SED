@@ -158,7 +158,7 @@ Var
   P3DVisLayers: boolean = false;
   P3DThings: boolean = true;
 
-  WireframeAPI: integer = 0;
+  WireframeAPI: integer = 1; // 1 - OpenGlL
   WF_DoubleBuf: boolean = true;
   MapRot: integer = 0;
 
