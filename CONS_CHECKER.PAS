@@ -8,11 +8,12 @@ uses
   Geometry, values;
 
 Const
-  cc_Fix = 0;
-  cc_NeverFix = 1;
-  cc_Ask = 2;
-  df_MaxSurfVerts = 24;
-  ijim_MaxSurfVerts = 64;
+  cc_Fix                 = 0;
+  cc_NeverFix            = 1;
+  cc_Ask                 = 2;
+  df_MaxSurfVerts        = 24;
+  ijim_MaxSurfVerts      = 64;
+  ijim_MaxTrackSurfVerts = 4;
 
 //Const
 //  et_none = 0;
@@ -281,18 +282,20 @@ begin { Check }
       surf := sec.surfaces[j];
       if (surf.adjoin = nil) and (surf.FaceFlags and FF_Transluent <> 0) then
         AddWarning('Incorrect face flags on solid surface', surf);
-
       if ((surf.SurfFlags and SF_Floor) <> 0) and ((surf.SurfFlags and SF_Collision) = 0)  then
         AddWarning('Missing collision flag on floor surface', surf);
-
       if surf.vertices.Count > maxSurfVerts then
         AddWarning(Format('More than %d vertices in a surface', [maxSurfVerts]), surf);
       if surf.vertices.Count < 3 then
         AddError('Less than 3 vertices in a surface!', surf);
+
+      if level.kind = IJIM then
+        if BitMaskTest(surf.surfflags, SF_IJIM_Track) and
+            (surf.vertices.Count > ijim_MaxTrackSurfVerts) then
+            AddWarning(Format('More than %d vertices in a track surface', [ijim_MaxTrackSurfVerts]), surf);
+
       if not IsClose(vlen(surf.normal), 1) then
-      begin
         AddWarning('Incorrect normal - surface must be invalid!', surf);
-      end;
       if surf.adjoin <> nil then
       begin
         if surf.adjoin.adjoin <> surf then
