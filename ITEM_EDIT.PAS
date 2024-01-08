@@ -138,6 +138,13 @@ uses ResourcePicker, FlagEditor, Jed_Main, GlobalVars, U_Templates, U_tbar,
 
 {$R *.DFM}
 
+procedure VertexChanged(vx: TJKVertex);
+begin
+  for var i := 0 to vx.Sector.surfaces.count - 1 do
+    vx.Sector.surfaces[i].RecalcAll;
+  JedMain.SectorChanged(vx.Sector);
+end;
+
 procedure TItemEdit.FormCreate(Sender: TObject);
 begin
   fe := TFieldEdit.Create(SGFields);
@@ -1144,24 +1151,28 @@ begin
   Caption := Format('Sector %d vertex %d', [vx.Sector.Num, vx.Num]);
   ResetEdit;
 
-  SetNameColWidth(100);
   Cur_VX := vx;
+  PNButtons.Visible := true;
+  BNAsFrame.Visible := true;
+  BNPaste.Visible   := true;
+  SetNameColWidth(100);
 
   With vx do
-  begin
-    fe.AddFieldFloat('x', ID_X, x);
-    fe.AddFieldFloat('y', ID_Y, y);
-    fe.AddFieldFloat('z', ID_Z, z);
+    begin
+      fe.AddFieldFloat('x', ID_X, x);
+      fe.AddFieldFloat('y', ID_Y, y);
+      fe.AddFieldFloat('z', ID_Z, z);
 
-// Vert colors editing doesn't work correct yet for seector surfaces that share same vertices
-// and only UV for 1 vertice can be selected. Needs fixing to be able to select vertex per face.
-//    var uv := GetUV();
-//    if (CurrentProject = MOTS) or (CurrentProject = IJIM) then
-//      fe.AddFieldColor('+COLOR', ID_VERT_COLOR, uv.color, (*withAlpha=*)false)
-//    else
-//      fe.AddFieldFloat('COLOR', ID_VERT_COLOR, RgbaToIntensity(uv.color));
+  // Vert colors editing doesn't work correct yet for seector surfaces that share same vertices
+  // and only UV for 1 vertice can be selected. Needs fixing to be able to select vertex per face.
+  //    var uv := GetUV();
+  //    if (CurrentProject = MOTS) or (CurrentProject = IJIM) then
+  //      fe.AddFieldColor('+COLOR', ID_VERT_COLOR, uv.color, (*withAlpha=*)false)
+  //    else
+  //      fe.AddFieldFloat('COLOR', ID_VERT_COLOR, RgbaToIntensity(uv.color));
 
-  end;
+    end;
+
   if not Visible then
     Show;
   fe.DoneAdding;
@@ -1299,9 +1310,7 @@ begin
     end;
 
   Result := true;
-  for i := 0 to Cur_VX.Sector.surfaces.count - 1 do
-    Cur_VX.Sector.surfaces[i].RecalcAll;
-  JedMain.SectorChanged(Cur_VX.Sector);
+  VertexChanged(Cur_VX);
 end;
 
 
@@ -1658,19 +1667,31 @@ var
   tx, ty, tz, tpch, tyaw, trol: double;
 begin
   case JedMain.Map_mode of
+    MM_VX:
+      begin
+        if Cur_VX = nil then
+          exit;
+
+        tx := Cur_VX.x;
+        ty := Cur_VX.y;
+        tz := Cur_VX.z;
+        tpch := 0;
+        tyaw := 0;
+        trol := 0;
+      end;
     MM_TH:
       begin
         if Cur_Thing = nil then
           exit;
         with Cur_Thing do
-        begin
-          tx := x;
-          ty := y;
-          tz := z;
-          tpch := pch;
-          tyaw := yaw;
-          trol := rol;
-        end;
+          begin
+            tx := x;
+            ty := y;
+            tz := z;
+            tpch := pch;
+            tyaw := yaw;
+            trol := rol;
+          end;
       end;
     MM_FR:
       begin
@@ -1717,6 +1738,7 @@ begin
   clp := clipboard;
   if not clp.HasFormat(CF_TEXT) then
     exit;
+
   s := clp.AsText;
   if Pos('(', s) <> 1 then
     exit;
@@ -1728,6 +1750,14 @@ begin
       s[i] := ' ';
 
   case JedMain.Map_mode of
+    MM_VX:
+      begin
+        if Cur_VX = nil then
+          exit;
+        with Cur_VX do
+          SScanf(s, '%f %f %f', [@x, @y, @z]);
+        VertexChanged(Cur_VX);
+      end;
     MM_TH:
       begin
         if Cur_Thing = nil then
