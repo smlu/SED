@@ -1724,7 +1724,7 @@ begin
   end;
 
   clp := clipboard;
-  clp.AsText := Sprintf('(%1.5f/%1.5f/%1.5f:%1.5f/%1.5f/%1.5f)',
+  clp.AsText := Sprintf('(%1.8f/%1.8f/%1.8f:%1.6f/%1.6f/%1.6f)',
     [tx, ty, tz, tpch, tyaw, trol]);
 end;
 
@@ -1765,8 +1765,6 @@ begin
         with Cur_Thing do
           SScanf(s, '%f %f %f %f %f %f', [@x, @y, @z, @pch, @yaw, @rol]);
         JedMain.ThingChanged(Cur_Thing);
-        JedMain.EditObject;
-        JedMain.Invalidate;
       end;
     MM_FR:
       begin
@@ -1776,10 +1774,12 @@ begin
         SScanf(s, '%f %f %f %f %f %f', [@tx, @ty, @tz, @tpch, @tyaw, @trol]);
         Cur_Frame.SetFrame(tx, ty, tz, tpch, tyaw, trol);
         JedMain.LevelChanged;
-        JedMain.EditObject;
-        JedMain.Invalidate;
       end;
+    else
+      exit;
   end;
+
+  JedMain.EditObject;
 end;
 
 Function TItemEdit.EdgeChange(Fi: TFieldInfo): boolean;
