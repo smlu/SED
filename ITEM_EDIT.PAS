@@ -764,7 +764,8 @@ begin
 
   Caption := Format('Thing %d Frame %d', [th, n]);
 
-  Cur_Frame := Level.Things[th].Vals[fr];
+  Cur_Thing := Level.Things[th];
+  Cur_Frame := Cur_Thing.Vals[fr];
   Cur_Frame.GetFrame(x, y, z, pch, yaw, rol);
 
   fe.AddFieldFloat('x', ID_X, x);
@@ -1754,6 +1755,9 @@ begin
       begin
         if Cur_VX = nil then
           exit;
+
+        StartUndoRec('Change Vertex');
+        SaveSecUndo(Cur_VX.Sector, ch_changed, sc_geo);
         with Cur_VX do
           SScanf(s, '%f %f %f', [@x, @y, @z]);
         VertexChanged(Cur_VX);
@@ -1762,6 +1766,9 @@ begin
       begin
         if Cur_Thing = nil then
           exit;
+
+        StartUndoRec('Change Thing');
+        SaveThingUndo(Cur_Thing, ch_changed);
         with Cur_Thing do
           SScanf(s, '%f %f %f %f %f %f', [@x, @y, @z, @pch, @yaw, @rol]);
         JedMain.ThingChanged(Cur_Thing);
@@ -1770,6 +1777,9 @@ begin
       begin
         if Cur_Frame = nil then
           exit;
+
+        StartUndoRec('Change Frame');
+        SaveThingUndo(Cur_Thing, ch_changed);
         Cur_Frame.GetFrame(tx, ty, tz, tpch, tyaw, trol);
         SScanf(s, '%f %f %f %f %f %f', [@tx, @ty, @tz, @tpch, @tyaw, @trol]);
         Cur_Frame.SetFrame(tx, ty, tz, tpch, tyaw, trol);
