@@ -515,6 +515,37 @@ begin
   fe.ONChange := SurfaceChange;
 end;
 
+Function ParseMirrorAdjoin(const s: string; var sec, surf: Integer): Boolean;
+  var w: string;
+begin
+  Result := false;
+  var i := GetWord(s, 1, w);
+  if w = '' then
+    exit;
+
+  if not ValInt(w, sec) then
+    exit;
+
+  if sec = -1 then
+    begin
+      Result := true;
+      exit;
+    end;
+
+  if (sec < 0) or (sec >= Level.Sectors.count) then
+    exit;
+
+  i := GetWord(s, i, w);
+  if w = '' then
+    exit;
+  if not ValInt(w, surf) then
+    exit;
+
+  if (surf < 0) or (surf >= Level.Sectors[sec].surfaces.count) then
+        exit;
+  Result := true;
+end;
+
 Function ValSurfField(const s: string; surf: TJKSurface; id: integer): boolean;
 var
   sc, sf, i: integer;
@@ -614,31 +645,14 @@ begin
         end;
       ID_SURF_ADJOIN:
         begin
-          i := GetWord(s, 1, w);
-          if w = '' then
+          if not ParseMirrorAdjoin(s, sc, sf) then
             exit;
-          if not ValInt(w, sc) then
-            exit;
+
+          Result := true;
           if sc = -1 then
-          begin
-            Adjoin := nil;
-            Result := true;
-            exit;
-          end;
-          i := GetWord(s, i, w);
-          if w = '' then
-            exit;
-          if not ValInt(w, sf) then
-            exit;
-          if (sc < 0) or (sc >= Level.Sectors.count) then
-            exit;
-          With Level.Sectors[sc] do
-          begin
-            if (sf < 0) or (sf >= surfaces.count) then
-              exit;
-            Adjoin := surfaces[sf];
-            Result := true;
-          end;
+            Adjoin := nil
+          else
+            Adjoin := Level.Sectors[sc].surfaces[sf];
         end;
     end;
   JedMain.SectorChanged(surf.Sector);
@@ -668,6 +682,7 @@ Procedure TItemEdit.SurfaceDblClk(Fi: TFieldInfo);
 var
   f: longint;
   c: TColorF;
+  sc, sf: integer;
 begin
   case Fi.id of
     ID_SURF_MATERIAL:
@@ -696,6 +711,14 @@ begin
         ValDword(Fi.s, f);
         f := SCFieldPicker.PickLightMode(f);
         Fi.s := IntToStr(f);
+      end;
+    ID_SURF_ADJOIN:
+      begin
+        // Select adjoin surface
+        if not ParseMirrorAdjoin(Fi.s, sc, sf) or (sc = -1) then
+          exit;
+        JedMain.SetCurSF(sc, sf);
+        exit;
       end;
     ID_SURF_ADJOINFLAGS:
       begin
