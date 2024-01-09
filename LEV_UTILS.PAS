@@ -2425,7 +2425,7 @@ begin { ConnectSectors }
   result := false;
   if not DoSectorsOverlap(sec1, sec2) then
   begin
-    PanMessage(mt_warning, 'The sectors don''t overlap');
+    PanMessage(mt_warning, 'Sectors can''t be joined as they do not overlap.');
     exit;
   end;
   lsec := sec1.Level.sectors.count;
@@ -3579,7 +3579,7 @@ var
   sec: TJKSector;
   sfchanged: boolean;
 begin
-  StartUndoRec('Merge vertices');
+  StartUndoRec('Merge Vertices');
   vxsel.sort;
   result := 0;
 

@@ -2016,7 +2016,7 @@ begin
                         exit;
                     end;
 
-                    StartUndoRec('Extrude surface');
+                    StartUndoRec('Extrude Surface');
 
                     ExtrudeSurface(surf, dx);
                     SetCurSF(Cur_SC, Cur_SF);
@@ -2132,7 +2132,7 @@ begin
                             i := scsel.AddSC(Cur_SC);
                             if scsel.Count = 2 then
                               begin
-                                StartUndoRec('Unadjoin sectors');
+                                StartUndoRec('Unadjoin Sectors');
                                 if UnAdjoinSectors(Level.Sectors[scsel.GetSC(0)],
                                   Level.Sectors[scsel.GetSC(1)]) then
                                     PanMessage(mt_info, 'Sectors unadjoined');
@@ -2146,7 +2146,7 @@ begin
                         begin
                             X := sfsel.AddSF(Cur_SC, Cur_SF);
                             nsel := 0;
-                            StartUndoRec('Unadjoin surfaces');
+                            StartUndoRec('Unadjoin Surfaces');
                             for i := 0 to sfsel.Count - 1 do
                               begin
                                 sfsel.GetSCSF(i, nsc, nsf);
@@ -2278,7 +2278,7 @@ begin
             Ord('P'):
                 if Map_mode = MM_SF then
                 begin
-                    StartUndoRec('Flatten surface');
+                    StartUndoRec('Flatten Surface');
                     if FlattenSurface(Level.Sectors[Cur_SC].surfaces[Cur_SF])
                     then
                         PanMessage(mt_info, 'Surface planarized')
@@ -2301,7 +2301,7 @@ begin
                         exit;
                     end;
 
-                    StartUndoRec('Extrude && Expand surface');
+                    StartUndoRec('Extrude && Expand Surface');
 
                     ExtrudeAndExpandSurface(surf, dx);
                     SetCurSF(Cur_SC, Cur_SF);
@@ -2481,7 +2481,7 @@ begin
                     begin
                         X := sfsel.AddSF(Cur_SC, Cur_SF);
                         nsel := 0;
-                        StartUndoRec('Adjoin surfaces');
+                        StartUndoRec('Adjoin Surfaces');
                         for i := 0 to sfsel.Count - 1 do
                         begin
                             sfsel.GetSCSF(i, nsc, nsf);
@@ -2510,7 +2510,7 @@ begin
             if Map_mode = MM_SF then
             begin
                 surf := Level.Sectors[Cur_SC].surfaces[Cur_SF];
-                StartUndoRec('Extrude surface');
+                StartUndoRec('Extrude Surface');
                 ExtrudeSurface(surf, surf.ExtrudeSize);
                 SetCurSF(Cur_SC, Cur_SF);
             end;
@@ -2565,7 +2565,7 @@ begin
                             i := scsel.AddSC(Cur_SC);
                             scsel.sort;
                             nsel := 0;
-                            StartUndoRec('Merge sectors');
+                            StartUndoRec('Merge Sectors');
 
                             while scsel.Count > 1 do
                             begin
@@ -2595,7 +2595,7 @@ begin
                                         surf := Level.Sectors[Cur_SC].surfaces[Cur_SF];
                                         if surf.adjoin = nil then
                                           exit;
-                                        StartUndoRec('Merge sectors');
+                                        StartUndoRec('Merge Sectors');
                                         sec := MergeSectors(surf.sector,
                                         surf.adjoin.sector);
                                         if sec = nil then
@@ -2611,7 +2611,7 @@ begin
                                 begin
                                     sfsel.sort;
                                     nsel := 0;
-                                    StartUndoRec('Merge surfaces');
+                                    StartUndoRec('Merge Surfaces');
 
                                     while sfsel.Count > 1 do
                                     begin
@@ -2655,7 +2655,7 @@ begin
                     MM_ED:
                         begin
                             surf := Level.Sectors[Cur_SC].surfaces[Cur_SF];
-                            StartUndoRec('Merge surfaces');
+                            StartUndoRec('Merge Surfaces');
                             if MergeSurfacesAt(surf, Cur_ED) then
                                 edsel.Clear;
                         end;
@@ -3273,20 +3273,20 @@ begin
 
     case Map_mode of
         MM_SC:
-            StartUndoRec('Drag sector(s)');
+            StartUndoRec('Drag Sector(s)');
         MM_SF:
-            StartUndoRec('Drag surface(s)');
+            StartUndoRec('Drag Surface(s)');
         MM_ED:
-            StartUndoRec('Drag edge(s)');
+            StartUndoRec('Drag Edge(s)');
         MM_VX:
-            StartUndoRec('Drag vertices');
+            StartUndoRec('Drag Vertices');
 
         MM_LT:
-            StartUndoRec('Drag light(s)');
+            StartUndoRec('Drag Light(s)');
         MM_TH:
-            StartUndoRec('Drag thing(s)');
+            StartUndoRec('Drag Thing(s)');
         MM_FR:
-            StartUndoRec('Drag frame(s)');
+            StartUndoRec('Drag Frame(s)');
         MM_Extra:
             if Assigned(OnExtraMove) then
                 OnExtraMove(ExtraObjs[Cur_EX], false);
@@ -3918,7 +3918,7 @@ begin
         Level.Sectors.Add(nsc);
         Level.RenumSecs;
 
-        StartUndoRec('Create sector');
+        StartUndoRec('Create Sector');
         SaveSecUndo(nsc, ch_added, sc_both);
 
         SectorAdded(nsc);
@@ -4166,7 +4166,7 @@ begin
 //                end;
                 surf.Recalc;
                 FindUVScales(surf);
-                if CompareValue(surf.normal.z, 0.6, CloseEnough) = GreaterThanValue then // If less LE 40ï¿½
+                if CompareValue(surf.normal.z, 0.6, CloseEnough) = GreaterThanValue then // If less LE 40°
                   surf.SurfFlags := surf.SurfFlags or SF_Floor;
             end;
         end;
@@ -4886,7 +4886,7 @@ begin
     If not GetXYZAt(X, Y, lx, ly, lz) then
         exit;
 
-    StartUndoRec('Add light(s)');
+    StartUndoRec('Add Light(s)');
 
     if Level.Lights.Count = 0 then
     begin
@@ -4948,7 +4948,7 @@ begin
     If not GetXYZAt(X, Y, tx, ty, tz) then
         exit;
 
-    StartUndoRec('Add thing(s)');
+    StartUndoRec('Add Thing(s)');
 
     { Copy data from currently selcted thing }
     if Level.Things.Count = 0 then
@@ -5032,7 +5032,7 @@ begin
     SetCurSC(Level.Sectors.Count - 1);
     SectorAdded(Level.Sectors[Level.Sectors.Count - 1]);
 
-    StartUndoRec('Add sector');
+    StartUndoRec('Add Sector');
     SaveSecUndo(Level.Sectors[Level.Sectors.Count - 1], ch_added, sc_both);
 
     Invalidate;
@@ -5060,7 +5060,7 @@ begin
 
     fnew := Level.Sectors.Count;
 
-    StartUndoRec('Copy sector(s)');
+    StartUndoRec('Copy Sector(s)');
 
     for i := 0 to scsel.Count - 1 do
     begin
@@ -6293,10 +6293,8 @@ begin
     if not Preview3D.IsActive then
         exit;
 
-    StartUndoRec('Scale texture');
-
+    StartUndoRec('Scale Texture(s)');
     n := sfsel.AddSF(Cur_SC, Cur_SF);
-
     for i := 0 to sfsel.Count - 1 do
     begin
         sfsel.GetSCSF(i, sc, SF);
@@ -6358,10 +6356,8 @@ begin
         exit;
     end;
 
-    StartUndoRec('Shift texture');
-
+    StartUndoRec('Shift Texture(s)');
     n := sfsel.AddSF(Cur_SC, Cur_SF);
-
     for i := 0 to sfsel.Count - 1 do
     begin
         sfsel.GetSCSF(i, sc, SF);
@@ -6379,7 +6375,7 @@ var
     procedure RotateUV(surf: TJKSurface; sina, cosa: double);
     var
         fv: Integer;
-        du, dv: double;
+        du, dv, xx,yy,zz: double;
         nu, nv, u, v: TVector;
 
     begin
@@ -6406,6 +6402,10 @@ var
 
         UpdateSurfUVData(surf, nu, nv);
         ArrangeTexture(surf, fv, nu, nv);
+//        var refsurf := Level.Sectors[Cur_SC].surfaces[Cur_SF];
+//        With refsurf.Vertices[fv], refsurf.txvertices[fv] do
+//         ArrangeTextureBy(surf, nu, nv, x, y, z, u, v);
+
         SectorChanged(surf.sector);
     end;
 begin
@@ -6428,9 +6428,8 @@ begin
             end;
     end;
 
-    StartUndoRec('Rotate texture');
+    StartUndoRec('Rotate Texture(s)');
     var n := sfsel.AddSF(Cur_SC, Cur_SF);
-
     for var i := 0 to sfsel.Count - 1 do
     begin
         sfsel.GetSCSF(i, sc, sf);
@@ -6522,14 +6521,14 @@ begin
                 sec := Level.Sectors[Cur_SC];
                 if axis <> rt_grid then
                     CalcSecCenter(sec, cx, cy, cz);
-                StartUndoRec('Rotate sector(s)');
+                StartUndoRec('Rotate Sector(s)');
                 i := scsel.AddSC(Cur_SC);
                 RotateSectors(Level, scsel, vec, cx, cy, cz, angle);
                 scsel.DeleteN(i);
             end;
         MM_SF:
             begin
-                StartUndoRec('Rotate surface(s)');
+                StartUndoRec('Rotate Surface(s)');
                 if axis <> rt_grid then
                     CalcSurfCenter(level.sectors[Cur_SC].surfaces[Cur_SF], cx, cy, cz);
                 i := sfsel.AddSF(Cur_SC, Cur_SF);
@@ -6546,7 +6545,7 @@ begin
                     cz := th.z;
                 end;
 
-                StartUndoRec('Rotate thing(s)');
+                StartUndoRec('Rotate Thing(s)');
                 i := thsel.AddTH(Cur_TH);
                 RotateThings(Level, thsel, vec, cx, cy, cz, angle, True);
                 thsel.DeleteN(i);
@@ -6561,7 +6560,7 @@ begin
                     cz := LT.position.z;
                 end;
 
-                StartUndoRec('Rotate light(s)');
+                StartUndoRec('Rotate Light(s)');
                 i := ltsel.AddLT(Cur_LT);
                 RotateLights(Level, ltsel, vec, cx, cy, cz, angle);
                 ltsel.DeleteN(i);
@@ -6582,7 +6581,7 @@ begin
                           cz, a, a, a);
                 end;
 
-                StartUndoRec('Rotate frame(s)');
+                StartUndoRec('Rotate Frame(s)');
                 i := frsel.AddFR(Cur_TH, Cur_FR);
                 RotateFrames(Level, frsel, vec, cx, cy, cz, angle, True);
                 frsel.DeleteN(i);
@@ -6600,7 +6599,7 @@ begin
     case Map_mode of
         MM_SC:
             begin
-                StartUndoRec('Flip sector(s)');
+                StartUndoRec('Flip Sector(s)');
                 i := scsel.AddSC(Cur_SC);
                 if how = rt_grid then
                     FlipSectorsOverPlane(Level, scsel, renderer.gnormal,
@@ -6608,14 +6607,13 @@ begin
                 else
                 begin
                     CalcSecCenter(Level.Sectors[Cur_SC], cx, cy, cz);
-                    StartUndoRec('Flip Sectors');
                     FlipSectors(Level, scsel, cx, cy, cz, how);
                 end;
                 scsel.DeleteN(i);
             end;
         MM_TH:
             begin
-                StartUndoRec('Flip thing(s)');
+                StartUndoRec('Flip Thing(s)');
                 { SaveSelThingsUndo('Change thing(s)',ch_changed); }
                 i := thsel.AddTH(Cur_TH);
 
@@ -6629,7 +6627,7 @@ begin
             end;
         MM_LT:
             begin
-                StartUndoRec('Flip light(s)');
+                StartUndoRec('Flip Light(s)');
                 { SaveSelThingsUndo('Change thing(s)',ch_changed); }
                 i := ltsel.AddLT(Cur_LT);
 
@@ -6660,7 +6658,7 @@ begin
             end;
         MM_FR:
             begin
-                StartUndoRec('Flip frame(s)');
+                StartUndoRec('Flip Frame(s)');
                 { SaveSelThingsUndo('Change thing(s)',ch_changed); }
                 i := frsel.AddFR(Cur_TH, Cur_FR);
 
@@ -6721,7 +6719,7 @@ begin
     case Map_mode of
         MM_SC:
             begin
-                StartUndoRec('Scale sector(s)');
+                StartUndoRec('Scale Sector(s)');
                 CalcSecCenter(level.Sectors[Cur_SC], sd.cx, sd.cy, sd.cz);
                 i := scsel.AddSC(Cur_SC);
                 ScaleSectors(Level, scsel, sd, how and sc_ScaleTX <> 0);
@@ -6729,7 +6727,7 @@ begin
             end;
         MM_SF:
             begin
-                StartUndoRec('Scale surface(s)');
+                StartUndoRec('Scale Surface(s)');
                 CalcSurfCenter(level.sectors[Cur_SC].surfaces[Cur_SF], sd.cx, sd.cy, sd.cz);
                 i := sfsel.AddSF(Cur_SC, Cur_SF);
                 ScaleSurfaces(Level, sfsel, sd, how and sc_ScaleTX <> 0);
@@ -6737,7 +6735,7 @@ begin
             end;
         MM_TH:
             begin
-                StartUndoRec('Scale thing(s)');
+                StartUndoRec('Scale Thing(s)');
                 i := thsel.AddTH(Cur_TH);
                 With Level.Things[Cur_TH] do
                 begin
@@ -6750,7 +6748,7 @@ begin
             end;
         MM_LT:
             begin
-                StartUndoRec('Scale light(s)');
+                StartUndoRec('Scale Light(s)');
                 i := ltsel.AddLT(Cur_LT);
                 With Level.Lights[Cur_LT] do
                 begin
@@ -6763,7 +6761,7 @@ begin
             end;
         MM_FR:
             begin
-                StartUndoRec('Scale light(s)');
+                StartUndoRec('Scale Light(s)');
                 i := frsel.AddFR(Cur_TH, Cur_FR);
                 if Cur_FR = -1 then
                     With Level.Things[Cur_TH] do
@@ -6792,13 +6790,13 @@ begin
     case Map_mode of
         MM_SC:
             begin
-                StartUndoRec('Translate sectors');
+                StartUndoRec('Translate Sector(s)');
                 sec := Level.Sectors[Cur_SC];
                 TranslateSectors(Level, scsel, Cur_SC, dx, dy, dz);
             end;
         MM_SF:
             begin
-                StartUndoRec('Translate surfaces');
+                StartUndoRec('Translate Surface(s)');
                 surf := Level.Sectors[Cur_SC].surfaces[Cur_SF];
                 TranslateSurfaces(Level, sfsel, Cur_SC, Cur_SF, dx, dy, dz);
             end;
@@ -6836,7 +6834,7 @@ begin
     ssurf := stitch_Surf;
     esurf := Level.Sectors[Cur_SC].surfaces[Cur_SF];
 
-    StartUndoRec('Stitch surfaces');
+    StartUndoRec('Stitch Surfaces');
     if ssurf.Material <> '' then
         esurf.Material := ssurf.Material;
     StitchSurfaces(ssurf, esurf);
@@ -6906,7 +6904,7 @@ begin
     case Map_mode of
         MM_SF:
             begin
-                StartUndoRec('Straighten surfaces');
+                StartUndoRec('Straighten Surface(s)');
                 n := sfsel.AddSF(Cur_SC, Cur_SF);
                 for i := 0 to sfsel.Count - 1 do
                 begin
@@ -6917,7 +6915,7 @@ begin
             end;
         MM_ED:
             begin
-                StartUndoRec('Straighten surfaces');
+                StartUndoRec('Straighten Surface(s)');
                 n := edsel.addED(Cur_SC, Cur_SF, Cur_ED);
                 for i := 0 to edsel.Count - 1 do
                 begin
@@ -6994,14 +6992,14 @@ begin
             end;
         MM_SF:
             begin
-                StartUndoRec('Translate surface(s)');
+                StartUndoRec('Translate Surface(s)');
                 TranslateSurfaces(Level, sfsel, Cur_SC, Cur_SF, dx, dy, dz);
             end;
         { TranslateSurface(Level.Sectors[Cur_SC].Surfaces[Cur_SF],
           dx,dy,dz); }
         MM_VX:
             begin
-                StartUndoRec('Translate vertices');
+                StartUndoRec('Translate Vertices');
                 TranslateVertices(Level, vxsel, Cur_SC, Cur_VX, dx, dy, dz);
             end;
 
@@ -7013,13 +7011,13 @@ begin
             end;
         MM_TH:
             begin
-                StartUndoRec('Translate thing(s)');
+                StartUndoRec('Translate Thing(s)');
                 { SaveSelThingsUndo('Translate thing(s)',ch_changed); }
                 TranslateThings(Level, thsel, Cur_TH, dx, dy, dz, MoveFrames);
             end;
         MM_FR:
             begin
-                StartUndoRec('Translate frame(s)');
+                StartUndoRec('Translate Frame(s)');
                 { SaveSelFramesUndo('Translate frame(s)',ch_changed); }
                 if Cur_FR = -1 then
                     TranslateThingKeepFrame(Level, Cur_TH, dx, dy, dz)
@@ -7029,7 +7027,7 @@ begin
         MM_LT:
             begin
                 { SaveSelLightsUndo('Translate thing(s)',ch_changed); }
-                StartUndoRec('Translate light(s)');
+                StartUndoRec('Translate Light(s)');
                 TranslateLights(Level, ltsel, Cur_LT, dx, dy, dz);
             end;
     else
@@ -7601,7 +7599,7 @@ begin
         exit;
     end;
 
-    StartUndoRec('Make door');
+    StartUndoRec('Make Door');
     SaveThingUndo(th, ch_changed);
 
     for i := 0 to th.Vals.Count - 1 do
@@ -7970,7 +7968,7 @@ begin
     case Map_mode of
         MM_SC:
             begin
-                StartUndoRec('Cleave sector(s)');
+                StartUndoRec('Cleave Sector(s)');
                 scsel.AddSC(Cur_SC);
                 for i := 0 to scsel.Count - 1 do
                     { Cleaved:= }
@@ -7980,7 +7978,7 @@ begin
             end;
         MM_SF:
             begin
-                StartUndoRec('Cleave surface(s)');
+                StartUndoRec('Cleave Surface(s)');
                 sfsel.AddSF(Cur_SC, Cur_SF);
                 for i := 0 to sfsel.Count - 1 do
                 begin
@@ -8386,7 +8384,7 @@ begin
 
     th := Level.Things[Cur_TH];
 
-    StartUndoRec('Add frame');
+    StartUndoRec('Add Frame');
     SaveThingUndo(th, ch_changed);
 
     if Cur_FR = -1 then
@@ -8488,7 +8486,7 @@ begin
                 if n = -1 then
                     exit;
 
-                StartUndoRec('Paste sector(s)');
+                StartUndoRec('Paste Sector(s)');
 
                 SetCurSC(n);
                 scsel.Clear;
@@ -8522,7 +8520,7 @@ begin
                 if Level.Lights.Count > 0 then
                     Layer := Level.Lights[Cur_LT].Layer;
 
-                StartUndoRec('Paste light(s)');
+                StartUndoRec('Paste Light(s)');
 
                 n := PasteLights(Level, rx, ry, rz);
                 if n = -1 then
@@ -8548,7 +8546,7 @@ begin
                 if Level.Things.Count > 0 then
                     Layer := Level.Things[Cur_TH].Layer;
 
-                StartUndoRec('Paste things');
+                StartUndoRec('Paste Thing(s)');
 
                 n := PasteThings(Level, rx, ry, rz);
                 if n = -1 then
@@ -9135,7 +9133,7 @@ begin
     a := sfsel.AddSF(Cur_SC, Cur_SF);
     if sfsel.Count = 2 then
     begin
-        StartUndoRec('Connect surfaces');
+        StartUndoRec('Connect Surfaces');
         sfsel.GetSCSF(0, sc1, sf1);
         sfsel.GetSCSF(1, sc2, sf2);
         if ConnectSurfaces(Level.Sectors[sc1].surfaces[sf1],
@@ -9155,7 +9153,7 @@ begin
     a := scsel.AddSC(Cur_SC);
     if scsel.Count = 2 then
     begin
-        StartUndoRec('Connect sectors');
+        StartUndoRec('Connect Sectors');
         if ConnectSectors(Level.Sectors[scsel.GetSC(0)],
           Level.Sectors[scsel.GetSC(1)]) then
             PanMessage(mt_info, 'The sectors successfully connected');
@@ -9175,7 +9173,7 @@ begin
     if (sc < 0) or (th < 0) or (sf < 0) then
       exit;
 
-    StartUndoRec('Bring thing to Surface');
+    StartUndoRec('Bring Thing to Surface');
     surf := Level.Sectors[sc].surfaces[SF];
     CalcSurfCenter(surf, X, Y, z);
     thing := Level.Things[th];
@@ -9209,7 +9207,7 @@ var
     light: TSedLight;
     x, y, z, l: double;
 begin
-    StartUndoRec('Bring light to Surface');
+    StartUndoRec('Bring Light to Surface');
     surf := Level.Sectors[sc].surfaces[SF];
     CalcSurfCenter(surf, X, Y, z);
     X := X + surf.normal.dx * 0.001;
@@ -9228,7 +9226,7 @@ var
     th: TJKThing;
     n: Integer;
 begin
-    StartUndoRec('Add thing(s)');
+    StartUndoRec('Add Thing(s)');
 
     { Copy data from currently selcted thing }
     th := Level.NewThing;
@@ -9251,7 +9249,7 @@ var
     th: TJKThing;
     n: Integer;
 begin
-    StartUndoRec('Add thing(s)');
+    StartUndoRec('Add Thing(s)');
 
     { Copy data from currently selcted thing }
     th := Level.NewThing;

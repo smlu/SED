@@ -1203,7 +1203,7 @@ begin
   // Function translates selected thing(s) in the direction of current selected thing
   if JedMain.Map_mode = MM_TH then
     begin
-      StartUndoRec('Translate thing(s)');
+      StartUndoRec('Translate Thing(s)');
       d.dx := dx;
       d.dy := dy;
       d.dz := dz;

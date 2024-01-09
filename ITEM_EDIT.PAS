@@ -651,7 +651,7 @@ var
   sc, sf: integer;
 begin
   { JedMain.SaveSelSurfUndo('Change surface(s)',ch_changed,sc_val); }
-  StartUndoRec('Change surface(s)');
+  StartUndoRec('Change Surface(s)');
 
   Result := ValSurfField(Fi.s, Cur_Surf, Fi.id);
   if not Result then
@@ -1346,7 +1346,7 @@ var
 begin
   { JedMain.SaveSelVertUndo('Change vertices',ch_changed); }
 
-  StartUndoRec('Change vertex');
+  StartUndoRec('Change Vertex');
 
   Result := ValVertField(Fi.s, Cur_VX, Fi.id);
   if not Result then
