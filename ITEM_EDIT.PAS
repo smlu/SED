@@ -718,6 +718,7 @@ begin
         if not ParseMirrorAdjoin(Fi.s, sc, sf) or (sc = -1) then
           exit;
         JedMain.SetCurSF(sc, sf);
+        JedMain.Invalidate;
         exit;
       end;
     ID_SURF_ADJOINFLAGS:
