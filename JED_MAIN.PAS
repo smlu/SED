@@ -3280,7 +3280,6 @@ begin
             StartUndoRec('Drag Edge(s)');
         MM_VX:
             StartUndoRec('Drag Vertices');
-
         MM_LT:
             StartUndoRec('Drag Light(s)');
         MM_TH:
@@ -3340,7 +3339,7 @@ begin
             begin
                 if (Cur_SC < 0) or (Cur_SC >= Level.Sectors.Count) then
                   exit;
-                if (Cur_VX < 0) or (Cur_SC >= Level.Sectors[Cur_SC].vertices.Count) then
+                if (Cur_VX < 0) or (Cur_VX >= Level.Sectors[Cur_SC].vertices.Count) then
                   exit;
 
                 VX := Level.Sectors[Cur_SC].vertices[Cur_VX];
@@ -3357,7 +3356,7 @@ begin
                       exit;
                 if (Cur_SF < 0) or (Cur_SF >= Level.Sectors[Cur_SC].surfaces.Count) then
                   exit;
-                if (Cur_ED < 0) or (Cur_SF >= Level.Sectors[Cur_SC].surfaces[Cur_SF].vertices.Count) then
+                if (Cur_ED < 0) or (Cur_ED >= Level.Sectors[Cur_SC].surfaces[Cur_SF].vertices.Count) then
                   exit;
 
                 With Level.Sectors[Cur_SC].surfaces[Cur_SF] do
