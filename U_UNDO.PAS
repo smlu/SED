@@ -834,7 +834,7 @@ var sec: TJKSector;
         if surf.geo < asurf.geo then
           SetAdjoinParamBasedOnAdjoin(asurf, surf)
         else
-           SetAdjoinParamBasedOnAdjoin(surf, asurf);
+          SetAdjoinParamBasedOnAdjoin(surf, asurf);
         {if asurf.adjoin=nil then}
       end;
   end; {end of ResolveRefs}
@@ -890,7 +890,7 @@ begin
 
       size:=SCVertSize(sec.vertices);
       for i := 0 to sec.surfaces.count - 1 do
-        inc(size, 2 + SFVertSize(sec.Surfaces[i].Vertices));
+        inc(size, 2 + SFVertSize(sec.Surfaces[i].Vertices)); // 2 is size of uint16
 
       GetMem(Data, size);
       pd := data;
@@ -960,7 +960,7 @@ var n:integer;
         begin
           surf := sec.surfaces[i];
           n := pword(pd)^;
-          inc(pd, 2);
+          inc(pd, 2);    // 2 is size of uint16
 
           if n<surf.vertices.count then
             for j := surf.vertices.count - 1 downto n do
@@ -1085,12 +1085,23 @@ begin
   if CurUndoRec=nil then exit;
 
   if (how and sc_geo) <> 0 then
-    if CurUndoRec.scgchanges.FindObjID(sec.id) = -1 then
+  begin
+    var objId := CurUndoRec.scgchanges.FindObjID(sec.id);
+    if objId = -1 then
       begin
         lch := TSecGeoUndo.Create;
         lch.SaveUndo(sec,change);
         CurUndoRec.scgchanges.AddObject(lch, sec.id);
+      end
+    else if change = ch_deleted then
+      begin
+        // if sector was changed before and now deleted (same undo frame)
+        // make sure the undo is marked as deleted, so in case of cur rect
+        // being undone a new sector will be created.
+        var sgch := TSecGeoUndo(CurUndoRec.scgchanges[objId]);
+        sgch.change := change;
       end;
+  end;
 
   if (how and sc_val) <> 0 then
     if CurUndoRec.scvchanges.FindObjID(sec.id) = -1 then

@@ -1993,6 +1993,7 @@ begin
     th := lev.Things[i];
     if th.sec <> sc then
       continue;
+
     n := FindSectorForThing(th);
     if n = -1 then
       th.sec := nil
@@ -2126,13 +2127,11 @@ begin
   For sf := 0 to sec.surfaces.count - 1 do
   begin
     CleaveAdjoin(sec.surfaces[sf], cnormal, cx, cy, cz,
-      SysCleaveSurface(sec.surfaces[sf], cnormal, cx, cy, cz));
+    SysCleaveSurface(sec.surfaces[sf], cnormal, cx, cy, cz));
   end;
 
   vxs := TJKVertices.Create;
-
   try
-
     for sf := 0 to sec.surfaces.count - 1 do
       With sec.surfaces[sf] do
       begin
@@ -2165,9 +2164,11 @@ begin
     nsf := TJKVertices.Create;
     nsf.Add(vxs[0]);
     nsf.Add(vxs[1]);
+
     v1 := vxs[1];
     vxs.Delete(0);
     vxs.Delete(0);
+
     Repeat
       nv := vxs.count;
       For sf := vxs.count div 2 - 1 downto 0 do
@@ -2189,7 +2190,6 @@ begin
           vxs.Delete(sf * 2);
           break;
         end;
-
       end;
     Until nv = vxs.count;
     vxs.Clear;
@@ -2317,9 +2317,7 @@ begin
     sec1.Renumber;
     JedMain.SectorAdded(sec1);
     RelayerSCThings(sec);
-
   end;
-
 end;
 
 Function ConnectSurfaces(surf1, surf2: TJKSurface): boolean;
@@ -2422,7 +2420,7 @@ Function ConnectSectors(sec1, sec2: TJKSector): boolean;
 var
   lsec, i: integer;
 begin { ConnectSectors }
-  result := false;
+  Result := false;
   if not DoSectorsOverlap(sec1, sec2) then
   begin
     PanMessage(mt_warning, 'Sectors can''t be joined as they do not overlap.');
@@ -2435,7 +2433,7 @@ begin { ConnectSectors }
   for i := 0 to sec1.surfaces.count - 1 do
     MakeAdjoinSCUP(sec1.surfaces[i], lsec);
 
-  result := true;
+  Result := true;
 end;
 
 Function VLen(const v: TVector): double;
@@ -3902,14 +3900,14 @@ var
   end;
 
 begin
-  result := false;
+  Result := false;
   for i := 0 to sec.surfaces.count - 1 do
   begin
     surf := sec.surfaces[i];
-    result := result or AdjointoSec1(surf);
+    Result := Result or AdjointoSec1(surf);
   end;
 
-  if result then
+  if Result then
   begin
     JedMain.SectorChanged(sec);
     JedMain.SectorChanged(sec1);
