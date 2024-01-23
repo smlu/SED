@@ -215,65 +215,66 @@ end;
   Procedure GetLevelHeader(var lh:TSEDLevelHeader;rflags:integer);override;
   Procedure SetLevelHeader(const lh:TSEDLevelHeader;rflags:integer);override;
 
-  Function NumSectors:integer;override;
-  Function NumThings:integer;override;
-  Function NumLights:integer;override;
-  Function NumCOGs:integer;override;
+  Function NumSectors :integer; override;
+  Function NumThings: integer; override;
+  Function NumLights: integer; override;
+  Function NumCOGs: integer; override;
 
   {Sectors}
-  Function SectorAdd:integer;override;
-  Procedure SectorDelete(n:integer);override;
+  Function SectorAdd: integer; override;
+  Procedure SectorDelete(n: integer); override;
 
-  Procedure SectorGet(sec:integer;var rec:TSEDSectorRec;what:integer);override;
-  Procedure SectorSet(sec:integer;const rec:TSEDSectorRec;what:integer);override;
+  Procedure SectorGet(sec:integer; var rec: TSEDSectorRec; what: integer); override;
+  Procedure SectorSet(sec:integer; const rec: TSEDSectorRec; what: integer); override;
 
-  Function SectorNumVertices(sec:integer):integer;override;
-  Function SectorNumSurfaces(sec:integer):integer;override;
+  Function SectorNumVertices(sec: integer): integer; override;
+  Function SectorNumSurfaces(sec: integer): integer; override;
 
-  Procedure SectorGetVertex(sec, vn: Integer; var vert: TSEDVector3);override;
-  Procedure SectorSetVertex(sec, vn: Integer; vert: TSEDVector3);override;
+  Procedure SectorGetVertex(sec, vn: Integer; var vert: TSEDVector3); override;
+  Procedure SectorSetVertex(sec, vn: Integer; vert: TSEDVector3); override;
 
-  Function SectorAddVertex(sec: Integer; vert: TSEDVector3):integer;override;
-  Function SectorFindVertex(sec: Integer; vert: TSEDVector3):integer;override;
-  Function SectorDeleteVertex(sec: Integer; n:Integer): Integer;override;
+  Function SectorAddVertex(sec: Integer; vert: TSEDVector3):integer; override;
+  Function SectorFindVertex(sec: Integer; vert: TSEDVector3):integer; override;
+  Function SectorDeleteVertex(sec: Integer; n:Integer): Integer; override;
 
-  Function SectorAddSurface(sec:integer):integer;override;
-  Procedure SectorDeleteSurface(sc,sf:integer);override;
-  Procedure SectorUpdate(sec:integer);override;
+  Function SectorAddSurface(sec: integer): integer; override;
+  Procedure SectorDeleteSurface(sc, sf: integer); override;
+  Procedure SectorUpdate(sec: integer); override;
 
   {Surfaces}
-  Procedure SurfaceGet(sc,sf:integer;var rec:TSEDSurfaceRec;rflags:integer);override;
-  Procedure SurfaceSet(sc,sf:integer;const rec:TSEDSurfaceRec;rflags:integer);override;
-  Procedure SurfaceGetNormal(sc,sf:integer;var n:TSEDVector3);override;
-  Procedure SurfaceUpdate(sc,sf:integer;how:integer);override;
-  Function SurfaceNumVertices(sc,sf:integer):Integer;override;
-  Function SurfaceGetVertexNum(sc,sf,vx:integer):integer;override;
-  Procedure SurfaceSetVertexNum(sc,sf,vx:integer;secvx:integer);override;
-  Function SurfaceAddVertex(sc,sf:integer;secvx:integer):Integer;override;
-  Function SurfaceInsertVertex(sc,sf:integer;at:integer;secvx:integer):Integer;override;
-  Procedure SurfaceDeleteVertex(sc,sf:integer;n:integer);override;
-  Procedure SurfaceGetVertexUV(sc,sf,vx:integer;var u,v:single);override;
-  Procedure SurfaceSetVertexUV(sc,sf,vx:integer;u,v:single);override;
+  Procedure SurfaceGet(sc,sf: integer; var rec: TSEDSurfaceRec; rflags: integer); override;
+  Procedure SurfaceSet(sc, sf: integer; const rec: TSEDSurfaceRec; rflags: integer); override;
+  Procedure SurfaceGetNormal(sc, sf: integer; var n: TSEDVector3); override;
+  Procedure SurfaceUpdate(sc, sf: integer; how: integer); override;
+  Function SurfaceNumVertices(sc, sf: integer): Integer; override;
+  Function SurfaceGetVertexNum(sc, sf, vx: integer): integer; override;
+  Procedure SurfaceSetVertexNum(sc, sf, vx: integer; secvx: integer); override;
+  Function SurfaceAddVertex(sc, sf: integer; secvx: integer): Integer; override;
+  Function SurfaceInsertVertex(sc, sf: integer; at: integer; secvx: integer): Integer; override;
+  Procedure SurfaceDeleteVertex(sc, sf: integer; n: integer); override;
+  Procedure SurfaceGetVertexUV(sc, sf, vx: integer; var u,v: single); override;
+  Procedure SurfaceSetVertexUV(sc, sf, vx: integer; u,v: single); override;
   Procedure SurfaceGetVertexLight(sc, sf, vx: integer; var color: TSEDColor); override;
   Procedure SurfaceSetVertexLight(sc, sf, vx: integer; const color: TSEDColor); override;
 
   {Things}
-  Function ThingAdd:Integer;override;
-  Procedure ThingDelete(th:integer);override;
-  Procedure ThingGet(th:integer;var rec:TSEDThingRec;rflags:integer);override;
-  Procedure ThingSet(th:integer;const rec:TSEDThingRec;rflags:integer);override;
-  Procedure ThingUpdate(th:integer);override;
+  Function ThingAdd: Integer; override;
+  Procedure ThingDelete(th: integer); override;
+  Procedure ThingGet(th: integer; var rec: TSEDThingRec; rflags: integer); override;
+  Procedure ThingSet(th: integer; const rec: TSEDThingRec; rflags: integer); override;
+  Procedure ThingUpdate(th: integer); override;
 
   {Lights}
-  Function LightAdd:Integer;override;
-  Procedure LightDelete(lt:integer);override;
-  Procedure LightGet(lt:integer;var rec:TSEDLightRec;rflags:integer);override;
-  Procedure LightSet(lt:integer;const rec:TSEDLightRec;rflags:integer);override;
+  Function LightAdd:Integer; override;
+  Procedure LightDelete(lt:integer); override;
+  Procedure LightGet(lt:integer; var rec: TSEDLightRec; rflags: integer);override;
+  Procedure LightSet(lt:integer; const rec: TSEDLightRec; rflags: integer);override;
+  Procedure LightUpdate(lt:integer); override;
 
   {Layers}
-  Function NumLayers:integer;override;
-  Function LayerGetName(n:integer):PChar;override;
-  Function LayerAdd(name:PChar):integer;override;
+  Function NumLayers: integer; override;
+  Function LayerGetName(n: integer): PChar; override;
+  Function LayerAdd(name: PChar): integer; override;
 
   {JED 0.92}
   Function NumThingValues(th:integer):integer;override;
@@ -963,7 +964,7 @@ end;
 
 {Lights}
 
-Function TSEDCOMLevel.LightAdd:Integer;
+Function TSEDCOMLevel.LightAdd: Integer;
 var lt: TSedLight;
 begin
   lt := Level.NewLight;
@@ -1028,21 +1029,25 @@ begin
   end;
 end;
 
+Procedure TSEDCOMLevel.LightUpdate(lt:integer);
+begin;
+  JedMain.LightChanged(level.Lights[lt]);
+end;
+
 Function TSEDCOMLevel.NumLayers:integer;
 begin
- Result:=Level.Layers.count;
+  Result:=Level.Layers.count;
 end;
 
 Function TSEDCOMLevel.LayerGetName(n:integer): PChar;
 begin
- Result := PChar(Level.GetLayerName(n));
+  Result := PChar(Level.GetLayerName(n));
 end;
 
 Function TSEDCOMLevel.LayerAdd(name: PChar):integer;
 begin
- Result := Level.AddLayer(name);
+  Result := Level.AddLayer(name);
 end;
-
 
 {0.92}
 Function TSEDCOMLevel.NumThingValues(th:integer):integer;

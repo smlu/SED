@@ -1339,6 +1339,7 @@ begin
     SaveThingUndo(lev.Things[th], ch_changed);
     vl.GetFrame(x, y, z, pch, yaw, rol);
     vl.SetFrame(x + dx, y + dy, z + dz, pch, yaw, rol);
+    JedMain.ThingChanged(lev.Things[th]);
   end;
   frsel.DeleteN(n);
 end;
@@ -1355,7 +1356,7 @@ Procedure TranslateLights(lev: TJKLevel; ltsel: TLTMultiSel; curlt: integer;
       position.y := position.y + dy;
       position.z := position.z + dz;
     end;
-    JedMain.LevelChanged;
+    JedMain.LightChanged(light);
   end;
 
 var
@@ -4652,7 +4653,7 @@ begin
     lt := lev.Lights[ltsel.GetLT(i)];
     SaveLightUndo(lt, ch_changed);
     RotateXYZ(lt.position.x, lt.position.y, lt.position.z, rd);
-    JedMain.LevelChanged;
+    JedMain.LightChanged(lt);
   end;
 end;
 
@@ -4877,7 +4878,7 @@ begin
     lt := lev.Lights[ltsel.GetLT(i)];
     SaveLightUndo(lt, ch_changed);
     ScaleXYZ(lt.position.x, lt.position.y, lt.position.z, sd);
-    JedMain.LevelChanged;
+    JedMain.LightChanged(lt);
   end;
 end;
 
@@ -4993,7 +4994,7 @@ begin
     lt := lev.Lights[ltsel.GetLT(i)];
     SaveLightUndo(lt, ch_changed);
     FlipXYZ(lt.position.x, lt.position.y, lt.position.z, pnorm, cx, cy, cz);
-    JedMain.LevelChanged;
+    JedMain.LightChanged(lt);
   end;
 end;
 

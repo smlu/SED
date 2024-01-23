@@ -706,7 +706,7 @@ begin
         SetLight(lt, TLightRec(data^));
       end;
   end;
-  JedMain.LevelChanged;
+  JedMain.LightChanged(lt);
 end;
 
 Procedure TThingUndo.SaveUndo(obj: TObject; ch: integer);

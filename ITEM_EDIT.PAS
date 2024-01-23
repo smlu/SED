@@ -89,27 +89,30 @@ type
     Cur_Light: TSedLight;
     Cur_Frame: TTPlValue;
     cedge: integer;
+    bUpdating: Boolean;
     Procedure ResetEdit;
     Procedure WMNCDblClck(var msg: TMessage); message WM_NCLBUTTONDBLCLK;
     Function DoPickColor(initColor: TColorF): TColorF;
     procedure SetNameColWidth(width: Integer); overload;
     procedure SetNameColWidth(width, dpi: Integer); overload;
+    procedure BeginUpdate;
+    procedure EndUpdate;
 
   public
     { Public declarations }
-    Procedure UpdateSectorField(id: Integer);
     Procedure LoadSector(sec: TJKSector);
     Procedure LoadSurface(surf: TJKSurface);
+    Procedure LoadEdge(surf: TJKSurface; edge: integer);
+    Procedure LoadVertex(vx: TJKVertex);
     Procedure LoadThing(thing: TJKThing);
     Procedure LoadFrame(th, fr: integer);
-    Procedure LoadVertex(vx: TJKVertex);
-
+    Procedure LoadLight(nLight: integer);
     Procedure LoadExtra(ex: integer);
-    Function ExtraChange(Fi: TFieldInfo): boolean;
 
     Procedure DblClk(Fi: TFieldInfo);
     Function SectorChange(Fi: TFieldInfo): boolean;
     Procedure SectorDblClk(Fi: TFieldInfo);
+    Procedure UpdateSectorField(id: Integer);
     Function SurfaceChange(Fi: TFieldInfo): boolean;
     Procedure SurfaceDblClk(Fi: TFieldInfo);
     Function ThingChange(Fi: TFieldInfo): boolean;
@@ -119,9 +122,8 @@ type
     Procedure ThingDblClk(Fi: TFieldInfo);
     Procedure LightDblClk(Fi: TFieldInfo);
     Function LightChange(Fi: TFieldInfo): boolean;
-    Procedure LoadLight(nLight: integer);
-    Procedure LoadEdge(surf: TJKSurface; edge: integer);
     Function EdgeChange(Fi: TFieldInfo): boolean;
+    Function ExtraChange(Fi: TFieldInfo): boolean;
     Procedure DoPickTexture;
     Procedure DoPickThing;
     Procedure AddCogs(ct: TCog_Type; lobj: TObject);
@@ -183,6 +185,9 @@ Procedure TItemEdit.LoadSector(sec: TJKSector);
 var
   i: integer;
 begin
+  if bUpdating then
+    exit;
+
   Cur_Sec := sec;
   Caption := Format('Sector %d', [sec.Num]);
   ResetEdit;
@@ -384,12 +389,17 @@ begin
   StartUndoRec('Change Sector(s)');
   { JedMain.SaveSelSecUndo('Change sector(s)',ch_changed,sc_val); }
 
-  Result := ValSecField(Fi.s, Cur_Sec, Fi.id);
-  if not Result then
-    exit;
-  scsl := JedMain.scsel;
-  for i := 0 to scsl.count - 1 do
-    ValSecField(Fi.s, Level.Sectors[scsl.getSC(i)], Fi.id);
+    try
+      BeginUpdate;
+      Result := ValSecField(Fi.s, Cur_Sec, Fi.id);
+      if not Result then
+        exit;
+      scsl := JedMain.scsel;
+      for i := 0 to scsl.count - 1 do
+        ValSecField(Fi.s, Level.Sectors[scsl.getSC(i)], Fi.id);
+  finally
+    EndUpdate;
+  end;
 end;
 
 Procedure TItemEdit.SectorDblClk(Fi: TFieldInfo);
@@ -471,6 +481,9 @@ Procedure TItemEdit.LoadSurface(surf: TJKSurface);
 var
   ast: string;
 begin
+  if bUpdating then
+    exit;
+
   Caption := Format('Sector %d Surface %d', [surf.Sector.Num, surf.Num]);
   ResetEdit;
 
@@ -667,14 +680,20 @@ begin
   { JedMain.SaveSelSurfUndo('Change surface(s)',ch_changed,sc_val); }
   StartUndoRec('Change Surface(s)');
 
-  Result := ValSurfField(Fi.s, Cur_Surf, Fi.id);
-  if not Result then
-    exit;
-  sfsl := JedMain.sfsel;
-  for i := 0 to sfsl.count - 1 do
-  begin
-    sfsl.GetSCSF(i, sc, sf);
-    ValSurfField(Fi.s, Level.Sectors[sc].surfaces[sf], Fi.id);
+  try
+    BeginUpdate;
+    Result := ValSurfField(Fi.s, Cur_Surf, Fi.id);
+    if not Result then
+      exit;
+
+    sfsl := JedMain.sfsel;
+    for i := 0 to sfsl.count - 1 do
+    begin
+      sfsl.GetSCSF(i, sc, sf);
+      ValSurfField(Fi.s, Level.Sectors[sc].surfaces[sf], Fi.id);
+    end;
+  finally
+    EndUpdate;
   end;
 end;
 
@@ -760,6 +779,9 @@ var
   x, y, z, pch, yaw, rol: double;
   fm: TForm;
 begin
+  if bUpdating then
+    exit;
+
   ResetEdit;
   SetNameColWidth(100);
 
@@ -830,6 +852,9 @@ Procedure TItemEdit.LoadThing(thing: TJKThing);
 var
   i: integer;
 begin
+  if bUpdating then
+    exit;
+
   Caption := Format('Thing %d', [thing.Num]);
   ResetEdit;
 
@@ -921,7 +946,6 @@ begin
   SaveThingUndo(Cur_Thing, ch_changed);
 
   i := id;
-
   With Cur_Thing do
     case i of
       ID_TH_NAME:
@@ -993,6 +1017,7 @@ begin
         end; }
 
     end;
+
   JedMain.ThingChanged(Cur_Thing);
   JedMain.Invalidate;
   Result := true;
@@ -1008,41 +1033,44 @@ begin
   StartUndoRec('Change Thing(s)');
   { JedMain.SaveSelThingsUndo('Change thing(s)',ch_changed); }
 
-  if (Fi.id < ID_TH_LAST) then
-  begin
+  try
+    BeginUpdate;
+    if (Fi.id < ID_TH_LAST) then
+      begin
+        Result := ValTHField(Fi.s, Cur_Thing, Fi.id);
 
-    Result := ValTHField(Fi.s, Cur_Thing, Fi.id);
+        if not Result then
+          exit;
+        thsl := JedMain.thsel;
+        for i := 0 to thsl.count - 1 do
+        begin
+          ValTHField(Fi.s, Level.Things[thsl.GetTH(i)], Fi.id);
+        end;
+      end
+    else { thing value }
+      begin
+        { Find which number of the value it is. i.e. - for multiple values
+          with the same name, like "frame" }
+        fname := Cur_Thing.Vals[Fi.id - ID_TH_LAST].name;
+        n := 0;
+        for i := Fi.id - ID_TH_LAST - 1 downto 0 do
+        begin
+          if CompareText(Cur_Thing.Vals[i].name, fname) = 0 then
+            inc(n);
+        end;
 
-    if not Result then
-      exit;
-    thsl := JedMain.thsel;
-    for i := 0 to thsl.count - 1 do
-    begin
-      ValTHField(Fi.s, Level.Things[thsl.GetTH(i)], Fi.id);
-    end;
+        Result := ValTHValue(Fi.s, Cur_Thing, fname, n);
+        if not Result then
+          exit;
 
-  end
-  else { thing value }
-  begin
-    { Find which number of the value it is. i.e. - for multiple values
-      with the same name, like "frame" }
-    fname := Cur_Thing.Vals[Fi.id - ID_TH_LAST].name;
-    n := 0;
-    for i := Fi.id - ID_TH_LAST - 1 downto 0 do
-    begin
-      if CompareText(Cur_Thing.Vals[i].name, fname) = 0 then
-        inc(n);
-    end;
-
-    Result := ValTHValue(Fi.s, Cur_Thing, fname, n);
-    if not Result then
-      exit;
-
-    thsl := JedMain.thsel;
-    for i := 0 to thsl.count - 1 do
-    begin
-      ValTHValue(Fi.s, Level.Things[thsl.GetTH(i)], fname, n);
-    end;
+        thsl := JedMain.thsel;
+        for i := 0 to thsl.count - 1 do
+        begin
+          ValTHValue(Fi.s, Level.Things[thsl.GetTH(i)], fname, n);
+        end;
+      end;
+  finally
+    EndUpdate;
   end;
 
 end;
@@ -1099,7 +1127,7 @@ begin
     ThingChange(Fi);
 end;
 
-Function ValFRField(const s: string; Cur_Frame: TTPlValue; id: integer)
+Function ValFRField(const s: string; Cur_Thing: TJKThing; Cur_Frame: TTPlValue; id: integer)
   : boolean;
 var
   i: integer;
@@ -1110,6 +1138,8 @@ begin
   Result := false;
   if Cur_Frame = nil then
     exit;
+
+  SaveThingUndo(Cur_Thing, ch_changed);
   Cur_Frame.GetFrame(x, y, z, pch, yaw, rol);
   case id of
     ID_X:
@@ -1146,6 +1176,7 @@ begin
     exit;
   end;
   Cur_Frame.SetFrame(x, y, z, pch, yaw, rol);
+  JedMain.ThingChanged(Cur_Thing);
   JedMain.Invalidate;
   Result := true;
 end;
@@ -1156,16 +1187,24 @@ var
   frsl: TFRMultiSel;
   fr, th: integer;
 begin
-  Result := ValFRField(Fi.s, Cur_Frame, Fi.id);
-  if not Result then
-    exit;
-  frsl := JedMain.frsel;
-  for i := 0 to frsl.count - 1 do
-  begin
-    frsl.GetTHFR(i, th, fr);
-    if fr = -1 then
-      continue;
-    ValFRField(Fi.s, Level.Things[th].Vals[fr], Fi.id);
+  try
+    BeginUpdate;
+    StartUndoRec('Change Frame(s)');
+
+    Result := ValFRField(Fi.s, Cur_Thing, Cur_Frame, Fi.id);
+    if not Result then
+      exit;
+
+    frsl := JedMain.frsel;
+    for i := 0 to frsl.count - 1 do
+    begin
+      frsl.GetTHFR(i, th, fr);
+      if fr = -1 then
+        continue;
+      ValFRField(Fi.s, Level.Things[th], Level.Things[th].Vals[fr], Fi.id);
+    end;
+  finally
+    EndUpdate;
   end;
 end;
 
@@ -1173,6 +1212,9 @@ Procedure TItemEdit.LoadVertex(vx: TJKVertex);
 var
   i: integer;
 begin
+  if bUpdating then
+    exit;
+
   Caption := Format('Sector %d vertex %d', [vx.Sector.Num, vx.Num]);
   ResetEdit;
 
@@ -1209,6 +1251,9 @@ Procedure TItemEdit.LoadExtra(ex: integer);
 var
   o: TObject;
 begin
+  if bUpdating then
+    exit;
+
   Caption := Format(JedMain.ExtraObjsName + ' %d', [ex]);
   ResetEdit;
 
@@ -1277,15 +1322,21 @@ var
   obj: TObject;
   ex: TExtraVertex;
 begin
-  Result := false;
-  obj := JedMain.ExtraObjs[JedMain.Cur_EX];
-  if not(obj is TExtraVertex) then
-    exit;
-  ex := TExtraVertex(obj);
-  Result := ValExtraVertex(Fi.s, ex, Fi.id);
-  if Result then
-    if Assigned(JedMain.OnExtraMove) then
-      JedMain.OnExtraMove(ex, false);
+  try
+    BeginUpdate;
+    Result := false;
+    obj := JedMain.ExtraObjs[JedMain.Cur_EX];
+    if not(obj is TExtraVertex) then
+      exit;
+
+    ex := TExtraVertex(obj);
+    Result := ValExtraVertex(Fi.s, ex, Fi.id);
+    if Result then
+      if Assigned(JedMain.OnExtraMove) then
+        JedMain.OnExtraMove(ex, false);
+  finally
+    EndUpdate;
+  end;
 end;
 
 Function ValVertField(const s: string; Cur_VX: TJKVertex; id: integer): boolean;
@@ -1371,21 +1422,29 @@ var
 begin
   { JedMain.SaveSelVertUndo('Change vertices',ch_changed); }
 
-  StartUndoRec('Change Vertex');
+  try
+    BeginUpdate;
+    StartUndoRec('Change Vertex');
 
-  Result := ValVertField(Fi.s, Cur_VX, Fi.id);
-  if not Result then
-    exit;
-  vxsl := JedMain.vxsel;
-  for i := 0 to vxsl.count - 1 do
-  begin
-    vxsl.GetSCVX(i, sc, vx);
-    ValVertField(Fi.s, Level.Sectors[sc].vertices[vx], Fi.id);
+    Result := ValVertField(Fi.s, Cur_VX, Fi.id);
+    if not Result then
+      exit;
+    vxsl := JedMain.vxsel;
+    for i := 0 to vxsl.count - 1 do
+    begin
+      vxsl.GetSCVX(i, sc, vx);
+      ValVertField(Fi.s, Level.Sectors[sc].vertices[vx], Fi.id);
+    end;
+  finally
+    EndUpdate;
   end;
 end;
 
 Procedure TItemEdit.LoadLight(nLight: integer);
 begin
+  if bUpdating then
+    exit;
+
   Caption := Format('Light %d', [nLight]);
   ResetEdit;
   SetNameColWidth(100);
@@ -1432,26 +1491,38 @@ var
   r, g, b: single;
   c: TColorF;
   fl: longint;
+  changed: Boolean;
 begin
   if Cur_Light = nil then
     exit;
+
+  changed := False;
   With Cur_Light do
     case Fi.id of
       ID_LAYER:
-        Fi.s := ResPicker.PickLayer(Fi.s);
+        begin
+          var nl := ResPicker.PickLayer(Fi.s);
+          changed := nl <> Fi.s;
+          Fi.s := nl;
+        end;
       ID_LT_FLAGS:
         begin
           ValHex(Fi.s, fl);
-          fl := FlagEdit.EditLightFlags(fl);
-          Fi.s := Format('0x%x', [fl]);
+          var nfl := FlagEdit.EditLightFlags(fl);
+          changed := nfl <> fl;
+          Fi.s := Format('0x%x', [nfl]);
         end;
       ID_LT_COLOR:
         begin
           ValColor(Fi.s, c);
-          c := DoPickColor(c);
-          Fi.s := ColorToStr(c, (*withAlpha=*)false);
+          var nc := DoPickColor(c);
+          changed := nc <> c;
+          Fi.s := ColorToStr(nc, (*withAlpha=*)false);
         end;
     end;
+
+  if changed then
+    LightChange(Fi);
 end;
 
 Function ValLTField(const s: string; Cur_Light: TSedLight; id: integer)
@@ -1516,7 +1587,7 @@ begin
         end;
     end;
   Result := true;
-  JedMain.LevelChanged;
+  JedMain.LightChanged(Cur_Light);
 end;
 
 Function TItemEdit.LightChange(Fi: TFieldInfo): boolean;
@@ -1525,20 +1596,22 @@ var
   ltsl: TLTMultiSel;
   lt: TSedLight;
 begin
+  try
+     BeginUpdate;
+     StartUndoRec('Change Light(s)');
 
-  { JedMain.SaveSelLightsUndo('Change light(s)',ch_changed); }
+    Result := ValLTField(Fi.s, Cur_Light, Fi.id);
+    if not Result then
+      exit;
 
-  StartUndoRec('Change Light(s)');
-
-  Result := ValLTField(Fi.s, Cur_Light, Fi.id);
-
-  if not Result then
-    exit;
-  ltsl := JedMain.ltsel;
-  for i := 0 to ltsl.count - 1 do
-  begin
-    lt := Level.Lights[ltsl.GetLT(i)];
-    ValLTField(Fi.s, lt, Fi.id);
+    ltsl := JedMain.ltsel;
+    for i := 0 to ltsl.count - 1 do
+    begin
+      lt := Level.Lights[ltsl.GetLT(i)];
+      ValLTField(Fi.s, lt, Fi.id);
+    end;
+  finally
+    EndUpdate;
   end;
 end;
 
@@ -1570,6 +1643,17 @@ end;
 procedure TItemEdit.SetNameColWidth(width, dpi: Integer);
 begin
   fe.NameColWidth := DpiScale(width, dpi);
+end;
+
+procedure TItemEdit.BeginUpdate;
+begin
+   bUpdating := true;
+end;
+
+procedure TItemEdit.EndUpdate;
+begin
+  JedMain.Update; // force window update so in case cur object was changed it's editor load function will catche bEditorChange = true
+  bUpdating := false;
 end;
 
 procedure TItemEdit.BNAddClick(Sender: TObject);
@@ -1724,7 +1808,7 @@ begin
           exit;
         Cur_Frame.GetFrame(tx, ty, tz, tpch, tyaw, trol);
       end;
-    MM_LT: // handle light set light to sector light (IJIM)
+    MM_LT: // handle set light to sector light (IJIM)
       begin
           StartUndoRec('Set Light to Sector(s)');
           var scsl := JedMain.scsel;
@@ -1807,7 +1891,7 @@ begin
         Cur_Frame.GetFrame(tx, ty, tz, tpch, tyaw, trol);
         SScanf(s, '%f %f %f %f %f %f', [@tx, @ty, @tz, @tpch, @tyaw, @trol]);
         Cur_Frame.SetFrame(tx, ty, tz, tpch, tyaw, trol);
-        JedMain.LevelChanged;
+        JedMain.ThingChanged(Cur_Thing);
       end;
     else
       exit;
@@ -1839,6 +1923,9 @@ Procedure TItemEdit.LoadEdge(surf: TJKSurface; edge: integer);
 var
   v1, v2: TJKVertex;
 begin
+  if bUpdating then
+    exit;
+
   Caption := Format('Sec %d Surf %d Edge %d',
     [surf.Sector.Num, surf.Num, edge]);
   ResetEdit;

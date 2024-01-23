@@ -497,6 +497,7 @@ type
         Procedure ThingChanged(th: TJKThing);
         Procedure ThingAdded(th: TJKThing);
         Procedure ThingDeleted(th: TJKThing);
+        Procedure LightChanged(lt: TSedLight);
 
         Procedure RotateObject(angle: double; axis: Integer);
         Procedure ScaleObject(sfactor: double; how: Integer);
@@ -4013,7 +4014,6 @@ begin
           if axis <> -1 then
             begin
                 RotateObject(angle, axis);
-                //Invalidate;
             end;
       end;
     end
@@ -6451,6 +6451,10 @@ end;
 Procedure TJedMain.SectorChanged(s: TJKSector);
 begin
     Preview3D.UpdateSector(s);
+    if ((Map_mode = MM_SC) or (Map_mode = MM_SF) or (Map_mode = MM_ED) or (Map_mode = MM_VX))
+      and (s.num = Cur_SC) then
+      UpdateItemEditor;
+
     LevelChanged;
 end;
 
@@ -6470,6 +6474,8 @@ Procedure TJedMain.ThingChanged(th: TJKThing);
 begin
     UpdateThingData(th);
     Preview3D.UpdateThing(th);
+    if ((Map_mode = MM_TH) or (Map_mode = MM_FR)) and (th.num = Cur_TH) then
+      UpdateItemEditor;
     LevelChanged;
 end;
 
@@ -6483,6 +6489,13 @@ end;
 Procedure TJedMain.ThingDeleted(th: TJKThing);
 begin
     Preview3D.DeleteThing(th);
+    LevelChanged;
+end;
+
+Procedure TJedMain.LightChanged(lt: TSedLight);
+begin
+    if (Map_mode = MM_LT) and (lt = Level.Lights[Cur_LT]) then
+      UpdateItemEditor;
     LevelChanged;
 end;
 
@@ -7337,7 +7350,8 @@ end;
 
 Procedure TJedMain.UpdateItemEditor;
 begin
-    updatestuff := true;
+    if ItemEdit.Visible then
+      updatestuff := true;
 end;
 
 Procedure TJedMain.LevelChanged;
@@ -9217,7 +9231,7 @@ begin
     light.position.x := x;
     light.position.y := y;
     light.position.z := z;
-    LevelChanged;
+    LightChanged(light);
 end;
 
 Procedure TJedMain.AddThingAtSurf;

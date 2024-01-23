@@ -439,6 +439,7 @@ ISEDLevel = class
   Procedure LightDelete(lt: Integer);virtual;stdcall;abstract;
   Procedure LightGet(lt: Integer; var rec: TSEDLightRec; flags: Integer); virtual;stdcall;abstract;
   Procedure LightSet(lt: Integer; const rec: TSEDLightRec; flags: Integer); virtual;stdcall;abstract;
+  Procedure LightUpdate(lt:integer); virtual;stdcall;abstract;
 
   {Layers}
   Function NumLayers: Integer; virtual;stdcall;abstract;
