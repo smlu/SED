@@ -29,7 +29,7 @@ const
   FF_SF_FLIP             = 1 shl 31;  // SED flag
 
 type
-  TGeoMode   = (NotDrawn, Vertex, Wireframe, Solid, Texture);
+  TGeoMode   = (NotDrawn = 0, Vertex = 1, Wireframe = 2, Solid = 3, Texture = 4);
   TLightMode = (None = 0, Lit = 1, Diffuse = 2, Gouraud = 3, Gouraud2 = 4, Gouraud3 = 5, VertexDiffuseOnly = -1); // VertexDiffuseOnly - is internal type, to not be used in the game
 
   TVector2d = record
