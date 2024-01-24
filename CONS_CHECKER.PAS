@@ -248,7 +248,8 @@ var
   boxes: ^TBoxes;
 
 begin { Check }
-  { if Not Visible then } Show;
+
+  var cursel  := Errors.ItemIndex;
   ClearErrors;
 
   var maxSurfVerts := df_MaxSurfVerts;
@@ -284,6 +285,8 @@ begin { Check }
         AddWarning('Incorrect face flags on solid surface', surf);
       if ((surf.SurfFlags and SF_Floor) <> 0) and ((surf.SurfFlags and SF_Collision) = 0)  then
         AddWarning('Missing collision flag on floor surface', surf);
+      if (surf.adjoin = nil) and (surf.geo <> Integer(Texture)) then
+        AddWarning('Incorrect geometry mode on solid surface', surf);
       if surf.vertices.Count > maxSurfVerts then
         AddWarning(Format('More than %d vertices in a surface', [maxSurfVerts]), surf);
       if surf.vertices.Count < 3 then
@@ -432,10 +435,18 @@ begin { Check }
   end;
 
   LBLTotalCnt.Caption := IntToStr(NErrors);
-  if Errors.ItemIndex <= 0 then
-    Errors.ItemIndex := 0
-  else
-    Errors.OnClick(nil);
+  if cursel > 0  then
+    begin
+      if cursel < NErrors then
+        Errors.ItemIndex := cursel
+      else
+         Errors.ItemIndex := NErrors - 1;
+    end
+  else if Errors.ItemIndex <= 0 then
+    Errors.ItemIndex := 0;
+
+  // Show window
+  Show;
 end;
 
 procedure TConsistency.BNCheckClick(Sender: TObject);
