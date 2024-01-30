@@ -97,11 +97,15 @@ Function IsPointOnSurface(surf: TJKSurface; x, y, z: double): boolean;
 Function IsPointWithInLine(x, y, z, x1, y1, z1, x2, y2, z2: double): boolean;
 { Function SurfLineXn(surf:TJKSurface;x1,y1,z1,x2,y2,z2:double):integer; }
 
+
 Function IsInSector(sec: TJKSector; x, y, z: double): boolean;
 Function DoSectorsOverlap(sec1, sec2: TJKSector): boolean;
 
 Function FindSectorForThing(thing: TJKThing): integer;
 Function FindSectorForXYZ(lev: TJKLevel; x, y, z: double): integer;
+Function GetPreviousSector(const lev: TJKLevel; n: integer): integer; // Returns index of the previous visible sector (visible layer) or -1
+Function GetPreviousThing(const lev: TJKLevel; n: integer): integer;  // Returns index of the previous visible thing (visible layer)  or -1
+
 { Level modifications }
 Procedure TranslateSectors(lev: TJKLevel; scsel: TSCMultiSel; cursc: integer;
   dx, dy, dz: double);
@@ -2897,6 +2901,44 @@ begin
     end;
 end;
 
+Function GetPreviousSector(const lev: TJKLevel; n: integer): integer;
+begin
+  Result := -1;
+  if Level.Sectors.Count = 0 then
+    exit;
+
+  n := Clampi(n, 0,  Level.Sectors.Count - 1);
+  var cur := n;
+  repeat
+      if (cur < 1) then
+          cur := Level.Sectors.Count - 1
+      else
+          dec(cur);
+      if cur = n then
+          exit;
+  until ToolBar.IsLayerVisible(Level.Sectors[cur].Layer);
+  Result := cur;
+end;
+
+Function GetPreviousThing(const lev: TJKLevel; n: integer): integer;
+begin
+  Result := -1;
+  if Level.Things.Count = 0 then
+    exit;
+
+  n := Clampi(n, 0,  Level.Things.Count - 1);
+  var cur := n;
+  repeat
+      if (cur < 1) then
+          cur := Level.Things.Count - 1
+      else
+          dec(cur);
+      if cur = n then
+          exit;
+  until ToolBar.IsLayerVisible(Level.Things[cur].Layer);
+  Result := cur;
+end;
+
 Const
   MaxLight = 10;
 
@@ -3107,11 +3149,19 @@ begin
   sec := lev.sectors[n];
   SaveSecUndo(sec, ch_deleted, sc_both);
 
-  lev.sectors.Delete(n);
+  if JedMain.Cur_SC = n then
+    JedMain.SetCurSC(Max(0, GetPreviousSector(lev, n)));
+
+
   RemoveSecRefs(lev, sec, rs_surfs);
   JedMain.SectorDeleted(sec);
-  sec.free;
+  sec.Free;
+
+  sec := lev.sectors[JedMain.Cur_SC];
+  lev.sectors.Delete(n);
+
   lev.RenumSecs;
+  JedMain.SetCurSC(sec.num);
 end;
 
 Procedure DeleteSurface(lev: TJKLevel; sc, sf: integer);
@@ -3123,6 +3173,8 @@ begin
   surf := sec.surfaces[sf];
   RemoveSurfRefs(lev, surf);
   sec.surfaces.Delete(sf);
+  surf.Free;
+
   sec.Renumber;
   JedMain.SectorChanged(sec);
 end;
@@ -3145,11 +3197,18 @@ begin
           if (Cog_Type = ct_thg) and (obj = th) then
             obj := nil;
         end;
-  JedMain.ThingDeleted(th);
 
+  if JedMain.Cur_TH = n then
+    JedMain.SetCurTH(Max(0, GetPreviousThing(lev, n)));
+
+  JedMain.ThingDeleted(th);
   th.free;
+
+  th := lev.things[JedMain.Cur_SC];
   lev.Things.Delete(n);
+
   lev.RenumThings;
+  JedMain.SetCurTH(th.num);
 end;
 
 Function DeleteVertex(sec: TJKSector; vx: integer; silent: boolean): boolean;

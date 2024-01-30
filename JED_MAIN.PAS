@@ -5295,17 +5295,10 @@ begin
     case Map_mode of
         MM_SC:
             begin
-                fi := Cur_SC;
-                n := fi;
-                repeat
-                    if n < 1 then
-                        n := Level.Sectors.Count - 1
-                    else
-                        dec(n);
-                    if n = fi then
-                        exit;
-                until ToolBar.IsLayerVisible(Level.Sectors[n].Layer);
-                SetCurSC(n);
+              n := GetPreviousSector(Level, Cur_SC);
+              if n < 0 then
+                exit;
+              SetCurSC(n);
             end;
         MM_SF:
             SetCurSF(Cur_SC, Cur_SF - 1);
@@ -5315,16 +5308,9 @@ begin
             SetCurED(Cur_SC, Cur_SF, Cur_ED - 1);
         MM_TH:
             begin
-                fi := Cur_TH;
-                n := fi;
-                repeat
-                    if n < 1 then
-                        n := Level.Things.Count - 1
-                    else
-                        dec(n);
-                    if n = fi then
-                        exit;
-                until ToolBar.IsLayerVisible(Level.Things[n].Layer);
+                n := GetPreviousThing(Level, Cur_TH);
+                if n < 0 then
+                  exit;
                 SetCurTH(n);
             end;
         MM_FR:
