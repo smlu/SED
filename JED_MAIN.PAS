@@ -517,7 +517,7 @@ type
         Procedure AddRecent(const s: string);
         Procedure LevelChanged;
         Procedure UpdateItemEditor;
-        Function askSave: boolean;
+        Function AskSave: boolean;
         Procedure SetThingView(how: Integer);
         Procedure SetMSelMode(mode: Integer);
         Procedure UpdateThingData(th: TJKThing);
@@ -1137,8 +1137,8 @@ begin
                 renderer.DrawPolygons(sec.surfaces);
         end;
 
-        if not MapGeoBackfaceCull then
-          begin
+       if not MapGeoBackfaceCull then
+        begin
           With clMapGeo do
               renderer.SetColor(CL_Front, r, g, b);
           renderer.SetCulling(r_CULLFRONT);
@@ -1157,7 +1157,6 @@ begin
         begin
             With clThing do
                 renderer.SetColor(CL_Front, r, g, b);
-
             for th := 0 to Level.Things.Count - 1 do
             begin
                 thing := Level.Things[th];
@@ -1549,7 +1548,7 @@ begin
     if MWMaxed then
         WindowState := wsMaximized;
 
-    EnableMapGeoBackfaceCull(true);
+    EnableMapGeoBackfaceCull(false);
     tcube := TPolygons.Create;
     tcube.VXList := Tvertices.Create;
     for i := 1 to 8 do
@@ -4165,7 +4164,7 @@ begin
 //                end;
                 surf.Recalc;
                 FindUVScales(surf);
-                if CompareValue(surf.normal.z, 0.6, CloseEnough) = GreaterThanValue then // If less LE 40°
+                if CompareValue(surf.normal.z, 0.6, CloseEnough) = GreaterThanValue then // If less LE 40ï¿½
                   surf.SurfFlags := surf.SurfFlags or SF_Floor;
             end;
         end;
@@ -8102,15 +8101,15 @@ begin
           renderer := nil;
       end;
     try
-        EnableMapGeoBackfaceCull(True);
-        SetMapGeoBackfaceCulling.Visible := True;
+        EnableMapGeoBackfaceCull(false);
+        SetMapGeoBackfaceCulling.Visible := false;
         case wireframeAPI of
             WF_Software:
                 renderer := TSFTRenderer.Create(Self.Handle);
             WF_OpenGL:
               begin
                 renderer := TOGLRenderer.Create(Self.Handle);
-                SetMapGeoBackfaceCulling.Visible := False; // backface culling doesn't work at the moment
+//                SetMapGeoBackfaceCulling.Visible := False; // backface culling doesn't work at the moment
               end
         else
             renderer := TSFTRenderer.Create(Self.Handle);

@@ -80,6 +80,7 @@ Type
     Procedure RenderPoly(p: TPolygon);
     Procedure RenderLine(v1, v2: TVertex);
     Function CreateOGLPalette(const pd: TPIXELFORMATDESCRIPTOR): Integer;
+    Function CanRenderWirePolygon(p: TPolygon): boolean;
   end;
 
 implementation
@@ -345,6 +346,23 @@ begin
     RenderPoly(p); }
 end;
 
+Function TOGLRenderer.CanRenderWirePolygon(p: TPolygon): Boolean;
+  var m: integer;
+begin
+  Result := BitMaskTest(p.FaceFlags, FF_DoubleSided);
+  if not Result and glIsEnabled(GL_CULL_FACE) then
+  begin
+    // Note this method works ok only for convex polygons
+    glGetIntegerv(GL_CULL_FACE_MODE, @m);
+    var dot := SMult(gnormal.x, gnormal.y, gnormal.z, p.normal.x, p.normal.y, p.normal.z);
+    if (m = GL_FRONT) and (dot > 0) then
+      exit
+    else if (m = GL_BACK) and (dot <= 0) then
+      exit;
+  end;
+  Result := true;
+end;
+
 Procedure TOGLRenderer.DrawPolygonsAt(ps: TPolygons;
   dx, dy, dz, pch, yaw, rol: double);
 var
@@ -352,11 +370,14 @@ var
   mx: TMat3x3;
   ax, ay, az: double;
 begin
+
   { With front_clr do glColor3ub(r,g,b);
     glDisable(GL_CULL_FACE); }
   CreateRotMatrix(mx, pch, yaw, rol);
   try
     for i := 0 to ps.count - 1 do
+    begin
+      if not CanRenderWirePolygon(ps[i]) then continue;
       with ps[i] do
       begin
         n := vertices.count;
@@ -380,7 +401,7 @@ begin
           end;
         glEnd;
       end;
-
+    end;
   finally
     { glEnable(GL_CULL_FACE); }
   end;
@@ -406,10 +427,12 @@ end;
 
 Procedure TOGLRenderer.RenderPoly(p: TPolygon);
 var
-  i, n: Integer;
+  i, n, m: Integer;
 begin
-  n := p.vertices.count;
+  if not CanRenderWirePolygon(p) then
+    exit;
 
+  n := p.vertices.count;
 //  case n of
 //    3:
 //      glBegin(GL_triangles);

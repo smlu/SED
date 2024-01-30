@@ -1019,6 +1019,7 @@ var
  glGetIntegerv:Procedure (pname: GLenum; params: PGLint);stdcall;
  glHint:Procedure (target: GLenum; mode: GLenum);stdcall;
  glInitNames: Procedure;stdcall;
+ glIsEnabled: Function(	cap: GLenum): GLboolean;stdcall;
  glLineWidth: Procedure (width: GLfloat);stdcall;
  glLoadIdentity: Procedure; stdcall;
  glLoadName:Procedure (name: GLuint);stdcall;
@@ -1157,6 +1158,7 @@ begin
  glHint:=LoadGLProc('glHint');
  glInitNames:=LoadGLProc('glInitNames');
  glLineWidth:=LoadGLProc('glLineWidth');
+ glIsEnabled:=LoadGLProc('glIsEnabled');
  glLoadIdentity:=LoadGLProc('glLoadIdentity');
  glLoadName:=LoadGLProc('glLoadName');
  glMatrixMode:=LoadGLProc('glMatrixMode');
