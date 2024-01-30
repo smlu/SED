@@ -4181,7 +4181,7 @@ begin
 //                end;
                 surf.Recalc;
                 FindUVScales(surf);
-                if CompareValue(surf.normal.z, 0.6, CloseEnough) = GreaterThanValue then // If less LE 40ï¿½
+                if CompareValue(surf.normal.z, 0.6, CloseEnough) = GreaterThanValue then // If less LE 40°
                   surf.SurfFlags := surf.SurfFlags or SF_Floor;
             end;
         end;
@@ -5035,9 +5035,11 @@ Procedure TJedMain.AddSectorAt;
 var
     tx, ty, tz: double;
     en: TVector;
+    nx, ny, nz: Tvector;
 begin
     If not GetXYZAt(X, Y, tx, ty, tz) then
         exit;
+
     en := renderer.gxnormal;
     en.dx := en.dx * 2;
     en.dy := en.dy * 2;
@@ -5059,6 +5061,7 @@ var
     i, j, fnew: Integer;
     sec, newsc: TJKSector;
     surf: TJKSurface;
+    nx, ny, nz: Tvector;
 begin
     If not GetXYZAt(X, Y, dx, dy, dz) then
         exit;
@@ -5072,19 +5075,19 @@ begin
     end;
 
     scsel.AddSC(Cur_SC);
-
     fnew := Level.Sectors.Count;
 
     StartUndoRec('Copy Sector(s)');
 
+    nx.SetCoords(1, 0, 0);
+    ny.SetCoords(0, 1, 0);
+    nz.SetCoords(0, 0, 1);
     for i := 0 to scsel.Count - 1 do
     begin
         sec := Level.Sectors[scsel.GetSC(i)];
         newsc := Level.NewSector;
         With renderer, sec.vertices[0] do
-            DuplicateSector(sec, newsc, X, Y, z, gxnormal, gynormal, gnormal,
-            //DuplicateSector(sec, newsc, X, Y, z, xv, yv, zv,   // <-- fixes new sector shape but is randomly rotated
-              dx, dy, dz);
+            DuplicateSector(sec, newsc, X, Y, z, nx, ny, nz, dx, dy, dz);
         Level.Sectors.Add(newsc);
         SaveSecUndo(newsc, ch_added, sc_both);
     end;
