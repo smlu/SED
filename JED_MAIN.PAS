@@ -490,6 +490,7 @@ type
         Procedure ShiftTexture(how: Integer);
         Procedure RotateTexture(how: Integer);
         Procedure ScaleTexture(how: Integer);
+
         { Notification procedures }
         Procedure SectorChanged(s: TJKSector);
         Procedure SectorAdded(s: TJKSector);
@@ -546,8 +547,7 @@ type
         Procedure AddThingAtSurf;
         Procedure ClearExtraObjs;
         Function AddExtraVertex(X, Y, z: double; const name: string): Integer;
-        Function AddExtraLine(x1, y1, z1, x2, y2, z2: double;
-          const name: string): Integer;
+        Function AddExtraLine(x1, y1, z1, x2, y2, z2: double; const name: string): Integer;
         Function TranslateExtras(Cur_EX: Integer; dx, dy, dz: double): Integer;
         Procedure DeleteExtraObj(n: Integer);
         Procedure AddThingAtXYZPYR(X, Y, z, pch, yaw, rol: double);
@@ -2189,9 +2189,9 @@ begin
                         end;
                 end;
             Ord('C'):
+                { Cleave by grid plane }
                 With renderer do
                     CleaveBy(gnormal, GridX, GridY, GridZ);
-            { Cleave by grid plane }
             Ord('I'):
                 if Map_mode = MM_SF then
                 begin
@@ -2205,9 +2205,10 @@ begin
               VK_DOWN: With Renderer do PCH:=PCH-10;
               VK_NEXT: With Renderer do ROL:=ROL+10;
               VK_PRIOR: With Renderer do ROL:=ROL-10; }
-            { VK_INSERT: Case map_mode of
-              MM_SC: if GetMousePos(X,Y) then AddSectorAt(X,Y);
-              end; }
+             VK_INSERT:
+              Case map_mode of
+                MM_SC: if GetMousePos(X,Y) then AddSectorAt(X,Y);
+              end;
             VK_HOME:
                 begin
                     StraightenTexture(false, false);
@@ -2691,9 +2692,12 @@ begin
                                 exit;
 
                             StartUndoRec('Delete Sector(s)');
-
                             for i := scsel.Count - 1 downto 0 do
-                                DeleteSector(Level, scsel.GetSC(i));
+                              begin
+                                var secn := scsel.GetSC(i);
+                                if ToolBar.IsLayerVisible(Level.Sectors[secn].Layer) then
+                                  DeleteSector(Level, secn);
+                              end;
                             { updated in procedure }
                             scsel.Clear;
                         end;
@@ -2703,12 +2707,18 @@ begin
                             thsel.sort;
                             if thsel.Count >= Level.Things.Count then
                                 exit;
+
                             StartUndoRec('Delete Thing(s)');
                             for i := thsel.Count - 1 downto 0 do
-                            begin
-                                Free3DO(Level.Things[thsel.GetTH(i)].a3DO);
-                                DeleteThing(Level, thsel.GetTH(i));
-                            end;
+                              begin
+                                  nth := thsel.GetTH(i);
+                                  th := Level.Things[nth];
+                                  if ToolBar.IsLayerVisible(th.Layer) then
+                                    begin
+                                      Free3DO(th.a3DO);
+                                      DeleteThing(Level, nth);
+                                    end;
+                              end;
                             thsel.Clear;
                         end;
                     MM_FR:
@@ -2720,7 +2730,8 @@ begin
                             for i := frsel.Count - 1 downto 0 do
                             begin
                                 frsel.GetTHFR(i, nth, nfr);
-                                DeleteFrame(nth, nfr);
+                                if ToolBar.IsLayerVisible(Level.Things[nth].Layer) then
+                                  DeleteFrame(nth, nfr);
                             end;
                             frsel.Clear;
                         end;
@@ -2733,7 +2744,11 @@ begin
                             { SaveSelLightsUndo('Delete light(s)',ch_deleted); }
                             StartUndoRec('Delete Light(s)');
                             for i := ltsel.Count - 1 downto 0 do
-                                DeleteLight(Level, ltsel.getLT(i));
+                              begin
+                                var nlt := ltsel.getLT(i);
+                                if ToolBar.IsLayerVisible(Level.Lights[nlt].Layer) then
+                                  DeleteLight(Level, nlt);
+                              end;
                             ltsel.Clear;
                         end;
                     MM_VX:
@@ -2744,13 +2759,15 @@ begin
                                 StartUndoRec('Delete Vertex')
                             else
                                 StartUndoRec('Delete Vertices');
+
                             a := 0;
                             for i := vxsel.Count - 1 downto 0 do
                             begin
                                 vxsel.GetSCVX(i, X, Y);
-                                if DeleteVertex(Level.Sectors[X], Y,
-                                  vxsel.Count <> 1) then
-                                    Inc(a);
+                                if ToolBar.IsLayerVisible(Level.Sectors[X].Layer) then
+                                  if DeleteVertex(Level.Sectors[X], Y,
+                                    vxsel.Count <> 1) then
+                                      Inc(a);
                             end;
                             PanMessageFmt(mt_info, '%d vertices deleted', [a]);
                             vxsel.Clear;
@@ -3944,7 +3961,7 @@ begin
                 Do_StartCleave(X, Y, ssShift in Shift);
             MM_CreateSector:
                 DO_StartCreateSC(X, Y, ssShift in Shift);
-            mm_Ruler:
+            MM_Ruler:
                 Do_StartRuler(X, Y, ssShift in Shift);
         end;
       TMouseButton.mbRight: ;
@@ -7961,7 +7978,7 @@ end;
 Procedure TJedMain.CleaveBy(const norm: TVector; X, Y, z: double);
 var
     i: Integer;
-    nsc, nsf: Integer;
+    nsc, nsf, ned: Integer;
 begin
     case Map_mode of
         MM_SC:
@@ -7969,8 +7986,11 @@ begin
                 StartUndoRec('Cleave Sector(s)');
                 scsel.AddSC(Cur_SC);
                 for i := 0 to scsel.Count - 1 do
-                    { Cleaved:= }
-                    CleaveSector(Level.Sectors[scsel.GetSC(i)], norm, X, Y, z);
+                  begin
+                    var sec := Level.Sectors[scsel.GetSC(i)];
+                    if ToolBar.IsLayerVisible(sec.Layer) then
+                      CleaveSector(sec, norm, X, Y, z);
+                  end;
                 { updated in procedure }
                 scsel.Clear;
             end;
@@ -7979,20 +7999,26 @@ begin
                 StartUndoRec('Cleave Surface(s)');
                 sfsel.AddSF(Cur_SC, Cur_SF);
                 for i := 0 to sfsel.Count - 1 do
-                begin
-                    sfsel.GetSCSF(i, nsc, nsf);
-                    { Cleaved:= }
-                    CleaveSurface(Level.Sectors[nsc].surfaces[nsf],
-                      norm, X, Y, z);
-                end;
+                  begin
+                      sfsel.GetSCSF(i, nsc, nsf);
+                      var sec := Level.Sectors[nsc];
+                      if ToolBar.IsLayerVisible(sec.Layer) then
+                        CleaveSurface(sec.surfaces[nsf], norm, X, Y, z);
+                  end;
                 sfsel.Clear;
             end;
         MM_ED:
             begin
                 StartUndoRec('Cleave Edge');
-                { CLeaved:= }
-                CleaveEdge(Level.Sectors[Cur_SC].surfaces[Cur_SF], Cur_ED,
-                  norm, X, Y, z);
+                edsel.AddED(Cur_SC, Cur_SF, Cur_ED);
+                for i := 0 to edsel.Count - 1 do
+                  begin
+                    edsel.GetSCSFED(i, nsf, nsf, ned);
+                    var sec := Level.Sectors[nsc];
+                    if ToolBar.IsLayerVisible(sec.Layer) then
+                      CleaveEdge(sec.surfaces[nsf], ned, norm, X, Y, z);
+                  end;
+                edsel.Clear;
             end;
     end;
 
