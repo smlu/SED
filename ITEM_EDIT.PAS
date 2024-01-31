@@ -136,7 +136,7 @@ var
 implementation
 
 uses ResourcePicker, FlagEditor, Jed_Main, GlobalVars, U_Templates, U_tbar,
-  U_SCFEdit, U_CogForm;
+  U_SCFEdit, U_CogForm, lev_utils;
 
 {$R *.DFM}
 
@@ -545,7 +545,7 @@ begin
       exit;
     end;
 
-  if (sec < 0) or (sec >= Level.Sectors.count) then
+  if not CheckSectorIndex(level, sec) then
     exit;
 
   i := GetWord(s, i, w);
@@ -554,9 +554,7 @@ begin
   if not ValInt(w, surf) then
     exit;
 
-  if (surf < 0) or (surf >= Level.Sectors[sec].surfaces.count) then
-        exit;
-  Result := true;
+  Result := CheckSectorSurfaceIndex(level.sectors[sec], surf);
 end;
 
 Function ValSurfField(const s: string; surf: TJKSurface; id: integer): boolean;

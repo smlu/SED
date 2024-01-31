@@ -82,9 +82,7 @@ Procedure RotVecbyData(var vec: TVector; var rd: TVecRotData);
 Function IsSurfConvex(surf: TJKSurface): boolean;
 Function IsSurfPlanar(surf: TJKSurface): boolean;
 Function IsSectorConvex(sec: TJKSector): boolean;
-
 Function IsOnLine(x1, y1, z1, x2, y2, z2, x, y, z: double): boolean;
-
 Function DistToPlane(surf: TPolygon; x, y, z: double): double;
 
 { Do line and surface intersect }
@@ -103,8 +101,8 @@ Function DoSectorsOverlap(sec1, sec2: TJKSector): boolean;
 
 Function FindSectorForThing(thing: TJKThing): integer;
 Function FindSectorForXYZ(lev: TJKLevel; x, y, z: double): integer;
-Function GetPreviousSector(const lev: TJKLevel; n: integer): integer; // Returns index of the previous visible sector (visible layer) or -1
-Function GetPreviousThing(const lev: TJKLevel; n: integer): integer;  // Returns index of the previous visible thing (visible layer)  or -1
+Function GetPreviousSector(const lev: TJKLevel; n: integer): integer; // Returns index of the previous sector on the visible layer or -1
+Function GetPreviousThing(const lev: TJKLevel; n: integer): integer;  // Returns index of the previous thing on the visible layer or -1
 
 { Level modifications }
 Procedure TranslateSectors(lev: TJKLevel; scsel: TSCMultiSel; cursc: integer;
@@ -261,6 +259,20 @@ Procedure GetLevelPal(l: TJKLevel; var pal: TCMPPal);
 Procedure OffsetByNode(lev: TJKLevel; nnode: integer; var x, y, z: double);
 Procedure UnOffsetByNode(lev: TJKLevel; nnode: integer; var x, y, z: double);
 
+{index bound checking functions}
+Function CheckSectorIndex(lev: TJKLevel; sc: integer): boolean;
+Function CheckSectorSurfaceIndex(sec: TJKSector; sf: integer): boolean;
+Function CheckSectorVertexIndex(sec: TJKSector; vx: integer): boolean;
+Function CheckSurfaceIndex(lev: TJKLevel; sc, sf: integer): boolean;
+Function CheckSurfaceEdgeIndex(surf: TJKSurface; ed: integer): boolean;
+Function CheckEdgeIndex(lev: TJKLevel; sc, sf, ed: integer): boolean;
+Function CheckVertexIndex(lev: TJKLevel; sc, vx: integer): boolean;
+Function CheckTemplateIndex(lev: TJKLevel; tmpl: integer): boolean;
+Function CheckThingIndex(lev: TJKLevel; th: integer): boolean;
+Function CheckFrameIndex(lev: TJKLevel; th, fr: integer): boolean;
+Function CheckCogIndex(lev: TJKLevel; co: integer): boolean;
+Function CheckLightIndex(lev: TJKLevel; lt: integer): boolean;
+
 implementation
 
 uses Math, SysUtils, Jed_main, u_tbar, values, u_COGForm, Types, u_undo;
@@ -279,15 +291,15 @@ Procedure ApplyTXData(surf: TJKSurface; const txd: TXData); forward;
 Procedure GetLevelPal(l: TJKLevel; var pal: TCMPPal);
 begin
   pal := defcmppal;
-  if Level.MasterCMP = '' then
-    if Level.sectors.count < 1 then
+  if level.MasterCMP = '' then
+    if level.sectors.count < 1 then
       exit
     else
     begin
-      LoadCmpPal(Level.sectors[0].colormap, pal);
+      LoadCmpPal(level.sectors[0].colormap, pal);
       exit;
     end;
-  LoadCmpPal(Level.MasterCMP, pal);
+  LoadCmpPal(level.MasterCMP, pal);
 end;
 
 Function NextIdx(n, maxn: integer): integer;
@@ -3146,12 +3158,14 @@ Procedure DeleteSector(lev: TJKLevel; n: integer);
 var
   sec: TJKSector;
 begin
+  if not CheckSectorIndex(lev, n) then
+    exit;
+
   sec := lev.sectors[n];
   SaveSecUndo(sec, ch_deleted, sc_both);
 
   if JedMain.Cur_SC = n then
     JedMain.SetCurSC(Max(0, GetPreviousSector(lev, n)));
-
 
   RemoveSecRefs(lev, sec, rs_surfs);
   JedMain.SectorDeleted(sec);
@@ -3169,6 +3183,11 @@ var
   sec: TJKSector;
   surf: TJKSurface;
 begin
+  if not CheckSectorIndex(lev, sc) then
+    exit;
+  if not CheckSectorSurfaceIndex(lev.sectors[sc], sf) then
+    exit;
+
   sec := lev.sectors[sc];
   surf := sec.surfaces[sf];
   RemoveSurfRefs(lev, surf);
@@ -3185,8 +3204,10 @@ var
   p, i, j: integer;
   th: TJKThing;
 begin
-  th := lev.Things[n];
+    if not CheckThingIndex(lev, n) then
+    exit;
 
+  th := lev.things[n];
   SaveThingUndo(th, ch_deleted);
 
   For i := 0 to lev.cogs.count - 1 do
@@ -3218,6 +3239,9 @@ var
   ns, sf, iv: integer;
   ed1, ed2: integer;
 begin
+  if not CheckSectorVertexIndex(sec, vx) then
+    exit;
+
   sf1 := nil;
   sf2 := nil;
   result := false;
@@ -3285,8 +3309,11 @@ end;
 
 Procedure DeleteLight(lev: TJKLevel; n: integer);
 begin
-  SaveLightUndo(lev.Lights[n], ch_deleted);
-  lev.Lights[n].free;
+  if not CheckLightIndex(lev, n) then
+    exit;
+
+  var lt := lev.Lights[n];
+  SaveLightUndo(lt, ch_deleted);
   lev.Lights.Delete(n);
   JedMain.LevelChanged;
 end;
@@ -3296,6 +3323,9 @@ var
   i, j: integer;
   cg: TCOG;
 begin
+  if not CheckCogIndex(lev, n) then
+    exit;
+
   cg := lev.cogs[n];
   lev.cogs.Delete(n);
   cg.free;
@@ -6405,6 +6435,84 @@ begin { UnoffsetMeshes }
   end;
 
   branch.free;
+end;
+
+Function CheckSectorIndex(lev: TJKLevel; sc: integer): boolean;
+begin
+  Result := (sc >= 0) and (sc < lev.sectors.Count);
+end;
+
+Function CheckSectorSurfaceIndex(sec: TJKSector; sf: integer): boolean;
+begin
+  Result := (sf >= 0) and (sf < sec.surfaces.Count);
+end;
+
+Function CheckSectorVertexIndex(sec: TJKSector; vx: integer): boolean;
+begin
+  Result := (vx >= 0) and (vx < sec.vertices.Count);
+end;
+
+Function CheckSurfaceIndex(lev: TJKLevel; sc, sf: integer): boolean;
+begin
+  Result := (sf >= 0) and CheckSectorIndex(lev, sc);
+  if not Result then
+    exit;
+  Result := sf < lev.sectors[sc].surfaces.Count;
+end;
+
+Function CheckSurfaceEdgeIndex(surf: TJKSurface; ed: integer): boolean;
+begin
+  Result := (ed >= 0) and (ed < surf.vertices.Count);
+end;
+
+Function CheckEdgeIndex(lev: TJKLevel; sc, sf, ed: integer): boolean;
+begin
+  Result := (ed >= 0) and CheckSectorIndex(lev, sc);
+  if not Result then
+    exit;
+
+  var sec := lev.sectors[sc];
+  Result := CheckSectorSurfaceIndex(sec, sf);
+  if not Result then
+    exit;
+
+  Result := ed < sec.surfaces[sf].Vertices.Count;
+end;
+
+Function CheckVertexIndex(lev: TJKLevel; sc, vx: integer): boolean;
+begin
+  Result := (vx >= 0) and CheckSectorIndex(lev, sc);
+  if not Result then
+    exit;
+  Result := vx < lev.sectors[sc].vertices.Count;
+end;
+
+Function CheckTemplateIndex(lev: TJKLevel; tmpl: integer): boolean;
+begin
+  Result := (tmpl >= 0) and (tmpl < lev.templates.Count);
+end;
+
+Function CheckThingIndex(lev: TJKLevel; th: integer): boolean;
+begin
+  Result := (th >= 0) and (th < lev.things.Count);
+end;
+
+Function CheckFrameIndex(lev: TJKLevel; th, fr: integer): boolean;
+begin
+  Result := (fr >= -1) and CheckThingIndex(lev, th);
+  if not Result then
+    exit;
+  Result := fr < lev.things[th].vals.Count;
+end;
+
+Function CheckCogIndex(lev: TJKLevel; co: integer): boolean;
+begin
+  Result := (co >= 0) and (co < lev.cogs.Count);
+end;
+
+Function CheckLightIndex(lev: TJKLevel; lt: integer): boolean;
+begin
+  Result := (lt >= 0) and (lt < lev.lights.Count);
 end;
 
 end.

@@ -1112,9 +1112,9 @@ begin
             renderer.SetPointSize(4);
             With clVertex do
                 renderer.SetColor(CL_Front, r, g, b);
-            for s := 0 to Level.Sectors.Count - 1 do
+            for s := 0 to level.sectors.Count - 1 do
             begin
-                sec := Level.Sectors[s];
+                sec := level.sectors[s];
                 if ToolBar.IsLayerVisible(sec.Layer) then
                     renderer.DrawVertices(sec.vertices);
             end;
@@ -1130,9 +1130,9 @@ begin
           end;
 
         renderer.SetCulling(r_CULLBACK);
-        for s := 0 to Level.Sectors.Count - 1 do
+        for s := 0 to level.sectors.Count - 1 do
         begin
-            sec := Level.Sectors[s];
+            sec := level.sectors[s];
             if ToolBar.IsLayerVisible(sec.Layer) then
                 renderer.DrawPolygons(sec.surfaces);
         end;
@@ -1142,9 +1142,9 @@ begin
           With clMapGeo do
               renderer.SetColor(CL_Front, r, g, b);
           renderer.SetCulling(r_CULLFRONT);
-          for s := 0 to Level.Sectors.Count - 1 do
+          for s := 0 to level.sectors.Count - 1 do
           begin
-              sec := Level.Sectors[s];
+              sec := level.sectors[s];
               if ToolBar.IsLayerVisible(sec.Layer) then
                   renderer.DrawPolygons(sec.surfaces);
           end;
@@ -1157,9 +1157,9 @@ begin
         begin
             With clThing do
                 renderer.SetColor(CL_Front, r, g, b);
-            for th := 0 to Level.Things.Count - 1 do
+            for th := 0 to level.things.Count - 1 do
             begin
-                thing := Level.Things[th];
+                thing := level.things[th];
                 if ToolBar.IsLayerVisible(thing.Layer) then
                     DrawThing(thing);
             end;
@@ -1170,9 +1170,9 @@ begin
             With clLight do
                 renderer.SetColor(CL_Front, r, g, b);
 
-            For th := 0 to Level.Lights.Count - 1 do
+            For th := 0 to level.lights.Count - 1 do
             begin
-                light := Level.Lights[th];
+                light := level.lights[th];
                 if ToolBar.IsLayerVisible(light.Layer) then
                     With light do
                         renderer.DrawVertex(position.x, position.y, position.z);
@@ -1185,16 +1185,15 @@ begin
                 renderer.SetColor(CL_Front, r, g, b);
 
             renderer.SetPointSize(4);
-            for th := 0 to Level.Things.Count - 1 do
+            for th := 0 to level.things.Count - 1 do
             begin
-                thing := Level.Things[th];
+                thing := level.things[th];
                 if not ToolBar.IsLayerVisible(thing.Layer) then
                     continue;
                 With thing do
                     renderer.DrawVertex(X, Y, z);
                 for s := 0 to thing.Vals.Count - 1 do
                     DrawFrame(thing.Vals[s]);
-
             end;
         end;
 
@@ -1232,6 +1231,7 @@ begin
                     sec := Level.Sectors[scsel.GetSC(s)];
                     renderer.DrawPolygons(sec.surfaces);
                 end;
+
                 With clMSel do
                     renderer.SetColor(CL_Front, r, g, b);
                 renderer.SetCulling(r_CULLFRONT);
@@ -2217,16 +2217,16 @@ begin
             VK_DELETE:
                 if Map_mode = MM_SF then
                     DeleteSurface(Level, Cur_SC, Cur_SF);
-            188:
+            188: { < }
                 begin
                     ScaleTexture(st_down);
                     exit;
-                end; { < }
-            190:
+                end;
+            190: { > }
                 begin
                     ScaleTexture(st_up);
                     exit;
-                end; { > }
+                end;
 
         end;
 
@@ -2695,8 +2695,8 @@ begin
                             for i := scsel.Count - 1 downto 0 do
                               begin
                                 var secn := scsel.GetSC(i);
-                                if ToolBar.IsLayerVisible(Level.Sectors[secn].Layer) then
-                                  DeleteSector(Level, secn);
+                                if ToolBar.IsLayerVisible(level.sectors[secn].Layer) then
+                                  DeleteSector(level, secn);
                               end;
                             { updated in procedure }
                             scsel.Clear;
@@ -2712,11 +2712,11 @@ begin
                             for i := thsel.Count - 1 downto 0 do
                               begin
                                   nth := thsel.GetTH(i);
-                                  th := Level.Things[nth];
+                                  th := level.things[nth];
                                   if ToolBar.IsLayerVisible(th.Layer) then
                                     begin
                                       Free3DO(th.a3DO);
-                                      DeleteThing(Level, nth);
+                                      DeleteThing(level, nth);
                                     end;
                               end;
                             thsel.Clear;
@@ -2730,7 +2730,7 @@ begin
                             for i := frsel.Count - 1 downto 0 do
                             begin
                                 frsel.GetTHFR(i, nth, nfr);
-                                if ToolBar.IsLayerVisible(Level.Things[nth].Layer) then
+                                if ToolBar.IsLayerVisible(level.things[nth].Layer) then
                                   DeleteFrame(nth, nfr);
                             end;
                             frsel.Clear;
@@ -2746,8 +2746,8 @@ begin
                             for i := ltsel.Count - 1 downto 0 do
                               begin
                                 var nlt := ltsel.getLT(i);
-                                if ToolBar.IsLayerVisible(Level.Lights[nlt].Layer) then
-                                  DeleteLight(Level, nlt);
+                                if ToolBar.IsLayerVisible(level.lights[nlt].Layer) then
+                                  DeleteLight(level, nlt);
                               end;
                             ltsel.Clear;
                         end;
@@ -2764,8 +2764,8 @@ begin
                             for i := vxsel.Count - 1 downto 0 do
                             begin
                                 vxsel.GetSCVX(i, X, Y);
-                                if ToolBar.IsLayerVisible(Level.Sectors[X].Layer) then
-                                  if DeleteVertex(Level.Sectors[X], Y,
+                                if ToolBar.IsLayerVisible(level.sectors[X].Layer) then
+                                  if DeleteVertex(level.sectors[X], Y,
                                     vxsel.Count <> 1) then
                                       Inc(a);
                             end;
@@ -2847,25 +2847,25 @@ begin
         renderer.SetPointSize(4);
         Case Map_mode of
             MM_SC:
-                for s := 0 to Level.Sectors.Count - 1 do
+                for s := 0 to level.sectors.Count - 1 do
                 begin
-                    sec := Level.Sectors[s];
+                    sec := level.sectors[s];
                     if ToolBar.IsLayerVisible(sec.Layer) then
                         renderer.PickPolygons(sec.surfaces, s);
                 end;
             MM_SF:
-                for s := 0 to Level.Sectors.Count - 1 do
+                for s := 0 to level.sectors.Count - 1 do
                 begin
-                    sec := Level.Sectors[s];
+                    sec := level.sectors[s];
                     if ToolBar.IsLayerVisible(sec.Layer) then
                         for SF := 0 to sec.surfaces.Count - 1 do
                             renderer.PickPolygon(sec.surfaces[SF],
                               s + SF * 65536);
                 end;
             MM_ED:
-                for s := 0 to Level.Sectors.Count - 1 do
+                for s := 0 to level.sectors.Count - 1 do
                 begin
-                    sec := Level.Sectors[s];
+                    sec := level.sectors[s];
                     if ToolBar.IsLayerVisible(sec.Layer) then
                         for SF := 0 to sec.surfaces.Count - 1 do
                             With sec.surfaces[SF] do
@@ -2903,7 +2903,7 @@ begin
                         end;
                 end;
             MM_VX:
-                for s := 0 to Level.Sectors.Count - 1 do
+                for s := 0 to level.sectors.Count - 1 do
                 begin
                     sec := Level.Sectors[s];
                     if ToolBar.IsLayerVisible(sec.Layer) then
@@ -2914,9 +2914,9 @@ begin
                                       s + VX * 65536);
                 end;
             MM_LT:
-                for th := 0 to Level.Lights.Count - 1 do
+                for th := 0 to level.lights.Count - 1 do
                 begin
-                    light := Level.Lights[th];
+                    light := level.lights[th];
                     if ToolBar.IsLayerVisible(light.Layer) then
                         With light do
                             renderer.PickVertex(position.x, position.y, position.z, th);
@@ -3183,8 +3183,8 @@ begin
     case Map_mode of
         MM_SC:
             begin
-                for i := 0 to Level.Sectors.Count - 1 do
-                    With Level.Sectors[i] do
+                for i := 0 to level.sectors.count - 1 do
+                    With level.sectors[i] do
                         if ToolBar.IsLayerVisible(Layer) then
                         begin
                             allin := true;
@@ -3201,8 +3201,8 @@ begin
             end;
         MM_SF:
             begin
-                for i := 0 to Level.Sectors.Count - 1 do
-                    With Level.Sectors[i] do
+                for i := 0 to level.sectors.Count - 1 do
+                    With level.sectors[i] do
                         if ToolBar.IsLayerVisible(Layer) then
                             For SF := 0 to surfaces.Count - 1 do
                                 if renderer.IsPolygonInRect(surfaces[SF]) then
@@ -3211,8 +3211,8 @@ begin
             end;
         MM_ED:
             begin
-                for i := 0 to Level.Sectors.Count - 1 do
-                    With Level.Sectors[i] do
+                for i := 0 to level.sectors.Count - 1 do
+                    With level.sectors[i] do
                         if ToolBar.IsLayerVisible(Layer) then
                             For SF := 0 to surfaces.Count - 1 do
                                 With surfaces[SF] do
@@ -3223,8 +3223,8 @@ begin
             end;
         MM_VX:
             begin
-                for i := 0 to Level.Sectors.Count - 1 do
-                    With Level.Sectors[i] do
+                for i := 0 to level.sectors.Count - 1 do
+                    With level.sectors[i] do
                         if ToolBar.IsLayerVisible(Layer) then
                             for VX := 0 to vertices.Count - 1 do
                                 With vertices[VX] do
@@ -3233,16 +3233,16 @@ begin
             end;
         MM_TH:
             begin
-                for i := 0 to Level.Things.Count - 1 do
-                    With Level.Things[i] do
+                for i := 0 to level.things.Count - 1 do
+                    With level.things[i] do
                         if ToolBar.IsLayerVisible(Layer) then
                             if renderer.IsVertexInRect(X, Y, z) then
                                 DO_SelTH(i);
             end;
         MM_LT:
             begin
-                for i := 0 to Level.Lights.Count - 1 do
-                    With Level.Lights[i] do
+                for i := 0 to level.lights.Count - 1 do
+                    With level.lights[i] do
                         if ToolBar.IsLayerVisible(Layer) then
                             if renderer.IsVertexInRect(position.x, position.y, position.z) then
                                 DO_SelLT(i);
@@ -3326,10 +3326,10 @@ begin
     case Map_mode of
         MM_SC:
             begin
-                if (Cur_SC < 0) or (Cur_SC >= Level.Sectors.Count) then
+                sec := level.GetSectorN(Cur_SC);
+                if sec = nil then
                   exit;
 
-                sec := Level.Sectors[Cur_SC];
                 With sec.vertices[0] do
                 begin
                     rx := X;
@@ -3339,12 +3339,9 @@ begin
             end;
         MM_SF:
             begin
-                if (Cur_SC < 0) or (Cur_SC >= Level.Sectors.Count) then
+                surf := level.GetSectorSurfaceN(Cur_SC, Cur_SF);
+                if surf = nil then
                   exit;
-                if (Cur_SF < 0) or (Cur_SF >= Level.Sectors[Cur_SC].surfaces.Count) then
-                  exit;
-
-                surf := Level.Sectors[Cur_SC].surfaces[Cur_SF];
                 With surf.vertices[0] do
                 begin
                     rx := X;
@@ -3354,12 +3351,9 @@ begin
             end;
         MM_VX:
             begin
-                if (Cur_SC < 0) or (Cur_SC >= Level.Sectors.Count) then
+                VX := level.GetSectorVertexN(Cur_SC, Cur_VX);
+                if VX = nil then
                   exit;
-                if (Cur_VX < 0) or (Cur_VX >= Level.Sectors[Cur_SC].vertices.Count) then
-                  exit;
-
-                VX := Level.Sectors[Cur_SC].vertices[Cur_VX];
                 With VX do
                 begin
                     rx := X;
@@ -3369,14 +3363,11 @@ begin
             end;
         MM_ED:
             begin
-                if (Cur_SC < 0) or (Cur_SC >= Level.Sectors.Count) then
-                      exit;
-                if (Cur_SF < 0) or (Cur_SF >= Level.Sectors[Cur_SC].surfaces.Count) then
-                  exit;
-                if (Cur_ED < 0) or (Cur_ED >= Level.Sectors[Cur_SC].surfaces[Cur_SF].vertices.Count) then
+                surf := level.GetSectorSurfaceN(Cur_SC, Cur_SF);
+                if (surf = nil) or not CheckSurfaceEdgeIndex(surf, Cur_ED) then
                   exit;
 
-                With Level.Sectors[Cur_SC].surfaces[Cur_SF] do
+                With surf do
                 begin
                     VX := vertices[Cur_ED];
                     With VX do
@@ -3389,10 +3380,9 @@ begin
             end;
         MM_TH:
             begin
-                if (Cur_TH < 0) or (Cur_TH >= Level.Things.Count ) then
+                th := level.GetThingN(Cur_TH);
+                if th = nil then
                   exit;
-
-                th := Level.Things[Cur_TH];
                 With th do
                 begin
                     rx := X;
@@ -3402,12 +3392,12 @@ begin
             end;
         MM_FR:
             begin
-                if (Cur_TH < 0) or (Cur_TH >= Level.Things.Count ) then
+                th := level.GetThingN(Cur_TH);
+                if th = nil then
                   exit;
 
                 if Cur_FR = -1 then
                 begin
-                    th := Level.Things[Cur_TH];
                     With th do
                     begin
                         rx := X;
@@ -3417,16 +3407,13 @@ begin
                 end
                 else
                 begin
-                    vl := Level.Things[Cur_TH].Vals[Cur_FR];
+                    vl := th.vals[Cur_FR];
                     vl.GetFrame(rx, ry, rz, pch, yaw, rol);
                 end;
             end;
         MM_LT:
             begin
-                if (Cur_LT < 0) or (Cur_LT >= Level.Lights.Count ) then
-                  exit;
-
-                LT := Level.Lights[Cur_LT];
+                LT := level.GetLightN(Cur_LT);
                 With LT do
                   begin
                       rx := position.x;
@@ -3938,7 +3925,7 @@ begin
         SaveSecUndo(nsc, ch_added, sc_both);
 
         SectorAdded(nsc);
-        SetCurSC(Level.Sectors.Count - 1);
+        SetCurSC(level.sectors.Count - 1);
 
     finally
         SetMouseMode(MM_Select);
@@ -4181,7 +4168,7 @@ begin
 //                end;
                 surf.Recalc;
                 FindUVScales(surf);
-                if CompareValue(surf.normal.z, 0.6, CloseEnough) = GreaterThanValue then // If less LE 40°
+                if CompareValue(surf.normal.z, 0.6, CloseEnough) = GreaterThanValue then // If less LE 40ï¿½
                   surf.SurfFlags := surf.SurfFlags or SF_Floor;
             end;
         end;
@@ -4203,7 +4190,7 @@ begin
             Level.Things.Add(Level.NewThing);
         end;
         Level.RenumSecs;
-        for var i := 0 to Level.Sectors.Count - 1 do
+        for var i := 0 to level.sectors.Count - 1 do
             Level.Sectors[i].Renumber;
 
         if sec <> nil then SetCurSC(sec.num);
@@ -4570,10 +4557,10 @@ end;
 Procedure TJedMain.SetCurSC(sc: Integer);
 begin
     Cur_SC := sc;
-    if Cur_SC >= Level.Sectors.Count then
+    if Cur_SC >= level.sectors.Count then
         Cur_SC := 0;
     if Cur_SC < 0 then
-        Cur_SC := Level.Sectors.Count - 1;
+        Cur_SC := level.sectors.Count - 1;
     EditObject;
 end;
 
@@ -4581,12 +4568,12 @@ Procedure TJedMain.SetCurSF(sc, SF: Integer);
 begin
     Cur_SC := sc;
     Cur_SF := SF;
-    if sc >= Level.Sectors.Count then
+    if sc >= level.sectors.Count then
         Cur_SC := 0;
     if Cur_SC < 0 then
-        Cur_SC := Level.Sectors.Count - 1;
+        Cur_SC := level.sectors.Count - 1;
 
-    With Level.Sectors[Cur_SC] do
+    With level.sectors[Cur_SC] do
     begin
         if Cur_SF < 0 then
             Cur_SF := surfaces.Count - 1;
@@ -4600,12 +4587,12 @@ Procedure TJedMain.SetCurVX(sc, VX: Integer);
 begin
     Cur_SC := sc;
     Cur_VX := VX;
-    if sc >= Level.Sectors.Count then
+    if sc >= level.sectors.Count then
         Cur_SC := 0;
     if sc < 0 then
-        Cur_SC := Level.Sectors.Count - 1;
+        Cur_SC := level.sectors.Count - 1;
 
-    With Level.Sectors[Cur_SC] do
+    With level.sectors[Cur_SC] do
     begin
         if VX < 0 then
             Cur_VX := vertices.Count - 1;
@@ -4620,12 +4607,12 @@ begin
     Cur_SC := sc;
     Cur_SF := SF;
     Cur_ED := ED;
-    if sc >= Level.Sectors.Count then
+    if sc >= level.sectors.Count then
         Cur_SC := 0;
     if sc < 0 then
-        Cur_SC := Level.Sectors.Count - 1;
+        Cur_SC := level.sectors.Count - 1;
 
-    With Level.Sectors[Cur_SC] do
+    With level.sectors[Cur_SC] do
     begin
         if SF < 0 then
             Cur_SF := surfaces.Count - 1;
@@ -4633,7 +4620,7 @@ begin
             Cur_SF := 0;
     end;
 
-    With Level.Sectors[Cur_SC].surfaces[Cur_SF] do
+    With level.sectors[Cur_SC].surfaces[Cur_SF] do
     begin
         if vertices.Count = 0 then
             exit;
@@ -4651,10 +4638,10 @@ end;
 Procedure TJedMain.SetCurTH(th: Integer);
 begin
     Cur_TH := th;
-    if th >= Level.Things.Count then
+    if th >= level.things.Count then
         Cur_TH := 0;
     if th < 0 then
-        Cur_TH := Level.Things.Count - 1;
+        Cur_TH := level.things.Count - 1;
     EditObject;
 end;
 
@@ -4663,15 +4650,15 @@ var
     thing: TJKThing;
 begin
     Cur_TH := th;
-    if th >= Level.Things.Count then
+    if th >= level.things.Count then
         Cur_TH := 0;
     if th < 0 then
-        Cur_TH := Level.Things.Count - 1;
-    thing := Level.Things[Cur_TH];
+        Cur_TH := level.things.Count - 1;
+    thing := level.things[Cur_TH];
 
     if fr < -1 then
-        Cur_FR := thing.Vals.Count - 1;
-    if fr >= thing.Vals.Count then
+        Cur_FR := thing.vals.Count - 1;
+    if fr >= thing.vals.Count then
         Cur_FR := -1;
 
     EditObject;
@@ -4680,10 +4667,10 @@ end;
 Procedure TJedMain.SetCurLT(LT: Integer);
 begin
     Cur_LT := LT;
-    if LT >= Level.Lights.Count then
+    if LT >= level.lights.Count then
         Cur_LT := 0;
     if LT < 0 then
-        Cur_LT := Level.Lights.Count - 1;
+        Cur_LT := level.lights.Count - 1;
     EditObject;
 end;
 
@@ -4903,20 +4890,20 @@ begin
 
     StartUndoRec('Add Light(s)');
 
-    if Level.Lights.Count = 0 then
+    if level.lights.Count = 0 then
     begin
-        LT := Level.NewLight;
+        LT := level.NewLight;
         LT.position.x := lx;
         LT.position.y := ly;
         LT.position.z := lz;
-        Level.Lights.Add(LT);
+        level.lights.Add(LT);
         SaveLightUndo(LT, ch_added);
         { SaveSelLightsUndo('Add light',ch_added); }
         LevelChanged;
         exit;
     end;
 
-    with Level.Lights[Cur_LT] do
+    with level.lights[Cur_LT] do
     begin
         lx := lx - position.x;
         ly := ly - position.y;
@@ -4925,22 +4912,22 @@ begin
 
     ltsel.AddLT(Cur_LT);
 
-    nlts := Level.Lights.Count;
+    nlts := level.lights.Count;
 
     for i := 0 to ltsel.Count - 1 do
     begin
-        LT := Level.Lights[ltsel.getLT(i)];
-        nlt := Level.NewLight;
+        LT := level.Lights[ltsel.getLT(i)];
+        nlt := level.NewLight;
         nlt.Assign(LT);
         nlt.position.x := LT.position.x + lx;
         nlt.position.y := LT.position.y + ly;
         nlt.position.z := LT.position.z + lz;
-        Level.Lights.Add(nlt);
+        level.lights.Add(nlt);
         SaveLightUndo(nlt, ch_added);
     end;
 
     ltsel.Clear;
-    for i := nlts to Level.Lights.Count - 1 do
+    for i := nlts to level.lights.Count - 1 do
         ltsel.AddLT(i);
 
     SetCurLT(nlts);
@@ -5046,11 +5033,11 @@ begin
     en.dz := en.dz * 2;
 
     CreateCube(Level, tx, ty, tz, renderer.gnormal, en);
-    SetCurSC(Level.Sectors.Count - 1);
-    SectorAdded(Level.Sectors[Level.Sectors.Count - 1]);
+    SetCurSC(level.sectors.Count - 1);
+    SectorAdded(level.sectors.Last);
 
     StartUndoRec('Add Sector');
-    SaveSecUndo(Level.Sectors[Level.Sectors.Count - 1], ch_added, sc_both);
+    SaveSecUndo(level.sectors.Last, ch_added, sc_both);
 
     Invalidate;
 end;
@@ -5075,7 +5062,7 @@ begin
     end;
 
     scsel.AddSC(Cur_SC);
-    fnew := Level.Sectors.Count;
+    fnew := level.sectors.Count;
 
     StartUndoRec('Copy Sector(s)');
 
@@ -5095,9 +5082,9 @@ begin
     Level.RenumSecs;
     scsel.Clear;
 
-    for i := fnew to Level.Sectors.Count - 1 do
+    for i := fnew to level.sectors.Count - 1 do
     begin
-        sec := Level.Sectors[i];
+        sec := level.sectors[i];
         for j := 0 to sec.surfaces.Count - 1 do
         begin
             surf := sec.surfaces[j];
@@ -5124,13 +5111,11 @@ var
     sc, SF, a: Integer;
 begin
     scs := TSCMultisel.Create;
-
     try
-
         if sender = CalcLightOnLayers then
         begin
-            for i := 0 to Level.Sectors.Count - 1 do
-                if ToolBar.IsLayerVisible(Level.Sectors[i].Layer) then
+            for i := 0 to level.sectors.Count - 1 do
+                if ToolBar.IsLayerVisible(level.sectors[i].Layer) then
                     scs.AddSC(i);
         end
         else if sender = CalcLightInSel then
@@ -5168,14 +5153,14 @@ begin
             else
                 begin
                     ShowMessage
-                      ('You must be in sector,surface,edge or vertex mode to use this option');
+                      ('You must be in sector, surface, edge or vertex mode to use this option');
                     exit;
                 end;
             end;
         end
         else
         begin
-            for i := 0 to Level.Sectors.Count - 1 do
+            for i := 0 to level.sectors.Count - 1 do
                 scs.AddSC(i);
         end;
 
@@ -5192,14 +5177,13 @@ begin
         PanMessage(mt_info, Format('%d lights processed in %s',
           [Level.Lights.Count, StrMSecs(sms)]));
 
-        if Level.Sectors.Count = scs.Count then
+        if level.sectors.Count = scs.Count then
             Preview3D.ReloadLevel
         else
             for i := 0 to scs.Count - 1 do
-                SectorChanged(Level.Sectors[scs.GetSC(i)]);
+                SectorChanged(level.sectors[scs.GetSC(i)]);
 
         LevelChanged;
-
     finally
         scs.free;
     end;
@@ -5251,13 +5235,13 @@ begin
                 fi := Cur_SC;
                 n := fi;
                 repeat
-                    if n >= Level.Sectors.Count - 1 then
+                    if n >= level.sectors.Count - 1 then
                         n := 0
                     else
                         Inc(n);
                     if n = fi then
                         exit;
-                until ToolBar.IsLayerVisible(Level.Sectors[n].Layer);
+                until ToolBar.IsLayerVisible(level.sectors[n].Layer);
 
                 SetCurSC(n);
             end;
@@ -7053,100 +7037,50 @@ begin
     Invalidate;
 end;
 
-Function IsSCValid(sc: Integer): boolean;
-begin
-    Result := (sc >= 0) and (sc < Level.Sectors.Count);
-end;
-
-Function IsSFValid(sc, SF: Integer): boolean;
-begin
-    Result := false;
-    if (sc < 0) or (sc >= Level.Sectors.Count) then
-        exit;
-    Result := (SF >= 0) and (SF < Level.Sectors[sc].surfaces.Count);
-end;
-
-Function IsEDValid(sc, SF, ED: Integer): boolean;
-begin
-    Result := false;
-    if (sc < 0) or (sc >= Level.Sectors.Count) then
-        exit;
-    if (SF < 0) or (SF >= Level.Sectors[sc].surfaces.Count) then
-        exit;
-    Result := (ED >= 0) and
-      (ED < Level.Sectors[sc].surfaces[SF].vertices.Count);
-end;
-
-Function IsVXValid(sc, VX: Integer): boolean;
-begin
-    Result := false;
-    if (sc < 0) or (sc >= Level.Sectors.Count) then
-        exit;
-    Result := (VX >= 0) and (VX < Level.Sectors[sc].vertices.Count);
-end;
-
-Function IsTHValid(th: Integer): boolean;
-begin
-    Result := (th >= 0) and (th < Level.Things.Count);
-end;
-
-Function IsLTValid(LT: Integer): boolean;
-begin
-    Result := (LT >= 0) and (LT < Level.Lights.Count);
-end;
-
-Function IsFRValid(th, fr: Integer): boolean;
-begin
-    Result := false;
-    if (th < 0) or (th >= Level.Things.Count) then
-        exit;
-    Result := (fr >= -1) and (fr < Level.Things[th].Vals.Count);
-end;
-
 Procedure TJedMain.VerifyMultiSelection;
 var
     i, sc, SF, ED, VX, fr, n: Integer;
 begin
     case Map_mode of
         MM_SC:
-            For i := scsel.Count - 1 downto 0 do
-                if not IsSCValid(scsel.GetSC(i)) then
+            for i := scsel.Count - 1 downto 0 do
+                if not CheckSectorIndex(level, scsel.GetSC(i)) then
                     scsel.DeleteN(i);
         MM_SF:
-            For i := sfsel.Count - 1 downto 0 do
+            for i := sfsel.Count - 1 downto 0 do
             begin
                 sfsel.GetSCSF(i, sc, SF);
-                if not IsSFValid(sc, SF) then
+                if not CheckSurfaceIndex(level, sc, SF) then
                     sfsel.DeleteN(i);
             end;
         MM_ED:
-            For i := edsel.Count - 1 downto 0 do
+            for i := edsel.Count - 1 downto 0 do
             begin
                 edsel.GetSCSFED(i, sc, SF, ED);
-                if not IsEDValid(sc, SF, ED) then
+                if not CheckEdgeIndex(level, sc, SF, ED) then
                     edsel.DeleteN(i);
             end;
         MM_VX:
-            For i := vxsel.Count - 1 downto 0 do
+            for i := vxsel.Count - 1 downto 0 do
             begin
                 vxsel.GetSCVX(i, sc, VX);
-                if not IsVXValid(sc, VX) then
+                if not CheckVertexIndex(level, sc, VX) then
                     vxsel.DeleteN(i);
             end;
         MM_TH:
-            For i := thsel.Count - 1 downto 0 do
-                if not IsTHValid(thsel.GetTH(i)) then
+            for i := thsel.Count - 1 downto 0 do
+                if not CheckThingIndex(level, thsel.GetTH(i)) then
                     thsel.DeleteN(i);
         MM_FR:
-            For i := frsel.Count - 1 downto 0 do
+            for i := frsel.Count - 1 downto 0 do
             begin
                 frsel.GetTHFR(i, n, fr);
-                if not IsFRValid(n, fr) then
+                if not CheckFrameIndex(level, n, fr) then
                     frsel.DeleteN(i);
             end;
         MM_LT:
-            For i := ltsel.Count - 1 downto 0 do
-                if not IsLTValid(ltsel.getLT(i)) then
+            for i := ltsel.Count - 1 downto 0 do
+                if not CheckLightIndex(level, ltsel.getLT(i)) then
                     ltsel.DeleteN(i);
     end;
 end;
@@ -7161,47 +7095,19 @@ Function TJedMain.IsSelValid: boolean;
 begin
     case Map_mode of
         MM_SC:
-            Result := (Cur_SC >= 0) and (Cur_SC < Level.Sectors.Count);
+            Result := CheckSectorIndex(level, Cur_SC);
         MM_SF:
-            begin
-                Result := false;
-                if (Cur_SC < 0) or (Cur_SC >= Level.Sectors.Count) then
-                    exit;
-                Result := (Cur_SF >= 0) and
-                  (Cur_SF < Level.Sectors[Cur_SC].surfaces.Count);
-            end;
+            Result := CheckSurfaceIndex(level, Cur_SC, Cur_SF);
         MM_ED:
-            begin
-                Result := false;
-                if (Cur_SC < 0) or (Cur_SC >= Level.Sectors.Count) then
-                    exit;
-                if (Cur_SF < 0) or
-                  (Cur_SF >= Level.Sectors[Cur_SC].surfaces.Count) then
-                    exit;
-                Result := (Cur_ED >= 0) and
-                  (Cur_ED < Level.Sectors[Cur_SC].surfaces[Cur_SF]
-                  .vertices.Count);
-            end;
+            Result := CheckEdgeIndex(level, Cur_SC, Cur_SF, Cur_ED);
         MM_VX:
-            begin
-                Result := false;
-                if (Cur_SC < 0) or (Cur_SC >= Level.Sectors.Count) then
-                    exit;
-                Result := (Cur_VX >= 0) and
-                  (Cur_VX < Level.Sectors[Cur_SC].vertices.Count);
-            end;
+            Result := CheckVertexIndex(level, Cur_SC, Cur_VX);
         MM_TH:
-            Result := (Cur_TH >= 0) and (Cur_TH < Level.Things.Count);
+            Result := CheckThingIndex(level, Cur_TH);
         MM_FR:
-            begin
-                Result := false;
-                if (Cur_TH < 0) or (Cur_TH >= Level.Things.Count) then
-                    exit;
-                Result := (Cur_FR >= -1) and
-                  (Cur_FR < Level.Things[Cur_TH].Vals.Count);
-            end;
+            Result := CheckFrameIndex(level, Cur_TH, Cur_TH);
         MM_LT:
-            Result := (Cur_LT >= 0) and (Cur_LT < Level.Lights.Count);
+            Result := CheckLightIndex(level, Cur_LT);
         MM_Extra:
             Result := (Cur_EX >= 0) and (Cur_EX < ExtraObjs.Count);
     else
@@ -8517,9 +8423,9 @@ begin
 
                 SetCurSC(n);
                 scsel.Clear;
-                for i := n to Level.Sectors.Count - 1 do
+                for i := n to level.sectors.Count - 1 do
                 begin
-                    nsc := Level.Sectors[i];
+                    nsc := level.sectors[i];
                     nsc.Layer := sec.Layer;
                     nsc.ColorMap := sec.ColorMap;
 

@@ -594,8 +594,8 @@ end;
 
 Procedure ResolveThingRefs(thing: TJKThing; var trec: TThingRec);
 begin
-  if (trec.sec < 0 ) or (trec.sec >= Level.Sectors.count) then
-    Thing.sec := nil
+  if not CheckSectorIndex(level, trec.sec) then
+    thing.sec := nil
   else thing.Sec := Level.Sectors[trec.sec];
 end;
 
@@ -693,16 +693,18 @@ begin
     ch_added: if n = -1 then exit else Level.Lights.Delete(n);
     ch_deleted, ch_changed:
       begin
-        if (change=ch_deleted) then
+        if (change = ch_deleted) then
           begin
-            if (n <> -1) then exit;
-            lt := Level.NewLight; Level.Lights.Add(lt);
+            if CheckLightIndex(Level, n) then exit;  // must not exist
+            lt := Level.NewLight;
+            Level.Lights.Add(lt);
           end;
         if (change = ch_changed) then
           begin
-            if (n = -1) then exit;
+            if not CheckLightIndex(Level, n) then exit;
             lt := Level.Lights[n];
           end;
+
         SetLight(lt, TLightRec(data^));
       end;
   end;
@@ -727,11 +729,11 @@ var n:integer;
     th:TJKThing;
     tmpur:TUndoRec;
 begin
-  n:=Level.GetThingByID(objid);
+  n := Level.GetThingByID(objid);
   case change of
     ch_added:
-      if n = -1 then exit else
         begin
+          if not CheckThingIndex(Level, n) then exit;
           tmpur := CurUndoRec;
           CurUndoRec := nil;
           DeleteThing(Level,n);
@@ -739,7 +741,7 @@ begin
         end;
     ch_deleted:
       begin
-      if n <> -1 then exit;
+        if CheckThingIndex(Level, n) then exit;  // must not exist
         th := Level.NewThing;
         SetThing(th, PThingRec(data));
         ResolveThingRefs(th, TThingRec(data^));
@@ -749,7 +751,7 @@ begin
       end;
     ch_changed:
       begin
-        if (n = -1) then exit;
+        if not CheckThingIndex(Level, n) then exit;
         th := Level.Things[n];
         SetThing(th, PThingRec(data));
         ResolveThingRefs(th, TThingRec(data^));
@@ -758,7 +760,7 @@ begin
   end;
 end;
 
-Procedure TSecValUndo.SaveUndo(obj:TObject;ch:integer);
+Procedure TSecValUndo.SaveUndo(obj: TObject; ch: integer);
 var sec: TJKSector;
     pd: PAnsiChar;
     i: integer;
@@ -781,7 +783,7 @@ begin
   end;
 end;
 
-procedure TSecValUndo.Undo(objid:Integer);
+procedure TSecValUndo.Undo(objid: Integer);
 var sec: TJKSector;
     pd: PAnsiChar;
     i ,n: integer;
@@ -793,28 +795,26 @@ var sec: TJKSector;
         sc,sf:integer;
 
     Procedure SetAdjoinParamBasedOnAdjoin(srf, adjoin: TJKSurface);
-    begin
-      srf.surfflags   := adjoin.surfFlags;
-      srf.faceflags   := adjoin.faceflags;
-      srf.geo         := adjoin.geo;
-      srf.adjoinflags := adjoin.adjoinflags;
-    end;
+      begin
+        srf.surfflags   := adjoin.surfFlags;
+        srf.faceflags   := adjoin.faceflags;
+        srf.geo         := adjoin.geo;
+        srf.adjoinflags := adjoin.adjoinflags;
+      end;
   begin
     for i:=0 to sec.surfaces.count-1 do
       begin
         surf := sec.surfaces[i];
+        surf.adjoin := nil;
         sc := surf.mark shr 16;
         sf := surf.mark and 65535;
-        surf.adjoin := nil;
         if sc = 65535 then continue;
 
         sc := Level.GetSectorByID(surf.nadj);
-        if sc = -1 then continue;
-
-        if sc>=Level.sectors.Count then continue;
+        if not CheckSectorIndex(Level, sc) then continue;
         asec := Level.sectors[sc];
 
-        if sf >= aSec.surfaces.Count then continue;
+        if not CheckSectorSurfaceIndex(asec, sf) then continue;
         asurf := asec.surfaces[sf];
 
         {  if (asurf.adjoin<>nil) and (asurf.adjoin.sector<>sec) then continue;}
@@ -844,8 +844,8 @@ begin
   case change of
     ch_changed, ch_deleted:
       begin
-        n:=Level.GetSectorByID(objid);
-        if n=-1 then exit;
+        n := Level.GetSectorByID(objid);
+        if not CheckSectorIndex(Level, n) then exit;
         sec := Level.Sectors[n];
       end;
     else exit;
@@ -869,7 +869,7 @@ begin
   JedMain.SectorChanged(sec);
 end;
 
-Procedure TSecGeoUndo.SaveUndo(obj:TObject;ch:integer);
+Procedure TSecGeoUndo.SaveUndo(obj: TObject; ch: integer);
 type
     pword = ^word;
 
@@ -909,17 +909,17 @@ begin
   end;
 end;
 
-procedure TSecGeoUndo.Undo(objid:Integer);
-type
-    pword=^word;
-var n:integer;
-    sec:TJKSector;
-    tmpur:TUndoRec;
-    pd:PAnsiChar;
+procedure TSecGeoUndo.Undo(objid: Integer);
+  type
+      pword = ^word;
+  var n: integer;
+      sec: TJKSector;
+      tmpur: TUndoRec;
+      pd: PAnsiChar;
 
   Procedure SetSector;
-  var i,j,n: integer;
-      surf: TJKSurface;
+    var i,j,n: integer;
+        surf: TJKSurface;
   begin
     tmpur := CurUndoRec;
     CurUndoRec := nil;
@@ -927,27 +927,27 @@ var n:integer;
       pd := data;
 
       if nvxs < sec.vertices.count then
-      For i:=sec.vertices.count - 1 downto nvxs do
-        begin
-          sec.vertices[i].Free;
-          sec.vertices.Delete(i);
-        end;
+        for i:=sec.vertices.count - 1 downto nvxs do
+          begin
+            sec.vertices[i].Free;
+            sec.vertices.Delete(i);
+          end;
 
       if nvxs > sec.vertices.count then
-      For i := sec.vertices.count to nvxs - 1 do
-      sec.Newvertex;
+        for i := sec.vertices.count to nvxs - 1 do
+          sec.NewVertex;
 
       SetSCVertices(sec.vertices, nvxs, PVXRec(pd));
       inc(pd, SCVertSize(sec.vertices));
 
       if nsfs < sec.surfaces.count then
-      for i := sec.surfaces.count - 1 downto nsfs do
-      begin
-        surf := sec.surfaces[i];
-        RemoveSurfRefs(Level, surf);
-        surf.free;
-        sec.surfaces.Delete(i);
-      end;
+        for i := sec.surfaces.count - 1 downto nsfs do
+          begin
+            surf := sec.surfaces[i];
+            RemoveSurfRefs(Level, surf);
+            surf.free;
+            sec.surfaces.Delete(i);
+          end;
 
       if nsfs > sec.surfaces.count then
         for i:=sec.surfaces.count to nsfs - 1 do
@@ -956,7 +956,7 @@ var n:integer;
             sec.surfaces.Add(surf);
           end;
 
-      for i:=0 to nsfs-1 do
+      for i:= 0 to nsfs - 1 do
         begin
           surf := sec.surfaces[i];
           n := pword(pd)^;
@@ -978,7 +978,7 @@ var n:integer;
         sec.Renumber;
 
       for i := 0 to sec.surfaces.count - 1 do
-      sec.surfaces[i].Recalc;
+        sec.surfaces[i].Recalc;
 
       CurUndoRec := tmpur;
     end;
@@ -988,8 +988,8 @@ begin
   n := Level.GetSectorByID(objID);
   case change of
     ch_added:
-      if n = -1 then exit else
         begin
+          if not CheckSectorIndex(Level, n) then exit;
           tmpur := CurUndoRec;
           CurUndoRec := nil;
           DeleteSector(Level, n);
@@ -997,9 +997,9 @@ begin
         end;
     ch_deleted:
       begin
-        if n <> -1 then exit;
+        if CheckSectorIndex(Level, n) then exit;  // must not exist
         sec := Level.NewSector;
-        sec.ID := ObjID;
+        sec.ID := objID;
         SetSector;
         Level.Sectors.Add(sec);
         Level.RenumSecs;
@@ -1007,7 +1007,7 @@ begin
       end;
     ch_changed:
       begin
-        if (n = -1) then exit;
+        if not CheckSectorIndex(Level, n) then exit;
         sec := Level.Sectors[n];
         SetSector;
         JedMain.SectorChanged(sec);
@@ -1067,11 +1067,10 @@ begin
   CurUndoRec.nodechanges.AddObject(nch, node.id);
 end;
 
-Procedure SaveLightUndo(lt:TSedLight;change:integer);
+Procedure SaveLightUndo(lt: TSedLight; change: integer);
 var lch:TUndoChange;
 begin
   if CurUndoRec = nil then exit;
-
   if CurUndoRec.ltchanges.FindObjID(lt.id) <> -1 then exit; {already saved}
 
   lch := TLightUndo.Create;
@@ -1082,7 +1081,7 @@ end;
 Procedure SaveSecUndo(sec: TJKSector; change: integer;how: integer);
 var lch:TUndoChange;
 begin
-  if CurUndoRec=nil then exit;
+  if CurUndoRec = nil then exit;
 
   if (how and sc_geo) <> 0 then
   begin

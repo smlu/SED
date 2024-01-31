@@ -115,6 +115,7 @@ type
     Function GetItem(n: integer): TJKSector;
     Procedure SetItem(n: integer; v: TJKSector);
     Property Items[n: integer]: TJKSector read GetItem write SetItem; default;
+    Function Last: TJKSector;
   end;
 
   TThing = class
@@ -309,7 +310,10 @@ type
     { for resolving references }
     Function GetSectorN(n: integer): TJKSector;
     Function GetSurfaceN(n: integer): TJKSurface;
+    Function GetSectorSurfaceN(sc, sf: integer): TJKSurface;
+    Function GetSectorVertexN(sc, vx: integer): TJKVertex;
     Function GetThingN(n: integer): TJKThing;
+    Function GetLightN(n: integer): TSedLight;
     Function GetGlobalSFN(sc, sf: integer): integer;
     Function GetLayerName(n: integer): String;
     Function AddLayer(const name: string): integer;
@@ -606,6 +610,11 @@ begin
   if (n < 0) or (n >= count) then
     raise EListError.CreateFmt('Sector Index is out of bounds: %d', [n]);
   List[n] := v;
+end;
+
+Function TSectors.Last: TJKSector;
+begin
+   Result := TJKSector(inherited Last);
 end;
 
 Function TThings.GetItem(n: integer): TThing;
@@ -1134,6 +1143,42 @@ begin
   Result := nil;
 end;
 
+Function TJKLevel.GetSectorSurfaceN(sc, sf: integer): TJKSurface;
+begin
+  Result := nil;
+
+  if sf < 0 then
+      exit;
+  var sec := GetSectorN(sc);
+  if sec = nil then
+    exit;
+
+  Try
+    Result := sec.surfaces[sf];
+  except
+    On Exception do
+      Result := nil;
+  end;
+end;
+
+Function TJKLevel.GetSectorVertexN(sc, vx: integer): TJKVertex;
+begin
+  Result := nil;
+
+  if vx < 0 then
+      exit;
+  var sec := GetSectorN(sc);
+  if sec = nil then
+    exit;
+
+  Try
+    Result := sec.vertices[vx];
+  except
+    On Exception do
+      Result := nil;
+  end;
+end;
+
 Function TJKLevel.GetThingN(n: integer): TJKThing;
 begin
   if n < 0 then
@@ -1142,7 +1187,24 @@ begin
     exit;
   end;
   Try
-    Result := Things[n];
+    Result := things[n];
+  except
+    On Exception do
+    begin
+      Result := nil;
+    end;
+  end;
+end;
+
+Function TJKLevel.GetLightN(n: integer): TSedLight;
+begin
+    if n < 0 then
+  begin
+    Result := nil;
+    exit;
+  end;
+  Try
+    Result := lights[n];
   except
     On Exception do
     begin
