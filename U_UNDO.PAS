@@ -690,7 +690,7 @@ var n: integer;
 begin
   n := Level.GetLightByID(objid);
   case change of
-    ch_added: if n = -1 then exit else Level.Lights.Delete(n);
+    ch_added: DeleteLight(Level, n);
     ch_deleted, ch_changed:
       begin
         if (change = ch_deleted) then
@@ -706,9 +706,12 @@ begin
           end;
 
         SetLight(lt, TLightRec(data^));
+        if (change = ch_deleted) then
+          JedMain.LightAdded(lt)
+        else
+          JedMain.LightChanged(lt);
       end;
   end;
-  JedMain.LightChanged(lt);
 end;
 
 Procedure TThingUndo.SaveUndo(obj: TObject; ch: integer);

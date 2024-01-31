@@ -5,7 +5,7 @@ uses classes, J_Level;
 
 const
   NMask=Longint(-1) shr 1;
-  NBit=1 shl 31;
+  NBit = 1 shl 31;
 
 Type
 
@@ -165,16 +165,16 @@ begin
 end;
 
 
-Function TMultisel.AddIntUnique(v:integer):integer;
+Function TMultisel.AddIntUnique(v: integer):integer;
 begin
- if not FindInt(self,v,Result) then Result:=AddInt(v) else
- result:=result or NBit;
+ if not FindInt(self, v, Result) then Result:=AddInt(v) else
+ Result := Result or NBit;
 end;
 
 Procedure TMultisel.DeleteN(n:integer);
 begin
- if n and NBit=0 then
-  if n<Count then Delete(n);
+ if (n and NBit) = 0 then
+  if n < Count then Delete(n);
 end;
 
 

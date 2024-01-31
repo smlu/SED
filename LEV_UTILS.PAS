@@ -103,6 +103,7 @@ Function FindSectorForThing(thing: TJKThing): integer;
 Function FindSectorForXYZ(lev: TJKLevel; x, y, z: double): integer;
 Function GetPreviousSector(const lev: TJKLevel; n: integer): integer; // Returns index of the previous sector on the visible layer or -1
 Function GetPreviousThing(const lev: TJKLevel; n: integer): integer;  // Returns index of the previous thing on the visible layer or -1
+Function GetPreviousLight(const lev: TJKLevel; n: integer): integer;  // Returns index of the previous light on the visible layer or -1
 
 { Level modifications }
 Procedure TranslateSectors(lev: TJKLevel; scsel: TSCMultiSel; cursc: integer;
@@ -2951,6 +2952,25 @@ begin
   Result := cur;
 end;
 
+Function GetPreviousLight(const lev: TJKLevel; n: integer): integer;
+begin
+  Result := -1;
+  if Level.Lights.Count = 0 then
+    exit;
+
+  n := Clampi(n, 0,  Level.Lights.Count - 1);
+  var cur := n;
+  repeat
+      if (cur < 1) then
+          cur := Level.Lights.Count - 1
+      else
+          dec(cur);
+      if cur = n then
+          exit;
+  until ToolBar.IsLayerVisible(Level.Lights[cur].Layer);
+  Result := cur;
+end;
+
 Const
   MaxLight = 10;
 
@@ -3226,7 +3246,7 @@ begin
   th.free;
 
   th := lev.things[JedMain.Cur_SC];
-  lev.Things.Delete(n);
+  lev.things.Delete(n);
 
   lev.RenumThings;
   JedMain.SetCurTH(th.num);
@@ -3314,8 +3334,13 @@ begin
 
   var lt := lev.Lights[n];
   SaveLightUndo(lt, ch_deleted);
+
+  if JedMain.Cur_LT = n then
+    JedMain.SetCurLT(Max(0, GetPreviousLight(lev, n)));
+
+  JedMain.LightDeleted(lt);
+  lt.free;
   lev.Lights.Delete(n);
-  JedMain.LevelChanged;
 end;
 
 Procedure DeleteCog(lev: TJKLevel; n: integer);

@@ -498,7 +498,9 @@ type
         Procedure ThingChanged(th: TJKThing);
         Procedure ThingAdded(th: TJKThing);
         Procedure ThingDeleted(th: TJKThing);
+        Procedure LightAdded(lt: TSedLight);
         Procedure LightChanged(lt: TSedLight);
+        Procedure LightDeleted(lt: TSedLight);
 
         Procedure RotateObject(angle: double; axis: Integer);
         Procedure ScaleObject(sfactor: double; how: Integer);
@@ -2685,11 +2687,11 @@ begin
                 case Map_mode of
                     MM_SC:
                         begin
-                            { SaveSelSecUndo('Delete Sector(s)',ch_deleted,sc_both); }
+                            if (scsel.Count + IfThen(scsel.FindSC(Cur_SC) <> -1,  0, 1)) >= level.sectors.Count then
+                                exit;
+
                             scsel.AddSC(Cur_SC);
                             scsel.sort;
-                            if scsel.Count >= Level.Sectors.Count then
-                                exit;
 
                             StartUndoRec('Delete Sector(s)');
                             for i := scsel.Count - 1 downto 0 do
@@ -2703,10 +2705,11 @@ begin
                         end;
                     MM_TH:
                         begin
+                            if (thsel.Count + IfThen(thsel.FindTH(Cur_TH) <> -1,  0, 1)) >= level.things.Count then
+                                exit;
+
                             thsel.AddTH(Cur_TH);
                             thsel.sort;
-                            if thsel.Count >= Level.Things.Count then
-                                exit;
 
                             StartUndoRec('Delete Thing(s)');
                             for i := thsel.Count - 1 downto 0 do
@@ -2737,10 +2740,11 @@ begin
                         end;
                     MM_LT:
                         begin
+                          if (ltsel.Count + IfThen(ltsel.FindLT(Cur_LT) <> -1,  0, 1)) >= level.lights.Count then
+                                  exit;
+
                             ltsel.AddLT(Cur_LT);
                             ltsel.sort;
-                            if ltsel.Count >= Level.Lights.Count then
-                                exit;
                             { SaveSelLightsUndo('Delete light(s)',ch_deleted); }
                             StartUndoRec('Delete Light(s)');
                             for i := ltsel.Count - 1 downto 0 do
@@ -4168,7 +4172,7 @@ begin
 //                end;
                 surf.Recalc;
                 FindUVScales(surf);
-                if CompareValue(surf.normal.z, 0.6, CloseEnough) = GreaterThanValue then // If less LE 40ï¿½
+                if CompareValue(surf.normal.z, 0.6, CloseEnough) = GreaterThanValue then // If less LE 40°
                   surf.SurfFlags := surf.SurfFlags or SF_Floor;
             end;
         end;
@@ -4898,8 +4902,7 @@ begin
         LT.position.z := lz;
         level.lights.Add(LT);
         SaveLightUndo(LT, ch_added);
-        { SaveSelLightsUndo('Add light',ch_added); }
-        LevelChanged;
+        LightAdded(lt);
         exit;
     end;
 
@@ -4924,6 +4927,7 @@ begin
         nlt.position.z := LT.position.z + lz;
         level.lights.Add(nlt);
         SaveLightUndo(nlt, ch_added);
+        LightAdded(lt);
     end;
 
     ltsel.Clear;
@@ -4934,9 +4938,6 @@ begin
     if ltsel.Count = 1 then
         ltsel.Clear;
 
-    { SaveSelLightsUndo('Add light(s)',ch_added); }
-
-    LevelChanged;
     Invalidate;
 end;
 
@@ -5328,16 +5329,9 @@ begin
             end;
         MM_LT:
             begin
-                fi := Cur_LT;
-                n := fi;
-                repeat
-                    if n < 1 then
-                        n := Level.Lights.Count - 1
-                    else
-                        dec(n);
-                    if n = fi then
-                        exit;
-                until ToolBar.IsLayerVisible(Level.Lights[n].Layer);
+                n := GetPreviousLight(Level, Cur_LT);
+                if n < 0 then
+                  exit;
                 SetCurLT(n);
             end;
         MM_Extra:
@@ -6481,11 +6475,20 @@ begin
     LevelChanged;
 end;
 
+Procedure TJedMain.LightAdded(lt: TSedLight);
+begin
+    LevelChanged;
+end;
+
 Procedure TJedMain.LightChanged(lt: TSedLight);
 begin
     if (Map_mode = MM_LT) and (lt = Level.Lights[Cur_LT]) then
       UpdateItemEditor;
     LevelChanged;
+end;
+Procedure TJedMain.LightDeleted(lt: TSedLight);
+begin
+    JedMain.LevelChanged;
 end;
 
 Procedure TJedMain.RotateObject(angle: double; axis: Integer);

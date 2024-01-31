@@ -856,7 +856,7 @@ var lt:TSedLight;
 begin
  lt:=Level.NewLight;
  Result:=Level.lights.Add(lt);
- JedMain.LevelChanged;
+ JedMain.LightAdded(lt);
 end;
 Procedure TCOMLevel.DeleteLight(lt:integer);
 begin
