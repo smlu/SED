@@ -11,9 +11,6 @@ Const
   cc_Fix                 = 0;
   cc_NeverFix            = 1;
   cc_Ask                 = 2;
-  df_MaxSurfVerts        = 24;
-  ijim_MaxSurfVerts      = 64;
-  ijim_MaxTrackSurfVerts = 4;
 
 //Const
 //  et_none = 0;
@@ -252,13 +249,9 @@ begin { Check }
   var cursel  := Errors.ItemIndex;
   ClearErrors;
 
-  var maxSurfVerts := df_MaxSurfVerts;
-  if level.kind = IJIM then
-    maxSurfVerts := ijim_MaxSurfVerts;
-
-  For i := 0 to Level.Sectors.Count - 1 do
+  For i := 0 to level.sectors.Count - 1 do
   begin
-    sec := Level.Sectors[i];
+    sec := level.Sectors[i];
     if (level.kind <> IJIM) and (Trim(sec.colormap) = '') then
       AddError('No colormap set for sector!', sec);
 
@@ -287,8 +280,8 @@ begin { Check }
         AddWarning('Missing collision flag on floor surface', surf);
       if (surf.adjoin = nil) and (surf.geo <> Integer(Texture)) then
         AddWarning('Incorrect geometry mode on solid surface', surf);
-      if surf.vertices.Count > maxSurfVerts then
-        AddWarning(Format('More than %d vertices in a surface', [maxSurfVerts]), surf);
+      if surf.vertices.Count > MaxSurfaceVertices(level) then
+        AddWarning(Format('More than %d vertices in a surface', [MaxSurfaceVertices(level)]), surf);
       if surf.vertices.Count < 3 then
         AddError('Less than 3 vertices in a surface!', surf);
 
@@ -330,19 +323,19 @@ begin { Check }
   if CheckOverlaps then
     try
       boxes := nil;
-      GetMem(boxes, Level.Sectors.Count * sizeof(TBox));
-      For i := 0 to Level.Sectors.Count - 1 do
+      GetMem(boxes, level.sectors.Count * sizeof(TBox));
+      For i := 0 to level.sectors.Count - 1 do
       begin
-        FindBBox(Level.Sectors[i], boxes^[i]);
+        FindBBox(level.sectors[i], boxes^[i]);
       end;
 
-      For i := 0 to Level.Sectors.Count - 1 do
+      For i := 0 to level.sectors.Count - 1 do
       begin
-        sec := Level.Sectors[i];
+        sec := level.sectors[i];
 
         for j := i - 1 downto 0 do
         begin
-          sec1 := Level.Sectors[j];
+          sec1 := level.sectors[j];
           b := false;
           for k := 0 to sec.surfaces.Count - 1 do
             if sec.surfaces[k].adjoin <> nil then
@@ -373,9 +366,9 @@ begin { Check }
         FreeMem(boxes);
     end;
 
-  for i := 0 to Level.Things.Count - 1 do
+  for i := 0 to level.things.Count - 1 do
   begin
-    th := Level.Things[i];
+    th := level.things[i];
     if th.sec = nil then
     begin
       AddError('Thing not in sector', th);

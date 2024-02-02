@@ -9,10 +9,14 @@ Const
   rs_surfs = 1;
 
 const
-  rt_x = 0;
-  rt_y = 1;
-  rt_z = 2;
+  rt_x    = 0;
+  rt_y    = 1;
+  rt_z    = 2;
   rt_grid = 3;
+
+  df_MaxSurfVerts        = 24;
+  ijim_MaxSurfVerts      = 64;
+  ijim_MaxTrackSurfVerts = 4;
 
 const
   newLight: boolean = true;
@@ -29,7 +33,9 @@ Type
     how: (scale_xyz, scale_x, scale_y, scale_z, scale_vec);
   end;
 
-Function NextIdx(n, maxn: integer): integer;
+function MaxSurfaceVertices(lev: TJKLevel): integer; // returns max number of vertices surface can have baseed on level kind
+
+function NextIdx(n, maxn: integer): integer;
 
 function GetAngle(x, y: double; xa, ya, xb, yb: double): double;
 Function Isabove180(x, y: double; xa, ya, xb, yb: double): boolean;
@@ -283,6 +289,11 @@ Type
     un, vn: TVector;
     x, y, z, u, v: double;
   end;
+
+function MaxSurfaceVertices(lev: TJKLevel): integer;
+begin
+  Result := IfThen(lev.kind = IJIM, ijim_MaxSurfVerts, df_MaxSurfVerts);
+end;
 
 Procedure SaveTXData(surf: TJKSurface; vx: integer; var txd: TXData); forward;
 Procedure ApplyTXDataToVX(surf: TJKSurface; vx: integer;
@@ -3448,10 +3459,10 @@ begin
       inc(nv);
   end;
 
-  if nv > 22 then
+  if nv > MaxSurfaceVertices(level) then
   begin
-    PanMessage(mt_error,
-      'Can''t merge surfaces - resulting surface is >24 vertices');
+    PanMessageFmt(mt_error, 'Can''t merge surfaces - resulting surface is >%d vertices',
+        [MaxSurfaceVertices(level)]);
     exit;
   end;
 
