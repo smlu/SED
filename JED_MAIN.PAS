@@ -4172,7 +4172,7 @@ begin
 //                end;
                 surf.Recalc;
                 FindUVScales(surf);
-                if CompareValue(surf.normal.z, 0.6, CloseEnough) = GreaterThanValue then // If less LE 40°
+                if CompareValue(surf.normal.z, 0.6, CloseEnough) = GreaterThanValue then // If less LE 40ï¿½
                   surf.SurfFlags := surf.SurfFlags or SF_Floor;
             end;
         end;
@@ -7108,7 +7108,7 @@ begin
         MM_TH:
             Result := CheckThingIndex(level, Cur_TH);
         MM_FR:
-            Result := CheckFrameIndex(level, Cur_TH, Cur_TH);
+            Result := CheckFrameIndex(level, Cur_TH, Cur_FR);
         MM_LT:
             Result := CheckLightIndex(level, Cur_LT);
         MM_Extra:
