@@ -286,6 +286,8 @@ type
 
         procedure OnFixSolidSurfaces(sender: TObject);
         procedure OnFixPassableAdjoins(sender: TObject);
+        procedure PickThing(th: TThing; id: integer);
+        procedure PickThingAt(th: TThing; x, y, z, pitch, yaw, roll: double; id: integer);
 
     public
         { Project vars }
@@ -383,7 +385,7 @@ type
         Procedure Import3DO(const name: string; const clearCurrentLevel: Boolean);
 
         procedure ExceptHandler(sender: TObject; E: Exception);
-        Procedure SetRendfromPYR;
+        Procedure SetRendFromPYR;
         Procedure GetPYR;
         Function GetTargetJKLName: string;
         Procedure UseInCog;
@@ -963,7 +965,7 @@ begin
         DrawThingAt(th, X, Y, z, pch, yaw, rol);
 end;
 
-Procedure TJedMain.DrawThingAt(th: TThing; X, Y, z, pch, yaw, rol: single);
+Procedure TJedMain.DrawThingAt(th: TThing; x, y, z, pch, yaw, rol: single);
 var
     i: Integer;
     var cpclr: TRColor;
@@ -983,7 +985,7 @@ begin
                 if th.bbox.x1 <> th.bbox.x2 then
                 begin
                   BoxToPolys(th.bbox, tcube);
-                  renderer.DrawPolygonsAt(tcube, X, Y, z, pch, yaw, rol);
+                  renderer.DrawPolygonsAt(tcube, x, y, z, pch, yaw, rol);
                 end;
             end;
         cv_Wireframes:
@@ -992,14 +994,14 @@ begin
                 begin
                   cpclr := highlight(cpclr);
                   for i := 0 to th.a3DO.Meshes.Count - 1 do
-                      With th.a3DO.Meshes[i] do
-                          renderer.DrawPolygonsAt(Faces, X, Y, z, pch, yaw, rol);
+                      With th.a3DO.meshes[i] do
+                          renderer.DrawPolygonsAt(faces, x, y, z, pch, yaw, rol);
                 end;
             end;
     end;
 
     renderer.SetColor(CL_Front, cpclr.r, cpclr.g, cpclr.b);
-    renderer.DrawVertex(X, Y, z);
+    renderer.DrawVertex(x, y, z);
     renderer.SetColor(CL_Front, clr.r, clr.g, clr.b);
 end;
 
@@ -1041,10 +1043,11 @@ var
     thing: TJKThing;
     X, Y, z, pch, yaw, rol: double;
 begin
-    if fr = -1 then
+    if not CheckFrameIndex(level, th, fr) or (fr = -1) then
         exit;
+
     thing := Level.Things[th];
-    thing.Vals[fr].GetFrame(X, Y, z, pch, yaw, rol);
+    thing.vals[fr].GetFrame(X, Y, z, pch, yaw, rol);
     renderer.DrawVertex(X, Y, z);
 
     renderer.SetCulling(r_CULLNONE);
@@ -1071,12 +1074,12 @@ end;
 
 Procedure TJedMain.DrawFrame(fr: TTPLValue);
 var
-    X, Y, z, pch, yaw, rol: double;
+    x, y, z, pch, yaw, rol: double;
 begin
     if fr.atype <> at_frame then
         exit;
-    fr.GetFrame(X, Y, z, pch, yaw, rol);
-    renderer.DrawVertex(X, Y, z);
+    fr.GetFrame(x, y, z, pch, yaw, rol);
+    renderer.DrawVertex(x, y, z);
 end;
 
 Procedure TJedMain.ReDraw;
@@ -1162,7 +1165,7 @@ begin
             for th := 0 to level.things.Count - 1 do
             begin
                 thing := level.things[th];
-                if ToolBar.IsLayerVisible(thing.Layer) then
+                if ToolBar.IsLayerVisible(thing.layer) then
                     DrawThing(thing);
             end;
         end;
@@ -1194,8 +1197,8 @@ begin
                     continue;
                 With thing do
                     renderer.DrawVertex(X, Y, z);
-                for s := 0 to thing.Vals.Count - 1 do
-                    DrawFrame(thing.Vals[s]);
+                for s := 0 to thing.vals.Count - 1 do
+                    DrawFrame(thing.vals[s]);
             end;
         end;
 
@@ -1316,9 +1319,10 @@ begin
                 for s := 0 to frsel.Count - 1 do
                 begin
                     frsel.GetTHFR(s, th, fr);
-                    if fr = -1 then
-                        continue;
-                    DrawFrame(Level.Things[th].Vals[fr]);
+//                    if fr = -1 then
+//                        continue;
+//                    DrawFrame(Level.Things[th].vals[fr]);
+                    DrawSelFrame(th, fr);
                 end;
             end;
         MM_LT:
@@ -1615,7 +1619,7 @@ begin
     AddKBItem(miMap, 'Move right', char(VK_LEFT), []);
     AddKBItem(miMap, 'Move Down', char(VK_UP), []);
     AddKBItem(miMap, 'Move Up', char(VK_Down), []);
-    AddKBItem(miMap, 'Move forth', char(VK_NEXT), []);
+    AddKBItem(miMap, 'Move forward', char(VK_NEXT), []);
     AddKBItem(miMap, 'Move back', char(VK_PRIOR), []);
 
     AddKBItem(miMap, 'Rotate'#9'Middle Mouse Button', #0, []);
@@ -1624,7 +1628,7 @@ begin
     AddKBItem(miMap, 'Rotate right', char(VK_RIGHT), [ssShift]);
     AddKBItem(miMap, 'Rotate left', char(VK_LEFT), [ssShift]);
     AddKBItem(miMap, 'Rotate Up', char(VK_UP), [ssShift]);
-    AddKBItem(miMap, 'Rotate Down', char(VK_Down), [ssShift]);
+    AddKBItem(miMap, 'Rotate Down', char(VK_DOWN), [ssShift]);
     AddKBItem(miMap, 'Rotate ...', char(VK_NEXT), [ssShift]);
     AddKBItem(miMap, 'Rotate ...', char(VK_PRIOR), [ssShift]);
     AddKBItem(miMap, 'Zoom at cursor'#9'Mouse Wheel', #0, []);
@@ -1733,7 +1737,7 @@ end;
 procedure TJedMain.FormResize(sender: TObject);
 begin
     if renderer <> nil then
-        renderer.SetViewPort(0, 0, ClientWidth, Clientheight);
+        renderer.SetViewPort(0, 0, ClientWidth, ClientHeight);
         ReDraw;
 end;
 
@@ -2406,7 +2410,7 @@ begin
             begin
                 renderer.Scale := Math.Min(renderer.Scale * 1.5, 3.5);  // max zoom out
             end;
-        VK_UP, VK_Down, VK_LEFT, VK_RIGHT, VK_NEXT, VK_PRIOR:
+        VK_UP, VK_DOWN, VK_LEFT, VK_RIGHT, VK_NEXT, VK_PRIOR:
             With renderer do
             begin
                 { CreateRotMatrix(mx,PCH,YAW,ROL); }
@@ -2431,7 +2435,7 @@ begin
                             CamY := CamY - nx.dy;
                             CamZ := CamZ - nx.dz;
                         end;
-                    VK_Down:
+                    VK_DOWN:
                         begin
                             CamX := CamX + ny.dx;
                             CamY := CamY + ny.dy;
@@ -2886,24 +2890,28 @@ begin
                 begin
                     thing := Level.Things[th];
                     if ToolBar.IsLayerVisible(thing.Layer) then
-                        With thing do
-                            renderer.PickVertex(X, Y, z, th);
+                      PickThing(thing, th);
                 end;
             MM_FR:
-                For th := 0 to Level.Things.Count - 1 do
+                For th := 0 to level.things.Count - 1 do
                 begin
-                    thing := Level.Things[th];
-                    if not ToolBar.IsLayerVisible(thing.Layer) then
+                    thing := level.things[th];
+                    if not ToolBar.IsLayerVisible(thing.layer) then
                         continue;
+
                     with thing Do
-                        renderer.PickVertex(X, Y, z, th * 65536 + 65535);
-                    for fr := 0 to thing.Vals.Count - 1 do
-                        with thing.Vals[fr] do
+                        renderer.PickVertex(x, y, z, th * 65536 + 65535);
+                    for fr := 0 to thing.vals.Count - 1 do
+                        with thing.vals[fr] do
                         begin
                             if atype <> at_frame then
                                 continue;
+
                             GetFrame(fx, fy, fz, pch, yaw, rol);
-                            renderer.PickVertex(fx, fy, fz, th * 65536 + fr);
+                            if frsel.FindFR(th, fr) <> -1 then
+                               PickThingAt(thing, fx, fy, fz, pch, yaw, rol, th * 65536 + fr)
+                            else
+                              renderer.PickVertex(fx, fy, fz, th * 65536 + fr);
                         end;
                 end;
             MM_VX:
@@ -2938,12 +2946,12 @@ begin
                     else if obj is TPolygon then
                         renderer.PickPolygon(TPolygon(obj), s);
                 end;
-
         end;
         renderer.EndPick;
         if renderer.Selected.Count <> 0 then
             csel := 0;
     end;
+
     { Lb.Caption:=IntToStr(Renderer.Selected.Count); }
     if (renderer.Selected.Count <> 0) then
     begin
@@ -2990,7 +2998,34 @@ begin
 
     LastSelXY.X := X;
     LastSelXY.Y := Y;
+end;
 
+Procedure TJedMain.PickThing(th: TThing; id: integer);
+begin
+    PickThingAt(th, th.x, th.y, th.z, th.pch, th.yaw, th.rol, id);
+end;
+
+procedure TJedMain.PickThingAt(th: TThing; x, y, z, pitch, yaw, roll: double; id: integer);
+begin
+  case thing_view of
+        cv_Boxes:
+            begin
+                if th.bbox.x1 <> th.bbox.x2 then
+                begin
+                  BoxToPolys(th.bbox, tcube);
+                  renderer.PickPolygonsAt(tcube, x, y, z, pitch, yaw, roll, id);
+                end;
+            end;
+        cv_Wireframes:
+            begin
+                if th.a3DO <> nil then
+                begin
+                  for var i := 0 to th.a3DO.Meshes.Count - 1 do
+                    renderer.PickPolygonsAt(th.a3DO.meshes[i].faces, x, y, z, pitch, yaw, roll, id);
+                end;
+            end;
+    end;
+    renderer.DrawVertex(x, y, z);
 end;
 
 { Cleave mouse functions }
@@ -7682,12 +7717,12 @@ begin
         sec := Level.Sectors[nsel.GetSC(0)];
         mesh := a3DO.NewMesh;
         a3DO.Meshes.Add(mesh);
-        mesh.name := Level.GetLayerName(sec.Layer);
+        mesh.name := Level.GetLayerName(sec.layer);
 
         for i := nsel.Count - 1 downto 0 do
         begin
             csec := Level.Sectors[nsel.GetSC(i)];
-            if csec.Layer <> sec.Layer then
+            if csec.layer <> sec.layer then
                 continue;
             csec.Renumber;
             AddSecToMesh(mesh, csec);
@@ -7900,7 +7935,7 @@ begin
                 for i := 0 to scsel.Count - 1 do
                   begin
                     var sec := Level.Sectors[scsel.GetSC(i)];
-                    if ToolBar.IsLayerVisible(sec.Layer) then
+                    if ToolBar.IsLayerVisible(sec.layer) then
                       CleaveSector(sec, norm, X, Y, z);
                   end;
                 { updated in procedure }
@@ -7914,7 +7949,7 @@ begin
                   begin
                       sfsel.GetSCSF(i, nsc, nsf);
                       var sec := Level.Sectors[nsc];
-                      if ToolBar.IsLayerVisible(sec.Layer) then
+                      if ToolBar.IsLayerVisible(sec.layer) then
                         CleaveSurface(sec.surfaces[nsf], norm, X, Y, z);
                   end;
                 sfsel.Clear;
@@ -8758,7 +8793,7 @@ begin
     TPLCreator.CreateTemplate;
 end;
 
-Procedure TJedMain.SetRendfromPYR;
+Procedure TJedMain.SetRendFromPYR;
 var
     X, Y, z: TVector;
 begin

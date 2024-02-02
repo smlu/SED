@@ -1335,54 +1335,54 @@ var
     m:T3DPMesh;
     lvec:TVector;
 
-Function GetIntersectingSurf(m: T3DPMesh; var cdist: double): Integer;
-var
-    a,b,c2: double;
-    ax,ay,az: double;
-    cv: TVector;
-    i: integer;
-    p: T3DPoly;
-    vxd: TVXDets;
-    dist: double;
-begin
- Result := -1;
- if m = nil then exit;
- cv.SetCoords(m.center.x - ax1, m.center.y - ay1, m.center.z - az1);
- c2 := sqr(cv.dx) + sqr(cv.dy) + sqr(cv.dz);
- a  := SMult(lvec.dx, lvec.dy, lvec.dz, cv.dx, cv.dy, cv.dz);
+  Function GetIntersectingSurf(m: T3DPMesh; var cdist: double): Integer;
+  var
+      a,b,c2: double;
+      ax,ay,az: double;
+      cv: TVector;
+      i: integer;
+      p: T3DPoly;
+      vxd: TVXDets;
+      dist: double;
+  begin
+   Result := -1;
+   if m = nil then exit;
+   cv.SetCoords(m.center.x - ax1, m.center.y - ay1, m.center.z - az1);
+   c2 := sqr(cv.dx) + sqr(cv.dy) + sqr(cv.dz);
+   a  := SMult(lvec.dx, lvec.dy, lvec.dz, cv.dx, cv.dy, cv.dz);
 
- if a < (-m.radius) then exit; {If behind the plane}
+   if a < (-m.radius) then exit; {If behind the plane}
 
- b := sqrt(c2 - sqr(a));
- if b > m.radius then exit; {if look line doesn't intersect bounding sphere}
+   b := sqrt(c2 - sqr(a));
+   if b > m.radius then exit; {if look line doesn't intersect bounding sphere}
 
- for i := 0 to m.polys.count - 1 do
-   begin
-    p := m.GetPoly(i);
-    if p.geo < Wireframe then continue;
+   for i := 0 to m.polys.count - 1 do
+     begin
+      p := m.GetPoly(i);
+      if p.geo < Wireframe then continue;
 
-    if SMult(p.normal.dx, p.normal.dy, p.normal.dz, lvec.dx, lvec.dy, lvec.dz) > 0 then continue;
+      if SMult(p.normal.dx, p.normal.dy, p.normal.dz, lvec.dx, lvec.dy, lvec.dz) > 0 then continue;
 
-    if p.vxds.count = 0 then continue;
-    vxd := p.getVXD(0);
-    if Not PlaneLineXnNew(p.normal, vxd.X, vxd.y, vxd.z, ax1, ay1, az1, ax2, ay2, az2, ax, ay, az)
-     then continue;
+      if p.vxds.count = 0 then continue;
+      vxd := p.getVXD(0);
+      if Not PlaneLineXnNew(p.normal, vxd.X, vxd.y, vxd.z, ax1, ay1, az1, ax2, ay2, az2, ax, ay, az)
+       then continue;
 
-     {Debug version}
-  {   if not IsPointOn3DPSurf(s,ax,ay,az) then continue;
-     dist:=SMult(ax-ax1,ay-ay1,az-az1,lvec.dx,lvec.dy,lvec.dz);
-    if dist<0 then continue;
-    if dist>cdist then continue;}
+       {Debug version}
+    {   if not IsPointOn3DPSurf(s,ax,ay,az) then continue;
+       dist:=SMult(ax-ax1,ay-ay1,az-az1,lvec.dx,lvec.dy,lvec.dz);
+      if dist<0 then continue;
+      if dist>cdist then continue;}
 
-    dist := SMult(ax - ax1, ay - ay1, az - az1, lvec.dx, lvec.dy, lvec.dz);
-    if dist < 0 then continue;
-    if dist > cdist then continue;
-    if not IsPointOn3DPSurf(p, ax, ay, az) then continue;
+      dist := SMult(ax - ax1, ay - ay1, az - az1, lvec.dx, lvec.dy, lvec.dz);
+      if dist < 0 then continue;
+      if dist > cdist then continue;
+      if not IsPointOn3DPSurf(p, ax, ay, az) then continue;
 
-    cdist  := dist;
-    Result := i;
-   end
-end;
+      cdist  := dist;
+      Result := i;
+     end
+  end;
 
 begin
  cdist := 1E100;

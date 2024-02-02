@@ -75,8 +75,7 @@ type
     Procedure EndScene; virtual; abstract;
     Procedure SetCulling(how: integer); virtual; abstract;
     Procedure DrawPolygon(p: TPolygon); virtual; abstract;
-    Procedure DrawPolygonsAt(ps: TPolygons; dx, dy, dz, pch, yaw, rol: double);
-      virtual; abstract;
+    Procedure DrawPolygonsAt(ps: TPolygons; dx, dy, dz, pch, yaw, rol: double); virtual; abstract;
     Procedure DrawPolygons(ps: TPolygons); virtual; abstract;
     Procedure DrawLine(v1, v2: TVertex); virtual; abstract;
     Procedure DrawVertex(x, y, z: double); virtual; abstract;
@@ -89,6 +88,7 @@ type
     Procedure EndPick; virtual; abstract;
     Procedure PickPolygon(p: TPolygon; id: integer); virtual; abstract;
     Procedure PickPolygons(ps: TPolygons; id: integer); virtual; abstract;
+    Procedure PickPolygonsAt(ps: TPolygons; x, y, z, pitch, yaw, roll: double; id: integer); virtual; abstract;
     Procedure PickLine(v1, v2: TVertex; id: integer); virtual; abstract;
     Procedure PickVertex(x, y, z: double; id: integer); virtual; abstract;
 

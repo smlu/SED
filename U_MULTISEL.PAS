@@ -161,7 +161,7 @@ end;
 Function TFRMultisel.FindFR(th,fr:integer):integer;
 var i:integer;
 begin
- if FindInt(self,frToInt(th,fr),i) then result:=i else result:=-1;
+ if FindInt(self, FRToInt(th,fr),i) then result:=i else result:=-1;
 end;
 
 
@@ -211,7 +211,7 @@ end;
 function TFRMultisel.AddFR(th,fr:integer):integer;
 begin
  if fr=-1 then begin result:=-1; exit; end;
- Result:=AddIntUnique(frtoInt(th,fr));
+ Result:=AddIntUnique(FRToInt(th,fr));
 end;
 
 

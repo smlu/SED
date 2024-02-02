@@ -61,12 +61,11 @@ Type
     Procedure EndPick; override;
     Procedure PickPolygon(p: TPolygon; id: Integer); override;
     Procedure PickPolygons(ps: TPolygons; id: Integer); override;
+    Procedure PickPolygonsAt(ps: TPolygons; x, y, z, pitch, yaw, roll: double; id: integer); override;
     Procedure PickLine(v1, v2: TVertex; id: Integer); override;
     Procedure PickVertex(x, y, Z: double; id: Integer); override;
-    Function GetXYZonPlaneAt(scX, scY: Integer; pnormal: TVector;
-      pX, pY, pZ: double; var x, y, Z: double): boolean; override;
-    Function GetGridAt(scX, scY: Integer; var x, y, Z: double)
-      : boolean; override;
+    Function GetXYZonPlaneAt(scX, scY: Integer; pnormal: TVector; pX, pY, pZ: double; var x, y, Z: double): boolean; override;
+    Function GetGridAt(scX, scY: Integer; var x, y, Z: double): boolean; override;
     Procedure SetPointSize(size: double); override;
     Procedure ProjectPoint(x, y, Z: double; Var WinX, WinY: Integer); override;
     Procedure UnProjectPoint(WinX, WinY: double; WinZ: double;
@@ -148,7 +147,7 @@ begin
   { glRotated(0,0,0,1);
     glRotated(0,0,1,0); }
 
-  glMatrixMode(gl_Modelview);
+  glMatrixMode(GL_MODELVIEW);
   glLoadIdentity;
 
 
@@ -184,7 +183,7 @@ var
   dpx, dpy: double;
 begin
   wglMakeCurrent(hdc, hglc);
-  glMatrixMode(GL_Projection);
+  glMatrixMode(GL_PROJECTION);
   glLoadIdentity;
 
   dpx := vpw / ppunit * DpiScale;
@@ -197,8 +196,6 @@ begin
    //glFrustum(-dpx/2,dpx/2,-dpy/2,dpy/2,0.01,Zrange/2);
 
   SetCamera;
-  {glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity; }
 end;
 
 Procedure TOGLRenderer.SetPickMatrix(x, y: Integer);
@@ -208,7 +205,7 @@ var
 begin
   wglMakeCurrent(hdc, hglc);
   glGetIntegerV(GL_VIEWPORT, @a);
-  glMatrixMode(GL_Projection);
+  glMatrixMode(GL_PROJECTION);
   glLoadIdentity();
   gluPickMatrix(x, a[3] - y, 4, 4, a);
 
@@ -395,7 +392,7 @@ begin
           begin
             ax := x;
             ay := y;
-            az := Z;
+            az := z;
             MultVM3(mx, ax, ay, az);
             glVertex3d(ax + dx, ay + dy, az + dz);
           end;
@@ -520,7 +517,7 @@ end;
 
 Procedure TOGLRenderer.RenderLine(v1, v2: TVertex);
 begin
-  glBegin(gl_lines);
+  glBegin(GL_LINES);
   With v1 do
     glVertex3d(x, y, Z);
   With v2 do
@@ -623,8 +620,13 @@ var
   i: Integer;
 begin
   glLoadName(id);
-  for i := 0 to ps.count - 1 do
-    RenderPoly(ps[i]);
+  DrawPolygons(ps);
+end;
+
+Procedure TOGLRenderer.PickPolygonsAt(ps: TPolygons; x, y, z, pitch, yaw, roll: double; id: integer);
+begin
+  glLoadName(id);
+  DrawPolygonsAt(ps, x, y, z, pitch, yaw, roll);
 end;
 
 Procedure TOGLRenderer.PickLine(v1, v2: TVertex; id: Integer);
