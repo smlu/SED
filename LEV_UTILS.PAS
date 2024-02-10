@@ -38,161 +38,160 @@ function MaxSurfaceVertices(lev: TJKLevel): integer; // returns max number of ve
 function NextIdx(n, maxn: integer): integer;
 
 function GetAngle(x, y: double; xa, ya, xb, yb: double): double;
-Function Isabove180(x, y: double; xa, ya, xb, yb: double): boolean;
-Function DoIntersect(x11, y11, x12, y12, x21, y21, x22, y22: double): boolean;
+function Isabove180(x, y: double; xa, ya, xb, yb: double): boolean;
+function DoIntersect(x11, y11, x12, y12, x21, y21, x22, y22: double): boolean;
 
-Procedure MultVM3(const mx: TMat3x3; var x, y, z: double);
+procedure MultVM3(const mx: TMat3x3; var x, y, z: double);
 
-Procedure MultM3(var mx: TMat3x3; const bymx: TMat3x3);
+procedure MultM3(var mx: TMat3x3; const bymx: TMat3x3);
 
-Procedure MultVM3s(const mx: TMat3x3s; var x, y, z: single);
+procedure MultVM3s(const mx: TMat3x3s; var x, y, z: single);
 
-Procedure MultM3s(var mx: TMat3x3s; const bymx: TMat3x3s);
+procedure MultM3s(var mx: TMat3x3s; const bymx: TMat3x3s);
 
-Procedure CreateRotMatrix(var mx: TMat3x3; pch, yaw, rol: double);
-Procedure ScaleMatrix(var mx: TMat3x3; scx, scy, scz: double);
+procedure CreateRotMatrix(var mx: TMat3x3; pch, yaw, rol: double);
+procedure ScaleMatrix(var mx: TMat3x3; scx, scy, scz: double);
 
-Procedure CreateRotMatrixS(var mx: TMat3x3s; pch, yaw, rol: single);
-Procedure ScaleMatrixS(var mx: TMat3x3s; scx, scy, scz: single);
+procedure CreateRotMatrixS(var mx: TMat3x3s; pch, yaw, rol: single);
+procedure ScaleMatrixS(var mx: TMat3x3s; scx, scy, scz: single);
 
-Procedure CalcNormal(surf: TPolygon; var normal: TVector);
+procedure CalcNormal(surf: TPolygon; var normal: TVector);
 
-Procedure FindBBox(sec: TJKSector; var box: TBox);
-Procedure FindBSphere(sec: TJKSector; var cx, cy, cz, Rad: double);
-Function FindCollideBox(sec: TJKSector; const bbox: TBox; cx, cy, cz: double;
+procedure FindBBox(sec: TJKSector; var box: TBox);
+procedure FindBSphere(sec: TJKSector; var cx, cy, cz, Rad: double);
+function FindCollideBox(sec: TJKSector; const bbox: TBox; cx, cy, cz: double;
   var cbox: TBox): boolean;
 
-Function DoBoxesIntersect(const box1, box2: TBox): boolean;
-Procedure SetBox(var box: TBox; x1, x2, y1, y2, z1, z2: double);
-Function IsPointInBox(const box: TBox; x, y, z: double): boolean;
+function DoBoxesIntersect(const box1, box2: TBox): boolean;
+procedure SetBox(var box: TBox; x1, x2, y1, y2, z1, z2: double);
+function IsPointInBox(const box: TBox; x, y, z: double): boolean;
 
-Function Do2DBoxesIntersect(const box1, box2: T2DBox): boolean;
-Procedure Set2DBox(var box: T2DBox; x1, x2, y1, y2: double);
-Function IsPointIn2DBox(const box: T2DBox; x, y: double): boolean;
+function Do2DBoxesIntersect(const box1, box2: T2DBox): boolean;
+procedure Set2DBox(var box: T2DBox; x1, x2, y1, y2: double);
+function IsPointIn2DBox(const box: T2DBox; x, y: double): boolean;
 
-Procedure FindCenter(sec: TJKSector; var cx, cy, cz: double);
-Procedure CalcSecCenter(sec: TJKSector; var cx, cy, cz: double);
+procedure FindCenter(sec: TJKSector; var cx, cy, cz: double);
+procedure CalcSecCenter(sec: TJKSector; var cx, cy, cz: double);
 
-Procedure CalcSurfCenter(surf: TJKSurface; var cx, cy, cz: double);
-Procedure CalcSurfRect(surf: TJKSurface; v1, v2, v3, v4: TVertex; by: double);
+procedure CalcSurfCenter(surf: TJKSurface; var cx, cy, cz: double);
+procedure CalcSurfRect(surf: TJKSurface; v1, v2, v3, v4: TVertex; by: double);
 
-Procedure VMult(x1, y1, z1, x2, y2, z2: double; var x, y, z: double);
-Function SMult(x1, y1, z1, x2, y2, z2: double): double;
-Function VLen(const v: TVector): double;
+procedure VMult(x1, y1, z1, x2, y2, z2: double; var x, y, z: double);
+function SMult(x1, y1, z1, x2, y2, z2: double): double;
+function VLen(const v: TVector): double;
 
-Procedure RotateVector(var vec: TVector; pch, yaw, rol: double);
-Procedure GetJKPYR(const x, y, z: TVector; var pch, yaw, rol: double);
-Procedure CalcRotVecData(var rd: TVecRotData; pch, yaw, rol: double);
-Procedure RotVecbyData(var vec: TVector; var rd: TVecRotData);
+procedure RotateVector(var vec: TVector; pch, yaw, rol: double);
+procedure GetJKPYR(const x, y, z: TVector; var pch, yaw, rol: double);
+procedure CalcRotVecData(var rd: TVecRotData; pch, yaw, rol: double);
+procedure RotVecbyData(var vec: TVector; var rd: TVecRotData);
 
-Function IsSurfConvex(surf: TJKSurface): boolean;
-Function IsSurfPlanar(surf: TJKSurface): boolean;
-Function IsSectorConvex(sec: TJKSector): boolean;
-Function IsOnLine(x1, y1, z1, x2, y2, z2, x, y, z: double): boolean;
-Function DistToPlane(surf: TPolygon; x, y, z: double): double;
+function IsSurfConvex(surf: TJKSurface): boolean;
+function IsSurfPlanar(surf: TJKSurface): boolean;
+function IsSectorConvex(sec: TJKSector): boolean;
+function IsOnLine(x1, y1, z1, x2, y2, z2, x, y, z: double): boolean;
+function DistToPlane(surf: TPolygon; x, y, z: double): double;
 
 { Do line and surface intersect }
-Function PlaneLineXn(const normal: TVector; D: double;
+function PlaneLineXn(const normal: TVector; D: double;
   x1, y1, z1, x2, y2, z2: double; var x, y, z: double): boolean;
-Function PlaneLineXnNew(const normal: TVector; pX, pY, pZ, x1, y1, z1, x2, y2,
+function PlaneLineXnNew(const normal: TVector; pX, pY, pZ, x1, y1, z1, x2, y2,
   z2: double; var x, y, z: double): boolean;
 
-Function IsPointOnSurface(surf: TJKSurface; x, y, z: double): boolean;
-Function IsPointWithInLine(x, y, z, x1, y1, z1, x2, y2, z2: double): boolean;
+function IsPointOnSurface(surf: TJKSurface; x, y, z: double): boolean;
+function IsPointWithInLine(x, y, z, x1, y1, z1, x2, y2, z2: double): boolean;
 { Function SurfLineXn(surf:TJKSurface;x1,y1,z1,x2,y2,z2:double):integer; }
 
+function IsInSector(sec: TJKSector; x, y, z: double): boolean;
+function DoSectorsOverlap(sec1, sec2: TJKSector): boolean;
 
-Function IsInSector(sec: TJKSector; x, y, z: double): boolean;
-Function DoSectorsOverlap(sec1, sec2: TJKSector): boolean;
-
-Function FindSectorForThing(thing: TJKThing): integer;
-Function FindSectorForXYZ(lev: TJKLevel; x, y, z: double): integer;
-Function GetPreviousSector(const lev: TJKLevel; n: integer): integer; // Returns index of the previous sector on the visible layer or -1
-Function GetPreviousThing(const lev: TJKLevel; n: integer): integer;  // Returns index of the previous thing on the visible layer or -1
-Function GetPreviousLight(const lev: TJKLevel; n: integer): integer;  // Returns index of the previous light on the visible layer or -1
+function FindSectorForThing(thing: TJKThing): integer;
+function FindSectorForXYZ(lev: TJKLevel; x, y, z: double): integer;
+function GetPreviousSector(const lev: TJKLevel; n: integer): integer; // Returns index of the previous sector on the visible layer or -1
+function GetPreviousThing(const lev: TJKLevel; n: integer): integer;  // Returns index of the previous thing on the visible layer or -1
+function GetPreviousLight(const lev: TJKLevel; n: integer): integer;  // Returns index of the previous light on the visible layer or -1
 
 { Level modifications }
-Procedure TranslateSectors(lev: TJKLevel; scsel: TSCMultiSel; cursc: integer;
+procedure TranslateSectors(lev: TJKLevel; scsel: TSCMultiSel; cursc: integer;
   dx, dy, dz: double);
-Procedure TranslateSurfaces(lev: TJKLevel; sfsel: TSFMultiSel;
+procedure TranslateSurfaces(lev: TJKLevel; sfsel: TSFMultiSel;
   cursc, cursf: integer; dx, dy, dz: double);
-Procedure TranslateVertices(lev: TJKLevel; vxsel: TVXMultiSel;
+procedure TranslateVertices(lev: TJKLevel; vxsel: TVXMultiSel;
   cursc, curvx: integer; dx, dy, dz: double);
 
-Procedure TranslateFrames(lev: TJKLevel; frsel: TFRMultisel; th, fr: integer;
+procedure TranslateFrames(lev: TJKLevel; frsel: TFRMultisel; th, fr: integer;
   dx, dy, dz: double);
 
-Procedure TranslateEdges(lev: TJKLevel; edsel: TEDMultiSel;
+procedure TranslateEdges(lev: TJKLevel; edsel: TEDMultiSel;
   cursc, cursf, cured: integer; dx, dy, dz: double);
 
-Procedure TranslateThingKeepFrame(lev: TJKLevel; curth: integer;
+procedure TranslateThingKeepFrame(lev: TJKLevel; curth: integer;
   dx, dy, dz: double);
 
-Procedure TranslateThings(lev: TJKLevel; thsel: TTHMultiSel; curth: integer;
+procedure TranslateThings(lev: TJKLevel; thsel: TTHMultiSel; curth: integer;
   dx, dy, dz: double; moveframes: boolean);
-Procedure TranslateLights(lev: TJKLevel; ltsel: TLTMultiSel; curlt: integer;
+procedure TranslateLights(lev: TJKLevel; ltsel: TLTMultiSel; curlt: integer;
   dx, dy, dz: double);
 
-Procedure RotateSectors(lev: TJKLevel; scsel: TSCMultiSel; axis: TVector;
+procedure RotateSectors(lev: TJKLevel; scsel: TSCMultiSel; axis: TVector;
   cx, cy, cz: double; angle: double);
-Procedure RotateSurfaces(level: TJKLevel; sfsel: TSFMultiSel; axis: TVector;
+procedure RotateSurfaces(level: TJKLevel; sfsel: TSFMultiSel; axis: TVector;
   cx, cy, cz: double; angle: double);
-Procedure RotateThings(lev: TJKLevel; thsel: TTHMultiSel; axis: TVector;
+procedure RotateThings(lev: TJKLevel; thsel: TTHMultiSel; axis: TVector;
   cx, cy, cz: double; angle: double; bRotatePYR: Boolean = False);
-Procedure RotateLights(lev: TJKLevel; ltsel: TLTMultiSel; axis: TVector;
+procedure RotateLights(lev: TJKLevel; ltsel: TLTMultiSel; axis: TVector;
   cx, cy, cz: double; angle: double);
-Procedure RotateFrames(lev: TJKLevel; frsel: TFRMultisel; axis: TVector;
+procedure RotateFrames(lev: TJKLevel; frsel: TFRMultisel; axis: TVector;
   cx, cy, cz: double; angle: double; bRotatePYR: Boolean = False);
 
-Procedure ScaleSectors(lev: TJKLevel; scsel: TSCMultiSel; const sd: TScaleData;
+procedure ScaleSectors(lev: TJKLevel; scsel: TSCMultiSel; const sd: TScaleData;
   scaletx: boolean);
-Procedure ScaleSurfaces(level: TJKLevel; sfsel: TSFMultiSel; const sd: TScaleData;
+procedure ScaleSurfaces(level: TJKLevel; sfsel: TSFMultiSel; const sd: TScaleData;
   scaletx: boolean);
-Procedure ScaleThings(lev: TJKLevel; thsel: TTHMultiSel; const sd: TScaleData);
-Procedure ScaleLights(lev: TJKLevel; ltsel: TLTMultiSel; const sd: TScaleData);
-Procedure ScaleFrames(lev: TJKLevel; frsel: TFRMultisel; const sd: TScaleData);
+procedure ScaleThings(lev: TJKLevel; thsel: TTHMultiSel; const sd: TScaleData);
+procedure ScaleLights(lev: TJKLevel; ltsel: TLTMultiSel; const sd: TScaleData);
+procedure ScaleFrames(lev: TJKLevel; frsel: TFRMultisel; const sd: TScaleData);
 
-Procedure FlipSectors(lev: TJKLevel; scsel: TSCMultiSel; cx, cy, cz: double;
+procedure FlipSectors(lev: TJKLevel; scsel: TSCMultiSel; cx, cy, cz: double;
   how: integer);
-Procedure FlipSurfaces(lev: TJKLevel; sfsel: TSFMultiSel);
-Procedure FlipThings(lev: TJKLevel; thsel: TTHMultiSel; cx, cy, cz: double;
+procedure FlipSurfaces(lev: TJKLevel; sfsel: TSFMultiSel);
+procedure FlipThings(lev: TJKLevel; thsel: TTHMultiSel; cx, cy, cz: double;
   how: integer);
 
-Procedure FlipThingsOverPlane(lev: TJKLevel; thsel: TTHMultiSel; pnorm: TVector;
+procedure FlipThingsOverPlane(lev: TJKLevel; thsel: TTHMultiSel; pnorm: TVector;
   cx, cy, cz: double);
-Procedure FlipLightsOverPlane(lev: TJKLevel; ltsel: TLTMultiSel; pnorm: TVector;
+procedure FlipLightsOverPlane(lev: TJKLevel; ltsel: TLTMultiSel; pnorm: TVector;
   cx, cy, cz: double);
-Procedure FlipFramesOverPlane(lev: TJKLevel; frsel: TFRMultisel; pnorm: TVector;
+procedure FlipFramesOverPlane(lev: TJKLevel; frsel: TFRMultisel; pnorm: TVector;
   cx, cy, cz: double);
 
-Procedure FlipSectorsOverPlane(lev: TJKLevel; scsel: TSCMultiSel;
+procedure FlipSectorsOverPlane(lev: TJKLevel; scsel: TSCMultiSel;
   const pnorm: TVector; pX, pY, pZ: double);
 
-Function Normalize(var normal: TVector): boolean;
+function Normalize(var normal: TVector): boolean;
 
-Function GetNearestVX(lev: TJKLevel; pX, pY, pZ: double; var rx, ry, rz: double;
+function GetNearestVX(lev: TJKLevel; pX, pY, pZ: double; var rx, ry, rz: double;
   mdist: double): boolean;
 
-Procedure ExtrudeSurface(surf: TJKSurface; by: double);
-Procedure ExtrudeAndExpandSurface(surf: TJKSurface; by: double);
+procedure ExtrudeSurface(surf: TJKSurface; by: double);
+procedure ExtrudeAndExpandSurface(surf: TJKSurface; by: double);
 
-Function CleaveSurface(surf: TJKSurface; const cnormal: TVector;
+function CleaveSurface(surf: TJKSurface; const cnormal: TVector;
   cx, cy, cz: double): boolean;
-Function CleaveSector(sec: TJKSector; const cnormal: TVector;
+function CleaveSector(sec: TJKSector; const cnormal: TVector;
   cx, cy, cz: double): boolean;
-Function CleaveEdge(surf: TJKSurface; edge: integer; const cnormal: TVector;
+function CleaveEdge(surf: TJKSurface; edge: integer; const cnormal: TVector;
   cx, cy, cz: double): boolean;
 
-Function ConnectSurfaces(surf1, surf2: TJKSurface): boolean;
+function ConnectSurfaces(surf1, surf2: TJKSurface): boolean;
 { Creates adjoin by cleaving both surfaces to reduce them to their
   common area }
 
-Function ConnectSectors(sec1, sec2: TJKSector): boolean;
+function ConnectSectors(sec1, sec2: TJKSector): boolean;
 
-Function BuildSector(lev: TJKLevel; sfsel: TSFMultiSel): TJKSector;
-Function BuildSurface(lev: TJKLevel; vxsel: TVXMultiSel): TJKSurface;
+function BuildSector(lev: TJKLevel; sfsel: TSFMultiSel): TJKSector;
+function BuildSurface(lev: TJKLevel; vxsel: TVXMultiSel): TJKSurface;
 
-Function FlattenSurface(surf: TJKSurface): boolean;
+function FlattenSurface(surf: TJKSurface): boolean;
 
 function MergeSurfaces(surf, surf1: TJKSurface): TJKSurface;
 function MergeSurfacesAt(surf: TJKSurface; edge: integer): boolean;
@@ -200,85 +199,85 @@ function MergeSectors(sec, sec1: TJKSector): TJKSector;
 function MergeVertices(lev: TJKLevel; vxsel: TVXMultiSel): integer;
 // returns number of vertices merged
 
-Procedure CalcDefaultUVNormals(surf: TJKSurface; orgvx: integer;
+procedure CalcDefaultUVNormals(surf: TJKSurface; orgvx: integer;
   var un, vn: TVector);
-Procedure CalcUVNormals(surf: TJKSurface; var un, vn: TVector);
-Procedure CalcUVNormalsFrom(surf: TJKSurface; nv1, nv2: integer;
+procedure CalcUVNormals(surf: TJKSurface; var un, vn: TVector);
+procedure CalcUVNormalsFrom(surf: TJKSurface; nv1, nv2: integer;
   var un, vn: TVector);
-Procedure CalcUV(surf: TJKSurface; orgvx: integer);
-Procedure UpdateSurfUVData(surf: TJKSurface; var un, vn: TVector);
-Procedure FindUVScales(surf: TJKSurface);
+procedure CalcUV(surf: TJKSurface; orgvx: integer);
+procedure UpdateSurfUVData(surf: TJKSurface; var un, vn: TVector);
+procedure FindUVScales(surf: TJKSurface);
 
-Procedure ArrangeTexture(surf: TJKSurface; orgvx: integer;
+procedure ArrangeTexture(surf: TJKSurface; orgvx: integer;
   const un, vn: TVector);
-Procedure ArrangeTextureBy(surf: TJKSurface; const un, vn: TVector;
+procedure ArrangeTextureBy(surf: TJKSurface; const un, vn: TVector;
   refx, refy, refz, refu, refv: double);
-Function IsTXFlipped(surf: TJKSurface): boolean;
-Procedure RemoveSurfRefs(lev: TJKLevel; surf: TJKSurface);
-Procedure RemoveSecRefs(lev: TJKLevel; sec: TJKSector; opt: byte);
+function IsTXFlipped(surf: TJKSurface): boolean;
+procedure RemoveSurfRefs(lev: TJKLevel; surf: TJKSurface);
+procedure RemoveSecRefs(lev: TJKLevel; sec: TJKSector; opt: byte);
 
 { Function StitchAt(surf:TJKSurface;nv1,nv2:integer):integer;
 
   Function StitchAtEdge(surf:TJKSurface;edge:integer):integer; }
 
-Function StitchSurfaces(surf, surf1: TJKSurface): boolean;
+function StitchSurfaces(surf, surf1: TJKSurface): boolean;
 
-Function FindCommonEdges(surf, withsurf: TJKSurface;
+function FindCommonEdges(surf, withsurf: TJKSurface;
   var v11, v12, v21, v22: integer): boolean;
 
-Procedure CalcLighting(lev: TJKLevel; scs: TSCMultiSel);
-Procedure CalcLightingNew(lev: TJKLevel; scs: TSCMultiSel);
+procedure CalcLighting(lev: TJKLevel; scs: TSCMultiSel);
+procedure CalcLightingNew(lev: TJKLevel; scs: TSCMultiSel);
 
-Procedure DeleteSector(lev: TJKLevel; n: integer);
-Procedure DeleteSurface(lev: TJKLevel; sc, sf: integer);
-Procedure DeleteThing(lev: TJKLevel; n: integer);
-Function DeleteVertex(sec: TJKSector; vx: integer; silent: boolean): boolean;
-Procedure DeleteLight(lev: TJKLevel; n: integer);
-Procedure DeleteCog(lev: TJKLevel; n: integer);
+procedure DeleteSector(lev: TJKLevel; n: integer);
+procedure DeleteSurface(lev: TJKLevel; sc, sf: integer);
+procedure DeleteThing(lev: TJKLevel; n: integer);
+function DeleteVertex(sec: TJKSector; vx: integer; silent: boolean): boolean;
+procedure DeleteLight(lev: TJKLevel; n: integer);
+procedure DeleteCog(lev: TJKLevel; n: integer);
 
-Function DO_Surf_Overlap(surf, surf1: TJKSurface): boolean;
-Function DO_Surf_Match(surf, surf1: TJKSurface): boolean;
+function DO_Surf_Overlap(surf, surf1: TJKSurface): boolean;
+function DO_Surf_Match(surf, surf1: TJKSurface): boolean;
 
-Function MakeAdjoin(surf: TJKSurface): boolean;
-Function MakeAdjoinSCUP(surf: TJKSurface; sc: integer): boolean;
-Function UnAdjoin(surf: TJKSurface): boolean;
-Procedure SysAdjoinSurfaces(surf1, surf2: TJKSurface);
-Function AdjoinSectors(sec, sec1: TJKSector): boolean;
-Function UnAdjoinSectors(sec, sec1: TJKSector): boolean;
+function MakeAdjoin(surf: TJKSurface): boolean;
+function MakeAdjoinSCUP(surf: TJKSurface; sc: integer): boolean;
+function UnAdjoin(surf: TJKSurface): boolean;
+procedure SysAdjoinSurfaces(surf1, surf2: TJKSurface);
+function AdjoinSectors(sec, sec1: TJKSector): boolean;
+function UnAdjoinSectors(sec, sec1: TJKSector): boolean;
 
-Procedure SetAdjoinParams(sf: TJKSurface);
-Procedure ClearAdjoinParams(sf: TJKSurface);
+procedure SetAdjoinParams(sf: TJKSurface);
+procedure ClearAdjoinParams(sf: TJKSurface);
 
-Procedure CreateCube(lev: TJKLevel; x, y, z: double;
+procedure CreateCube(lev: TJKLevel; x, y, z: double;
   const pnormal, edge: TVector);
 
-Procedure CreateCubeSec(s: TJKSector; x, y, z: double;
+procedure CreateCubeSec(s: TJKSector; x, y, z: double;
   const pnormal, edge: TVector);
 
-Procedure RotatePoint(ax1, ay1, az1, ax2, ay2, az2: double; angle: double;
+procedure RotatePoint(ax1, ay1, az1, ax2, ay2, az2: double; angle: double;
   var x, y, z: double);
 
-Procedure DuplicateSector(sec, newsc: TJKSector; cx, cy, cz: double;
+procedure DuplicateSector(sec, newsc: TJKSector; cx, cy, cz: double;
   nx, ny, nz: TVector; dx, dy, dz: double);
 
-Procedure GetLevelPal(l: TJKLevel; var pal: TCMPPal);
+procedure GetLevelPal(l: TJKLevel; var pal: TCMPPal);
 
-Procedure OffsetByNode(lev: TJKLevel; nnode: integer; var x, y, z: double);
-Procedure UnOffsetByNode(lev: TJKLevel; nnode: integer; var x, y, z: double);
+procedure OffsetByNode(lev: TJKLevel; nnode: integer; var x, y, z: double);
+procedure UnOffsetByNode(lev: TJKLevel; nnode: integer; var x, y, z: double);
 
 {index bound checking functions}
-Function CheckSectorIndex(lev: TJKLevel; sc: integer): boolean;
-Function CheckSectorSurfaceIndex(sec: TJKSector; sf: integer): boolean;
-Function CheckSectorVertexIndex(sec: TJKSector; vx: integer): boolean;
-Function CheckSurfaceIndex(lev: TJKLevel; sc, sf: integer): boolean;
-Function CheckSurfaceEdgeIndex(surf: TJKSurface; ed: integer): boolean;
-Function CheckEdgeIndex(lev: TJKLevel; sc, sf, ed: integer): boolean;
-Function CheckVertexIndex(lev: TJKLevel; sc, vx: integer): boolean;
-Function CheckTemplateIndex(lev: TJKLevel; tmpl: integer): boolean;
-Function CheckThingIndex(lev: TJKLevel; th: integer): boolean;
-Function CheckFrameIndex(lev: TJKLevel; th, fr: integer): boolean;
-Function CheckCogIndex(lev: TJKLevel; co: integer): boolean;
-Function CheckLightIndex(lev: TJKLevel; lt: integer): boolean;
+function CheckSectorIndex(lev: TJKLevel; sc: integer): boolean;
+function CheckSectorSurfaceIndex(sec: TJKSector; sf: integer): boolean;
+function CheckSectorVertexIndex(sec: TJKSector; vx: integer): boolean;
+function CheckSurfaceIndex(lev: TJKLevel; sc, sf: integer): boolean;
+function CheckSurfaceEdgeIndex(surf: TJKSurface; ed: integer): boolean;
+function CheckEdgeIndex(lev: TJKLevel; sc, sf, ed: integer): boolean;
+function CheckVertexIndex(lev: TJKLevel; sc, vx: integer): boolean;
+function CheckTemplateIndex(lev: TJKLevel; tmpl: integer): boolean;
+function CheckThingIndex(lev: TJKLevel; th: integer): boolean;
+function CheckFrameIndex(lev: TJKLevel; th, fr: integer): boolean;
+function CheckCogIndex(lev: TJKLevel; co: integer): boolean;
+function CheckLightIndex(lev: TJKLevel; lt: integer): boolean;
 
 implementation
 
@@ -3437,6 +3436,20 @@ begin
   result := nil;
   nv := 0;
 
+  // Prevent modifying locked sector
+  if not ToolBar.IsLayerVisible(surf1.sector.Layer) then
+    begin
+      PanMessageFmt(mt_info, 'Can''t merge surface %d, %d - locked layer',
+        [surf1.sector.num, surf1.num]);
+      exit;
+    end;
+  if not ToolBar.IsLayerVisible(surf2.sector.Layer) then
+    begin
+      PanMessageFmt(mt_info, 'Can''t merge surface %d, %d - locked layer',
+        [surf2.sector.num, surf2.num]);
+      exit;
+    end;
+
   if ((surf1.adjoin = nil) and (surf2.adjoin <> nil)) or
     ((surf2.adjoin = nil) and (surf1.adjoin <> nil)) then
   begin
@@ -3552,12 +3565,11 @@ begin
   if result <> nil then
   begin
     if not IsSurfPlanar(result) then
-      PanMessageFmt(mt_info, 'The surface %d,%d is not planar',
+      PanMessageFmt(mt_info, 'The surface %d, %d is not planar',
         [surf.sector.Num, surf.Num]);
     if not IsSurfConvex(result) then
-      PanMessageFmt(mt_info, 'The surface %d,%d is not convex',
+      PanMessageFmt(mt_info, 'The surface %d, %d is not convex',
         [surf.sector.Num, surf.Num]);
-
   end;
 end;
 
@@ -3579,27 +3591,32 @@ begin
 
   surf1 := nil;
   sec := surf.sector;
+
   for sf := 0 to sec.surfaces.count - 1 do
   begin
     asf := sec.surfaces[sf];
     if asf = surf then
       continue;
+
     for v := 0 to asf.Vertices.count - 1 do
     begin
       av1 := asf.Vertices[v];
       av2 := asf.Vertices[asf.NextVX(v)];
       if (v1 <> av2) or (v2 <> av1) then
         continue;
+
       if surf1 <> nil then
       begin
         PanMessage(mt_error, 'The edge is common to more than one surface');
         exit;
       end;
+
       surf1 := asf;
       edge1 := v;
       nsf1 := sf;
     end;
   end;
+
   if surf1 = nil then
   begin
     PanMessage(mt_error, 'The edge belongs to just one surface');
@@ -3616,6 +3633,13 @@ var
   sfs, sfs1: TSurfaces;
 begin
   result := nil;
+  if not ToolBar.IsLayerVisible(sec.Layer) or
+     not ToolBar.IsLayerVisible(sec1.Layer) then
+  begin
+    PanMessageFmt(mt_info, 'Can''t merge sectors %d and %d - locked layer(s)', [sec.num, sec1.num]);
+    exit;
+  end;
+
   sfs := TSurfaces.Create;
   sfs1 := TSurfaces.Create;
   for i := 0 to sec.surfaces.count - 1 do
@@ -3630,63 +3654,62 @@ begin
   end;
 
   if sfs.count = 0
-  then { PanMessageFmt(mt_warning,'The sectors %d and %d aren''t adjoined or adjoins don''t overlap',[sec.num,sec1.num]) }
+    then PanMessageFmt(mt_warning,'The sectors %d and %d are not adjoined or adjoins don''t overlap',[sec.num,sec1.num])
   else
-  begin
-
-    SaveSecUndo(sec, ch_changed, sc_both);
-    SaveSecUndo(sec1, ch_deleted, sc_both);
-
-    for i := sec1.surfaces.count - 1 downto 0 do
     begin
-      surf := sec1.surfaces[i];
-      { If surface is to be deleted - skip it }
-      if sfs1.IndexOf(surf) <> -1 then
-        continue;
 
-      { Add all vertices used in the surface to Sec }
-      for j := 0 to surf.Vertices.count - 1 do
-        with surf.Vertices[j] do
-          surf.Vertices[j] := sec.AddVertex(x, y, z);
+      SaveSecUndo(sec, ch_changed, sc_both);
+      SaveSecUndo(sec1, ch_deleted, sc_both);
 
-      { Add surface to Sec and delete from Sec1 }
-      surf.sector := sec;
-      sec.surfaces.Add(surf);
-      sec1.surfaces.Delete(i);
+      for i := sec1.surfaces.count - 1 downto 0 do
+      begin
+        surf := sec1.surfaces[i];
+        { If surface is to be deleted - skip it }
+        if sfs1.IndexOf(surf) <> -1 then
+          continue;
+
+        { Add all vertices used in the surface to Sec }
+        for j := 0 to surf.Vertices.count - 1 do
+          with surf.Vertices[j] do
+            surf.Vertices[j] := sec.AddVertex(x, y, z);
+
+        { Add surface to Sec and delete from Sec1 }
+        surf.sector := sec;
+        sec.surfaces.Add(surf);
+        sec1.surfaces.Delete(i);
+      end;
+
+      RemoveSecRefs(sec1.Level, sec1, 0);
+
+      for i := 0 to sfs.count - 1 do
+        RemoveSurfRefs(sec1.Level, sfs[i]);
+
+      for i := 0 to sfs1.count - 1 do
+        RemoveSurfRefs(sec1.Level, sfs1[i]);
+
+      for i := 0 to sfs.count - 1 do
+      begin
+        j := sec.surfaces.IndexOf(sfs[i]);
+        sec.surfaces.Delete(j);
+        sfs[i].free;
+      end;
+
+      sec.Renumber;
+
+      JedMain.SectorChanged(sec);
+
+      i := sec1.Level.sectors.IndexOf(sec1);
+      sec1.Level.sectors.Delete(i);
+      JedMain.SectorDeleted(sec1);
+      sec1.free;
+
+      sec.Level.RenumSecs;
+
+      result := sec;
+
+      if not IsSectorConvex(sec) then
+        PanMessageFmt(mt_info, 'The sector %d is not convex', [sec.Num]);
     end;
-
-    RemoveSecRefs(sec1.Level, sec1, 0);
-
-    for i := 0 to sfs.count - 1 do
-      RemoveSurfRefs(sec1.Level, sfs[i]);
-
-    for i := 0 to sfs1.count - 1 do
-      RemoveSurfRefs(sec1.Level, sfs1[i]);
-
-    for i := 0 to sfs.count - 1 do
-    begin
-      j := sec.surfaces.IndexOf(sfs[i]);
-      sec.surfaces.Delete(j);
-      sfs[i].free;
-    end;
-
-    sec.Renumber;
-
-    JedMain.SectorChanged(sec);
-
-    i := sec1.Level.sectors.IndexOf(sec1);
-    sec1.Level.sectors.Delete(i);
-    JedMain.SectorDeleted(sec1);
-    sec1.free;
-
-    sec.Level.RenumSecs;
-
-    result := sec;
-
-    if not IsSectorConvex(sec) then
-      PanMessageFmt(mt_info, 'The sector %d is not convex', [sec.Num]);
-
-  end;
 
   sfs.free;
   sfs1.free;
@@ -3718,14 +3741,17 @@ begin
       vxsel.GetSCVX(j, sc, vx);
       v2 := lev.sectors[sc].Vertices[vx];
       nv2 := vx;
+
       if v1 = v2 then
         goto next;
       if v1.sector <> v2.sector then
         goto next;
-      if not(IsClose(v1.x, v2.x) and IsClose(v1.y, v2.y) and IsClose(v1.z, v2.z))
-      then
+      if not(IsClose(v1.x, v2.x) and IsClose(v1.y, v2.y) and IsClose(v1.z, v2.z)) then
         goto next;
+
       sec := v1.sector;
+      if not ToolBar.IsLayerVisible(sec.Layer) then // Prevent modifying sector on invisible layer
+        goto next;
 
       SaveSecUndo(sec, ch_changed, sc_geo);
 
@@ -3751,7 +3777,6 @@ begin
       v2.free;
       inc(result);
       JedMain.SectorChanged(sec);
-
     next:
       inc(j);
     end;

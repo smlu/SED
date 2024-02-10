@@ -186,7 +186,7 @@ begin
     dpx:=vpw/ppunit*scale;
     dpy:=vph/vpw*dpx; }
 
-  dpx := 16 / DpiScale;
+  dpx := ppunit / DpiScale;
 
   ScaleMatrixs(mx, dpx, dpx, dpx);
 

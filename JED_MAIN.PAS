@@ -2579,8 +2579,9 @@ begin
                                 sec := Level.Sectors[scsel.GetSC(scsel.Count - 1)];
                                 for i := 0 to scsel.Count - 2 do
                                 begin
-                                    if MergeSectors(Level.Sectors[scsel.GetSC(i)
-                                      ], sec) <> nil then
+                                    var msec := level.sectors[scsel.GetSC(i)];
+                                    if not ToolBar.IsLayerVisible(msec.Layer) then continue;  // Don't allow modification of sectors on invisible layer
+                                    if MergeSectors(msec, sec) <> nil then
                                     begin
                                         Inc(nsel);
                                         break;
@@ -2602,12 +2603,11 @@ begin
                                         surf := Level.Sectors[Cur_SC].surfaces[Cur_SF];
                                         if surf.adjoin = nil then
                                           exit;
+
                                         StartUndoRec('Merge Sectors');
-                                        sec := MergeSectors(surf.sector,
-                                        surf.adjoin.sector);
+                                        sec := MergeSectors(surf.sector, surf.adjoin.sector);
                                         if sec = nil then
-                                          PanMessage(mt_info,
-                                        'Sectors weren''t merged')
+                                          PanMessage(mt_info, 'Sectors weren''t merged')
                                         else
                                           begin
                                             SetCurSF(sec.num, 0);
@@ -2621,33 +2621,27 @@ begin
                                     StartUndoRec('Merge Surfaces');
 
                                     while sfsel.Count > 1 do
-                                    begin
-                                        sfsel.GetSCSF(sfsel.Count - 1,
-                                        nsc, nsf);
-                                        surf := Level.Sectors[nsc]
-                                        .surfaces[nsf];
-                                        for i := 0 to sfsel.Count - 2 do
-                                        begin
-                                        sfsel.GetSCSF(i, nsc, nsf);
-                                        if MergeSurfaces
-                                        (Level.Sectors[nsc].surfaces[nsf], surf)
-                                        <> nil then
-                                        begin
-                                        Inc(nsel);
-                                        break;
-                                        end;
-
-                                        end;
-                                        sfsel.DeleteN(sfsel.Count - 1);
-                                    end;
+                                      begin
+                                          sfsel.GetSCSF(sfsel.Count - 1, nsc, nsf);
+                                          surf := Level.Sectors[nsc].surfaces[nsf];
+                                          for i := 0 to sfsel.Count - 2 do
+                                            begin
+                                              sfsel.GetSCSF(i, nsc, nsf);
+                                              var msurf := level.sectors[nsc].surfaces[nsf];
+                                              if MergeSurfaces(msurf, surf) <> nil then
+                                              begin
+                                                Inc(nsel);
+                                                break;
+                                              end;
+                                            end;
+                                          sfsel.DeleteN(sfsel.Count - 1);
+                                      end;
 
                                     sfsel.GetSCSF(0, nsc, nsf);
-                                    surf := Level.Sectors[nsc].surfaces[nsf];
+                                    surf := level.sectors[nsc].surfaces[nsf];
                                     sfsel.Clear;
                                     SetCurSF(surf.sector.num, surf.num);
-                                    PanMessageFmt(mt_info,
-                                      '%d surfaces merged', [nsel]);
-
+                                    PanMessageFmt(mt_info,'%d surfaces merged', [nsel]);
                                 end;
                                 { else ShowMessage('You should either select one surface to merge sector or two surfaces to merge surfaces'); }
                             end;
@@ -2655,8 +2649,7 @@ begin
                         end;
                     MM_VX:
                         begin
-                            PanMessageFmt(mt_info, '%d vertices merged',
-                              [MergeVertices(Level, vxsel)]);
+                            PanMessageFmt(mt_info, '%d vertices merged', [MergeVertices(level, vxsel)]);
                             vxsel.Clear;
                         end;
                     MM_ED:

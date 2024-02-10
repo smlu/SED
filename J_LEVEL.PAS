@@ -130,8 +130,8 @@ type
       num: integer;
       Sec: TJKSector;
       name: String;
-      X, Y, Z: double;
-      PCH, YAW, ROL: double;
+      x, y, z: double;
+      pch, yaw, rol: double;
       vals: TTPLValues;
       layer: integer;
       a3DO: T3DO;
@@ -148,7 +148,6 @@ type
       Function NextFrame(n: integer): integer;
       Function PrevFrame(n: integer): integer;
       Function Nframes: integer;
-
   end;
 
   TJKThing = TThing;

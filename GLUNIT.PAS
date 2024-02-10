@@ -1020,6 +1020,7 @@ var
  glHint:Procedure (target: GLenum; mode: GLenum);stdcall;
  glInitNames: Procedure;stdcall;
  glIsEnabled: Function(	cap: GLenum): GLboolean;stdcall;
+ glLineStipple: Procedure(factor: GLint; pattern: GLushort);stdcall;
  glLineWidth: Procedure (width: GLfloat);stdcall;
  glLoadIdentity: Procedure; stdcall;
  glLoadName:Procedure (name: GLuint);stdcall;
@@ -1031,10 +1032,13 @@ var
  glPixelStorei:Procedure (pname: GLenum; param: GLint);stdcall;
  glPointSize:Procedure (size: GLfloat);stdcall;
  glPolygonMode:Procedure (face: GLenum; mode: GLenum);stdcall;
+ glPopAttrib:Procedure;stdcall;
+ glPushAttrib:Procedure (mask: GLbitfield);stdcall;
  glPushName:Procedure (name: GLuint);stdcall;
  glRenderMode:Function (mode: GLenum): GLint;stdcall;
  glRotated:Procedure (angle: GLdouble; x: GLdouble; y: GLdouble; z: GLdouble);stdcall;
  glScaled:Procedure (x: GLdouble; y: GLdouble; z: GLdouble);stdcall;
+ glScalef:Procedure (x: GLfloat; y: GLfloat; z: GLfloat);stdcall;
  glSelectBuffer:Procedure (size: GLsizei; buffer: PGLuint);stdcall;
  glShadeModel:Procedure (mode: GLenum);stdcall;
  glTexCoord2f:Procedure (s: GLfloat; t: GLfloat);stdcall;
@@ -1157,8 +1161,9 @@ begin
  glGetIntegerv:=LoadGLProc('glGetIntegerv');
  glHint:=LoadGLProc('glHint');
  glInitNames:=LoadGLProc('glInitNames');
- glLineWidth:=LoadGLProc('glLineWidth');
  glIsEnabled:=LoadGLProc('glIsEnabled');
+ glLineStipple:=LoadGLProc('glLineStipple');
+ glLineWidth:=LoadGLProc('glLineWidth');
  glLoadIdentity:=LoadGLProc('glLoadIdentity');
  glLoadName:=LoadGLProc('glLoadName');
  glMatrixMode:=LoadGLProc('glMatrixMode');
@@ -1169,10 +1174,13 @@ begin
  glPixelStorei:=LoadGLProc('glPixelStorei');
  glPointSize:=LoadGLProc('glPointSize');
  glPolygonMode:=LoadGLProc('glPolygonMode');
+ glPopAttrib:=LoadGLProc('glPopAttrib');
+ glPushAttrib:=LoadGLProc('glPushAttrib');
  glPushName:=LoadGLProc('glPushName');
  glRenderMode:=LoadGLProc('glRenderMode');
  glRotated:=LoadGLProc('glRotated');
  glScaled:=LoadGLProc('glScaled');
+ glScalef:=LoadGLProc('glScalef');
  glSelectBuffer:=LoadGLProc('glSelectBuffer');
  glShadeModel:=LoadGLProc('glShadeModel');
  glTexCoord2f:=LoadGLProc('glTexCoord2f');
