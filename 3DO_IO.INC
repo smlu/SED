@@ -21,7 +21,7 @@ begin
 
 end;
 
-Constructor T3DO.CreateFrom3DO(const name:string;lod:integer; var fileVersion: double);
+Constructor T3DO.CreateFrom3DO(const name: string;lod:integer; var fileVersion: double);
 var t:TTextFile; cpos:word; s,w1,w2:String;
     cur_line:integer;
     a,n,nx:Integer;
@@ -141,8 +141,7 @@ begin
  GetNextLine(s); {Geosets}
  SScanf(s,'GEOSETS %d',[@ngeos]);
 
- if lod>ngeos-1 then lod:=ngeos-1;
-
+ if lod > ngeos-1 then lod := ngeos-1;
 
  While not EndOfSection do
  begin
@@ -169,10 +168,10 @@ begin
     end;
   if EndOfSection then exit;
 
-  Mesh:=NewMesh;
-  Meshes.Add(Mesh);
+  mesh := NewMesh;
+  meshes.Add(mesh);
 
-  GetNextLine(s); {Name} Mesh.Name:=GetWordN(s,2);
+  GetNextLine(s); {Name} mesh.name := GetWordN(s,2);
 (*  GetNextLine(s); {Radius}
   GetNextLine(s); {GEOMETRYMODE}
   GetNextLine(s); {LIGHTINGMODE}
@@ -206,16 +205,16 @@ begin
       end
     else if IsClose(version, 2.2) then
       begin
-        SScanf(s,'%s %f %f %f %l %l %l',[@w1,@v.x,@v.y,@v.z, @vcolor.r, @vcolor.g, @vcolor.b]);
+        SScanf(s,'%s %f %f %f %l %l %l',[@w1, @v.x, @v.y, @v.z, @vcolor.r, @vcolor.g, @vcolor.b]);
         vcolor.a := 1.0;
       end
     else
       begin // 2.3
-        SScanf(s,'%s %f %f %f %l %l %l %l',[@w1,@v.x,@v.y,@v.z, @vcolor.r, @vcolor.g, @vcolor.b, @vcolor.a]);
+        SScanf(s,'%s %f %f %f %l %l %l %l',[@w1, @v.x ,@v.y ,@v.z, @vcolor.r, @vcolor.g, @vcolor.b, @vcolor.a]);
       end;
 
    vertIntensities[j] := vcolor;
-   Mesh.Vertices.Add(v);
+   mesh.vertices.Add(v);
   end;
 
   GetNextLine(s); {Texture vertices}
@@ -305,15 +304,15 @@ begin
      p:=GetWord(s,1,w1);
      p:=GetWord(s,p,w2);
      if (w1 <> 'FACE') and (w2 <> 'NORMALS') then continue;
-     break;
+      break;
     end;
    if EndOfSection then exit;
 
-   For j:=0 to nfaces-1 do
+   For j:=0 to nfaces - 1 do
      begin
       GetNextLine(s);
       face := Mesh.Faces[j];
-      SScanf(s,'%s %f %f %f',[@w1,@face.normal.x,@face.normal.y,@face.normal.z]);
+      SScanf(s,'%s %f %f %f',[@w1, @face.normal.x, @face.normal.y, @face.normal.z]);
      end;
 
    for m:=0 to GTXVXList.Count-1 do
@@ -347,64 +346,63 @@ begin
 end;
 
 Procedure OffsetMeshes;
-var i,j:integer;
-    hnode,hnode1:THNode;
-    mdx,mdy,mdz:double;
-    mx:TMat3x3;
-    vs:TVertices;
+var i, j: integer;
+    hnode, hnode1: THNode;
+    mdx, mdy, mdz: double;
+    mx: TMat3x3;
+    vs: TVertices;
 begin
- for i:=0 to HNodes.Count-1 do
+ for i := 0 to hnodes.Count-1 do
  begin
-  hnode:=HNodes[i];
-  if hnode.nmesh=-1 then continue;
+  hnode := hnodes[i];
+  if hnode.nmesh = -1 then continue;
 
-  vs:=Meshes[hnode.nmesh].Vertices;
+  vs := meshes[hnode.nmesh].vertices;
+  with hnode do CreateRotMatrix(mx, pch, yaw, rol);
+  for j := 0 to vs.Count - 1 do
+    With vs[j] do
+      begin
+       x := x + hnode.pivotx;
+       y := y + hnode.pivoty;
+       z := z + hnode.pivotz;
+       MultVM3(mx, x, y, z);
 
-  With Hnode do CreateRotMatrix(mx,pch,yaw,rol);
-  for j:=0 to vs.count-1 do
-  With vs[j] do
-  begin
-   x:=x+hnode.pivotx;
-   y:=y+hnode.pivoty;
-   z:=z+hnode.pivotz;
-   MultVM3(mx,x,y,z);
-   x:=x+hnode.x;
-   y:=y+hnode.y;
-   z:=z+hnode.z;
-  end;
+       x := x + hnode.x;
+       y := y + hnode.y;
+       z := z + hnode.z;
+      end;
 
 (*  mdx:=hnode.x+hnode.pivotx{+InsX};
   mdy:=hnode.y+hnode.pivoty{+InsY};
   mdz:=hnode.z+hnode.pivotz{+InsZ}; *)
 
-  hnode1:=hnode;
-  While hnode1.parent<>-1 do
-  begin
-   hnode1:=HNodes[hnode1.Parent];
-
-   With hnode1 do CreateRotMatrix(mx,pch,yaw,rol);
-
-   for j:=0 to vs.count-1 do
-   With vs[j] do
-   begin
-    MultVM3(mx,x,y,z);
-    x:=x+hnode1.x;
-    y:=y+hnode1.y;
-    z:=z+hnode1.z;
-   end;
-
-  end;
-
+  hnode1 := hnode;
+  While hnode1.parent <> - 1 do
+    begin
+     hnode1 := hnodes[hnode1.parent];
+     with hnode1 do CreateRotMatrix(mx, pch, yaw, rol);
+     for j := 0 to vs.Count - 1 do
+       With vs[j] do
+         begin
+          MultVM3(mx, x, y, z);
+          x := x + hnode1.x;
+          y := y + hnode1.y;
+          z := z + hnode1.z;
+         end;
+    end;
  end;
 end;
 
-var i,j:integer;
+var i, j: integer;
 begin {CreateFrom3DO begin}
  CreateNew;
- FormatSettings.DecimalSeparator:='.';
+ self.name := ExtractFileName(name);
 
- if ExtractFilePath(name)<>'' then t:=TTextFile.CreateRead(OpenFileRead(name,0)) else
- t:=TTextFile.CreateRead(OpenGameFile(name));
+ FormatSettings.DecimalSeparator:='.';
+ if ExtractFilePath(name) <> '' then
+    t := TTextFile.CreateRead(OpenFileRead(name, 0))
+ else
+    t := TTextFile.CreateRead(OpenGameFile(name));
  cur_line:=0;
  EndOfSection:=false;
  CurSection:='';
@@ -579,7 +577,7 @@ var i,j,k,v,nc:integer;
     rad:double;
 
 begin
- Assign(t,name);
+ Assign(t, name);
  Rewrite(t);
 
  UnOffsetMeshes;
@@ -594,7 +592,7 @@ Try
  WriteS('SECTION: MODELRESOURCE');
  WriteS('');
  WriteFmt('MATERIALS %d',[Mats.count]);
- For i:=0 to Mats.count-1 do
+ For i:=0 to mats.count-1 do
  begin
   WriteFmt('%d: %s',[i,Mats[i]]);
  end;
@@ -615,11 +613,11 @@ Try
  WriteFmt('MESHES %d',[Meshes.count]);
 
  for i:=0 to Meshes.count-1 do
- With Meshes[i] do
+ With meshes[i] do
  begin
   WriteS('');
   WriteFmt('MESH %d',[i]);
-  WriteS('NAME '+Name);
+  WriteS('NAME ' + name);
   Rad:=1;
 
   rad:=FindRadius;

@@ -23,9 +23,11 @@ Type
     name: string;
     faces: T3DOFaces;
 
-    Constructor Create;
     Function GetVXs: TVertices;
     Property vertices: TVertices read GetVXs;
+
+    Constructor Create;
+
     Destructor Destroy; override;
     Function FindRadius: double;
     Function AddVertex(x, y, z: double; duplicates: Boolean = False): integer;
@@ -56,9 +58,10 @@ Type
   end;
 
   T3DO = class
+    name: string;
     ucount: integer;
-    Mats: TStringList;
-    Meshes: T3DOMeshes;
+    mats: TStringList;
+    meshes: T3DOMeshes;
     hnodes: THNodes;
     Constructor CreateNew;
     Constructor CreateFrom3DO(const name: string; lod: integer); overload;
@@ -115,24 +118,24 @@ var
 begin
   i := L3DOs.IndexOf(name);
   if i <> -1 then
-  begin
-    Result := T3DO(L3DOs.Objects[i]);
-    inc(Result.ucount);
-  end
+    begin
+      Result := T3DO(L3DOs.Objects[i]);
+      inc(Result.ucount);
+    end
   else
-  begin
-    try
-      Result := T3DO.CreateFrom3DO(name, 0);
-      L3DOs.AddObject(name, Result);
-      Result.ucount := 1;
-    except
-      on Exception do
-      begin
-        Result := nil;
-        PanMessageFmt(mt_warning, 'Cannot load %s', [name]);
+    begin
+      try
+        Result := T3DO.CreateFrom3DO(name, 0);
+        L3DOs.AddObject(name, Result);
+        Result.ucount := 1;
+      except
+        on Exception do
+        begin
+          Result := nil;
+          PanMessageFmt(mt_warning, 'Cannot load %s', [name]);
+        end;
       end;
     end;
-  end;
 end;
 
 Procedure Free3DO(var a3DO: T3DO);
