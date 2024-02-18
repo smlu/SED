@@ -3117,7 +3117,7 @@ begin
         exit;
 
     Canvas.Pen.mode := pmXor;
-    Canvas.Pen.Color := clLime;//clRed;
+    Canvas.Pen.Color := clCleaveLine.col;//clRed;
     Canvas.MoveTo(cleaveOrg2.X, cleaveOrg2.Y);
     Canvas.LineTo(cleaveCurPos2.x, cleaveCurPos2.y);
     Canvas.MoveTo(cleaveOrg2.X, cleaveOrg2.Y);
@@ -3193,7 +3193,7 @@ begin
     if not bRulerStarted then
         exit;
     Canvas.Pen.mode  := pmXor;
-    Canvas.Pen.Color := clRed;
+    Canvas.Pen.Color := clCleaveLine.col;
     Canvas.MoveTo(rulerOrg2.X, rulerOrg2.Y);
     Canvas.LineTo(rulerCurPos2.x, rulerCurPos2.y);
     Canvas.MoveTo(rulerOrg2.X, rulerOrg2.Y);

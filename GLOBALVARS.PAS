@@ -239,6 +239,7 @@ Var
   clGridX: TJedColor = (r: 255; g: 255; b: 0);
   clGridY: TJedColor = (r: 0; g: 0; b: 255);
   clExtra: TJedColor = (r: 0; g: 255; b: 128);
+  clCleaveLine: TJedColor = (r: 0; g: 255; b: 0);
 
 Function GetConfigFilePath: string;
 Procedure GetWinPos(f: TForm; var p: TWinPos);

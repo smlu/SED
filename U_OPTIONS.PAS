@@ -157,7 +157,7 @@ type
 const
   NoConfile: boolean = false;
 
-  RegValues: array [0 .. 85] of TRegValue = (
+  RegValues: array [0 .. 86] of TRegValue = (
     (d_type: dt_str; Section: 'JKDF2'; Name: 'Dir'; data: @JKDir; onExit: false),
     (d_type: dt_str; Section: 'MOTS'; Name: 'Dir'; data: @MOTSDir; onExit: false),
 
@@ -243,6 +243,7 @@ const
     (d_type: dt_int; Section: 'Editor'; Name: 'clGridX'; data: @clGridX.i; onExit: false),
     (d_type: dt_int; Section: 'Editor'; Name: 'clGridY'; data: @clGridY.i; onExit: false),
     (d_type: dt_int; Section: 'Editor'; Name: 'clExtra'; data: @clExtra.i; onExit: false),
+    (d_type: dt_int; Section: 'Editor'; Name: 'clCleaveLine'; data: @clCleaveLine.i; onExit: false),
 
     (d_type: dt_int; Section: 'Editor'; Name: 'IEdit.X'; data: @IEditPos.X; onExit: true),
     (d_type: dt_int; Section: 'Editor'; Name: 'IEdit.Y'; data: @IEditPos.Y; onExit: true),
@@ -579,6 +580,7 @@ begin
   AddColor('3D preview solid surface', clP3DSolidSurface);
   AddColor('3D preview special surface', clP3DSpecialSurface);
 
+  AddColor('Cleave Line', clCleaveLine);
   AddColor('Map background', clMapBack);
   AddColor('Geometry', clMapGeo);
   AddColor('Geometry - backside', clMapGeoBack);
