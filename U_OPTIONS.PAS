@@ -77,6 +77,7 @@ type
     CBSaveEditorLights: TCheckBox;
     CBSaveEditorLayers: TCheckBox;
     GBIJIM: TGroupBox;
+    cbInvrtCull: TCheckBox;
     procedure BNOKClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure SBHelpClick(Sender: TObject);
@@ -156,7 +157,7 @@ type
 const
   NoConfile: boolean = false;
 
-  RegValues: array [0 .. 84] of TRegValue = (
+  RegValues: array [0 .. 85] of TRegValue = (
     (d_type: dt_str; Section: 'JKDF2'; Name: 'Dir'; data: @JKDir; onExit: false),
     (d_type: dt_str; Section: 'MOTS'; Name: 'Dir'; data: @MOTSDir; onExit: false),
 
@@ -181,6 +182,7 @@ const
     (d_type: dt_bool; Section: '3D Preview'; Name: 'Things'; data: @P3DThings; onExit: false),
 
     (d_type: dt_int; Section: 'Editor'; Name: 'WFAPI'; data: @WireframeAPI; onExit: false),
+    (d_type: dt_int; Section: 'Editor'; Name: 'WFInvertCulling'; data: @WF_InvertCulling; onExit: false),
     (d_type: dt_bool; Section: 'Editor'; Name: 'WFDBUF'; data: @WF_DoubleBuf; onExit: false),
     (d_type: dt_bool; Section: 'Editor'; Name: 'UndoEnabled'; data: @UndoEnabled; onExit: false),
     (d_type: dt_int; Section: 'Editor'; Name: 'UndoSize'; data: @UndoStackSize; onExit: false),
@@ -427,10 +429,10 @@ var
 begin
   if curPage <> nil then
     Pages.ActivePage := curPage;
+
   cdir := GetCurDir;
   SetControls;
   result := ShowModal = mrOK;
-
   if result then GetControls;
 
   SetCurDir(cdir);
@@ -547,6 +549,7 @@ begin
   NewCtl(@P3DThings, dt_bool, CBShowThings);
   NewCtl(@P3DAPI, dt_int, RGAPI);
   NewCtl(@WireframeAPI, dt_int, RGWireframe);
+  NewCtl(@WF_InvertCulling, dt_bool, cbInvrtCull);
   NewCtl(@WF_DoubleBuf, dt_bool, CBDbuf);
   NewCtl(@MapRot, dt_int, RGMapRot);
 
@@ -684,7 +687,6 @@ begin
   For i := 0 to ctls.Count - 1 do
     With TCtrlData(ctls[i]) do
     begin
-
       Case d_type of
         dt_bool:
           case c_type of
@@ -730,7 +732,6 @@ begin
                 Double(data^) := TValInput(control).AsFloat;
               end;
           end;
-
         dt_str:
           Case c_type of
             ct_edit:

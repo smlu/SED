@@ -1046,12 +1046,12 @@ begin
     v1 := TJKVertex.Create;
     v2 := TJKVertex.Create;
 
-    v1.X := th.X;
-    v1.Y := th.Y;
+    v1.x := th.x;
+    v1.y := th.y;
     v1.z := th.z;
 
-    v2.X := v1.X + d.dx;
-    v2.Y := v1.Y + d.dy;
+    v2.x := v1.X + d.dx;
+    v2.y := v1.Y + d.dy;
     v2.z := v1.z + d.dz;
     renderer.DrawLine(v1, v2);
     v1.free;
@@ -1070,7 +1070,7 @@ begin
     if not CheckFrameIndex(level, th, fr) or (fr = -1) then
         exit;
 
-    thing := Level.Things[th];
+    thing := level.things[th];
     thing.vals[fr].GetFrame(X, Y, z, pch, yaw, rol);
     renderer.DrawVertex(X, Y, z);
 
@@ -1107,6 +1107,8 @@ begin
 end;
 
 Procedure TJedMain.ReDraw;
+type
+  TRenderMode = (RM_VERTEX = 0, RM_POLYGON);
 var
     s, th: Integer;
     v1, v2: TJKVertex;
@@ -1120,6 +1122,29 @@ var
     wx, wy, sc, SF, VX, ED, fr: Integer;
     obj: TObject;
     ps: double;
+
+    procedure SetCullingAndDrawColor(cull: integer; color: TJedColor);
+    begin
+      var cullmode := IfThen(WF_InvertCulling, IfThen(cull = R_CULLFRONT, R_CULLBACK, R_CULLFRONT), cull);
+      var what := IfThen(cullmode = R_CULLFRONT, CL_BACK, CL_FRONT);
+      renderer.SetColor(what, color.r, color.g, color.b);
+      renderer.SetCulling(cullmode);
+    end;
+
+    procedure RenderWorldGeometry(mode: TRenderMode);
+    begin
+      for var s := 0 to level.sectors.Count - 1 do
+        begin
+          sec := level.sectors[s];
+          if ToolBar.IsLayerVisible(sec.layer) then
+            begin
+              case mode of
+                RM_VERTEX: renderer.DrawVertices(sec.vertices);
+                RM_POLYGON: renderer.DrawPolygons(sec.surfaces);
+              end;
+            end;
+        end;
+    end;
 begin
     if not visible then
         exit;
@@ -1141,43 +1166,41 @@ begin
             renderer.SetPointSize(4);
             With clVertex do
                 renderer.SetColor(CL_FRONT, r, g, b);
-            for s := 0 to level.sectors.Count - 1 do
-            begin
-                sec := level.sectors[s];
-                if ToolBar.IsLayerVisible(sec.layer) then
-                    renderer.DrawVertices(sec.vertices);
-            end;
+            RenderWorldGeometry(RM_VERTEX);
+//            for s := 0 to level.sectors.Count - 1 do
+//            begin
+//                sec := level.sectors[s];
+//                if ToolBar.IsLayerVisible(sec.layer) then
+//                    renderer.DrawVertices(sec.vertices);
+//            end;
             renderer.SetPointSize(ps);
         end;
 
-        With clMapGeoBack do
-          begin
-            if bMapGeoBackfaceCull then
-              renderer.SetColor(CL_FRONT, clMapGeo.r, clMapGeo.g, clMapGeo.b)
-            else
-              renderer.SetColor(CL_BACK, r, g, b);
-          end;
+        // Draw level geometry
 
-        renderer.SetCulling(R_CULLBACK);
-        for s := 0 to level.sectors.Count - 1 do
-        begin
-            sec := level.sectors[s];
-            if ToolBar.IsLayerVisible(sec.layer) then
-                renderer.DrawPolygons(sec.surfaces);
-        end;
-
-       if not bMapGeoBackfaceCull then
-        begin
-          With clMapGeo do
-              renderer.SetColor(CL_FRONT, r, g, b);
-          renderer.SetCulling(R_CULLFRONT);
-          for s := 0 to level.sectors.Count - 1 do
+        // Render backfaces of level geometry
+        if not bMapGeoBackfaceCull then
           begin
-              sec := level.sectors[s];
-              if ToolBar.IsLayerVisible(sec.layer) then
-                  renderer.DrawPolygons(sec.surfaces);
+            SetCullingAndDrawColor(R_CULLFRONT, clMapGeoBack);
+
+            RenderWorldGeometry(RM_POLYGON);
           end;
-        end;
+//        for s := 0 to level.sectors.Count - 1 do
+//        begin
+//            sec := level.sectors[s];
+//            if ToolBar.IsLayerVisible(sec.layer) then
+//                renderer.DrawPolygons(sec.surfaces);
+//        end;
+
+        // Render frontfaces of level geometry
+        SetCullingAndDrawColor(R_CULLBACK, clMapGeo);
+        RenderWorldGeometry(RM_POLYGON);
+//          for s := 0 to level.sectors.Count - 1 do
+//          begin
+//              sec := level.sectors[s];
+//              if ToolBar.IsLayerVisible(sec.layer) then
+//                  renderer.DrawPolygons(sec.surfaces);
+//          end;
 
         renderer.SetCulling(R_CULLNONE);
         renderer.SetPointSize(4);
@@ -1196,14 +1219,14 @@ begin
 
         if (not bLightsHidden) or (mapMode = MM_LT) then
         begin
-            With clLight do
+            with clLight do
                 renderer.SetColor(CL_FRONT, r, g, b);
 
-            For th := 0 to level.lights.Count - 1 do
+            for th := 0 to level.lights.Count - 1 do
             begin
                 light := level.lights[th];
                 if ToolBar.IsLayerVisible(light.Layer) then
-                    With light do
+                    with light do
                         renderer.DrawVertex(position.x, position.y, position.z);
             end;
         end;
@@ -1217,7 +1240,7 @@ begin
             for th := 0 to level.things.Count - 1 do
             begin
                 thing := level.things[th];
-                if not ToolBar.IsLayerVisible(thing.Layer) then
+                if not ToolBar.IsLayerVisible(thing.layer) then
                     continue;
                 With thing do
                     renderer.DrawVertex(X, Y, z);
@@ -1231,60 +1254,51 @@ begin
             renderer.SetColor(CL_FRONT, r, g, b);
         renderer.SetCulling(R_CULLNONE);
         for s := 0 to extraObjs.Count - 1 do
-        begin
-            obj := extraObjs[s];
-            if obj is TVertex then
-                With TJKVertex(obj) do
-                    renderer.DrawVertex(X, Y, z)
-            else if obj is TExtraLine then
-                With TExtraLine(obj) do
-                    renderer.DrawLine(v1, v2)
-            else if obj is TIsolatedPolygon then
-                renderer.DrawPolygon(TPolygon(obj));
-        end;
+          begin
+              obj := extraObjs[s];
+              if obj is TVertex then
+                  With TJKVertex(obj) do
+                      renderer.DrawVertex(X, Y, z)
+              else if obj is TExtraLine then
+                  With TExtraLine(obj) do
+                      renderer.DrawLine(v1, v2)
+              else if obj is TIsolatedPolygon then
+                  renderer.DrawPolygon(TPolygon(obj));
+          end;
 
     except
         On Exception do;
     end;
 
-    { Draw multiselection }
-
+    // Draw multiselection
     case mapMode of
         MM_SC:
             begin
-                With clMSelBack do
-                    renderer.SetColor(CL_BACK, r, g, b);
-                renderer.SetCulling(R_CULLBACK);
+                SetCullingAndDrawColor(R_CULLFRONT, clMSelBack);
                 for s := 0 to scsel.Count - 1 do
                 begin
-                    sec := Level.Sectors[scsel.GetSC(s)];
+                    sec := level.sectors[scsel.GetSC(s)];
                     renderer.DrawPolygons(sec.surfaces);
                 end;
 
-                With clMSel do
-                    renderer.SetColor(CL_FRONT, r, g, b);
-                renderer.SetCulling(R_CULLFRONT);
+                SetCullingAndDrawColor(R_CULLBACK, clMSel);
                 for s := 0 to scsel.Count - 1 do
                 begin
-                    sec := Level.Sectors[scsel.GetSC(s)];
+                    sec := level.sectors[scsel.GetSC(s)];
                     renderer.DrawPolygons(sec.surfaces);
                 end;
             end;
         MM_SF:
             begin
-                With clMSelBack do
-                    renderer.SetColor(CL_BACK, r, g, b);
-                renderer.SetCulling(R_CULLBACK);
+                SetCullingAndDrawColor(R_CULLFRONT, clMSelBack);
                 for s := 0 to sfsel.Count - 1 do
                 begin
                     sfsel.GetSCSF(s, sc, SF);
-                    surf := Level.Sectors[sc].surfaces[SF];
+                    surf := level.sectors[sc].surfaces[SF];
                     renderer.DrawPolygon(surf);
                 end;
 
-                With clMSel do
-                    renderer.SetColor(CL_FRONT, r, g, b);
-                renderer.SetCulling(R_CULLFRONT);
+                SetCullingAndDrawColor(R_CULLBACK, clMSel);
 
                 for s := 0 to sfsel.Count - 1 do
                 begin
@@ -1295,23 +1309,20 @@ begin
             end;
         MM_ED:
             begin
-                With clMSelBack do
-                    renderer.SetColor(CL_BACK, r, g, b);
-                renderer.SetCulling(R_CULLBACK);
+                SetCullingAndDrawColor(R_CULLFRONT, clMSelBack);
                 for s := 0 to edsel.Count - 1 do
                 begin
                     edsel.GetSCSFED(s, sc, SF, ED);
-                    surf := Level.Sectors[sc].surfaces[SF];
+                    surf := level.sectors[sc].surfaces[SF];
                     With surf do
                         renderer.DrawLine(vertices[ED], vertices[NextVX(ED)]);
                 end;
-                With clMSel do
-                    renderer.SetColor(CL_FRONT, r, g, b);
-                renderer.SetCulling(R_CULLFRONT);
+
+                SetCullingAndDrawColor(R_CULLBACK, clMSel);
                 for s := 0 to edsel.Count - 1 do
                 begin
                     edsel.GetSCSFED(s, sc, SF, ED);
-                    surf := Level.Sectors[sc].surfaces[SF];
+                    surf := level.sectors[sc].surfaces[SF];
                     With surf do
                         renderer.DrawLine(vertices[ED], vertices[NextVX(ED)]);
                 end;
@@ -1320,13 +1331,12 @@ begin
             begin
                 With clMSel do
                     renderer.SetColor(CL_FRONT, r, g, b);
-                { Renderer.SetCulling(R_CULLBACK); }
                 renderer.SetPointSize(4);
                 for s := 0 to vxsel.Count - 1 do
                 begin
-                    vxsel.GetSCVX(s, sc, VX);
-                    With Level.Sectors[sc].vertices[VX] do
-                        renderer.DrawVertex(X, Y, z);
+                    vxsel.GetSCVX(s, sc, vx);
+                    With level.sectors[sc].vertices[vx] do
+                        renderer.DrawVertex(x, y, z);
                 end;
             end;
         MM_TH:
@@ -1334,7 +1344,7 @@ begin
                 With clMSel do
                     renderer.SetColor(CL_FRONT, r, g, b);
                 for s := 0 to thsel.Count - 1 do
-                    DrawThing(Level.Things[thsel.GetTH(s)]);
+                    DrawThing(level.things[thsel.GetTH(s)]);
             end;
         MM_FR:
             begin
@@ -1352,12 +1362,12 @@ begin
                   renderer.SetColor(CL_FRONT, r, g, b);
 
                 for s := 0 to ltsel.Count - 1 do
-                  With Level.Lights[ltsel.getLT(s)] do
+                  With level.lights[ltsel.GetLT(s)] do
                       renderer.DrawVertex(position.x, position.y, position.z);
             end;
     end;
 
-    { Draw Selection }
+    // Draw current selection
     With clMapSel do
         renderer.SetColor(CL_FRONT, r, g, b);
 
@@ -1365,26 +1375,19 @@ begin
         case mapMode of
             MM_SC:
                 begin
-                    sec := Level.Sectors[Cur_SC];
-
+                    sec := level.sectors[Cur_SC];
                     if scsel.FindSC(Cur_SC) = -1 then
-                        With clMapSelBack do
-                            renderer.SetColor(CL_BACK, r, g, b)
+                      SetCullingAndDrawColor(R_CULLFRONT, clMapSelBack)
                     else
-                        With clSelMSelBack do
-                            renderer.SetColor(CL_BACK, r, g, b);
+                      SetCullingAndDrawColor(R_CULLFRONT, clSelMSelBack);
 
-                    renderer.SetCulling(R_CULLBACK);
                     renderer.DrawPolygons(sec.surfaces);
 
                     if scsel.FindSC(Cur_SC) = -1 then
-                        With clMapSel do
-                            renderer.SetColor(CL_FRONT, r, g, b)
+                      SetCullingAndDrawColor(R_CULLBACK, clMapSel)
                     else
-                        With clSelMSel do
-                            renderer.SetColor(CL_FRONT, r, g, b);
+                      SetCullingAndDrawColor(R_CULLBACK, clSelMSel);
 
-                    renderer.SetCulling(R_CULLFRONT);
                     renderer.DrawPolygons(sec.surfaces);
 
                     if sec.vertices.Count > 0 then
@@ -1394,28 +1397,20 @@ begin
             MM_SF:
                 begin
                     if sfsel.FindSF(Cur_SC, Cur_SF) = -1 then
-                        With clMapSelBack do
-                            renderer.SetColor(CL_BACK, r, g, b)
+                      SetCullingAndDrawColor(R_CULLFRONT, clMapSelBack)
                     else
-                        With clSelMSelBack do
-                            renderer.SetColor(CL_BACK, r, g, b);
+                      SetCullingAndDrawColor(R_CULLFRONT, clSelMSelBack);
 
-                    renderer.SetCulling(R_CULLBACK);
-                    renderer.DrawPolygon(Level.Sectors[Cur_SC].surfaces
-                      [Cur_SF]);
+                    renderer.DrawPolygon(level.sectors[Cur_SC].surfaces[Cur_SF]);
 
                     if sfsel.FindSF(Cur_SC, Cur_SF) = -1 then
-                        With clMapSel do
-                            renderer.SetColor(CL_FRONT, r, g, b)
+                      SetCullingAndDrawColor(R_CULLBACK, clMapSel)
                     else
-                        With clSelMSel do
-                            renderer.SetColor(CL_FRONT, r, g, b);
+                      SetCullingAndDrawColor(R_CULLBACK, clSelMSel);
 
-                    renderer.SetCulling(R_CULLFRONT);
-                    renderer.DrawPolygon(Level.Sectors[Cur_SC].surfaces
-                      [Cur_SF]);
+                    renderer.DrawPolygon(level.sectors[Cur_SC].surfaces[Cur_SF]);
 
-                    With Level.Sectors[Cur_SC].surfaces[Cur_SF].vertices[0] do
+                    With level.sectors[Cur_SC].surfaces[Cur_SF].vertices[0] do
                         renderer.DrawVertex(X, Y, z);
                     { v1:=TJKVertex.Create;
                       With level.Sectors[Cur_SC].surfaces[Cur_SF] do
@@ -1429,7 +1424,7 @@ begin
                       v1.free; }
                 end;
             MM_ED:
-                With Level.Sectors[Cur_SC].surfaces[Cur_SF] do
+                With level.sectors[Cur_SC].surfaces[Cur_SF] do
                 begin
 
                     if edsel.FindED(Cur_SC, Cur_SF, Cur_ED) = -1 then
@@ -1443,13 +1438,15 @@ begin
                     v2 := vertices[NextVX(Cur_ED)];
                     renderer.DrawLine(v1, v2);
                     renderer.SetPointSize(4);
-                    renderer.DrawVertex(v1.X, v1.Y, v1.z);
-                    dx := v2.X - v1.X;
-                    dy := v2.Y - v1.Y;
+                    renderer.DrawVertex(v1.x, v1.y, v1.z);
+
+                    dx := v2.x - v1.x;
+                    dy := v2.y - v1.y;
                     dz := v2.z - v1.z;
+
                     v2 := TJKVertex.Create;
-                    v2.X := v1.X + dx * 0.5;
-                    v2.Y := v1.Y + dy * 0.5;
+                    v2.x := v1.x + dx * 0.5;
+                    v2.y := v1.y + dy * 0.5;
                     v2.z := v1.z + dz * 0.5;
 
                     en := normal.Cross(dx, dy, dz);
@@ -1457,8 +1454,8 @@ begin
 //                      en.dy, en.dz);
 
                     v1 := TJKVertex.Create;
-                    v1.X := v2.X + en.dx * 0.5;
-                    v1.Y := v2.Y + en.dy * 0.5;
+                    v1.X := v2.x + en.dx * 0.5;
+                    v1.Y := v2.y + en.dy * 0.5;
                     v1.z := v2.z + en.dz * 0.5;
                     renderer.DrawLine(v2, v1);
                     v1.free;
@@ -1473,11 +1470,11 @@ begin
                         With clSelMSel do
                             renderer.SetColor(CL_FRONT, r, g, b);
 
-                    DrawSelThing(Level.Things[Cur_TH]);
+                    DrawSelThing(level.things[Cur_TH]);
                 end;
             MM_FR:
                 if Cur_FR = -1 then
-                    with Level.Things[Cur_TH] do
+                    with level.things[Cur_TH] do
                         renderer.DrawVertex(X, Y, z)
                 else
                 begin
@@ -1498,7 +1495,7 @@ begin
                         With clSelMSel do
                             renderer.SetColor(CL_FRONT, r, g, b);
 
-                    With Level.Sectors[Cur_SC].vertices[Cur_VX] do
+                    With level.sectors[Cur_SC].vertices[Cur_VX] do
                         renderer.DrawVertex(X, Y, z);
                 end;
             MM_LT:
@@ -1510,8 +1507,8 @@ begin
                         With clSelMSel do
                             renderer.SetColor(CL_FRONT, r, g, b);
 
-                    if Cur_LT < Level.Lights.Count then
-                        With Level.Lights[Cur_LT] do
+                    if CheckLightIndex(level, Cur_LT) then
+                        With level.lights[Cur_LT] do
                         begin
                             renderer.DrawVertex(position.x, position.y, position.z);
                             renderer.DrawCircle(position.x, position.y, position.z, range);
@@ -5790,7 +5787,7 @@ begin
     With Options do
     begin
         SetOptions(nil);
-        if IsVarChanged(wireframeAPI) or IsVarChanged(WF_DoubleBuf) then
+        if IsVarChanged(WireframeAPI) or IsVarChanged(WF_DoubleBuf)  then
             CreateRenderer;
     end;
 

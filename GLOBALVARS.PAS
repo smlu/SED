@@ -159,6 +159,7 @@ Var
   P3DThings: boolean = true;
 
   WireframeAPI: integer = 1; // 1 - OpenGlL
+  WF_InvertCulling: boolean = false;
   WF_DoubleBuf: boolean = true;
   MapRot: integer = 0;
 
