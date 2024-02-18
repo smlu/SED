@@ -80,10 +80,18 @@ var
           With surf do
           begin
             // TODO: parse version 2 with RGB colors for ExtraLight
-            if not ReadFmt('%s %x %x %d %d %d %l %d %d %d %x',
-              [@Material, @SurfFlags, @FaceFlags, @geo, @light, @tex,
-              @ExtraLight.a, @nsv, @asec, @asf, @AdjoinFlags])
-              then raise Exception.Create('Failed to parse template sector surface info');
+            var surfstr: string;
+            ReadS(surfstr);
+            if not SScanf(surfstr, '%s %x %x %d %d %d %l %d %d %d %x %l %l',
+              [@material, @surfflags, @faceFlags, @geo, @light, @tex,
+              @extraLight.a, @nsv, @asec, @asf, @adjoinFlags, @uscale, @vscale]) then
+              begin
+                 // Try to read format without UV scale
+                 if not SScanf(surfstr, '%s %x %x %d %d %d %l %d %d %d %x',
+                  [@material, @surfflags, @faceFlags, @geo, @light, @tex,
+                  @extraLight.a, @nsv, @asec, @asf, @adjoinFlags]) then
+                      raise Exception.Create('Failed to parse template sector surface info');
+              end;
             ExtraLight := IntensityToColor(ExtraLight.a);
             if Material = '-' then
               Material := '';
