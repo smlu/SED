@@ -3,7 +3,7 @@ unit u_undo;
 interface
 
 uses J_Level, misc_utils, SysUtils, Classes, GlobalVars,
-     values, u_3dos, Math, Geometry;
+     values, u_3dos, Geometry;
 
 {$A-} // no alignment
 
@@ -145,7 +145,7 @@ Procedure SetURQRec(node: THNode; var nrec: TURQRec);
 
 implementation
 
-uses Jed_main, lev_utils, u_3doform;
+uses Jed_main, lev_utils, u_3doform, System.Math;
 
 Type
 
@@ -354,7 +354,7 @@ begin
         end;
 
       FillChar(sfrec.Material, SizeOf(sfrec.Material), #0);
-      StrLCopy(sfrec.Material, PChar(Material), Math.Min(Material.Length, Length(sfrec.Material) - 1));
+      StrLCopy(sfrec.Material, PChar(Material), System.Math.Min(Material.Length, Length(sfrec.Material) - 1));
 
       sfrec.AdjoinFlags := AdjoinFlags;
       sfrec.SurfFlags   := SurfFlags;

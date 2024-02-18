@@ -76,7 +76,7 @@ end;
 
 
 implementation
-uses D3D_PRender;
+uses D3D_PRender, math;
 
 var curdxr:TD3D5PRenderer;
 
@@ -892,30 +892,32 @@ end;
 //   end;
 //end;
 
-Procedure TD3D5PRenderer.GetWorldLine(X,Y:integer;var x1,y1,z1,x2,y2,z2:double);
+Procedure TD3D5PRenderer.GetWorldLine(X,Y: integer; var x1,y1,z1, x2,y2,z2: double);
 var xv,yv,zv:TVector;
     px,py:double;
     vec:TVector;
 begin
- // set camera rotation
- yv.SetCoords(0,1,0);
- RotateVector(yv,-PCH,0,0);
- RotateVector(yv,0,-YAW,0);
+ // Set camera rotation
+ yv := TVector.forward;
+ //yv.SetCoords(0,1,0);
+ RotateVector(yv, -PCH, 0, 0);
+ RotateVector(yv, 0, -YAW, 0);
 
- zv.SetCoords(0,0,1);
- RotateVector(zv,-PCH,0,0);
- RotateVector(zv,0,-YAW,0);
+ zv := TVector.up;
+ //zv.SetCoords(0,0,1);
+ RotateVector(zv, -PCH, 0, 0);
+ RotateVector(zv, 0, -YAW, 0);
 
- xv.SetCoords(1,0,0);
- RotateVector(xv,-PCH,0,0);
- RotateVector(xv,0,-YAW,0);
+ xv := TVector.right;
+ //xv.SetCoords(1,0,0);
+ RotateVector(xv, -PCH, 0, 0);
+ RotateVector(xv, 0, -YAW, 0);
 
  {The projection rectangle is 0.1x0.075 units and 0.05 units away
   from camera}
 
- px:=(X-vwidth/2)/vwidth*0.1;
- py:=(vheight/2-y)/vheight*0.075;
-
+ px:=(X - vwidth/2)/ vwidth * 0.1;
+ py:=(vheight/2 - Y)/ vheight * 0.075;
 
  x1:=CamX + px*xv.dx + py*zv.dx + 0.05*yv.dx;
  y1:=CamY + px*xv.dy + py*zv.dy + 0.05*yv.dy;
@@ -953,12 +955,12 @@ begin
 end;
 
 Procedure TD3D5PRenderer.Redraw;
-var bltfx:TDDBLTFX;
-    res:Integer;
-    r,sr:TRect;
-    m_proj,m_view,m_world:TD3dMatrix;
-    vec,zvec:TVector;
-    rec:TD3DRECT;
+var bltfx: TDDBLTFX;
+    res: Integer;
+    r, sr: TRect;
+    m_proj, m_view, m_world: TD3dMatrix;
+    vec, zvec: TVector;
+    rec: TD3DRECT;
 begin
  curdxr:=self;
  DisableFPUExceptions;
@@ -968,75 +970,75 @@ begin
 
  {res:=idsback.Blt(NIL,NIL,NIL,DDBLT_WAIT or DDBLT_COLORFILL,bltfx);}
 
- rec.x1:=0;
- rec.y1:=0;
- rec.x2:=vwidth;
- rec.y2:=vheight;
- res := iview.clear(1,rec,d3dclear_target or d3dclear_zbuffer);
- DXCheck(res,'Clearing viewport');
+ rec.x1 := 0;
+ rec.y1 := 0;
+ rec.x2 := vwidth;
+ rec.y2 := vheight;
+ res := iview.clear(1 ,rec, d3dclear_target or d3dclear_zbuffer);
+ DXCheck(res, 'Clearing viewport');
 
- 
  m_World := IdentityMatrix;
- m_World._11:=-1;
+ m_World._11 := -1;
 
  {MatrixMul(TranslateMatrix(CamX,CamY,CamZ),RotateXmatrix(-pi/2));}
 
- vec.SetCoords(0,1,0);
- RotateVector(vec,-PCH,0,0);
- RotateVector(vec,0,-YAW,0);
-
+ vec := TVector.forward;
+ //vec.SetCoords(0,1,0);
+ RotateVector(vec, -PCH, 0, 0);
+ RotateVector(vec, 0, -YAW, 0);
 
 { RotateVector(zvec,-PCH,0,0);
  RotateVector(zvec,0,-YAW,0);}
 
- zvec.SetCoords(0,0,1);
- if Abs(vec.dz)>0.99 then
+ zvec := TVector.up;
+ //zvec.SetCoords(0, 0, 1);
+ if Abs(vec.dz) > 0.99 then
  begin
-  Vmult(1,0,0,
-        vec.dx,vec.dy,vec.dz,
-        zvec.dx,zvec.dy,zvec.dz);
-  RotateVector(zvec,0,YAW,0);
+  zvec := TVector.right.Cross(vec);
+  //VectorCross3(1, 0, 0, vec.dx, vec.dy, vec.dz, zvec.dx, zvec.dy, zvec.dz); //Vmult
+  RotateVector(zvec, 0, YAW, 0);
  end;
 
- m_View := ViewMatrix(D3DVECTOR(-CamX,CamY,CamZ),
- D3DVECTOR(-CamX-vec.dx,CamY+vec.dy,CamZ+vec.dz), D3DVECTOR(zvec.dx,zvec.dy,zvec.dz), 0);
+ m_View := ViewMatrix(
+   D3DVECTOR(-CamX, CamY, CamZ),
+   D3DVECTOR( -CamX - vec.dx, CamY + vec.dy, CamZ + vec.dz),
+   D3DVECTOR(zvec.dx, zvec.dy, zvec.dz),
+   0);
 
- m_Proj := ProjectionMatrix(FrontPlane, BackPlane, (90*PI/180));
+ m_Proj := ProjectionMatrix(FrontPlane, BackPlane, (90 * PI / 180));
 
  Id3dDev.SetTransform(D3DTRANSFORMSTATE_WORLD, m_World);
  Id3dDev.SetTransform(D3DTRANSFORMSTATE_VIEW, m_View);
  Id3dDev.SetTransform(D3DTRANSFORMSTATE_PROJECTION, m_Proj);
 
  res:=id3ddev.BeginScene;
- DXCheck(res,'Beginnning scene');
+ DXCheck(res, 'Beginnning scene');
 
  inherited Redraw;
 
  res:=id3ddev.EndScene;
- DXCheck(res,'Ending scene');
+ DXCheck(res, 'Ending scene');
 
- GetClientRect(whandle,sr);
+ GetClientRect(whandle, sr);
 { r:=sr;}
 
- ClientToScreen(whandle,sr.topleft);
- ClientToScreen(whandle,sr.bottomright);
-
+ ClientToScreen(whandle, sr.topleft);
+ ClientToScreen(whandle, sr.bottomright);
 
  {r.left:=0; r.top:=0;
  r.bottom:=vheight-1; r.right:=vwidth-1;}
  {res:=idsback.Blt(NIL,NIL,NIL,DDBLT_WAIT or DDBLT_COLORFILL,bltfx);}
 
- res:=ids.Blt( @sr, idsback, nil, DDBLT_WAIT, bltfx);
+ res := ids.Blt(@sr, idsback, nil, DDBLT_WAIT, bltfx);
 
- if res=DDERR_SURFACELOST then
+ if res = DDERR_SURFACELOST then
  begin
   ids.Restore;
   idsback.Restore;
  end;
- DDCheck(res,'Blitting from back to front');
+ DDCheck(res, 'Blitting from back to front');
 
 { res:=ids.BltFast(sr.left,sr.top, idsback, Trect(nil^), DDBLTFAST_WAIT or DDBLTFAST_NOCOLORKEY);}
-
 end;
 
 {Texture}
@@ -1045,7 +1047,6 @@ Function Min(i1,i2:integer):integer;
 begin
  if i1<i2 then result:=i1 else result:=i2;
 end;
-
 
 Constructor TD3DTexture.CreateFromMat(const Mat:string;const ppal:PTCMPPal; const pcmp:PTCMPTable;adxr:TD3D5PRenderer;gamma:double);
 var

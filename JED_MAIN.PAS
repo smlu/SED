@@ -1,11 +1,11 @@
-unit Jed_Main;
+ï»¿unit Jed_Main;
 
 interface
 
 uses
     Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
     ComCtrls, StdCtrls, Menus, GlobalVars, J_Level, misc_utils, ExtCtrls,
-    Render, OGL_render, FileOperations, lev_utils, Geometry, Buttons, Math,
+    Render, OGL_render, FileOperations, lev_utils, Geometry, Buttons, System.Math,
     Containers, Files, U_templates, Prefab, ListRes, sft_render, u_multisel,
     jed_plugins, sed_plugins, values, shellApi, U_copypaste, FileCtrl, u_undo,
     SED_COM, JED_COM, tbar_tools, u_3dos, System.ImageList, Vcl.ImgList, Types;
@@ -286,8 +286,12 @@ type
 
         procedure OnFixSolidSurfaces(sender: TObject);
         procedure OnFixPassableAdjoins(sender: TObject);
+
         procedure PickThing(th: TThing; id: integer);
         procedure PickThingAt(th: TThing; x, y, z, pitch, yaw, roll: double; id: integer);
+
+        function ZoomIn: boolean;
+        function ZoomOut: boolean;
 
     public
         { Project vars }
@@ -300,54 +304,67 @@ type
         snaptoy: boolean;
 
         { }
-        SnapToGrid: boolean;
+        bSnapToGrid: boolean;
+        vxsnapMaxDist: double;
         renderer: TRenderer;
         ListID: Integer;
         hdc: HDC;
         hglc: HGLRC;
-        { scale:double; }
+        
+        { different mode vars }
         Cur_SC, Cur_SF, Cur_VX, Cur_ED, Cur_LT, Cur_TH, Cur_FR, Cur_EX: Integer;
-        Map_mode: Integer;
-        MapGeoBackfaceCull: Boolean;
-        Mouse_mode: Integer;
-        msel_mode: Integer;
-        thing_view: Integer;
+        mapMode: Integer;
+        bMapGeoBackfaceCull: Boolean;
+        mouseMode: Integer;
+        mselMode: Integer;
+        thingView: Integer;
+        
         { Private declarations }
         { Select vars }
-        LastSelXY: TPoint;
+        lastSelXY: TPoint;
         csel: Integer;
+        
         { Drag variables }
-        dragged: boolean;
-        DragOrg: T3DPoint;
-        DragOrgPos: T3DPoint;
+        bDragged: boolean;
+        dragOrg: TVector;
+        dragRefOrg: TVector;
+        
         { Cleave vars }
-        CleaveOrgXY: TPoint;
-        CleaveOrg: T3DPoint;
-        CleaveStarted: boolean;
-        SCCreateStarted: boolean;
-        LastX, LastY: Integer;
+        cleaveOrg2: TPoint;
+        cleaveOrg: TVector;
+        cleaveCurPos2: TPoint;
+        bCleaveStarted: boolean;
+        bCreateSCStarted: boolean;        
+        
         { Whip ruler vars}
-        RulerOrgXY: TPoint;
-        RulerOrg: T3DPoint;
-        RulerStarted: boolean;
+        rulerOrg2: TPoint;
+        rulerCurPos2: TPoint;
+        rulerOrg: TVector;
+        bRulerStarted: boolean;
+        
         { Rect select vars }
-        RectOrgX, RectOrgY: Integer;
-        RectLastX, RectLastY: Integer;
-        RectSelStarted: boolean;
+        rectSelOrg: TPoint;
+        reactSelPos: TPoint;
+
+        bRectSelStarted: boolean;
 
         { Grid translate vars }
-        GOrgXY: TPoint;
-        GOrg: T3DPoint;
+        gridTranslateOrg2: TPoint;
+        gridTranslateOrg: TVector;
+        
         { Cam translate }
-        CamOrg: TPoint;
+        camTranslatePos: TPoint;
+        
         { Cam Rotate vars }
-        OrgX, OrgY, OrgZ: TVector;
+        camRotOrgX, camRotOrgY, camRotOrgZ: TVector; // cam view basis vectors
+        
         { Stitch variables }
-        stitch_Sec: TJKSector;
-        stitch_Surf: TJKSurface;
+        stitchSec: TJKSector;
+        stitchSurf: TJKSurface;
 
         tcube: TPolygons;
 
+        { Multi selection vars }
         scsel: TSCMultisel;
         sfsel: TSFMultisel;
         vxsel: TVXMultisel;
@@ -361,12 +378,13 @@ type
         rPch, rYaw, rRol: double;
 
         { Extra objects - for plugins }
-        ExtraObjs: TObjList;
-        ExtraObjsName: string;
-        OnExtraSelect: TNotifyEvent;
-        OnExtraMove: TOnExtraMove;
+        extraObjs: TObjList;
+        extraObjsName: string;
+        onExtraSelect: TNotifyEvent;
+        onExtraMove: TOnExtraMove;
+        
         { Hide thing/lights bools }
-        ThingsHidden, LightsHidden: boolean;
+        bThingsHidden, bLightsHidden: boolean;
 
         { 3DO Hierarchy }
 
@@ -411,23 +429,27 @@ type
         Procedure SaveJKLto(const name: string);
         Procedure SaveToFile(const filePath: string; ext: string; setSaved: Boolean = True);
         Procedure SnapGridToObject;
-        Function GetXYZAt(atX, atY: Integer; var X, Y, z: double): boolean;
+        Function GetGridPosAt(atX, atY: Integer; var X, Y, z: double): boolean; // projects 2D to 3D pos at grid pos or nearest grid pos  if SnapToGrid is true
+        Function GetPosAt(atX, atY: Integer; var x, y, z: double): boolean; overload; // projects 2D x,y pos to 3D pos at camera view pos or grid pos if SnapToGrid is true
+        Function GetPosAt(atX, atY: Integer; var pos: TVector): boolean; overload; // projects 2D x,y pos to 3D pos at camera view pos or grid pos if SnapToGrid is true
+        Function GetSnappedPosAt(atX, atY: Integer; snapToVertex: boolean; var x, y, z: double): boolean; overload; // projects 2D x,y pos to 3D pos at camera view pos snapped to grid or nearest word geo vertex
+        Function GetSnappedPosAt(atPos: TPoint; snapToVertex: boolean; var pos: TVector): boolean; overload;
+        Function GetSnappedPosAt(atX, atY: Integer; snapToVertex: boolean; var pos: TVector): boolean; overload;
         Function GetMousePos(var X, Y: Integer): boolean;
 
         Procedure GetCurObjRefXYZ(var rx, ry, rz: double);
         Procedure Do_SelectAt(X, Y: Integer; fore: boolean);
 
-        Procedure Do_StartCleave(X, Y: Integer; snaptovertex: boolean);
-        Procedure Do_ProceedCleave(X, Y: Integer; snaptovertex: boolean);
-        Procedure Do_EndCleave(X, Y: Integer; snaptovertex: boolean);
+        Procedure Do_StartCleave(X, Y: Integer; snapToVertex: boolean);
+        Procedure Do_ProceedCleave(X, Y: Integer; snapToVertex: boolean);
+        Procedure Do_EndCleave(X, Y: Integer; snapToVertex: boolean);
 
-        Procedure Do_StartRuler(X, Y: Integer; snaptovertex: boolean);
-        Procedure Do_ProceedRuler(X, Y: Integer; snaptovertex: boolean);
-        Procedure Do_EndRuler(X, Y: Integer; snaptovertex: boolean);
+        Procedure Do_StartRuler(X, Y: Integer; snapToVertex: boolean);
+        Procedure Do_ProceedRuler(X, Y: Integer; snapToVertex: boolean);
+        Procedure Do_EndRuler(X, Y: Integer; snapToVertex: boolean);
 
         Procedure Do_StartDrag(X, Y: Integer);
-        Procedure Do_ProceedDrag(X, Y: Integer; snaptovx: boolean;
-          snaptoaxis, yaxis: boolean);
+        Procedure Do_ProceedDrag(X, Y: Integer; snapToVx: boolean; snapToAxis, yaxis: boolean);
         Procedure Do_EndDrag(X, Y: Integer);
 
         Procedure Do_StartTranslateCam(X, Y: Integer);
@@ -442,9 +464,9 @@ type
         Procedure Do_StartRotateGrid(X, Y: Integer);
         Procedure Do_RotateGrid(X, Y: Integer);
 
-        Procedure DO_StartCreateSC(X, Y: Integer; snaptovertex: boolean);
-        Procedure DO_ProceedCreateSC(X, Y: Integer; snaptovertex: boolean);
-        Procedure DO_EndCreateSC(X, Y: Integer; snaptovertex: boolean);
+        Procedure DO_StartCreateSC(X, Y: Integer; snapToVertex: boolean);
+        Procedure DO_ProceedCreateSC(X, Y: Integer; snapToVertex: boolean);
+        Procedure DO_EndCreateSC(X, Y: Integer; snapToVertex: boolean);
 
         Procedure DO_StartRectSelect(X, Y: Integer);
         Procedure DO_ProceedRectSelect(X, Y: Integer);
@@ -534,7 +556,7 @@ type
         Procedure CleaveBy(const norm: TVector; X, Y, z: double);
         Procedure CreateRenderer;
         Procedure FlipObject(how: Integer);
-        procedure DeleteFrame(Cur_TH, Cur_FR: Integer);
+        Procedure DeleteFrame(Cur_TH, Cur_FR: Integer);
         Procedure DO_SelSC(sc: Integer);
         Procedure DO_SelSF(sc, SF: Integer);
         Procedure DO_SelVX(sc, VX: Integer);
@@ -551,7 +573,9 @@ type
         Procedure AddThingAtSurf;
         Procedure ClearExtraObjs;
         Function AddExtraVertex(X, Y, z: double; const name: string): Integer;
-        Function AddExtraLine(x1, y1, z1, x2, y2, z2: double; const name: string): Integer;
+        Function AddExtraLine(x1, y1, z1, x2, y2, z2: double; const name: string): Integer; overload;
+        Function AddExtraLine(x, y, z: double; direction: TVector; length: double; const name: string): Integer; overload;
+        Function AddExtraLine(startPos: TVector; endPos: TVector; const name: string): Integer; overload;
         Function TranslateExtras(Cur_EX: Integer; dx, dy, dz: double): Integer;
         Procedure DeleteExtraObj(n: Integer);
         Procedure AddThingAtXYZPYR(X, Y, z, pch, yaw, rol: double);
@@ -566,13 +590,13 @@ var
     JedMain: TJedMain;
 
 Procedure LoadThing3DO(th: TJKThing; force: boolean);
-Procedure sysGetPYR(const X, Y, z: TVector; var pch, yaw, rol: double);
+Procedure SysGetPYR(const X, Y, z: TVector; var pch, yaw, rol: double);
 Procedure LoadDLLPlugin(const dll: string);
 
 implementation
 
 uses Item_edit, U_CogForm, Cons_checker, FileDialogs, U_Tools,
-    U_Options, Jed_about1, ProgressDialog, U_tbar, U_Preview, U_msgForm,
+    U_Options, Jed_about1, math, ProgressDialog, U_tbar, U_Preview, U_msgForm,
     Q_Sectors, Q_surfs, Q_things, U_lheader, U_Medit, u_DFI,
     u_errorform, U_tplcreate, ResourcePicker, u_cscene, u_3doform,
     graph_files;
@@ -972,14 +996,14 @@ var
     function highlight(clr: TRColor): TRColor;
     begin
       var hint: Integer := 152;
-      Result.r := Math.Min(clr.r + hint, 255);
-      Result.g := Math.Min(clr.g + hint, 255);
-      Result.b := Math.Min(clr.b + hint, 255);
+      Result.r := System.Math.Min(clr.r + hint, 255);
+      Result.g := System.Math.Min(clr.g + hint, 255);
+      Result.b := System.Math.Min(clr.b + hint, 255);
     end;
 begin
     var clr := renderer.Front_clr;
     cpclr := renderer.Front_clr;
-    case thing_view of
+    case thingView of
         cv_Boxes:
             begin
                 if th.bbox.x1 <> th.bbox.x2 then
@@ -1000,9 +1024,9 @@ begin
             end;
     end;
 
-    renderer.SetColor(CL_Front, cpclr.r, cpclr.g, cpclr.b);
+    renderer.SetColor(CL_FRONT, cpclr.r, cpclr.g, cpclr.b);
     renderer.DrawVertex(x, y, z);
-    renderer.SetColor(CL_Front, clr.r, clr.g, clr.b);
+    renderer.SetColor(CL_FRONT, clr.r, clr.g, clr.b);
 end;
 
 Procedure TJedMain.DrawSelThing(th: TThing);
@@ -1012,7 +1036,7 @@ var
     size: double;
     i: Integer;
 begin
-    renderer.SetCulling(r_CULLNONE);
+    renderer.SetCulling(R_CULLNONE);
     DrawThing(th);
     d.dx := 0;
     d.dy := 0.2;
@@ -1050,7 +1074,7 @@ begin
     thing.vals[fr].GetFrame(X, Y, z, pch, yaw, rol);
     renderer.DrawVertex(X, Y, z);
 
-    renderer.SetCulling(r_CULLNONE);
+    renderer.SetCulling(R_CULLNONE);
     DrawThingAt(thing, X, Y, z, pch, yaw, rol);
     d.dx := 0;
     d.dy := 0.2;
@@ -1101,26 +1125,26 @@ begin
         exit;
     try
         With clMapBack do
-            renderer.SetColor(CL_Background, r, g, b);
+            renderer.SetColor(CL_BACKGROUND, r, g, b);
 
         renderer.BeginScene;
 
         With clGrid do
-            renderer.SetColor(CL_Front, r, g, b);
+            renderer.SetColor(CL_FRONT, r, g, b);
 
         ps := 1;// * DpiScale(1, Screen.PixelsPerInch);
         renderer.SetPointSize(ps);
         renderer.DrawGrid;
 
-        if Map_mode = MM_VX then
+        if mapMode = MM_VX then
         begin
             renderer.SetPointSize(4);
             With clVertex do
-                renderer.SetColor(CL_Front, r, g, b);
+                renderer.SetColor(CL_FRONT, r, g, b);
             for s := 0 to level.sectors.Count - 1 do
             begin
                 sec := level.sectors[s];
-                if ToolBar.IsLayerVisible(sec.Layer) then
+                if ToolBar.IsLayerVisible(sec.layer) then
                     renderer.DrawVertices(sec.vertices);
             end;
             renderer.SetPointSize(ps);
@@ -1128,40 +1152,40 @@ begin
 
         With clMapGeoBack do
           begin
-            if MapGeoBackfaceCull then
-              renderer.SetColor(CL_Front, clMapGeo.r, clMapGeo.g, clMapGeo.b)
+            if bMapGeoBackfaceCull then
+              renderer.SetColor(CL_FRONT, clMapGeo.r, clMapGeo.g, clMapGeo.b)
             else
-              renderer.SetColor(CL_Back, r, g, b);
+              renderer.SetColor(CL_BACK, r, g, b);
           end;
 
-        renderer.SetCulling(r_CULLBACK);
+        renderer.SetCulling(R_CULLBACK);
         for s := 0 to level.sectors.Count - 1 do
         begin
             sec := level.sectors[s];
-            if ToolBar.IsLayerVisible(sec.Layer) then
+            if ToolBar.IsLayerVisible(sec.layer) then
                 renderer.DrawPolygons(sec.surfaces);
         end;
 
-       if not MapGeoBackfaceCull then
+       if not bMapGeoBackfaceCull then
         begin
           With clMapGeo do
-              renderer.SetColor(CL_Front, r, g, b);
-          renderer.SetCulling(r_CULLFRONT);
+              renderer.SetColor(CL_FRONT, r, g, b);
+          renderer.SetCulling(R_CULLFRONT);
           for s := 0 to level.sectors.Count - 1 do
           begin
               sec := level.sectors[s];
-              if ToolBar.IsLayerVisible(sec.Layer) then
+              if ToolBar.IsLayerVisible(sec.layer) then
                   renderer.DrawPolygons(sec.surfaces);
           end;
         end;
 
-        renderer.SetCulling(r_CULLNONE);
+        renderer.SetCulling(R_CULLNONE);
         renderer.SetPointSize(4);
 
-        if (not ThingsHidden) or (Map_mode = MM_TH) then
+        if (not bThingsHidden) or (mapMode = MM_TH) then
         begin
             With clThing do
-                renderer.SetColor(CL_Front, r, g, b);
+                renderer.SetColor(CL_FRONT, r, g, b);
             for th := 0 to level.things.Count - 1 do
             begin
                 thing := level.things[th];
@@ -1170,10 +1194,10 @@ begin
             end;
         end;
 
-        if (not LightsHidden) or (Map_mode = MM_LT) then
+        if (not bLightsHidden) or (mapMode = MM_LT) then
         begin
             With clLight do
-                renderer.SetColor(CL_Front, r, g, b);
+                renderer.SetColor(CL_FRONT, r, g, b);
 
             For th := 0 to level.lights.Count - 1 do
             begin
@@ -1184,10 +1208,10 @@ begin
             end;
         end;
 
-        if Map_mode = MM_FR then
+        if mapMode = MM_FR then
         begin
             With clFrame do
-                renderer.SetColor(CL_Front, r, g, b);
+                renderer.SetColor(CL_FRONT, r, g, b);
 
             renderer.SetPointSize(4);
             for th := 0 to level.things.Count - 1 do
@@ -1204,11 +1228,11 @@ begin
 
         { Draw extra stuff }
         With clExtra do
-            renderer.SetColor(CL_Front, r, g, b);
-        renderer.SetCulling(r_CULLNONE);
-        for s := 0 to ExtraObjs.Count - 1 do
+            renderer.SetColor(CL_FRONT, r, g, b);
+        renderer.SetCulling(R_CULLNONE);
+        for s := 0 to extraObjs.Count - 1 do
         begin
-            obj := ExtraObjs[s];
+            obj := extraObjs[s];
             if obj is TVertex then
                 With TJKVertex(obj) do
                     renderer.DrawVertex(X, Y, z)
@@ -1225,12 +1249,12 @@ begin
 
     { Draw multiselection }
 
-    case Map_mode of
+    case mapMode of
         MM_SC:
             begin
                 With clMSelBack do
-                    renderer.SetColor(CL_Back, r, g, b);
-                renderer.SetCulling(r_CULLBACK);
+                    renderer.SetColor(CL_BACK, r, g, b);
+                renderer.SetCulling(R_CULLBACK);
                 for s := 0 to scsel.Count - 1 do
                 begin
                     sec := Level.Sectors[scsel.GetSC(s)];
@@ -1238,8 +1262,8 @@ begin
                 end;
 
                 With clMSel do
-                    renderer.SetColor(CL_Front, r, g, b);
-                renderer.SetCulling(r_CULLFRONT);
+                    renderer.SetColor(CL_FRONT, r, g, b);
+                renderer.SetCulling(R_CULLFRONT);
                 for s := 0 to scsel.Count - 1 do
                 begin
                     sec := Level.Sectors[scsel.GetSC(s)];
@@ -1249,8 +1273,8 @@ begin
         MM_SF:
             begin
                 With clMSelBack do
-                    renderer.SetColor(CL_Back, r, g, b);
-                renderer.SetCulling(r_CULLBACK);
+                    renderer.SetColor(CL_BACK, r, g, b);
+                renderer.SetCulling(R_CULLBACK);
                 for s := 0 to sfsel.Count - 1 do
                 begin
                     sfsel.GetSCSF(s, sc, SF);
@@ -1259,8 +1283,8 @@ begin
                 end;
 
                 With clMSel do
-                    renderer.SetColor(CL_Front, r, g, b);
-                renderer.SetCulling(r_CULLFRONT);
+                    renderer.SetColor(CL_FRONT, r, g, b);
+                renderer.SetCulling(R_CULLFRONT);
 
                 for s := 0 to sfsel.Count - 1 do
                 begin
@@ -1272,8 +1296,8 @@ begin
         MM_ED:
             begin
                 With clMSelBack do
-                    renderer.SetColor(CL_Back, r, g, b);
-                renderer.SetCulling(r_CULLBACK);
+                    renderer.SetColor(CL_BACK, r, g, b);
+                renderer.SetCulling(R_CULLBACK);
                 for s := 0 to edsel.Count - 1 do
                 begin
                     edsel.GetSCSFED(s, sc, SF, ED);
@@ -1282,8 +1306,8 @@ begin
                         renderer.DrawLine(vertices[ED], vertices[NextVX(ED)]);
                 end;
                 With clMSel do
-                    renderer.SetColor(CL_Front, r, g, b);
-                renderer.SetCulling(r_CULLFRONT);
+                    renderer.SetColor(CL_FRONT, r, g, b);
+                renderer.SetCulling(R_CULLFRONT);
                 for s := 0 to edsel.Count - 1 do
                 begin
                     edsel.GetSCSFED(s, sc, SF, ED);
@@ -1295,8 +1319,8 @@ begin
         MM_VX:
             begin
                 With clMSel do
-                    renderer.SetColor(CL_Front, r, g, b);
-                { Renderer.SetCulling(r_CULLBACK); }
+                    renderer.SetColor(CL_FRONT, r, g, b);
+                { Renderer.SetCulling(R_CULLBACK); }
                 renderer.SetPointSize(4);
                 for s := 0 to vxsel.Count - 1 do
                 begin
@@ -1308,64 +1332,59 @@ begin
         MM_TH:
             begin
                 With clMSel do
-                    renderer.SetColor(CL_Front, r, g, b);
+                    renderer.SetColor(CL_FRONT, r, g, b);
                 for s := 0 to thsel.Count - 1 do
                     DrawThing(Level.Things[thsel.GetTH(s)]);
             end;
         MM_FR:
             begin
                 With clMSel do
-                    renderer.SetColor(CL_Front, r, g, b);
+                    renderer.SetColor(CL_FRONT, r, g, b);
                 for s := 0 to frsel.Count - 1 do
                 begin
                     frsel.GetTHFR(s, th, fr);
-//                    if fr = -1 then
-//                        continue;
-//                    DrawFrame(Level.Things[th].vals[fr]);
                     DrawSelFrame(th, fr);
                 end;
             end;
         MM_LT:
             begin
                 With clMSel do
-                  renderer.SetColor(CL_Front, r, g, b);
+                  renderer.SetColor(CL_FRONT, r, g, b);
 
                 for s := 0 to ltsel.Count - 1 do
                   With Level.Lights[ltsel.getLT(s)] do
-                    begin
-                        renderer.DrawVertex(position.x, position.y, position.z);
-                    end;
+                      renderer.DrawVertex(position.x, position.y, position.z);
             end;
     end;
 
     { Draw Selection }
     With clMapSel do
-        renderer.SetColor(CL_Front, r, g, b);
+        renderer.SetColor(CL_FRONT, r, g, b);
 
     if IsSelValid then
-        case Map_mode of
+        case mapMode of
             MM_SC:
                 begin
                     sec := Level.Sectors[Cur_SC];
 
                     if scsel.FindSC(Cur_SC) = -1 then
                         With clMapSelBack do
-                            renderer.SetColor(CL_Back, r, g, b)
+                            renderer.SetColor(CL_BACK, r, g, b)
                     else
                         With clSelMSelBack do
-                            renderer.SetColor(CL_Back, r, g, b);
+                            renderer.SetColor(CL_BACK, r, g, b);
 
-                    renderer.SetCulling(r_CULLBACK);
+                    renderer.SetCulling(R_CULLBACK);
                     renderer.DrawPolygons(sec.surfaces);
 
                     if scsel.FindSC(Cur_SC) = -1 then
                         With clMapSel do
-                            renderer.SetColor(CL_Front, r, g, b)
+                            renderer.SetColor(CL_FRONT, r, g, b)
                     else
                         With clSelMSel do
-                            renderer.SetColor(CL_Front, r, g, b);
+                            renderer.SetColor(CL_FRONT, r, g, b);
 
-                    renderer.SetCulling(r_CULLFRONT);
+                    renderer.SetCulling(R_CULLFRONT);
                     renderer.DrawPolygons(sec.surfaces);
 
                     if sec.vertices.Count > 0 then
@@ -1376,23 +1395,23 @@ begin
                 begin
                     if sfsel.FindSF(Cur_SC, Cur_SF) = -1 then
                         With clMapSelBack do
-                            renderer.SetColor(CL_Back, r, g, b)
+                            renderer.SetColor(CL_BACK, r, g, b)
                     else
                         With clSelMSelBack do
-                            renderer.SetColor(CL_Back, r, g, b);
+                            renderer.SetColor(CL_BACK, r, g, b);
 
-                    renderer.SetCulling(r_CULLBACK);
+                    renderer.SetCulling(R_CULLBACK);
                     renderer.DrawPolygon(Level.Sectors[Cur_SC].surfaces
                       [Cur_SF]);
 
                     if sfsel.FindSF(Cur_SC, Cur_SF) = -1 then
                         With clMapSel do
-                            renderer.SetColor(CL_Front, r, g, b)
+                            renderer.SetColor(CL_FRONT, r, g, b)
                     else
                         With clSelMSel do
-                            renderer.SetColor(CL_Front, r, g, b);
+                            renderer.SetColor(CL_FRONT, r, g, b);
 
-                    renderer.SetCulling(r_CULLFRONT);
+                    renderer.SetCulling(R_CULLFRONT);
                     renderer.DrawPolygon(Level.Sectors[Cur_SC].surfaces
                       [Cur_SF]);
 
@@ -1415,10 +1434,10 @@ begin
 
                     if edsel.FindED(Cur_SC, Cur_SF, Cur_ED) = -1 then
                         With clMapSel do
-                            renderer.SetColor(CL_Front, r, g, b)
+                            renderer.SetColor(CL_FRONT, r, g, b)
                     else
                         With clSelMSel do
-                            renderer.SetColor(CL_Front, r, g, b);
+                            renderer.SetColor(CL_FRONT, r, g, b);
 
                     v1 := vertices[Cur_ED];
                     v2 := vertices[NextVX(Cur_ED)];
@@ -1432,8 +1451,11 @@ begin
                     v2.X := v1.X + dx * 0.5;
                     v2.Y := v1.Y + dy * 0.5;
                     v2.z := v1.z + dz * 0.5;
-                    VMult(normal.dx, normal.dy, normal.dz, dx, dy, dz, en.dx,
-                      en.dy, en.dz);
+
+                    en := normal.Cross(dx, dy, dz);
+//                    VMult(normal.dx, normal.dy, normal.dz, dx, dy, dz, en.dx,
+//                      en.dy, en.dz);
+
                     v1 := TJKVertex.Create;
                     v1.X := v2.X + en.dx * 0.5;
                     v1.Y := v2.Y + en.dy * 0.5;
@@ -1446,10 +1468,10 @@ begin
                 begin
                     if thsel.FindTH(Cur_TH) = -1 then
                         With clMapSel do
-                            renderer.SetColor(CL_Front, r, g, b)
+                            renderer.SetColor(CL_FRONT, r, g, b)
                     else
                         With clSelMSel do
-                            renderer.SetColor(CL_Front, r, g, b);
+                            renderer.SetColor(CL_FRONT, r, g, b);
 
                     DrawSelThing(Level.Things[Cur_TH]);
                 end;
@@ -1461,20 +1483,20 @@ begin
                 begin
                     if frsel.FindFR(Cur_TH, Cur_FR) = -1 then
                         With clMapSel do
-                            renderer.SetColor(CL_Front, r, g, b)
+                            renderer.SetColor(CL_FRONT, r, g, b)
                     else
                         With clSelMSel do
-                            renderer.SetColor(CL_Front, r, g, b);
+                            renderer.SetColor(CL_FRONT, r, g, b);
                     DrawSelFrame(Cur_TH, Cur_FR);
                 end;
             MM_VX:
                 begin
                     if vxsel.FindVX(Cur_SC, Cur_VX) = -1 then
                         With clMapSel do
-                            renderer.SetColor(CL_Front, r, g, b)
+                            renderer.SetColor(CL_FRONT, r, g, b)
                     else
                         With clSelMSel do
-                            renderer.SetColor(CL_Front, r, g, b);
+                            renderer.SetColor(CL_FRONT, r, g, b);
 
                     With Level.Sectors[Cur_SC].vertices[Cur_VX] do
                         renderer.DrawVertex(X, Y, z);
@@ -1483,10 +1505,10 @@ begin
                 begin
                     if ltsel.FindLT(Cur_LT) = -1 then
                         With clMapSel do
-                            renderer.SetColor(CL_Front, r, g, b)
+                            renderer.SetColor(CL_FRONT, r, g, b)
                     else
                         With clSelMSel do
-                            renderer.SetColor(CL_Front, r, g, b);
+                            renderer.SetColor(CL_FRONT, r, g, b);
 
                     if Cur_LT < Level.Lights.Count then
                         With Level.Lights[Cur_LT] do
@@ -1499,7 +1521,7 @@ begin
             MM_Extra:
                 begin
                     With clMSel do
-                        renderer.SetColor(CL_Front, r, g, b);
+                        renderer.SetColor(CL_FRONT, r, g, b);
                     obj := ExtraObjs[Cur_EX];
                     if obj is TVertex then
                         With TJKVertex(obj) do
@@ -1511,6 +1533,32 @@ begin
                         renderer.DrawPolygon(TPolygon(obj));
                 end;
         end;
+
+    // DEBUG
+//    with renderer do
+//    begin
+//      renderer.SetColor(CL_FRONT, 255, 0, 0);
+//      renderer.DrawLineAt(GridX, GridY, GridZ, gnormal, 10);
+//
+//      renderer.SetColor(CL_FRONT, 255, 255, 0);
+//      renderer.DrawLineAt(GridX, GridY, GridZ, gynormal, 10);
+//
+//      renderer.SetColor(CL_FRONT, 0, 0, 255);
+//      renderer.DrawLineAt(GridX, GridY, GridZ, gxnormal, 10);
+//
+//      renderer.SetColor(CL_FRONT,0, 255, 255);
+//      renderer.DrawLineAt(-CamX, -CamY, -CamZ, yv, 10);
+//
+//      renderer.SetColor(CL_FRONT,255, 0, 255);
+//      renderer.DrawLineAt(-CamX, -CamY, -CamZ, xv, 10);
+//
+//      renderer.SetColor(CL_FRONT,255, 255, 255);
+//      var zvc := zv;
+//      //zvc.x := zvc.x + 1;
+//      renderer.DrawLineAt(-CamX, -CamY, -CamZ, zvc, 10);
+//    end;
+   // DEBUG END
+
     renderer.EndScene;
     ValidateRect(Handle, nil);
 end;
@@ -1754,7 +1802,7 @@ begin
             end;
       end;
 
-    case Map_mode of
+    case mapMode of
         MM_SC:
           ForSelectedSectorsDo(procedure(sec: TJKSector)
             begin
@@ -1785,7 +1833,7 @@ begin
             end;
       end;
 
-    case Map_mode of
+    case mapMode of
         MM_SC:
           ForSelectedSectorsDo(procedure(sec: TJKSector)
             begin
@@ -1987,7 +2035,7 @@ begin
 //                        CamX := -dx;
 //                        CamY := -dy;
 //                        CamZ := -dz;
-//                        renderer.Scale := renderer.Scale / 1.5;
+//                        ZoomIn;
 //                    end;
             { if GetXYZAt(X,Y,dx,dy,dz) then
               with Renderer do
@@ -2016,7 +2064,7 @@ begin
                     exit;
                 end;
             Ord('X'):
-                if Map_mode = MM_SF then
+                if mapMode = MM_SF then
                 begin
                     surf := Level.Sectors[Cur_SC].surfaces[Cur_SF];
                     if surf.adjoin <> nil then
@@ -2038,7 +2086,7 @@ begin
             VK_RIGHT,
             VK_LEFT,
             VK_UP,
-            VK_Down,
+            VK_DOWN,
             VK_NEXT,
             VK_PRIOR:
                 if MapRot = MR_old then
@@ -2050,16 +2098,16 @@ begin
                             rYaw := rYaw + 5;
                         VK_UP:
                             rPch := rPch - 5;
-                        VK_Down:
+                        VK_DOWN:
                             rPch := rPch + 5;
                         VK_PRIOR:
                             rRol := rRol - 5;
                         VK_NEXT:
                             rRol := rRol + 5;
                     end;
-                    SetRendfromPYR;
-                    with renderer do
-                      SetGridNormal(zv.dx, zv.dy, zv.dz); // New code, fixes cleaving
+                    SetRendFromPYR;
+                    //with renderer do
+                      //SetGridNormal(zv.dx, zv.dy, zv.dz); // New code, fixes cleaving
                     Invalidate;
                 end
                 else
@@ -2119,7 +2167,7 @@ begin
                     exit;
                 end; { / }
             Ord('A'):
-                if Map_mode = MM_TH then
+                if mapMode = MM_TH then
                     LayerThings;
             Ord('F'):
                 Goto_Adjoin;
@@ -2140,15 +2188,15 @@ begin
 
         case Key of
             Ord('A'):
-                case Map_mode of
+                case mapMode of
                     MM_SC:
                         begin
                             i := scsel.AddSC(Cur_SC);
                             if scsel.Count = 2 then
                               begin
                                 StartUndoRec('Unadjoin Sectors');
-                                if UnAdjoinSectors(Level.Sectors[scsel.GetSC(0)],
-                                  Level.Sectors[scsel.GetSC(1)]) then
+                                if UnAdjoinSectors(level.sectors[scsel.GetSC(0)],
+                                  level.sectors[scsel.GetSC(1)]) then
                                     PanMessage(mt_info, 'Sectors unadjoined');
                               end
                               else
@@ -2164,7 +2212,7 @@ begin
                             for i := 0 to sfsel.Count - 1 do
                               begin
                                 sfsel.GetSCSF(i, nsc, nsf);
-                                if UnAdjoin(Level.Sectors[nsc].surfaces[nsf]) then
+                                if UnAdjoin(level.sectors[nsc].surfaces[nsf]) then
                                   Inc(nsel);
                               end;
                             PanMessageFmt(mt_info,
@@ -2174,11 +2222,11 @@ begin
                         end;
                 end;
             Ord('B'):
-                case Map_mode of
+                case mapMode of
                     MM_SF:
                         begin
                             i := sfsel.AddSF(Cur_SC, Cur_SF);
-                            sec := BuildSector(Level, sfsel);
+                            sec := BuildSector(level, sfsel);
                             if sec = nil then
                                 sfsel.DeleteN(i)
                             else
@@ -2191,7 +2239,7 @@ begin
                     MM_VX:
                         begin
                             i := vxsel.AddVX(Cur_SC, Cur_VX);
-                            surf := BuildSurface(Level, vxsel);
+                            surf := BuildSurface(level, vxsel);
                             if surf = nil then
                                 vxsel.DeleteN(i)
                             else
@@ -2207,7 +2255,7 @@ begin
                 With renderer do
                     CleaveBy(gnormal, GridX, GridY, GridZ);
             Ord('I'):
-                if Map_mode = MM_SF then
+                if mapMode = MM_SF then
                 begin
                     i := sfsel.AddSF(Cur_SC, Cur_SF);
                     FlipSurfaces(Level, sfsel);
@@ -2220,7 +2268,7 @@ begin
               VK_NEXT: With Renderer do ROL:=ROL+10;
               VK_PRIOR: With Renderer do ROL:=ROL-10; }
              VK_INSERT:
-              Case map_mode of
+              Case mapMode of
                 MM_SC: if GetMousePos(X,Y) then AddSectorAt(X,Y);
               end;
             VK_HOME:
@@ -2229,7 +2277,7 @@ begin
                     exit;
                 end;
             VK_DELETE:
-                if Map_mode = MM_SF then
+                if mapMode = MM_SF then
                     DeleteSurface(Level, Cur_SC, Cur_SF);
             188: { < }
                 begin
@@ -2291,7 +2339,7 @@ begin
             Ord('V'):
                 miPasteClick(nil);
             Ord('P'):
-                if Map_mode = MM_SF then
+                if mapMode = MM_SF then
                 begin
                     StartUndoRec('Flatten Surface');
                     if FlattenSurface(Level.Sectors[Cur_SC].surfaces[Cur_SF])
@@ -2302,7 +2350,7 @@ begin
                     Invalidate;
                 end;
             Ord('X'):
-                if Map_mode = MM_SF then
+                if mapMode = MM_SF then
                 begin
                     surf := Level.Sectors[Cur_SC].surfaces[Cur_SF];
                     if surf.adjoin <> nil then
@@ -2326,6 +2374,19 @@ begin
     end;
 
     case Key of
+        VK_HOME:
+          begin
+             With renderer do
+              begin
+                  CamX := 0;
+                  CamY := 0;
+                  CamZ := 0;
+                  rPch := 0;
+                  rYaw := 0;
+                  rRol := 0;
+                  scale := 0.5;
+              end;
+          end;
         VK_BACK:
             ClearMultiSelection;
         VK_ESCAPE:
@@ -2372,8 +2433,8 @@ begin
                         end;
                 end;
                 SetRendfromPYR;
-                with renderer do
-                  SetGridNormal(zv.dx, zv.dy, zv.dz); // New code, fixes cleaving
+//                with renderer do
+//                  SetGridNormal(zv.dx, zv.dy, zv.dz); // New code, fixes cleaving
                 Invalidate;
             end
             else
@@ -2412,11 +2473,11 @@ begin
                     end;
         VK_ADD:
             begin
-                renderer.Scale := renderer.Scale / 1.5;
+                ZoomIn;
             end;
         VK_SUBTRACT:
             begin
-                renderer.Scale := Math.Min(renderer.Scale * 1.5, 3.5);  // max zoom out
+                ZoomOut;
             end;
         VK_UP, VK_DOWN, VK_LEFT, VK_RIGHT, VK_NEXT, VK_PRIOR:
             With renderer do
@@ -2469,14 +2530,14 @@ begin
                         end;
                 end;
             end;
-        VK_return:
+        VK_RETURN:
             begin
                 if IsSelValid then
                     ItemEdit.Show;
                 exit;
             end;
         Ord('A'):
-            Case Map_mode of
+            Case mapMode of
                 MM_SC:
                     begin
                         i := scsel.AddSC(Cur_SC);
@@ -2511,7 +2572,7 @@ begin
                     LayerThings;
             end;
         Ord('B'):
-            case Map_mode of
+            case mapMode of
                 MM_TH:
                     BringThingToSurf(Cur_TH, Cur_SC, Cur_SF);
                 MM_LT:
@@ -2522,7 +2583,7 @@ begin
         Ord('E'):
             SetMapMode(MM_ED);
         Ord('X'):
-            if Map_mode = MM_SF then
+            if mapMode = MM_SF then
             begin
                 surf := Level.Sectors[Cur_SC].surfaces[Cur_SF];
                 StartUndoRec('Extrude Surface');
@@ -2538,7 +2599,7 @@ begin
         Ord('F'):
             SetMapMode(MM_SF);
         Ord('J'):
-            case Map_mode of
+            case mapMode of
                 MM_SC:
                     ConnectSCs;
                 MM_SF:
@@ -2574,7 +2635,7 @@ begin
 //            LoadDLLPlugin('h:\rr\mv\mv.dll');
         Ord('M'):
             begin
-                case Map_mode of
+                case mapMode of
                     MM_SC:
                         begin
                             i := scsel.AddSC(Cur_SC);
@@ -2668,11 +2729,11 @@ begin
                                 edsel.Clear;
                         end;
                 end;
-                SetMapMode(Map_mode);
+                SetMapMode(mapMode);
             end;
         VK_INSERT:
             Begin
-                Case Map_mode of
+                Case mapMode of
                     MM_SC:
                         if GetMousePos(X, Y) then
                             CopySectorsAt(X, Y);
@@ -2689,7 +2750,7 @@ begin
             end;
         VK_DELETE:
             begin
-                case Map_mode of
+                case mapMode of
                     MM_SC:
                         begin
                             if (scsel.Count + IfThen(scsel.FindSC(Cur_SC) <> -1,  0, 1)) >= level.sectors.Count then
@@ -2782,7 +2843,7 @@ begin
                             vxsel.Clear;
                         end;
                 end;
-                SetMapMode(Map_mode);
+                SetMapMode(mapMode);
             end;
         { ; } 186:
             begin
@@ -2854,19 +2915,19 @@ begin
     begin
         renderer.BeginPick(X, Y);
         renderer.SetPointSize(4);
-        Case Map_mode of
+        Case mapMode of
             MM_SC:
                 for s := 0 to level.sectors.Count - 1 do
                 begin
                     sec := level.sectors[s];
-                    if ToolBar.IsLayerVisible(sec.Layer) then
+                    if ToolBar.IsLayerVisible(sec.layer) then
                         renderer.PickPolygons(sec.surfaces, s);
                 end;
             MM_SF:
                 for s := 0 to level.sectors.Count - 1 do
                 begin
                     sec := level.sectors[s];
-                    if ToolBar.IsLayerVisible(sec.Layer) then
+                    if ToolBar.IsLayerVisible(sec.layer) then
                         for SF := 0 to sec.surfaces.Count - 1 do
                             renderer.PickPolygon(sec.surfaces[SF],
                               s + SF * 65536);
@@ -2875,7 +2936,7 @@ begin
                 for s := 0 to level.sectors.Count - 1 do
                 begin
                     sec := level.sectors[s];
-                    if ToolBar.IsLayerVisible(sec.Layer) then
+                    if ToolBar.IsLayerVisible(sec.layer) then
                         for SF := 0 to sec.surfaces.Count - 1 do
                             With sec.surfaces[SF] do
                                 for ED := 0 to vertices.Count - 1 do
@@ -2887,10 +2948,10 @@ begin
                                 end;
                 end;
             MM_TH:
-                For th := 0 to Level.Things.Count - 1 do
+                For th := 0 to level.things.Count - 1 do
                 begin
-                    thing := Level.Things[th];
-                    if ToolBar.IsLayerVisible(thing.Layer) then
+                    thing := level.things[th];
+                    if ToolBar.IsLayerVisible(thing.layer) then
                       PickThing(thing, th);
                 end;
             MM_FR:
@@ -2918,8 +2979,8 @@ begin
             MM_VX:
                 for s := 0 to level.sectors.Count - 1 do
                 begin
-                    sec := Level.Sectors[s];
-                    if ToolBar.IsLayerVisible(sec.Layer) then
+                    sec := level.sectors[s];
+                    if ToolBar.IsLayerVisible(sec.layer) then
                         With sec do
                             for VX := 0 to vertices.Count - 1 do
                                 With vertices[VX] do
@@ -2930,7 +2991,7 @@ begin
                 for th := 0 to level.lights.Count - 1 do
                 begin
                     light := level.lights[th];
-                    if ToolBar.IsLayerVisible(light.Layer) then
+                    if ToolBar.IsLayerVisible(light.layer) then
                         With light do
                             renderer.PickVertex(position.x, position.y, position.z, th);
                 end;
@@ -2956,7 +3017,7 @@ begin
     { Lb.Caption:=IntToStr(Renderer.Selected.Count); }
     if (renderer.Selected.Count <> 0) then
     begin
-        case Map_mode of
+        case mapMode of
             MM_SC:
                 SetCurSC(renderer.Selected[csel]);
             MM_SF:
@@ -3008,7 +3069,7 @@ end;
 
 procedure TJedMain.PickThingAt(th: TThing; x, y, z, pitch, yaw, roll: double; id: integer);
 begin
-  case thing_view of
+  case thingView of
         cv_Boxes:
             begin
                 if th.bbox.x1 <> th.bbox.x2 then
@@ -3031,92 +3092,73 @@ end;
 
 { Cleave mouse functions }
 
-Procedure TJedMain.Do_StartCleave(X, Y: Integer; snaptovertex: boolean);
+Procedure TJedMain.Do_StartCleave(X, Y: Integer; snapToVertex: boolean);
 begin
-    if CleaveStarted then
-        ReDraw;
-    With CleaveOrgXY do
-        if not GetMousePos(Integer(X), Integer(Y)) then
-            exit;
-    WIth CleaveOrg do
-    begin
-        if not renderer.GetGridAt(CleaveOrgXY.X, CleaveOrgXY.Y, X, Y, z) then
-            exit;
-        if snaptovertex then
-            GetNearestVX(Level, X, Y, z, X, Y, z, 0.2)
-        else if SnapToGrid then
-            renderer.GetNearestGrid(X, Y, z, X, Y, z);
-    end;
-    With CleaveOrg do
-        renderer.ProjectPoint(X, Y, z, Integer(CleaveOrgXY.X),
-          Integer(CleaveOrgXY.Y));
-    LastX := CleaveOrgXY.X;
-    LastY := CleaveOrgXY.Y;
+    if bCleaveStarted then
+      ReDraw;
+        
+    With cleaveOrg2 do
+      if not GetMousePos(X, Y) then
+        exit;
+
+    if not GetSnappedPosAt(cleaveOrg2, snapToVertex, cleaveOrg) then
+      exit;
+
+    With cleaveOrg do
+      renderer.ProjectPoint(x, y, z, cleaveOrg2.X, cleaveOrg2.Y);
+
+    cleaveCurPos2 := cleaveOrg2;   
     SetMouseMode(MM_Cleave);
-    CleaveStarted := true;
+    bCleaveStarted := true;
 end;
 
-Procedure TJedMain.Do_ProceedCleave(X, Y: Integer; snaptovertex: boolean);
+Procedure TJedMain.Do_ProceedCleave(X, Y: Integer; snapToVertex: boolean);
 var
     fx, fy, fz: double;
 begin
-    if not CleaveStarted then
+    if not bCleaveStarted then
         exit;
-    Canvas.Pen.mode := pmXor;
-    Canvas.Pen.Color := clRed;
-    Canvas.MoveTo(CleaveOrgXY.X, CleaveOrgXY.Y);
-    Canvas.LineTo(LastX, LastY);
-    Canvas.MoveTo(CleaveOrgXY.X, CleaveOrgXY.Y);
 
-    if not renderer.GetGridAt(X, Y, fx, fy, fz) then
-        exit;
-    if snaptovertex then
-        GetNearestVX(Level, fx, fy, fz, fx, fy, fz, 0.2)
-    else if SnapToGrid then
-        renderer.GetNearestGrid(fx, fy, fz, fx, fy, fz);
+    Canvas.Pen.mode := pmXor;
+    Canvas.Pen.Color := clLime;//clRed;
+    Canvas.MoveTo(cleaveOrg2.X, cleaveOrg2.Y);
+    Canvas.LineTo(cleaveCurPos2.x, cleaveCurPos2.y);
+    Canvas.MoveTo(cleaveOrg2.X, cleaveOrg2.Y);
+
+    if not GetSnappedPosAt(X, Y, snapToVertex, fx, fy, fz) then
+      exit;
 
     renderer.ProjectPoint(fx, fy, fz, X, Y);
     Canvas.LineTo(X, Y);
-    LastX := X;
-    LastY := Y;
+    cleaveCurPos2 := TPoint.Create(X, Y);
 end;
 
-Procedure TJedMain.Do_EndCleave(X, Y: Integer; snaptovertex: boolean);
+Procedure TJedMain.Do_EndCleave(X, Y: Integer; snapToVertex: boolean);
 var
-    x1, y1, z1, x2, y2, z2: double;
-    cnormal: TVector;
-    cleaved: boolean;
-    i: Integer;
+    endPos: TVector;
 begin
     try
-        if not CleaveStarted then
+        if not bCleaveStarted then
             exit;
 
-        if not renderer.GetGridAt(X, Y, x2, y2, z2) then
+        if not GetSnappedPosAt(X, Y, snapToVertex, endPos) then
             exit;
-        if snaptovertex then
-            GetNearestVX(Level, x2, y2, z2, x2, y2, z2, 0.2)
-        else if SnapToGrid then
-            renderer.GetNearestGrid(x2, y2, z2, x2, y2, z2);
 
-        With CleaveOrg do
-        begin
-            x1 := X;
-            y1 := Y;
-            z1 := z;
-        end;
-        If IsClose(x2, x1) and IsClose(y2, y1) and IsClose(z2, z1) Then
-            exit;
-        With renderer do
-            VMult(gnormal.dx, gnormal.dy, gnormal.dz, x2 - x1, y2 - y1, z2 - z1,
-              cnormal.dx, cnormal.dy, cnormal.dz);
-        Normalize(cnormal);
-        cleaved := false;
-        CleaveBy(cnormal, x1, y1, z1);
+        if endPos = cleaveOrg then
+          exit;
+
+        var normal := renderer.gnormal;
+        if not bSnapToGrid then
+          normal := renderer.GetCameraForward;
+
+        var cnormal := normal.Cross(endPos - cleaveOrg).Normalized;
+        CleaveBy(cnormal, cleaveOrg.x, cleaveOrg.y, cleaveOrg.z);
+
+//        /AddExtraLine(cleaveOrg, endPos, 'Cleave - debug line');
     finally
         SetMouseMode(MM_Select);
         Invalidate;
-        CleaveStarted := false;
+        bCleaveStarted := false;
     end;
 end;
 
@@ -3125,54 +3167,47 @@ end;
 
 Procedure TJedMain.Do_StartRuler(X, Y: Integer; snaptovertex: boolean);
 begin
-    if RulerStarted then
-        ReDraw;
-    With RulerOrgXY do
-        if not GetMousePos(Integer(X), Integer(Y)) then
-            exit;
-    WIth RulerOrg do
-    begin
-        if not renderer.GetGridAt(RulerOrgXY.X, RulerOrgXY.Y, X, Y, z) then
-            exit;
-        if snaptovertex then
-            GetNearestVX(Level, X, Y, z, X, Y, z, 0.2)
-        else if SnapToGrid then
-            renderer.GetNearestGrid(X, Y, z, X, Y, z);
-    end;
-    With RulerOrg do
-        renderer.ProjectPoint(X, Y, z, Integer(RulerOrgXY.X),
-          Integer(RulerOrgXY.Y));
-    LastX := RulerOrgXY.X;
-    LastY := RulerOrgXY.Y;
+    if bRulerStarted then
+      ReDraw;
+      
+    With rulerOrg2 do
+      if not GetMousePos(Integer(X), Integer(Y)) then
+        exit;
+
+   With cleaveOrg2 do
+      if not GetMousePos(X, Y) then
+        exit;
+
+    if not GetSnappedPosAt(rulerOrg2, snaptovertex, rulerOrg) then
+      exit;
+    
+    With rulerOrg do
+      renderer.ProjectPoint(X, Y, z, Integer(rulerOrg2.X), Integer(rulerOrg2.Y));
+      
+    rulerCurPos2 := rulerOrg2;
     SetMouseMode(MM_Ruler);
-    RulerStarted := true;
+    bRulerStarted := true;
 end;
 
 Procedure TJedMain.Do_ProceedRuler(X, Y: Integer; snaptovertex: boolean);
 var
     fx, fy, fz: double;
 begin
-    if not RulerStarted then
+    if not bRulerStarted then
         exit;
     Canvas.Pen.mode  := pmXor;
     Canvas.Pen.Color := clRed;
-    Canvas.MoveTo(RulerOrgXY.X, RulerOrgXY.Y);
-    Canvas.LineTo(LastX, LastY);
-    Canvas.MoveTo(RulerOrgXY.X, RulerOrgXY.Y);
+    Canvas.MoveTo(rulerOrg2.X, rulerOrg2.Y);
+    Canvas.LineTo(rulerCurPos2.x, rulerCurPos2.y);
+    Canvas.MoveTo(rulerOrg2.X, rulerOrg2.Y);
 
-    if not renderer.GetGridAt(X, Y, fx, fy, fz) then
-        exit;
-    if snaptovertex then
-        GetNearestVX(Level, fx, fy, fz, fx, fy, fz, 0.2)
-    else if SnapToGrid then
-        renderer.GetNearestGrid(fx, fy, fz, fx, fy, fz);
-
+    if not GetSnappedPosAt(X, Y, snaptovertex, fx, fy, fz) then
+      exit;
 
     renderer.ProjectPoint(fx, fy, fz, X, Y);
 
     Canvas.LineTo(X, Y);
-    LastX := X;
-    LastY := Y;
+    rulerCurPos2 := TPoint.Create(X, y);
 end;
 
 Procedure TJedMain.Do_EndRuler(X, Y: Integer; snaptovertex: boolean);
@@ -3183,22 +3218,21 @@ var
     i: Integer;
 begin
     try
-        if not RulerStarted then
+        if not bRulerStarted then
             exit;
     finally
         SetMouseMode(MM_Select);
         Invalidate;
-        RulerStarted := false;
+        bRulerStarted := false;
     end;
 end;
 
 Procedure TJedMain.DO_StartRectSelect(X, Y: Integer);
 begin
-    RectSelStarted := true;
-    RectOrgX := X;
-    RectOrgY := Y;
-    RectLastX := RectOrgX;
-    RectLastY := RectOrgY;
+    bRectSelStarted := true;
+    rectSelOrg.X := X;
+    rectSelOrg.Y := Y;
+    reactSelPos := rectSelOrg;
     SetMouseMode(MM_RectSelect);
 end;
 
@@ -3207,10 +3241,10 @@ begin
     Canvas.Pen.mode := pmXor;
     Canvas.Pen.Color := clRed;
     Canvas.Brush.Style := bsClear;
-    Canvas.Rectangle(RectOrgX, RectOrgY, RectLastX, RectLastY);
-    Canvas.Rectangle(RectOrgX, RectOrgY, X, Y);
-    RectLastX := X;
-    RectLastY := Y;
+    Canvas.Rectangle(rectSelOrg.X, rectSelOrg.Y, reactSelPos.X, reactSelPos.Y);
+    Canvas.Rectangle(rectSelOrg.X, rectSelOrg.Y, X, Y);
+    reactSelPos.X := X;
+    reactSelPos.Y := Y;
 end;
 
 Procedure TJedMain.DO_EndRectSelect(X, Y: Integer);
@@ -3219,8 +3253,8 @@ var
     ax, ay, az, pch, yaw, rol: double;
     allin: boolean;
 begin
-    renderer.BeginRectPick(RectOrgX, RectOrgY, X, Y);
-    case Map_mode of
+    renderer.BeginRectPick(rectSelOrg.X, rectSelOrg.Y, X, Y);
+    case mapMode of
         MM_SC:
             begin
                 for i := 0 to level.sectors.count - 1 do
@@ -3317,18 +3351,14 @@ var
     n, i: Integer;
     th, fr: Integer;
 begin
-    if not renderer.GetGridAt(X, Y, fx, fy, fz) then
-        exit;
+    if not GetPosAt(X, Y, dragOrg) then
+      exit;
 
     SetMouseMode(MM_Drag);
-    DragOrg.X := fx;
-    DragOrg.Y := fy;
-    DragOrg.z := fz;
+    with dragRefOrg do
+        GetCurObjRefXYZ(x, y, z);
 
-    with DragOrgPos do
-        GetCurObjRefXYZ(X, Y, z);
-
-    case Map_mode of
+    case mapMode of
         MM_SC:
             StartUndoRec('Drag Sector(s)');
         MM_SF:
@@ -3345,116 +3375,109 @@ begin
             StartUndoRec('Drag Frame(s)');
         MM_Extra:
             if Assigned(OnExtraMove) then
-                OnExtraMove(ExtraObjs[Cur_EX], false);
+                OnExtraMove(extraObjs[Cur_EX], false);
     end;
 end;
 
 Procedure TJedMain.GetCurObjRefXYZ(var rx, ry, rz: double);
 var
-    sec: TJKSector;
-    surf: TJKSurface;
-    VX: TJKVertex;
-    th: TJKThing;
-    LT: TSedLight;
-    vl: TTPLValue;
-    EX: TObject;
     pch, yaw, rol: double;
 begin
     rx := 0;
     ry := 0;
     rz := 0;
-    case Map_mode of
+    case mapMode of
         MM_SC:
             begin
-                sec := level.GetSectorN(Cur_SC);
+                var sec := level.GetSectorN(Cur_SC);
                 if sec = nil then
                   exit;
 
                 With sec.vertices[0] do
                 begin
-                    rx := X;
-                    ry := Y;
+                    rx := x;
+                    ry := y;
                     rz := z;
                 end;
             end;
         MM_SF:
             begin
-                surf := level.GetSectorSurfaceN(Cur_SC, Cur_SF);
+                var surf := level.GetSectorSurfaceN(Cur_SC, Cur_SF);
                 if surf = nil then
                   exit;
                 With surf.vertices[0] do
                 begin
-                    rx := X;
-                    ry := Y;
+                    rx := x;
+                    ry := y;
                     rz := z;
                 end;
             end;
         MM_VX:
             begin
-                VX := level.GetSectorVertexN(Cur_SC, Cur_VX);
-                if VX = nil then
+                var vx := level.GetSectorVertexN(Cur_SC, Cur_VX);
+                if vx = nil then
                   exit;
-                With VX do
+                With vx do
                 begin
-                    rx := X;
-                    ry := Y;
+                    rx := x;
+                    ry := y;
                     rz := z;
                 end;
             end;
         MM_ED:
             begin
-                surf := level.GetSectorSurfaceN(Cur_SC, Cur_SF);
+                var surf := level.GetSectorSurfaceN(Cur_SC, Cur_SF);
                 if (surf = nil) or not CheckSurfaceEdgeIndex(surf, Cur_ED) then
                   exit;
 
                 With surf do
                 begin
-                    VX := vertices[Cur_ED];
-                    With VX do
+                    var vx := vertices[Cur_ED];
+                    With vx do
                     begin
-                        rx := X;
-                        ry := Y;
+                        rx := x;
+                        ry := y;
                         rz := z;
                     end;
                 end;
             end;
         MM_TH:
             begin
-                th := level.GetThingN(Cur_TH);
+                var th := level.GetThingN(Cur_TH);
                 if th = nil then
                   exit;
                 With th do
-                begin
-                    rx := X;
-                    ry := Y;
-                    rz := z;
-                end;
+                  begin
+                      rx := x;
+                      ry := y;
+                      rz := z;
+                  end;
             end;
         MM_FR:
             begin
-                th := level.GetThingN(Cur_TH);
+                var th := level.GetThingN(Cur_TH);
                 if th = nil then
                   exit;
 
                 if Cur_FR = -1 then
-                begin
-                    With th do
-                    begin
-                        rx := X;
-                        ry := Y;
-                        rz := z;
-                    end;
-                end
+                  begin
+                      With th do
+                      begin
+                          rx := x;
+                          ry := y;
+                          rz := z;
+                      end;
+                  end
                 else
-                begin
-                    vl := th.vals[Cur_FR];
-                    vl.GetFrame(rx, ry, rz, pch, yaw, rol);
-                end;
+                  begin
+                      var vl := th.vals[Cur_FR];
+                      vl.GetFrame(rx, ry, rz, pch, yaw, rol);
+                  end;
             end;
         MM_LT:
             begin
-                LT := level.GetLightN(Cur_LT);
-                With LT do
+                var lt := level.GetLightN(Cur_LT);
+                With lt do
                   begin
                       rx := position.x;
                       ry := position.y;
@@ -3463,188 +3486,124 @@ begin
             end;
         MM_Extra:
             begin
-                if (Cur_EX < 0) or (ExtraObjs.Count = 0) then
+                if (Cur_EX < 0) or (extraObjs.Count = 0) then
                   exit;
 
-                EX := ExtraObjs[Cur_EX];
-                if EX is TVertex then
-                    With TVertex(EX) do
+                var ext := extraObjs[Cur_EX];
+                if ext is TVertex then
+                    With TVertex(ext) do
                     begin
-                        rx := X;
-                        ry := Y;
+                        rx := x;
+                        ry := y;
                         rz := z;
                     end;
-                if EX is TExtraLine then
-                    With TExtraLine(EX).v1 do
+                if ext is TExtraLine then
+                    With TExtraLine(ext).v1 do
                     begin
-                        rx := X;
-                        ry := Y;
+                        rx := x;
+                        ry := y;
                         rz := z;
                     end;
-                if EX is TPolygon then
-                    With TPolygon(EX).vertices[0] do
+                if ext is TPolygon then
+                    With TPolygon(ext).vertices[0] do
                     begin
-                        rx := X;
-                        ry := Y;
+                        rx := x;
+                        ry := y;
                         rz := z;
                     end;
             end;
     end;
 end;
 
-Procedure TJedMain.Do_ProceedDrag(X, Y: Integer; snaptovx: boolean;
-  snaptoaxis, yaxis: boolean);
-const
-    dragcloseenough = 0.2;
-var
-    fx, fy, fz, dx, dy, dz: double;
-
-    Procedure GetDXYZ(rx, ry, rz: double; var dx, dy, dz: double);
-    var
-        ax, ay, az, d: double;
-        arx, ary, arz: double;
+Procedure TJedMain.Do_ProceedDrag(X, Y: Integer; snapToVx: boolean; snapToAxis, yaxis: boolean);
+    procedure GetSnapToGridVector(pos: TVector; var svec: Tvector);
+      var
+         pline, gpos: TVector;
     begin
-        With DragOrg do
-        begin
-            dx := fx - X;
-            dy := fy - Y;
-            dz := fz - z;
-        end;
+        { Find distance to plane - signed }
+        with renderer do
+          begin
+              var dot := gnormal.Dot(gridX, gridY, gridZ);
 
-        if snaptoaxis then
+              PlaneLineXn(gnormal, dot, pos.x, pos.y, pos.z,
+                pos.x + gnormal.dx, pos.y + gnormal.dy, pos.z + gnormal.dz,
+                pline.x, pline.y, pline.z);
+
+              renderer.GetNearestGrid(pline.x, pline.y, pline.z, gpos.x, gpos.y, gpos.z);
+              svec := gpos - pline + svec;
+          end;
+    end;
+
+    function GetDragVector(curRefPos: TVector; var dvec: Tvector) : boolean;
+      var curDragPos: TVector;
+    begin
+        Result := false;
+        if not GetPosAt(X, Y, curDragPos) then
+          exit;
+
+        dvec := curDragPos - dragOrg; // default delta for no snap
+        Result := true;
+
+        if snapToAxis then
             with renderer do
             begin
-                arx := gxnormal.dx * dx + gxnormal.dy * dy + gxnormal.dz * dz;
-                ary := gynormal.dx * dx + gynormal.dy * dy + gynormal.dz * dz;
-
                 if yaxis then
-                begin
-                    dx := gynormal.dx * ary;
-                    dy := gynormal.dy * ary;
-                    dz := gynormal.dz * ary;
-                end
+                    dvec := gynormal * gynormal.Dot(dvec)
                 else
-                begin
-                    dx := gxnormal.dx * arx;
-                    dy := gxnormal.dy * arx;
-                    dz := gxnormal.dz * arx;
-                end;
+                    dvec := gxnormal * gxnormal.Dot(dvec);
 
-                if SnapToGrid then
-                    with renderer do
-                    begin
-                        d := gnormal.dx * GridX + gnormal.dy * GridY +
-                          gnormal.dz * GridZ;
-                        PlaneLineXn(gnormal, d, rx + dx, ry + dy, rz + dz,
-                          rx + dx + gnormal.dx, ry + dy + gnormal.dy,
-                          rz + dz + gnormal.dz, arx, ary, arz);
-                        renderer.GetNearestGrid(arx, ary, arz, ax, ay, az);
-                        dx := ax - arx + dx;
-                        dy := ay - ary + dy;
-                        dz := az - arz + dz;
-                    end;
-
-                exit;
-
+//                if bSnapToGrid then
+//                    GetSnapToGridVector(curRefPos + dvec, dvec);
+//                exit;
             end;
 
-        case snaptovx of
-            false:
-                case SnapToGrid of
-                    false:
-                        exit;
-                    true:
-                        begin
-                            { Find distance to plane - signed }
-                            With renderer do
-                            begin
-                                { a:=SMult(gnormal.dX,gnormal.dy,gnormal.dz,rx+dx-gridX,ry+dy-GridY,rz+dz-GridZ); }
-                                d := gnormal.dx * GridX + gnormal.dy * GridY +
-                                  gnormal.dz * GridZ;
-                                PlaneLineXn(gnormal, d, rx + dx, ry + dy,
-                                  rz + dz, rx + dx + gnormal.dx,
-                                  ry + dy + gnormal.dy, rz + dz + gnormal.dz,
-                                  arx, ary, arz);
-                                renderer.GetNearestGrid(arx, ary, arz,
-                                  ax, ay, az);
-                                dx := ax - arx + dx;
-                                dy := ay - ary + dy;
-                                dz := az - arz + dz;
-                            end;
-                        end;
-                end;
-            true:
-                begin
-                    if not GetNearestVX(Level, rx + dx, ry + dy, rz + dz, ax,
-                      ay, az, dragcloseenough) then
-                        exit;
-                    dx := ax - rx;
-                    dy := ay - ry;
-                    dz := az - rz;
-                end;
-        end;
+        if snapToVx then
+           begin
+              var vxpos: TVector;
+              if not GetNearestWorldVertexToLine(level, curRefPos + dvec, renderer.GetCameraForward, vxsnapMaxDist, vxpos) then
+                exit;
+              dvec := vxpos - curRefPos;
+            end
+        else if bSnapToGrid then
+          GetSnapToGridVector(curRefPos + dvec, dvec);
     end;
 
 Var
-    i: Integer;
-    rx, ry, rz: double;
-
+    curRefPos, tvec: TVector;
 begin
-    if not renderer.GetGridAt(X, Y, fx, fy, fz) then
-        exit;
+    if not GetDragVector(dragRefOrg, tvec) then
+      exit;
 
-    // GetCurObjRefXYZ(rx,ry,rz);
-
-    With DragOrgPos do
-    begin
-        rx := X;
-        ry := Y;
-        rz := z;
-    end;
-
-    GetDXYZ(rx, ry, rz, dx, dy, dz);
-
-    GetCurObjRefXYZ(rx, ry, rz);
-
-    dx := DragOrgPos.X - rx + dx;
-    dy := DragOrgPos.Y - ry + dy;
-    dz := DragOrgPos.z - rz + dz;
-
-    case Map_mode of
+    GetCurObjRefXYZ(curRefPos.x, curRefPos.y, curRefPos.z);
+    tvec :=  dragRefOrg - curRefPos + tvec;
+    case mapMode of
         MM_SC:
-            TranslateSectors(Level, scsel, Cur_SC, dx, dy, dz);
+            TranslateSectors(Level, scsel, Cur_SC, tvec.x, tvec.y, tvec.z);
         MM_SF:
-            TranslateSurfaces(Level, sfsel, Cur_SC, Cur_SF, dx, dy, dz);
+            TranslateSurfaces(Level, sfsel, Cur_SC, Cur_SF, tvec.x, tvec.y, tvec.z);
         MM_VX:
-            TranslateVertices(Level, vxsel, Cur_SC, Cur_VX, dx, dy, dz);
+            TranslateVertices(Level, vxsel, Cur_SC, Cur_VX, tvec.x, tvec.y, tvec.z);
         MM_ED:
-            TranslateEdges(Level, edsel, Cur_SC, Cur_SF, Cur_ED, dx, dy, dz);
+            TranslateEdges(Level, edsel, Cur_SC, Cur_SF, Cur_ED, tvec.x, tvec.y, tvec.z);
         MM_TH:
-            TranslateThings(Level, thsel, Cur_TH, dx, dy, dz, MoveFrames);
+            TranslateThings(Level, thsel, Cur_TH, tvec.x, tvec.y, tvec.z, MoveFrames);
         MM_FR:
             if Cur_FR = -1 then
-                TranslateThingKeepFrame(Level, Cur_TH, dx, dy, dz)
+                TranslateThingKeepFrame(Level, Cur_TH, tvec.x, tvec.y, tvec.z)
             else
-                TranslateFrames(Level, frsel, Cur_TH, Cur_FR, dx, dy, dz);
+                TranslateFrames(Level, frsel, Cur_TH, Cur_FR, tvec.x, tvec.y, tvec.z);
         MM_LT:
-            TranslateLights(Level, ltsel, Cur_LT, dx, dy, dz);
+            TranslateLights(Level, ltsel, Cur_LT, tvec.x, tvec.y, tvec.z);
         MM_Extra:
-            TranslateExtras(Cur_EX, dx, dy, dz);
+            TranslateExtras(Cur_EX, tvec.x, tvec.y, tvec.z);
     end;
-
-    // With DragOrg do
-    // begin
-    // x:=x+dx;
-    // y:=y+dy;
-    // z:=z+dz;
-    // end;
 
     Invalidate;
 end;
 
 Procedure TJedMain.Do_EndDrag(X, Y: Integer);
 begin
-    { Case Map_Mode of
+    { Case mapMode of
       mm_th: LayerThing(Cur_TH);
       end; }
     SetMouseMode(MM_Select);
@@ -3652,8 +3611,8 @@ end;
 
 Procedure TJedMain.Do_StartTranslateCam(X, Y: Integer);
 begin
-    CamOrg.X := X;
-    CamOrg.Y := Y;
+    camTranslatePos.X := X;
+    camTranslatePos.Y := Y;
     SetMouseMode(MM_TranslateCam);
 end;
 
@@ -3661,13 +3620,13 @@ Procedure TJedMain.Do_TranslateCam(X, Y: Integer);
 var
     nx, ny, nz, nx1, ny1, nz1: double;
 begin
-    if (CamOrg.X = X) and (CamOrg.Y = Y) then exit;
+    if (camTranslatePos.X = X) and (camTranslatePos.Y = Y) then exit;
     With renderer do
     begin
         if not GetXYZonPlaneAt(X, Y, renderer.zv, CamX, CamY, CamZ, nx, ny, nz)
         then exit;
 
-        if not GetXYZonPlaneAt(CamOrg.X, CamOrg.Y, renderer.zv, CamX, CamY, CamZ, nx1, ny1, nz1)
+        if not GetXYZonPlaneAt(camTranslatePos.X, camTranslatePos.Y, renderer.zv, CamX, CamY, CamZ, nx1, ny1, nz1)
         then exit;
 
         const s = Min(renderer.DpiScale * 10000.0, 1.0);
@@ -3695,19 +3654,19 @@ end;
 
 Procedure TJedMain.Do_StartRotateCam(X, Y: Integer);
 begin
-    if Mouse_mode = MM_RotateCam then
+    if mouseMode = MM_RotateCam then
         exit;
-    GOrgXY.X := X;
-    GOrgXY.Y := Y;
-    With GOrg do
+    gridTranslateOrg2.X := X;
+    gridTranslateOrg2.Y := Y;
+    With gridTranslateOrg do
     begin
-        X := rPch;
-        Y := rYaw;
+        x := rPch;
+        y := rYaw;
         z := rRol;
     end;
-    OrgX := renderer.xv;
-    OrgY := renderer.yv;
-    OrgZ := renderer.zv;
+    camRotOrgX := renderer.xv;
+    camRotOrgY := renderer.yv;
+    camRotOrgZ := renderer.zv;
 
 
 //      var nx, ny, nz: double;
@@ -3730,8 +3689,8 @@ var
     dx, dy: Integer;
     nx, ny, nz: TVector;
 begin
-    dx := X - GOrgXY.X;
-    dy := Y - GOrgXY.Y;
+    dx := X - gridTranslateOrg2.X;
+    dy := Y - gridTranslateOrg2.Y;
 //      var cx, cy, cz: double;
 //     With renderer do
 //    begin
@@ -3751,57 +3710,54 @@ begin
 //    end;
 
     if MapRot = MR_old then
-    begin
-        with GOrg do
-        begin
-            const s = Min(renderer.DpiScale * 100.0, 1.0);
-            rRol := z - dx * s;
-            rPch := X - dy * s;
-//            if rRol > 360 then
-//              rRol := rRol - 360
-//            else if rRol < 0 then
-//              rRol := rRol + 360;
-//            if rPch > 360 then
-//              rPch := rPch - 360
-//            else if rPch < 0 then
-//              rPch := rPch + 360;
+      begin
+        const s = Min(renderer.DpiScale * 100.0, 1.0);
+        rRol := gridTranslateOrg.z - dx * s;
+        rPch := gridTranslateOrg.x - dy * s;
+  //      if rRol > 360 then
+  //        rRol := rRol - 360
+  //      else if rRol < 0 then
+  //        rRol := rRol + 360;
+  //      if rPch > 360 then
+  //        rPch := rPch - 360
+  //      else if rPch < 0 then
+  //        rPch := rPch + 360;
 
-           // PanMessageFmt(mt_Info, 'pch: %f rol: %f', [rPch, rRol]);
-            SetRendfromPYR;
-        end;
-    end
+       // PanMessageFmt(mt_Info, 'pch: %f rol: %f', [rPch, rRol]);
+        SetRendFromPYR;
+      end
     else
-    begin
-        nx := OrgX;
-        ny := OrgY;
-        nz := OrgZ;
+      begin
+          nx := camRotOrgX;
+          ny := camRotOrgY;
+          nz := camRotOrgZ;
 
-        RotAxisAngle(nx, ny, dx); { l/r }
-        RotAxisAngle(nz, ny, dy); { u/d }
+          RotAxisAngle(nx, ny, dx); { l/r }
+          RotAxisAngle(nz, ny, dy); { u/d }
 
-        With nz do
-            renderer.SetZ(dx, dy, dz);
-        With nx do
-            renderer.SetX(dx, dy, dz);
-//        With ny do
-//            renderer.SetY(dx, dy, dz);
+          With nz do
+              renderer.SetZ(dx, dy, dz);
+          With nx do
+              renderer.SetX(dx, dy, dz);
+  //        With ny do
+  //            renderer.SetY(dx, dy, dz);
 
-    end;
+      end;
 
-    with renderer do
-        SetGridNormal(zv.dx, zv.dy, zv.dz); // New code, fixes cleaving
+//   with renderer do
+//          SetGridNormal(zv.dx, zv.dy, zv.dz); // New code, fixes cleaving
     Invalidate;
 end;
 
 Procedure TJedMain.Do_StartTranslateGrid(X, Y: Integer);
 begin
-    GOrgXY.X := X;
-    GOrgXY.Y := Y;
-    With GOrg, renderer do
+    gridTranslateOrg2.X := X;
+    gridTranslateOrg2.Y := Y;
+    With gridTranslateOrg do
     begin
-        X := GridX;
-        Y := GridY;
-        z := GridZ;
+        x := renderer.gridX;
+        y := renderer.gridY;
+        z := renderer.gridZ;
     end;
 end;
 
@@ -3815,7 +3771,6 @@ begin
         pnorm := zv;
         if not GetXYZonPlaneAt(X, Y, pnorm, CamX, CamY, CamZ, nx, ny, nz) then
             exit;
-
         try
             a := 1 / GridMoveStep;
             nx := Int(nx * a) / a;
@@ -3833,13 +3788,13 @@ end;
 
 Procedure TJedMain.Do_StartRotateGrid(X, Y: Integer);
 begin
-    GOrgXY.X := X;
-    GOrgXY.Y := Y;
-    With GOrg, renderer do
+    gridTranslateOrg2.X := X;
+    gridTranslateOrg2.Y := Y;
+    With gridTranslateOrg do
     begin
-        X := GridX;
-        Y := GridY;
-        z := GridZ;
+        x := renderer.gridX;
+        y := renderer.gridY;
+        z := renderer.gridZ;
     end;
 end;
 
@@ -3847,129 +3802,112 @@ Procedure TJedMain.Do_RotateGrid(X, Y: Integer);
 var
     dx, dy: double;
 begin
-    dx := X - GOrgXY.X;
-    dy := Y - GOrgXY.Y;
+    dx := X - gridTranslateOrg2.X;
+    dy := Y - gridTranslateOrg2.Y;
 
 end;
 
-Procedure TJedMain.DO_StartCreateSC(X, Y: Integer; snaptovertex: boolean);
+Procedure TJedMain.DO_StartCreateSC(X, Y: Integer; snapToVertex: boolean);
 begin
-    if SCCreateStarted then
+    if bCreateSCStarted then
         ReDraw;
-    With CleaveOrgXY do
+        
+    With cleaveOrg2 do
         if not GetMousePos(Integer(X), Integer(Y)) then
             exit;
-    WIth CleaveOrg do
-    begin
-        if not renderer.GetGridAt(CleaveOrgXY.X, CleaveOrgXY.Y, X, Y, z) then
-            exit;
-        if snaptovertex then
-            GetNearestVX(Level, X, Y, z, X, Y, z, 0.2)
-        else if SnapToGrid then
-            renderer.GetNearestGrid(X, Y, z, X, Y, z);
-    end;
-    With CleaveOrg do
-        renderer.ProjectPoint(X, Y, z, Integer(CleaveOrgXY.X),
-          Integer(CleaveOrgXY.Y));
-    LastX := CleaveOrgXY.X;
-    LastY := CleaveOrgXY.Y;
+
+    if not GetSnappedPosAt(cleaveOrg2, snapToVertex, cleaveOrg) then
+        exit;
+
+    With cleaveOrg do
+        renderer.ProjectPoint(x, y, z, Integer(cleaveOrg2.X), Integer(cleaveOrg2.Y));
+
+    cleaveCurPos2 := cleaveOrg2;
     SetMouseMode(MM_CreateSector);
-    SCCreateStarted := true;
+    bCreateSCStarted := true;
 end;
 
-Procedure TJedMain.DO_ProceedCreateSC(X, Y: Integer; snaptovertex: boolean);
+Procedure TJedMain.DO_ProceedCreateSC(X, Y: Integer; snapToVertex: boolean);
 var
     fx, fy, fz: double;
 begin
-    if not SCCreateStarted then
+    if not bCreateSCStarted then
         exit;
+
     Canvas.Pen.mode := pmXor;
     Canvas.Pen.Color := clRed;
-    Canvas.MoveTo(CleaveOrgXY.X, CleaveOrgXY.Y);
-    Canvas.LineTo(LastX, LastY);
-    Canvas.MoveTo(CleaveOrgXY.X, CleaveOrgXY.Y);
+    Canvas.MoveTo(cleaveOrg2.X, cleaveOrg2.Y);
+    Canvas.LineTo(cleaveCurPos2.X, cleaveCurPos2.Y);
+    Canvas.MoveTo(cleaveOrg2.X, cleaveOrg2.Y);
 
-    if not renderer.GetGridAt(X, Y, fx, fy, fz) then
+    if not GetSnappedPosAt(X, Y, snapToVertex, fx, fy, fz) then
         exit;
-    if snaptovertex then
-        GetNearestVX(Level, fx, fy, fz, fx, fy, fz, 0.2)
-    else if SnapToGrid then
-        renderer.GetNearestGrid(fx, fy, fz, fx, fy, fz);
 
     renderer.ProjectPoint(fx, fy, fz, X, Y);
     Canvas.LineTo(X, Y);
-    LastX := X;
-    LastY := Y;
+    cleaveCurPos2 := TPoint.Create(X, Y);
 end;
 
-Procedure TJedMain.DO_EndCreateSC(X, Y: Integer; snaptovertex: boolean);
+Procedure TJedMain.DO_EndCreateSC(X, Y: Integer; snapToVertex: boolean);
 var
-    x1, y1, z1, x2, y2, z2: double;
-    nx, ny, nz: TVector;
+    endPos, nx, ny, nz: TVector;
     vl: double;
     sc, nsc: TJKSector;
     box: TBox;
     sec: TJKSector;
 begin
     try
-        if not SCCreateStarted then
+        if not bCreateSCStarted then
             exit;
 
-        if not renderer.GetGridAt(X, Y, x2, y2, z2) then
+        if not GetSnappedPosAt(X, Y, snapToVertex, endPos) then
             exit;
-        if snaptovertex then
-            GetNearestVX(Level, x2, y2, z2, x2, y2, z2, 0.2)
-        else if SnapToGrid then
-            renderer.GetNearestGrid(x2, y2, z2, x2, y2, z2);
 
-        With CleaveOrg do
-        begin
-            x1 := X;
-            y1 := Y;
-            z1 := z;
-        end;
-        nx.dx := x2 - x1;
-        nx.dy := y2 - y1;
-        nx.dz := z2 - z1;
-
-        vl := Vlen(nx);
+        nx := endPos - cleaveOrg;
+        vl := nx.Normalize;
         sc := ToolBar.GetNewShape;
 
         if vl < 0.1 then
-            nx := renderer.gxnormal
-        else
-        begin
+          begin
+            vl := 1;
             FindBBox(sc, box);
             vl := box.x2 - box.x1;
-            nx.SetCoords(nx.dx / vl, nx.dy / vl, nx.dz / vl);
-        end;
 
-        vl := Vlen(nx);
+            nx := renderer.gxnormal;
+            if not bSnapToGrid then
+              nx := renderer.GetCameraRight;
+          end;
+
+        nx.Scale(vl);
 
         nz := renderer.gnormal;
-        nz.SetCoords(nz.dx * vl, nz.dy * vl, nz.dz * vl);
+        if not bSnapToGrid then
+          nz := -renderer.GetCameraForward;
+        nz.Scale(vl);
 
-        VMult(nz.dx, nz.dy, nz.dz, nx.dx, nx.dy, nx.dz, ny.dx, ny.dy, ny.dz);
+        ny := nz.Cross(nx).Normalized;
+        ny.Scale(vl);
 
-        Normalize(ny);
-        ny.SetCoords(ny.dx * vl, ny.dy * vl, ny.dz * vl);
+        // Recalculate nx in case angled nx (snap to vertex, etc...)
+        // otherwise it could result in in curved sector
+        nx := ny.Cross(nz).Normalized;
+        nx.Scale(vl);
 
-        sec := Level.Sectors[Cur_SC];
-        nsc := Level.NewSector;
-        DuplicateSector(sc, nsc, 0, 0, 0, nx, ny, nz, x1, y1, z1);
+        sec := level.sectors[Cur_SC];
+        nsc := level.NewSector;
+        DuplicateSector(sc, nsc, 0, 0, 0, nx, ny, nz, cleaveOrg.x, cleaveOrg.y, cleaveOrg.z);
         nsc.Assign(sec);
-        Level.Sectors.Add(nsc);
-        Level.RenumSecs;
+        level.sectors.Add(nsc);
+        level.RenumSecs;
 
         StartUndoRec('Create Sector');
         SaveSecUndo(nsc, ch_added, sc_both);
 
         SectorAdded(nsc);
         SetCurSC(level.sectors.Count - 1);
-
     finally
         SetMouseMode(MM_Select);
-        SCCreateStarted := false;
+        bCreateSCStarted := false;
         Invalidate;
     end;
 end;
@@ -3981,7 +3919,7 @@ var
 begin
     case Button of
       TMouseButton.mbLeft:
-        case Mouse_mode of
+        case mouseMode of
             MM_Select:
                 ;
             MM_Cleave:
@@ -4008,7 +3946,7 @@ procedure TJedMain.FormMouseUp(sender: TObject; Button: TMouseButton;
 begin
     case Button of
         TMouseButton.mbLeft:
-            Case Mouse_mode of
+            Case mouseMode of
                 MM_Select:
                     begin
                         Do_SelectAt(X, Y, ssAlt in Shift);
@@ -4039,7 +3977,7 @@ begin
 
   if Shift <> [] then
     begin
-      if ((Map_mode = MM_TH) or (Map_mode = MM_FR)) and (ssCtrl in Shift) then
+      if ((mapMode = MM_TH) or (mapMode = MM_FR)) and (ssCtrl in Shift) then
       begin
           dx := 0;
           dy := 0;
@@ -4069,14 +4007,18 @@ begin
               if not GetXYZonPlaneAt(MousePos.X, MousePos.Y, ny, CamX, CamY, CamZ,
                 dx, dy, dz) then
                   exit;
+
+              var zoomed := false;
+              if WheelDelta > 0 then
+                zoomed := ZoomIn
+              else
+                zoomed := ZoomOut;
+              if not zoomed then
+                exit;
+
               CamX := dx;
               CamY := dy;
               CamZ := dz;
-
-              if WheelDelta > 0 then
-                renderer.Scale := renderer.Scale / 1.5
-              else
-                renderer.Scale := Math.Min(renderer.Scale * 1.5, 3.5);  // max zoom out
 
               GetXYZonPlaneAt(MousePos.X, MousePos.Y, ny, CamX, CamY, CamZ, dx, dy, dz);
               CamX := dx;
@@ -4088,13 +4030,12 @@ begin
     end;
 end;
 
-procedure TJedMain.FormMouseMove(sender: TObject; Shift: TShiftState;
-  X, Y: Integer);
+procedure TJedMain.FormMouseMove(sender: TObject; Shift: TShiftState; X, Y: Integer);
 var
     msX, msY: Integer;
     gX, gY, gZ: double;
 begin
-    Case Mouse_mode of
+    Case mouseMode of
         MM_Select:
             begin
                 if (ssLeft in Shift) and (ssCtrl in Shift) then
@@ -4118,15 +4059,16 @@ begin
         MM_RotateCam:
           begin
             if (ssShift in Shift) and (ssCtrl in Shift) then
-              X := GOrgXY.X
+              X := gridTranslateOrg2.X
             else if ssCtrl in Shift then
-              Y := GOrgXY.Y;
+              Y := gridTranslateOrg2.Y;
             Do_RotateCam(X, Y);
           end;
         MM_RectSelect:
             DO_ProceedRectSelect(X, Y);
     end;
 
+    //if GetMousePos(msX, msY) and renderer.GetCameraAt(X, Y, gX, gY, gZ) then  // <--- TODO: use this at some point
     if GetMousePos(msX, msY) and renderer.GetGridAt(msX, msY, gX, gY, gZ) then
         PXYZ.Caption := Format('X,Y,Z: %2.4f, %2.4f, %2.4f', [gX, gY, gZ]);
 
@@ -4208,7 +4150,7 @@ begin
 //                end;
                 surf.Recalc;
                 FindUVScales(surf);
-                if CompareValue(surf.normal.z, 0.6, CloseEnough) = GreaterThanValue then // If less LE 40°
+                if CompareValue(surf.normal.z, 0.6, CloseEnough) = GreaterThanValue then // If less LE 40ï¿½
                   surf.SurfFlags := surf.SurfFlags or SF_Floor;
             end;
         end;
@@ -4258,34 +4200,33 @@ begin
 
             s := LowerCase(ExtractFileExt(FileName));
             if s = '.3do' then
-            begin
-              { a3DO:=T3DO.CreateFrom3DO(FileName,0);
-                a3Do.SaveToFile('i:\a.3do');
-                a3Do.Free; }
-              var clearCurrent := MsgBox('Do you want to import 3DO sector(s) to the current project?', 'Info', MB_YESNO) <> ID_YES;
-              Import3DO(FileName, clearCurrent);
-              if not clearCurrent then
-                begin
-                  LevelChanged;
-                  Preview3D.ReloadLevel;
-                  SyncRecents;
-                  exit;
-                end;
-                
-            end
-            else if s = '.asc' then
-            begin
-                Level.ImportAsc(FileName);
-            end
-            else
-            begin
-                Scale := 40;
-                s := '40';
-                if DFImport.ShowModal <> mrOK then
+              begin
+                { a3DO:=T3DO.CreateFrom3DO(FileName,0);
+                  a3Do.SaveToFile('i:\a.3do');
+                  a3Do.Free; }
+                var clearCurrent := MsgBox('Do you want to import 3DO sector(s) to the current project?', 'Info', MB_YESNO) <> ID_YES;
+                Import3DO(FileName, clearCurrent);
+                if not clearCurrent then
+                  begin
+                    LevelChanged;
+                    Preview3D.ReloadLevel;
+                    SyncRecents;
                     exit;
-                Scale := DFImport.VScale.AsFloat;
-                Level.ImportLev(FileName, Scale, DFImport.RGTX.ItemIndex);
-            end;
+                  end;
+              end
+            else if s = '.asc' then
+              begin
+                  Level.ImportAsc(FileName);
+              end
+            else
+              begin
+                  Scale := 40;
+                  s := '40';
+                  if DFImport.ShowModal <> mrOK then
+                      exit;
+                  Scale := DFImport.VScale.AsFloat;
+                  Level.ImportLev(FileName, Scale, DFImport.RGTX.ItemIndex);
+              end;
 
             PMsg.Caption := '';
             LevelFile := 'Untitled';
@@ -4327,7 +4268,7 @@ end;
 
 procedure TJedMain.SetMapGeoBackfaceCullingClick(Sender: TObject);
 begin
-    EnableMapGeoBackfaceCull(not MapGeoBackfaceCull);
+    EnableMapGeoBackfaceCull(not bMapGeoBackfaceCull);
 end;
 
 Procedure TJedMain.SetMapMode(mm: Integer);
@@ -4527,8 +4468,8 @@ var
     end;
 
 begin
-    oldmode := Map_mode;
-    Map_mode := mm;
+    oldmode := mapMode;
+    mapMode := mm;
     Case mm of
         MM_SC:
             begin
@@ -4582,10 +4523,10 @@ end;
 
 Procedure TJedMain.EnableMapGeoBackfaceCull(enable: Boolean);
 begin
-  MapGeoBackfaceCull := enable;
+  bMapGeoBackfaceCull := enable;
   SetMapGeoBackfaceCulling.Caption := 'Disable Backface Cull';
   SetMapGeoBackfaceCulling.Hint := 'Disable map geometry back-face culling';
-  if not MapGeoBackfaceCull then
+  if not bMapGeoBackfaceCull then
     begin
       SetMapGeoBackfaceCulling.Caption := 'Enable Backface Cull';
       SetMapGeoBackfaceCulling.Hint := 'Enable map geometry back-face culling'
@@ -4717,12 +4658,12 @@ end;
 Procedure TJedMain.SetCurEX(EX: Integer);
 begin
     Cur_EX := EX;
-    if EX >= ExtraObjs.Count then
+    if EX >= extraObjs.Count then
         Cur_EX := 0;
     if EX < 0 then
-        Cur_EX := ExtraObjs.Count - 1;
+        Cur_EX := extraObjs.Count - 1;
     if Assigned(OnExtraSelect) then
-        OnExtraSelect(ExtraObjs[Cur_EX]);
+        OnExtraSelect(extraObjs[Cur_EX]);
     EditObject;
 end;
 
@@ -4824,10 +4765,11 @@ begin
             GridZ := 0;
             SetGridNormal(0, 0, 1);
             SetGridXNormal(1, 0, 0);
-            Scale := 0.5;
+            scale := 0.5;
             perspective := false;
         end;
 
+        vxsnapMaxDist := 0.2;
         Cur_SC := IfThen(Level.sectors.Count = 0, -1, 0);
         Cur_SF := IfThen(Level.sectors.Count = 0, -1, 0);
         Cur_TH := IfThen(Level.things.Count  = 0, -1, 0);
@@ -4860,7 +4802,7 @@ begin
     else
       begin
           ToolBar.RefreshLayers(false);
-          SetMapMode(Map_mode);
+          SetMapMode(mapMode);
           VerifyMultiSelection;
       end;
 
@@ -4926,7 +4868,7 @@ var
     LT, nlt: TSedLight;
     nlts, i: Integer;
 begin
-    If not GetXYZAt(X, Y, lx, ly, lz) then
+    If not GetGridPosAt(X, Y, lx, ly, lz) then
         exit;
 
     StartUndoRec('Add Light(s)');
@@ -4985,7 +4927,7 @@ var
     oldth, th: TJKThing;
     i, j, nths: Integer;
 begin
-    If not GetXYZAt(X, Y, tx, ty, tz) then
+    If not GetGridPosAt(X, Y, tx, ty, tz) then
         exit;
 
     StartUndoRec('Add Thing(s)');
@@ -5062,7 +5004,7 @@ var
     en: TVector;
     nx, ny, nz: Tvector;
 begin
-    If not GetXYZAt(X, Y, tx, ty, tz) then
+    If not GetGridPosAt(X, Y, tx, ty, tz) then
         exit;
 
     en := renderer.gxnormal;
@@ -5070,7 +5012,7 @@ begin
     en.dy := en.dy * 2;
     en.dz := en.dz * 2;
 
-    CreateCube(Level, tx, ty, tz, renderer.gnormal, en);
+    CreateCube(level, tx, ty, tz, renderer.gnormal, en);
     SetCurSC(level.sectors.Count - 1);
     SectorAdded(level.sectors.Last);
 
@@ -5088,7 +5030,7 @@ var
     surf: TJKSurface;
     nx, ny, nz: Tvector;
 begin
-    If not GetXYZAt(X, Y, dx, dy, dz) then
+    If not GetGridPosAt(X, Y, dx, dy, dz) then
         exit;
     sec := Level.Sectors[Cur_SC];
 
@@ -5158,7 +5100,7 @@ begin
         end
         else if sender = CalcLightInSel then
         begin
-            case Map_mode of
+            case mapMode of
                 MM_SC:
                     begin
                         for i := 0 to scsel.Count - 1 do
@@ -5267,7 +5209,7 @@ var
     i, n, fi: Integer;
     th: TJKThing;
 begin
-    case Map_mode of
+    case mapMode of
         MM_SC:
             begin
                 fi := Cur_SC;
@@ -5334,7 +5276,7 @@ var
     i, fi, n: Integer;
     th: TJKThing;
 begin
-    case Map_mode of
+    case mapMode of
         MM_SC:
             begin
               n := GetPreviousSector(Level, Cur_SC);
@@ -5381,7 +5323,7 @@ Procedure TJedMain.NextObjectInSurface;
 var
     surf: TJKSurface;
 begin
-    case Map_mode of
+    case mapMode of
         MM_ED:
             begin
                 surf := Level.Sectors[Cur_SC].surfaces[Cur_SF];
@@ -5398,10 +5340,10 @@ Procedure TJedMain.PreviousObjectInSurface;
 var
     surf: TJKSurface;
 begin
-    case Map_mode of
+    case mapMode of
         MM_ED:
             begin
-                surf := Level.Sectors[Cur_SC].surfaces[Cur_SF];
+                surf := level.sectors[Cur_SC].surfaces[Cur_SF];
                 if Cur_ED <= 0 then
                     SetCurED(Cur_SC, Cur_SF, surf.vertices.Count - 1)
                 else
@@ -5411,14 +5353,49 @@ begin
     end;
 end;
 
-Function TJedMain.GetXYZAt(atX, atY: Integer; var X, Y, z: double): boolean;
+Function TJedMain.GetGridPosAt(atX, atY: Integer; var X, Y, z: double): boolean;
 begin
     Result := false;
     Result := renderer.GetGridAt(atX, atY, X, Y, z);
     if not Result then
         exit;
-    if SnapToGrid then
+    if bSnapToGrid then
         renderer.GetNearestGrid(X, Y, z, X, Y, z);
+end;
+
+Function TJedMain.GetPosAt(atX, atY: Integer; var x, y, z: double): boolean;
+begin
+  if bSnapToGrid then
+    Result := renderer.GetGridAt(atX, atY, x, y, z)
+  else
+    Result := renderer.GetCameraAt(atX, atY, x, y, z);
+end;
+
+Function TJedMain.GetPosAt(atX, atY: Integer; var pos: TVector): boolean;
+begin
+  Result := GetPosAt(atX, atY, pos.x, pos.y, pos.z);
+end;
+
+Function TJedMain.GetSnappedPosAt(atX, atY: Integer; snapToVertex: boolean; var x, y, z: double): boolean;
+begin
+  Result := GetPosAt(atX, atY, x, y, z);
+  if not Result then
+    exit;
+
+  if snapToVertex then
+    GetNearestWorldVertexToLine(Level, x, y, z, renderer.GetCameraForward, vxsnapMaxDist, x, y, z)
+  else if bSnapToGrid then
+    renderer.GetNearestGrid(x, y, z, x, y, z);
+end;
+
+Function TJedMain.GetSnappedPosAt(atPos: TPoint; snapToVertex: boolean; var pos: TVector): boolean;
+begin
+  Result := GetSnappedPosAt(atPos.X, atPos.Y, snapToVertex, pos.x, pos.y, pos.z);
+end;
+
+Function TJedMain.GetSnappedPosAt(atX, atY: Integer; snapToVertex: boolean; var pos: TVector): boolean;
+begin
+  Result := GetSnappedPosAt(atX, atY, snapToVertex, pos.x, pos.y, pos.z);
 end;
 
 Function TJedMain.GetMousePos(var X, Y: Integer): boolean;
@@ -5461,7 +5438,7 @@ begin
     else
         exit;
     end;
-    Mouse_mode := mm;
+    mouseMode := mm;
     Screen.Cursor := CurSor;
 end;
 
@@ -5469,7 +5446,7 @@ Procedure TJedMain.EditObject;
 begin
     if not IsSelValid then
         exit;
-    case Map_mode of
+    case mapMode of
         MM_SC:
           begin
             ItemEdit.LoadSector(Level.Sectors[Cur_SC]);
@@ -5518,7 +5495,7 @@ Procedure TJedMain.CenterViewOnObject;
 var
     cx, cy, cz, a: double;
 begin
-    case Map_mode of
+    case mapMode of
         MM_SC:
             With Level.Sectors[Cur_SC].vertices[0] do
             begin
@@ -5638,12 +5615,12 @@ var
     v1, v2: TJKVertex;
     sc, VX, i: Integer;
 begin
-    norm := renderer.gnormal;
+    norm  := renderer.gnormal;
     xnorm := renderer.gxnormal;
-    case Map_mode of
+    case mapMode of
         MM_SC:
             begin
-                With Level.Sectors[Cur_SC].vertices[0] do
+                With level.sectors[Cur_SC].vertices[0] do
                 begin
                     rx := X;
                     ry := Y;
@@ -5651,7 +5628,7 @@ begin
                 end;
             end;
         MM_SF:
-            With Level.Sectors[Cur_SC].surfaces[Cur_SF] do
+            With level.sectors[Cur_SC].surfaces[Cur_SF] do
             begin
                 v1 := vertices[0];
                 v2 := vertices[1];
@@ -5667,16 +5644,16 @@ begin
                 xnorm.dz := v2.z - v1.z;
             end;
         MM_ED:
-            With Level.Sectors[Cur_SC].surfaces[Cur_SF] do
+            With level.sectors[Cur_SC].surfaces[Cur_SF] do
             begin
                 v1 := vertices[Cur_ED];
                 v2 := vertices[NextVX(Cur_ED)];
                 with v1 do
-                begin
-                    rx := X;
-                    ry := Y;
-                    rz := z;
-                end;
+                  begin
+                      rx := x;
+                      ry := y;
+                      rz := z;
+                  end;
                 norm := normal;
                 xnorm.dx := v2.X - v1.X;
                 xnorm.dy := v2.Y - v1.Y;
@@ -5688,47 +5665,51 @@ begin
                 if vxsel.Count = 3 then
                 begin
                     vxsel.GetSCVX(0, sc, VX);
-                    v1 := Level.Sectors[sc].vertices[VX];
-                    vxsel.GetSCVX(1, sc, VX);
-                    v2 := Level.Sectors[sc].vertices[VX];
-                    xnorm.SetCoords(v2.X - v1.X, v2.Y - v1.Y, v2.z - v1.z);
-                    vxsel.GetSCVX(2, sc, VX);
-                    v1 := Level.Sectors[sc].vertices[VX];
+                    v1 := level.sectors[sc].vertices[VX];
 
+                    vxsel.GetSCVX(1, sc, VX);
+                    v2 := level.sectors[sc].vertices[VX];
+                    xnorm.SetCoords(v2.x - v1.x, v2.y - v1.y, v2.z - v1.z);
+
+                    vxsel.GetSCVX(2, sc, VX);
+                    v1 := level.sectors[sc].vertices[VX];
                     av.SetCoords(v1.X - v2.X, v1.Y - v2.Y, v1.z - v2.z);
-                    VMult(xnorm.dx, xnorm.dy, xnorm.dz, av.dx, av.dy, av.dz,
-                      norm.dx, norm.dy, norm.dz);
+
+                    norm := xnorm.Cross(av).Normalized;
+//                    VMult(xnorm.dx, xnorm.dy, xnorm.dz, av.dx, av.dy, av.dz,
+//                      norm.dx, norm.dy, norm.dz);
                 end;
+
                 vxsel.DeleteN(i);
-                With Level.Sectors[Cur_SC].vertices[Cur_VX] do
-                begin
-                    rx := X;
-                    ry := Y;
-                    rz := z;
-                end;
+                With level.sectors[Cur_SC].vertices[Cur_VX] do
+                  begin
+                      rx := x;
+                      ry := y;
+                      rz := z;
+                  end;
             end;
         MM_TH:
-            With Level.Things[Cur_TH] do
+            With level.things[Cur_TH] do
             begin
-                rx := X;
-                ry := Y;
+                rx := x;
+                ry := y;
                 rz := z;
             end;
         MM_FR:
             if Cur_FR = -1 then
-                With Level.Things[Cur_TH] do
+                With level.things[Cur_TH] do
                 begin
-                    rx := X;
-                    ry := Y;
+                    rx := x;
+                    ry := y;
                     rz := z;
                 end
             else
-                with Level.Things[Cur_TH].Vals[Cur_FR] do
+                with level.things[Cur_TH].vals[Cur_FR] do
                 begin
                     GetFrame(rx, ry, rz, p, Y, r);
                 end;
         MM_LT:
-            With Level.Lights[Cur_LT] do
+            With level.lights[Cur_LT] do
             begin
                 rx := position.x;
                 ry := position.y;
@@ -5738,16 +5719,16 @@ begin
         exit;
     end;
     With renderer do
-    begin
-        GridX := rx;
-        GridY := ry;
-        GridZ := rz;
-        With norm do
-            SetGridNormal(dx, dy, dz);
-        With xnorm do
-            SetGridXNormal(dx, dy, dz);
-        Invalidate;
-    end;
+      begin
+          gridX := rx;
+          gridY := ry;
+          gridZ := rz;
+          With norm do
+              SetGridNormal(dx, dy, dz);
+          With xnorm do
+              SetGridXNormal(dx, dy, dz);
+          Invalidate;
+      end;
 end;
 
 procedure TJedMain.MUSnapGridToClick(sender: TObject);
@@ -5759,7 +5740,7 @@ Procedure TJedMain.LayerThings;
 var
     n, a, i: Integer;
 begin
-    if Map_mode <> MM_TH then
+    if mapMode <> MM_TH then
         exit;
     n := 0;
     a := thsel.AddTH(Cur_TH);
@@ -5820,21 +5801,26 @@ end;
 
 procedure TJedMain.CancelMouseMode;
 begin
-    case Mouse_mode of
+    case mouseMode of
         MM_Cleave:
             begin
                 Invalidate;
-                CleaveStarted := false;
+                bCleaveStarted := false;
+            end;
+        MM_CreateSector:
+            begin
+                Invalidate;
+                bCreateSCStarted := false;
             end;
         MM_RectSelect:
             begin
                 Invalidate;
-                RectSelStarted := false;
+                bRectSelStarted := false;
             end;
         MM_Ruler:
             begin
                 Invalidate;
-                RulerStarted := false;
+                bRulerStarted := false;
             end;
     end;
     SetMouseMode(MM_Select);
@@ -6307,7 +6293,7 @@ var
     end;
 
 begin
-    if Map_mode <> MM_SF then
+    if mapMode <> MM_SF then
         SetMapMode(MM_SF);
     if not Preview3D.IsActive then
         exit;
@@ -6346,7 +6332,7 @@ var
     end;
 
 begin
-    if Map_mode <> MM_SF then
+    if mapMode <> MM_SF then
         SetMapMode(MM_SF);
     if not Preview3D.IsActive then
         exit;
@@ -6402,7 +6388,7 @@ var
 
         fv := 0;
         if (surf.sector.num = Cur_SC) and (surf.num = Cur_SF) then
-          case Map_mode of
+          case mapMode of
             MM_ED:
               fv := Cur_ED;
             MM_SF:
@@ -6431,19 +6417,19 @@ begin
     if not Preview3D.IsActive then
         exit;
 
-    if (Map_mode <> MM_SF) and (Map_mode <> MM_ED) then
+    if (mapMode <> MM_SF) and (mapMode <> MM_ED) then
         SetMapMode(MM_SF);
 
     case how of
         st_left:
             begin
-                cosa := cOS(TXRotStep * PI / 180);
-                sina := SIN(TXRotStep * PI / 180);
+                cosa := Cos(TXRotStep * PI / 180);
+                sina := Sin(TXRotStep * PI / 180);
             end;
         st_right:
             begin
-                cosa := cOS(-TXRotStep * PI / 180);
-                sina := SIN(-TXRotStep * PI / 180);
+                cosa := Cos(-TXRotStep * PI / 180);
+                sina := Sin(-TXRotStep * PI / 180);
             end;
     end;
 
@@ -6471,7 +6457,7 @@ end;
 Procedure TJedMain.SectorChanged(s: TJKSector);
 begin
     Preview3D.UpdateSector(s);
-    if ((Map_mode = MM_SC) or (Map_mode = MM_SF) or (Map_mode = MM_ED) or (Map_mode = MM_VX))
+    if ((mapMode = MM_SC) or (mapMode = MM_SF) or (mapMode = MM_ED) or (mapMode = MM_VX))
       and (s.num = Cur_SC) then
       UpdateItemEditor;
 
@@ -6494,7 +6480,7 @@ Procedure TJedMain.ThingChanged(th: TJKThing);
 begin
     UpdateThingData(th);
     Preview3D.UpdateThing(th);
-    if ((Map_mode = MM_TH) or (Map_mode = MM_FR)) and (th.num = Cur_TH) then
+    if ((mapMode = MM_TH) or (mapMode = MM_FR)) and (th.num = Cur_TH) then
       UpdateItemEditor;
     LevelChanged;
 end;
@@ -6519,7 +6505,7 @@ end;
 
 Procedure TJedMain.LightChanged(lt: TSedLight);
 begin
-    if (Map_mode = MM_LT) and (lt = Level.Lights[Cur_LT]) then
+    if (mapMode = MM_LT) and (lt = Level.Lights[Cur_LT]) then
       UpdateItemEditor;
     LevelChanged;
 end;
@@ -6556,7 +6542,7 @@ begin
         exit;
     end;
 
-    case Map_mode of
+    case mapMode of
         MM_SC:
             begin
                 sec := Level.Sectors[Cur_SC];
@@ -6637,18 +6623,18 @@ var
     i: Integer;
     vec: TVector;
 begin
-    case Map_mode of
+    case mapMode of
         MM_SC:
             begin
                 StartUndoRec('Flip Sector(s)');
                 i := scsel.AddSC(Cur_SC);
                 if how = rt_grid then
-                    FlipSectorsOverPlane(Level, scsel, renderer.gnormal,
+                    FlipSectorsOverPlane(level, scsel, renderer.gnormal,
                       renderer.GridX, renderer.GridY, renderer.GridZ)
                 else
                 begin
-                    CalcSecCenter(Level.Sectors[Cur_SC], cx, cy, cz);
-                    FlipSectors(Level, scsel, cx, cy, cz, how);
+                    CalcSecCenter(level.Sectors[Cur_SC], cx, cy, cz);
+                    FlipSectors(level, scsel, cx, cy, cz, how);
                 end;
                 scsel.DeleteN(i);
             end;
@@ -6659,11 +6645,11 @@ begin
                 i := thsel.AddTH(Cur_TH);
 
                 if how = rt_grid then
-                    FlipThingsOverPlane(Level, thsel, renderer.gnormal,
+                    FlipThingsOverPlane(level, thsel, renderer.gnormal,
                       renderer.GridX, renderer.GridY, renderer.GridZ)
                 else
-                    With Level.Things[Cur_TH] do
-                        FlipThings(Level, thsel, X, Y, z, how);
+                    With level.things[Cur_TH] do
+                        FlipThings(level, thsel, X, Y, z, how);
                 thsel.DeleteN(i);
             end;
         MM_LT:
@@ -6672,7 +6658,7 @@ begin
                 { SaveSelThingsUndo('Change thing(s)',ch_changed); }
                 i := ltsel.AddLT(Cur_LT);
 
-                With Level.Lights[Cur_LT] do
+                With level.lights[Cur_LT] do
                 begin
                     cx := position.x;
                     cy := position.y;
@@ -6689,12 +6675,12 @@ begin
                     rt_grid:
                         begin
                             vec := renderer.gnormal;
-                            cx := renderer.GridX;
-                            cy := renderer.GridY;
-                            cz := renderer.GridZ;
+                            cx := renderer.gridX;
+                            cy := renderer.gridY;
+                            cz := renderer.gridZ;
                         end;
                 end;
-                FlipLightsOverPlane(Level, ltsel, vec, cx, cy, cz);
+                FlipLightsOverPlane(level, ltsel, vec, cx, cy, cz);
                 ltsel.DeleteN(i);
             end;
         MM_FR:
@@ -6704,14 +6690,14 @@ begin
                 i := frsel.AddFR(Cur_TH, Cur_FR);
 
                 if Cur_FR < 0 then
-                    With Level.Things[Cur_TH] do
+                    With level.Things[Cur_TH] do
                     begin
                         cx := X;
                         cy := Y;
                         cz := z;
                     end
                 else
-                    Level.Things[Cur_TH].Vals[Cur_FR].GetFrame(cx, cy,
+                    level.things[Cur_TH].Vals[Cur_FR].GetFrame(cx, cy,
                       cz, a, a, a);
 
                 case how of
@@ -6724,12 +6710,12 @@ begin
                     rt_grid:
                         begin
                             vec := renderer.gnormal;
-                            cx := renderer.GridX;
-                            cy := renderer.GridY;
-                            cz := renderer.GridZ;
+                            cx := renderer.gridX;
+                            cy := renderer.gridY;
+                            cz := renderer.gridZ;
                         end;
                 end;
-                FlipFramesOverPlane(Level, frsel, vec, cx, cy, cz);
+                FlipFramesOverPlane(level, frsel, vec, cx, cy, cz);
                 frsel.DeleteN(i);
             end;
     end;
@@ -6750,20 +6736,20 @@ begin
     else if (how and sc_scaleZ <> 0) then
         sd.how := scale_z
     else if (how and sc_scaleGrid <> 0) then
-    begin
-        sd.how := scale_vec;
-        sd.vec := renderer.gnormal;
-    end
+      begin
+          sd.how := scale_vec;
+          sd.vec := renderer.gnormal;
+      end
     else
         sd.how := scale_XYZ;
 
-    case Map_mode of
+    case mapMode of
         MM_SC:
             begin
                 StartUndoRec('Scale Sector(s)');
-                CalcSecCenter(level.Sectors[Cur_SC], sd.cx, sd.cy, sd.cz);
+                CalcSecCenter(level.sectors[Cur_SC], sd.cx, sd.cy, sd.cz);
                 i := scsel.AddSC(Cur_SC);
-                ScaleSectors(Level, scsel, sd, how and sc_ScaleTX <> 0);
+                ScaleSectors(level, scsel, sd, how and sc_ScaleTX <> 0);
                 scsel.DeleteN(i);
             end;
         MM_SF:
@@ -6771,14 +6757,14 @@ begin
                 StartUndoRec('Scale Surface(s)');
                 CalcSurfCenter(level.sectors[Cur_SC].surfaces[Cur_SF], sd.cx, sd.cy, sd.cz);
                 i := sfsel.AddSF(Cur_SC, Cur_SF);
-                ScaleSurfaces(Level, sfsel, sd, how and sc_ScaleTX <> 0);
+                ScaleSurfaces(level, sfsel, sd, how and sc_ScaleTX <> 0);
                 sfsel.DeleteN(i);
             end;
         MM_TH:
             begin
                 StartUndoRec('Scale Thing(s)');
                 i := thsel.AddTH(Cur_TH);
-                With Level.Things[Cur_TH] do
+                With level.things[Cur_TH] do
                 begin
                     sd.cx := X;
                     sd.cy := Y;
@@ -6791,13 +6777,13 @@ begin
             begin
                 StartUndoRec('Scale Light(s)');
                 i := ltsel.AddLT(Cur_LT);
-                With Level.Lights[Cur_LT] do
+                With level.lights[Cur_LT] do
                 begin
                     sd.cx := position.x;
                     sd.cy := position.y;
                     sd.cz := position.z;
                 end;
-                ScaleLights(Level, ltsel, sd);
+                ScaleLights(level, ltsel, sd);
                 ltsel.DeleteN(i);
             end;
         MM_FR:
@@ -6805,16 +6791,16 @@ begin
                 StartUndoRec('Scale Light(s)');
                 i := frsel.AddFR(Cur_TH, Cur_FR);
                 if Cur_FR = -1 then
-                    With Level.Things[Cur_TH] do
+                    With level.things[Cur_TH] do
                     begin
                         sd.cx := X;
                         sd.cy := Y;
                         sd.cz := z;
                     end
                 else
-                    Level.Things[Cur_TH].Vals[Cur_FR].GetFrame(sd.cx, sd.cy,
+                    level.things[Cur_TH].vals[Cur_FR].GetFrame(sd.cx, sd.cy,
                       sd.cz, a, a, a);
-                ScaleFrames(Level, frsel, sd);
+                ScaleFrames(level, frsel, sd);
                 frsel.DeleteN(i);
             end;
 
@@ -6828,7 +6814,7 @@ var
     surf: TJKSurface;
     i: Integer;
 begin
-    case Map_mode of
+    case mapMode of
         MM_SC:
             begin
                 StartUndoRec('Translate Sector(s)');
@@ -6847,37 +6833,37 @@ end;
 
 Procedure TJedMain.StartStitch;
 begin
-    if Map_mode <> MM_SF then
+    if mapMode <> MM_SF then
         exit;
-    stitch_Sec := Level.Sectors[Cur_SC];
-    stitch_Surf := Level.Sectors[Cur_SC].surfaces[Cur_SF];
+    stitchSec := level.sectors[Cur_SC];
+    stitchSurf := level.sectors[Cur_SC].surfaces[Cur_SF];
 end;
 
 Procedure TJedMain.DoStitch;
 var
     ssurf, esurf: TJKSurface;
 begin
-    if Map_mode <> MM_SF then
+    if mapMode <> MM_SF then
         exit;
-    if stitch_Sec = nil then
+    if stitchSec = nil then
     begin
         PanMessage(mt_error, 'No start surface was set for stitching');
         exit;
     end;
 
-    if (Level.Sectors.IndexOf(stitch_Sec) < 0) or
-      (stitch_Sec.surfaces.IndexOf(stitch_Surf) < 0) then
+    if (level.sectors.IndexOf(stitchSec) < 0) or
+      (stitchSec.surfaces.IndexOf(stitchSurf) < 0) then
     begin
         PanMessage(mt_error, 'The stitching start surface was deleted');
         exit;
     end;
 
-    ssurf := stitch_Surf;
-    esurf := Level.Sectors[Cur_SC].surfaces[Cur_SF];
+    ssurf := stitchSurf;
+    esurf := level.sectors[Cur_SC].surfaces[Cur_SF];
 
     StartUndoRec('Stitch Surfaces');
-    if ssurf.Material <> '' then
-        esurf.Material := ssurf.Material;
+    if ssurf.material <> '' then
+        esurf.material := ssurf.material;
     StitchSurfaces(ssurf, esurf);
 
     SectorChanged(esurf.sector);
@@ -6942,7 +6928,7 @@ Var
     i, sc, SF, ED, n: Integer;
 
 begin
-    case Map_mode of
+    case mapMode of
         MM_SF:
             begin
                 StartUndoRec('Straighten Surface(s)');
@@ -6999,7 +6985,7 @@ begin
     rPch := pch;
     rYaw := yaw;
     rRol := rol;
-    SetRendfromPYR;
+    SetRendFromPYR;
 
     Invalidate;
 end;
@@ -7025,51 +7011,51 @@ begin
             dz := -gnormal.dz * perpStep;
         end;
 
-    case Map_mode of
+    case mapMode of
         MM_SC:
             begin
                 StartUndoRec('Translate Sector(s)');
-                TranslateSectors(Level, scsel, Cur_SC, dx, dy, dz);
+                TranslateSectors(level, scsel, Cur_SC, dx, dy, dz);
             end;
         MM_SF:
             begin
                 StartUndoRec('Translate Surface(s)');
-                TranslateSurfaces(Level, sfsel, Cur_SC, Cur_SF, dx, dy, dz);
+                TranslateSurfaces(level, sfsel, Cur_SC, Cur_SF, dx, dy, dz);
             end;
         { TranslateSurface(Level.Sectors[Cur_SC].Surfaces[Cur_SF],
           dx,dy,dz); }
         MM_VX:
             begin
                 StartUndoRec('Translate Vertices');
-                TranslateVertices(Level, vxsel, Cur_SC, Cur_VX, dx, dy, dz);
+                TranslateVertices(level, vxsel, Cur_SC, Cur_VX, dx, dy, dz);
             end;
 
         MM_ED:
             begin
                 StartUndoRec('Translate Edge(s)');
-                TranslateEdges(Level, edsel, Cur_SC, Cur_SF, Cur_ED,
+                TranslateEdges(level, edsel, Cur_SC, Cur_SF, Cur_ED,
                   dx, dy, dz);
             end;
         MM_TH:
             begin
                 StartUndoRec('Translate Thing(s)');
                 { SaveSelThingsUndo('Translate thing(s)',ch_changed); }
-                TranslateThings(Level, thsel, Cur_TH, dx, dy, dz, MoveFrames);
+                TranslateThings(level, thsel, Cur_TH, dx, dy, dz, MoveFrames);
             end;
         MM_FR:
             begin
                 StartUndoRec('Translate Frame(s)');
                 { SaveSelFramesUndo('Translate frame(s)',ch_changed); }
                 if Cur_FR = -1 then
-                    TranslateThingKeepFrame(Level, Cur_TH, dx, dy, dz)
+                    TranslateThingKeepFrame(level, Cur_TH, dx, dy, dz)
                 else
-                    TranslateFrames(Level, frsel, Cur_TH, Cur_FR, dy, dy, dz);
+                    TranslateFrames(level, frsel, Cur_TH, Cur_FR, dy, dy, dz);
             end;
         MM_LT:
             begin
                 { SaveSelLightsUndo('Translate thing(s)',ch_changed); }
                 StartUndoRec('Translate Light(s)');
-                TranslateLights(Level, ltsel, Cur_LT, dx, dy, dz);
+                TranslateLights(level, ltsel, Cur_LT, dx, dy, dz);
             end;
     else
         exit;
@@ -7081,7 +7067,7 @@ Procedure TJedMain.VerifyMultiSelection;
 var
     i, sc, SF, ED, VX, fr, n: Integer;
 begin
-    case Map_mode of
+    case mapMode of
         MM_SC:
             for i := scsel.Count - 1 downto 0 do
                 if not CheckSectorIndex(level, scsel.GetSC(i)) then
@@ -7128,12 +7114,12 @@ end;
 Procedure TJedMain.VerifySelection;
 begin
     if not IsSelValid then
-        SetMapMode(Map_mode);
+        SetMapMode(mapMode);
 end;
 
 Function TJedMain.IsSelValid: boolean;
 begin
-    case Map_mode of
+    case mapMode of
         MM_SC:
             Result := CheckSectorIndex(level, Cur_SC);
         MM_SF:
@@ -7149,7 +7135,7 @@ begin
         MM_LT:
             Result := CheckLightIndex(level, Cur_LT);
         MM_Extra:
-            Result := (Cur_EX >= 0) and (Cur_EX < ExtraObjs.Count);
+            Result := (Cur_EX >= 0) and (Cur_EX < extraObjs.Count);
     else
         Result := false;
     end;
@@ -7274,7 +7260,7 @@ end;
 
 procedure TJedMain.Find1Click(sender: TObject);
 begin
-    case Map_mode of
+    case mapMode of
         MM_SC:
             if FindSectors.Find then
                 Invalidate;
@@ -7289,7 +7275,7 @@ end;
 
 procedure TJedMain.FindNext1Click(sender: TObject);
 begin
-    case Map_mode of
+    case mapMode of
         MM_SC:
             FindSectors.FindNext(Cur_SC);
         MM_SF:
@@ -7344,7 +7330,7 @@ Procedure TJedMain.SetThingView(how: Integer);
 var
     i: Integer;
 begin
-    thing_view := how;
+    thingView := how;
     case how of
         cv_Dots:
             Dots.Checked := true;
@@ -7353,11 +7339,11 @@ begin
         cv_Wireframes:
             begin
                 Wireframes.Checked := true;
-                Progress.Reset(Level.Things.Count);
+                Progress.Reset(level.things.Count);
                 Progress.msg := 'Loading 3DOs...';
-                for i := 0 to Level.Things.Count - 1 do
+                for i := 0 to level.things.Count - 1 do
                 begin
-                    UpdateThingData(Level.Things[i]);
+                    UpdateThingData(level.things[i]);
                     Progress.Step;
                 end;
                 Progress.hide;
@@ -7375,6 +7361,7 @@ var
 begin
     if not force and (th.a3DO <> nil) then
         exit;
+
     itpl := Templates.IndexOfName(th.name);
     if itpl = -1 then
     begin
@@ -7397,7 +7384,7 @@ var
     itpl: Integer;
     tpl: TTemplate;
 begin
-    case thing_view of
+    case thingView of
         cv_Dots, cv_Boxes:
             begin
                 itpl := Templates.IndexOfName(th.name);
@@ -7542,7 +7529,7 @@ var
     end;
 
 begin
-    if Map_mode <> MM_TH then
+    if mapMode <> MM_TH then
     begin
         ShowMessage('You must be in Thing mode');
         exit;
@@ -7690,7 +7677,7 @@ var
     ax, ay, az: double;
 
 begin
-    if Map_mode <> MM_SC then
+    if mapMode <> MM_SC then
         exit;
     if not Save3DO.Execute then
         exit;
@@ -7881,7 +7868,7 @@ end;
 
 Procedure TJedMain.DO_MultiSelect;
 begin
-    case Map_mode of
+    case mapMode of
         MM_SC:
             DO_SelSC(Cur_SC);
         MM_SF:
@@ -7904,7 +7891,7 @@ end;
 
 Procedure TJedMain.ClearMultiSelection;
 begin
-    case Map_mode of
+    case mapMode of
         MM_SC:
             scsel.Clear;
         MM_SF:
@@ -7920,7 +7907,7 @@ begin
         MM_LT:
             ltsel.Clear;
     end;
-    if (Map_mode = MM_SC) or (Map_mode = MM_SF) or (Map_mode = MM_TH) then
+    if (mapMode = MM_SC) or (mapMode = MM_SF) or (mapMode = MM_TH) then
       Preview3D.Repaint;
 end;
 
@@ -7929,14 +7916,14 @@ var
     i: Integer;
     nsc, nsf, ned: Integer;
 begin
-    case Map_mode of
+    case mapMode of
         MM_SC:
             begin
                 StartUndoRec('Cleave Sector(s)');
                 scsel.AddSC(Cur_SC);
                 for i := 0 to scsel.Count - 1 do
                   begin
-                    var sec := Level.Sectors[scsel.GetSC(i)];
+                    var sec := level.sectors[scsel.GetSC(i)];
                     if ToolBar.IsLayerVisible(sec.layer) then
                       CleaveSector(sec, norm, X, Y, z);
                   end;
@@ -7950,7 +7937,7 @@ begin
                 for i := 0 to sfsel.Count - 1 do
                   begin
                       sfsel.GetSCSF(i, nsc, nsf);
-                      var sec := Level.Sectors[nsc];
+                      var sec := level.sectors[nsc];
                       if ToolBar.IsLayerVisible(sec.layer) then
                         CleaveSurface(sec.surfaces[nsf], norm, X, Y, z);
                   end;
@@ -7963,7 +7950,7 @@ begin
                 for i := 0 to edsel.Count - 1 do
                   begin
                     edsel.GetSCSFED(i, nsf, nsf, ned);
-                    var sec := Level.Sectors[nsc];
+                    var sec := level.sectors[nsc];
                     if ToolBar.IsLayerVisible(sec.Layer) then
                       CleaveEdge(sec.surfaces[nsf], ned, norm, X, Y, z);
                   end;
@@ -8022,7 +8009,7 @@ end;
 Procedure TJedMain.CreateRenderer;
 var
     X, z, gX, gZ: TVector;
-    Scale, cmx, cmy, cmz, grx, gry, grz: double;
+    scale, cmx, cmy, cmz, grx, gry, grz: double;
     grdot, grline, grsize, grstep: double;
 begin
     if renderer = nil then
@@ -8048,7 +8035,7 @@ begin
           z := renderer.zv;
           gX := renderer.gxnormal;
           gZ := renderer.gnormal;
-          Scale := renderer.Scale;
+          scale := renderer.scale;
           cmx := renderer.CamX;
           cmy := renderer.CamY;
           cmz := renderer.CamZ;
@@ -8088,7 +8075,7 @@ begin
     renderer.SetX(X.dx, X.dy, X.dz);
     renderer.SetGridNormal(gZ.dx, gZ.dy, gZ.dz);
     renderer.SetGridXNormal(gX.dx, gX.dy, gX.dz);
-    renderer.Scale := Scale;
+    renderer.scale := scale;
     With renderer do
     begin
         CamX := cmx;
@@ -8352,7 +8339,7 @@ var
     th: TJKThing;
     vl: TTPLValue;
 begin
-    If not GetXYZAt(X, Y, fx, fy, fz) then
+    If not GetGridPosAt(X, Y, fx, fy, fz) then
         exit;
 
     th := Level.Things[Cur_TH];
@@ -8389,7 +8376,7 @@ begin
     miUndo.Caption := '&Undo ' + s;
     miUndo.Enabled := s <> '';
 
-    case Map_mode of
+    case mapMode of
         MM_SC:
             begin
                 miPaste.Enabled := CanPasteSectors;
@@ -8415,7 +8402,7 @@ end;
 
 procedure TJedMain.miCopyClick(sender: TObject);
 begin
-    case Map_mode of
+    case mapMode of
         MM_SC:
             CopySectors(Level, scsel, Cur_SC);
         MM_LT:
@@ -8435,27 +8422,27 @@ var
     surf: TJKSurface;
 begin
     if sender <> nil then
-    begin
-        rx := renderer.CamX;
-        ry := renderer.CamY;
-        rz := renderer.CamZ;
-    end
+      begin
+          rx := renderer.CamX;
+          ry := renderer.CamY;
+          rz := renderer.CamZ;
+      end
     else
-    begin
-        if not GetMousePos(X, Y) then
-            exit;
-        if not GetXYZAt(X, Y, rx, ry, rz) then
-            exit;
-    end;
+      begin
+          if not GetMousePos(X, Y) then
+              exit;
+          if not GetGridPosAt(X, Y, rx, ry, rz) then
+              exit;
+      end;
 
-    case Map_mode of
+    case mapMode of
         MM_SC:
             begin
                 if not CanPasteSectors then
                   exit;
 
-                sec := Level.Sectors[Cur_SC];
-                n := PasteSectors(Level, rx, ry, rz);
+                sec := level.sectors[Cur_SC];
+                n := PasteSectors(level, rx, ry, rz);
                 if n = -1 then
                     exit;
 
@@ -8479,7 +8466,7 @@ begin
                     end;
 
                     scsel.AddSC(i);
-                    SectorAdded(Level.Sectors[i]);
+                    SectorAdded(Level.sectors[i]);
                 end;
                 Invalidate;
 
@@ -8489,21 +8476,22 @@ begin
                 if not CanPasteLights then
                   exit;
 
-                Layer := 0;
-                if Level.Lights.Count > 0 then
-                    Layer := Level.Lights[Cur_LT].Layer;
+                layer := 0;
+                if level.lights.Count > 0 then
+                    layer := level.lights[Cur_LT].layer;
 
                 StartUndoRec('Paste Light(s)');
 
-                n := PasteLights(Level, rx, ry, rz);
+                n := PasteLights(level, rx, ry, rz);
                 if n = -1 then
                     exit;
+
                 SetCurLT(n);
                 ltsel.Clear;
-                for i := n to Level.Lights.Count - 1 do
+                for i := n to level.lights.Count - 1 do
                 begin
-                    SaveLightUndo(Level.Lights[i], ch_added);
-                    Level.Lights[i].Layer := Layer;
+                    SaveLightUndo(level.lights[i], ch_added);
+                    level.lights[i].layer := layer;
                     ltsel.AddLT(i);
                 end;
                 { SaveSelLightsUndo('Paste light(s)',ch_added); }
@@ -8515,23 +8503,24 @@ begin
                 if not CanPasteThings then
                   exit;
 
-                Layer := 0;
-                if Level.Things.Count > 0 then
-                    Layer := Level.Things[Cur_TH].Layer;
+                layer := 0;
+                if level.things.Count > 0 then
+                    layer := level.things[Cur_TH].layer;
 
                 StartUndoRec('Paste Thing(s)');
 
-                n := PasteThings(Level, rx, ry, rz);
+                n := PasteThings(level, rx, ry, rz);
                 if n = -1 then
                     exit;
+
                 SetCurTH(n);
                 thsel.Clear;
-                for i := n to Level.Things.Count - 1 do
+                for i := n to level.things.Count - 1 do
                 begin
-                    Level.Things[i].Layer := Layer;
-                    SaveThingUndo(Level.Things[i], ch_added);
+                    level.things[i].layer := layer;
+                    SaveThingUndo(level.things[i], ch_added);
                     LayerThing(i);
-                    ThingAdded(Level.Things[i]);
+                    ThingAdded(level.things[i]);
                     thsel.AddTH(i);
                 end;
                 { SaveSelThingsUndo('paste Thing(s)',ch_added); }
@@ -8546,7 +8535,7 @@ var
 begin
     cpch := 0;
     cyaw := 0;
-    case Map_mode of
+    case mapMode of
         MM_SC:
             FindCenter(Level.Sectors[Cur_SC], cx, cy, cz);
         { MM_VX: with Level.Sectors[Cur_SC].Vertices[Cur_VX] do begin cx:=x; cy:=y; cz:=z; end; }
@@ -8607,13 +8596,13 @@ begin
     else
         exit;
     end;
-    msel_mode := mode;
+    mselMode := mode;
     PMsel.hint := 'Current multiselction mode is ' + mname + ' Click to change';
 end;
 
 procedure TJedMain.PMselClick(sender: TObject);
 begin
-    case msel_mode of
+    case mselMode of
         mm_Toggle:
             SetMSelMode(mm_Add);
         mm_Add:
@@ -8639,7 +8628,7 @@ Procedure TJedMain.DO_SelSC(sc: Integer);
 var
     i: Integer;
 begin
-    case msel_mode of
+    case mselMode of
         mm_Toggle:
             begin
                 i := scsel.AddSC(sc);
@@ -8660,7 +8649,7 @@ Procedure TJedMain.DO_SelSF(sc, SF: Integer);
 var
     i: Integer;
 begin
-    case msel_mode of
+    case mselMode of
         mm_Toggle:
             begin
                 i := sfsel.AddSF(sc, SF);
@@ -8681,7 +8670,7 @@ Procedure TJedMain.DO_SelVX(sc, VX: Integer);
 var
     i: Integer;
 begin
-    case msel_mode of
+    case mselMode of
         mm_Toggle:
             begin
                 i := vxsel.AddVX(sc, VX);
@@ -8702,7 +8691,7 @@ Procedure TJedMain.DO_SelED(sc, SF, ED: Integer);
 var
     i: Integer;
 begin
-    case msel_mode of
+    case mselMode of
         mm_Toggle:
             begin
                 i := edsel.addED(sc, SF, ED);
@@ -8723,7 +8712,7 @@ Procedure TJedMain.DO_SelTH(th: Integer);
 var
     i: Integer;
 begin
-    case msel_mode of
+    case mselMode of
         mm_Toggle:
             begin
                 i := thsel.AddTH(th);
@@ -8746,7 +8735,7 @@ var
 begin
     if fr < 0 then
         exit;
-    case msel_mode of
+    case mselMode of
         mm_Toggle:
             begin
                 i := frsel.AddFR(th, fr);
@@ -8767,7 +8756,7 @@ Procedure TJedMain.DO_SelLT(LT: Integer);
 var
     i: Integer;
 begin
-    case msel_mode of
+    case mselMode of
         mm_Toggle:
             begin
                 i := ltsel.AddLT(LT);
@@ -8821,7 +8810,7 @@ begin
     { So PCH - x , YAW - y, ROL - z }
     renderer.SetZ(z.dx, z.dy, z.dz);
     renderer.SetX(X.dx, X.dy, X.dz);
-    //renderer.SetY(Y.dx, Y.dy, Y.dz);
+    renderer.SetY(Y.dx, Y.dy, Y.dz);
 
 end;
 
@@ -8845,7 +8834,7 @@ end;
 
   end; *)
 
-Procedure sysGetPYR(const X, Y, z: TVector; var pch, yaw, rol: double);
+Procedure SysGetPYR(const X, Y, z: TVector; var pch, yaw, rol: double);
 { Assumes PCH,ROL, YAW
   PCH - x, YAW - y, ROL - z }
 var
@@ -8887,7 +8876,7 @@ end;
 Procedure TJedMain.GetPYR;
 begin
     With renderer do
-        sysGetPYR(xv, yv, zv, rPch, rYaw, rRol);
+        SysGetPYR(xv, yv, zv, rPch, rYaw, rRol);
 end;
 
 
@@ -8918,7 +8907,7 @@ var
     obj: TObject;
     icog, ival: Integer;
 begin
-    case Map_mode of
+    case mapMode of
         MM_SC:
             begin
                 ctype := ct_sec;
@@ -8954,7 +8943,7 @@ end;
 Function TJedMain.GetCurObjForCog(ct: TCOG_Type): TObject;
 begin
     Result := nil;
-    case Map_mode of
+    case mapMode of
         MM_SC:
             begin
                 case ct of
@@ -9101,7 +9090,7 @@ var
     a: Integer;
     sc1, sc2, sf1, sf2: Integer;
 begin
-    if Map_mode <> MM_SF then
+    if mapMode <> MM_SF then
         exit;
     a := sfsel.AddSF(Cur_SC, Cur_SF);
     if sfsel.Count = 2 then
@@ -9121,7 +9110,7 @@ Procedure TJedMain.ConnectSCs;
 var
     a: Integer;
 begin
-    if Map_mode <> MM_SC then
+    if mapMode <> MM_SC then
         exit;
     a := scsel.AddSC(Cur_SC);
     if scsel.Count = 2 then
@@ -9136,38 +9125,39 @@ begin
 end;
 
 Procedure TJedMain.BringThingToSurf(th, sc, SF: Integer);
+const surf: TJKSurface = nil;
 var
-    surf: TJKSurface;
     thing: TJKThing;
-    X, Y, z, l: double;
-    xv, yv, zv: TVector;
+    l: double;
+    pos, xv, yv, zv: TVector;
     v1, v2: TJKVertex;
 begin
-    if (sc < 0) or (th < 0) or (sf < 0) then
+    if not CheckSurfaceIndex(level, sc, sf) or not CheckThingIndex(level, th) then
       exit;
 
     StartUndoRec('Bring Thing to Surface');
-    surf := Level.Sectors[sc].surfaces[SF];
-    CalcSurfCenter(surf, X, Y, z);
-    thing := Level.Things[th];
+    surf := level.sectors[sc].surfaces[SF];
+    CalcSurfCenter(surf, pos.x, pos.y, pos.z);
+    thing := level.things[th];
 
     SaveThingUndo(thing, ch_changed);
 
     l := -thing.bbox.z1;
-    X := X + surf.normal.dx * l;
-    Y := Y + surf.normal.dy * l;
-    z := z + surf.normal.dz * l;
-    thing.X := X;
-    thing.Y := Y;
-    thing.z := z;
+    pos := pos + surf.normal.Scaled(l);
+//    X := X + surf.normal.dx * l;
+//    Y := Y + surf.normal.dy * l;
+//    z := z + surf.normal.dz * l;
+    thing.x := pos.x;
+    thing.y := pos.y;
+    thing.z := pos.z;
 
     v1 := surf.vertices[0];
     v2 := surf.vertices[1];
     zv := surf.normal;
 
     yv.SetCoords(v2.X - v1.X, v2.Y - v1.Y, v2.z - v1.z);
-    Normalize(yv);
-    VMult(yv.dx, yv.dy, yv.dz, zv.dx, zv.dy, zv.dz, xv.dx, xv.dy, xv.dz);
+    yv.Normalize;
+    xv := yv.Cross(zv);
 
     GetJKPYR(xv, yv, zv, thing.pch, thing.yaw, thing.rol);
 
@@ -9250,7 +9240,7 @@ var
     n, SF, ED: Integer;
     surf: TJKSurface;
 begin
-    case Map_mode of
+    case mapMode of
         MM_SC:
             s := Format('%d', [Cur_SC]);
         MM_SF:
@@ -9270,7 +9260,7 @@ begin
     end;
     if not InputQuery('Jump to', 'Jump to:', s) then
         exit;
-    case Map_mode of
+    case mapMode of
         MM_SC:
             begin
                 ValInt(s, n);
@@ -9345,9 +9335,9 @@ Procedure TJedMain.ClearExtraObjs;
 var
     i, j: Integer;
 begin
-    for i := 0 to ExtraObjs.Count - 1 do
-        ExtraObjs[i].free;
-    ExtraObjs.Clear;
+    for i := 0 to extraObjs.Count - 1 do
+        extraObjs[i].free;
+    extraObjs.Clear;
     Cur_EX := -1;
     ExtraObjsName := '';
 end;
@@ -9361,11 +9351,10 @@ begin
     v.Y := Y;
     v.z := z;
     v.name := name;
-    Result := ExtraObjs.Add(v);
+    Result := extraObjs.Add(v);
 end;
 
-Function TJedMain.AddExtraLine(x1, y1, z1, x2, y2, z2: double;
-  const name: string): Integer;
+Function TJedMain.AddExtraLine(x1, y1, z1, x2, y2, z2: double; const name: string): Integer;
 var
     i: Integer;
     l: TExtraLine;
@@ -9378,16 +9367,26 @@ begin
     l.v2.Y := y2;
     l.v2.z := z2;
     l.name := name;
-    Result := ExtraObjs.Add(l);
+    Result := extraObjs.Add(l);
+end;
+
+Function TJedMain.AddExtraLine(x, y, z: double; direction: TVector; length: double; const name: string): Integer;
+begin
+   Result := AddExtraLine(x, y, z, x + direction.x * length, y + direction.y * length, z + direction.z * length, name);
+end;
+
+Function TJedMain.AddExtraLine(startPos: TVector; endPos: TVector; const name: string): Integer;
+begin
+  Result := AddExtraLine(startPos.x, startPos.y, startPos.z, endPos.x, endPos.y, endPos.z, name);
 end;
 
 Procedure TJedMain.DeleteExtraObj(n: Integer);
 begin
-    ExtraObjs[n].free;
-    ExtraObjs.Delete(n);
-    if Cur_EX >= ExtraObjs.Count then
-        Cur_EX := ExtraObjs.Count - 1;
-    ExtraObjsName := '';
+    extraObjs[n].free;
+    extraObjs.Delete(n);
+    if Cur_EX >= extraObjs.Count then
+        Cur_EX := extraObjs.Count - 1;
+    extraObjsName := '';
 end;
 
 Function TJedMain.TranslateExtras(Cur_EX: Integer; dx, dy, dz: double): Integer;
@@ -9395,10 +9394,10 @@ var
     j: Integer;
     EX: TObject;
 begin
-    if (Cur_EX < -1) or (ExtraObjs.Count = 0) then
+    if (Cur_EX < -1) or (extraObjs.Count = 0) then
       exit;
 
-    EX := ExtraObjs[Cur_EX];
+    EX := extraObjs[Cur_EX];
     if EX is TVertex then
         With TVertex(EX) do
         begin
@@ -9431,8 +9430,8 @@ end;
 
 Procedure TJedMain.SetHideLights(hide: boolean);
 begin
-    LightsHidden := hide;
-    if LightsHidden then
+    bLightsHidden := hide;
+    if bLightsHidden then
         HideLights.Caption := 'Show &Lights'
     else
         HideLights.Caption := 'Hide &Lights';
@@ -9441,8 +9440,8 @@ end;
 
 Procedure TJedMain.SetHideThings(hide: boolean);
 begin
-    ThingsHidden := hide;
-    if ThingsHidden then
+    bThingsHidden := hide;
+    if bThingsHidden then
         HideThings.Caption := 'Show &Things'
     else
         HideThings.Caption := 'Hide &Things';
@@ -9451,12 +9450,12 @@ end;
 
 procedure TJedMain.HideThingsClick(sender: TObject);
 begin
-    SetHideThings(not ThingsHidden);
+    SetHideThings(not bThingsHidden);
 end;
 
 procedure TJedMain.HideLightsClick(sender: TObject);
 begin
-    SetHideLights(not LightsHidden);
+    SetHideLights(not bLightsHidden);
 end;
 
 procedure TJedMain.ExportSectorasShape1Click(sender: TObject);
@@ -9498,7 +9497,7 @@ end;
 
 procedure TJedMain.ForSelectedSectorsDo(callback: TSectorCallback);
 begin
-    if Map_mode <> MM_SC then exit;
+    if mapMode <> MM_SC then exit;
     var curi := scsel.AddSC(Cur_SC);
     for var i := 0 to scsel.Count - 1 do
         begin
@@ -9510,7 +9509,7 @@ end;
 
 procedure TJedMain.ForSelectedSurfacesDo(callback: TSurfaceCallback);
 begin
-    if Map_mode <> MM_SF then exit;
+    if mapMode <> MM_SF then exit;
     var curi := sfsel.AddSF(Cur_SC, Cur_SF);
     for var i := 0 to sfsel.Count - 1 do
     begin
@@ -9521,6 +9520,25 @@ begin
         callback(surf);
     end;
     sfsel.DeleteN(curi);
+end;
+
+function TJedMain.ZoomIn: boolean;
+begin
+  Result := false;
+  if (renderer = nil) or renderer.perspective then
+    exit;
+  renderer.scale := renderer.scale / 1.5;
+  Result := true;
+end;
+
+function TJedMain.ZoomOut: boolean;
+begin
+  Result := false;
+  if (renderer = nil) or renderer.perspective then
+    exit;
+
+  renderer.scale := System.Math.Min(renderer.scale * 1.5, 3.5);  // max zoom out
+  Result := true;
 end;
 
 end.

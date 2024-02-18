@@ -36,6 +36,7 @@ var
   Progress: TProgress;
 
 implementation
+uses System.Math;
 
 {$R *.DFM}
 
@@ -70,7 +71,7 @@ begin
   ProgressBar.Position := 0;
   if steps <= 5000 then
   begin
-    ProgressBar.Max := Math.Max(steps - 1, 0);
+    ProgressBar.Max := System.Math.Max(steps - 1, 0);
     LargeMax := false;
   end
   else

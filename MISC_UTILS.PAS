@@ -193,7 +193,7 @@ const
 
 implementation
 
-uses Windows, Jed_main, Math, System.Character;
+uses Windows, Jed_main, System.Math, System.Character;
 
 class operator TColorF.Add(a, b: TColorF): TColorF;
 begin
@@ -302,7 +302,7 @@ end;
 
 Function TColorF.IsZero: Boolean;
 begin
-  Result := Math.IsZero(r) and Math.IsZero(g) and Math.IsZero(b) and Math.IsZero(a);
+  Result := System.Math.IsZero(r) and System.Math.IsZero(g) and System.Math.IsZero(b) and System.Math.IsZero(a);
 end;
 
 Function TColorF.Intensity: single;

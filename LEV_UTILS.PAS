@@ -1,4 +1,4 @@
-unit lev_utils;
+﻿unit lev_utils;
 
 interface
 
@@ -55,7 +55,7 @@ procedure ScaleMatrix(var mx: TMat3x3; scx, scy, scz: double);
 procedure CreateRotMatrixS(var mx: TMat3x3s; pch, yaw, rol: single);
 procedure ScaleMatrixS(var mx: TMat3x3s; scx, scy, scz: single);
 
-procedure CalcNormal(surf: TPolygon; var normal: TVector);
+procedure CalcNormal(const surf: TPolygon; var normal: TVector);
 
 procedure FindBBox(sec: TJKSector; var box: TBox);
 procedure FindBSphere(sec: TJKSector; var cx, cy, cz, Rad: double);
@@ -66,19 +66,15 @@ function DoBoxesIntersect(const box1, box2: TBox): boolean;
 procedure SetBox(var box: TBox; x1, x2, y1, y2, z1, z2: double);
 function IsPointInBox(const box: TBox; x, y, z: double): boolean;
 
-function Do2DBoxesIntersect(const box1, box2: T2DBox): boolean;
-procedure Set2DBox(var box: T2DBox; x1, x2, y1, y2: double);
-function IsPointIn2DBox(const box: T2DBox; x, y: double): boolean;
+function Do2DBoxesIntersect(const box1, box2: TBox2): boolean;
+procedure Set2DBox(var box: TBox2; x1, x2, y1, y2: double);
+function IsPointIn2DBox(const box: TBox2; x, y: double): boolean;
 
 procedure FindCenter(sec: TJKSector; var cx, cy, cz: double);
 procedure CalcSecCenter(sec: TJKSector; var cx, cy, cz: double);
 
-procedure CalcSurfCenter(surf: TJKSurface; var cx, cy, cz: double);
+procedure CalcSurfCenter(const surf: TJKSurface; var cx, cy, cz: double);
 procedure CalcSurfRect(surf: TJKSurface; v1, v2, v3, v4: TVertex; by: double);
-
-procedure VMult(x1, y1, z1, x2, y2, z2: double; var x, y, z: double);
-function SMult(x1, y1, z1, x2, y2, z2: double): double;
-function VLen(const v: TVector): double;
 
 procedure RotateVector(var vec: TVector; pch, yaw, rol: double);
 procedure GetJKPYR(const x, y, z: TVector; var pch, yaw, rol: double);
@@ -167,10 +163,11 @@ procedure FlipFramesOverPlane(lev: TJKLevel; frsel: TFRMultisel; pnorm: TVector;
 procedure FlipSectorsOverPlane(lev: TJKLevel; scsel: TSCMultiSel;
   const pnorm: TVector; pX, pY, pZ: double);
 
-function Normalize(var normal: TVector): boolean;
-
-function GetNearestVX(lev: TJKLevel; pX, pY, pZ: double; var rx, ry, rz: double;
-  mdist: double): boolean;
+// Functions for retrieving nearest vertex  to the line defined by lx, ly, lt and lineNormal
+function GetNearestVertexToLine(vertices: TVertices; lx, ly, lz: double; lineNormal: TVector; radius: double; var vx, vy, vz: double): boolean;
+function GetNearestWorldVertexToLine(lev: TJKLevel; lx, ly, lz: double; lineNormal: TVector; radius: double; var vx, vy, vz: double): boolean; overload;
+function GetNearestWorldVertexToLine(lev: TJKLevel; linePoint: Tvector; lineNormal: TVector; radius: double; var vx, vy, vz: double): boolean; overload;
+function GetNearestWorldVertexToLine(lev: TJKLevel; linePoint: Tvector; lineNormal: TVector; radius: double; var v: TVector): boolean; overload;
 
 procedure ExtrudeSurface(surf: TJKSurface; by: double);
 procedure ExtrudeAndExpandSurface(surf: TJKSurface; by: double);
@@ -182,9 +179,10 @@ function CleaveSector(sec: TJKSector; const cnormal: TVector;
 function CleaveEdge(surf: TJKSurface; edge: integer; const cnormal: TVector;
   cx, cy, cz: double): boolean;
 
-function ConnectSurfaces(surf1, surf2: TJKSurface): boolean;
 { Creates adjoin by cleaving both surfaces to reduce them to their
   common area }
+function ConnectSurfaces(surf1, surf2: TJKSurface): boolean;
+
 
 function ConnectSectors(sec1, sec2: TJKSector): boolean;
 
@@ -196,8 +194,7 @@ function FlattenSurface(surf: TJKSurface): boolean;
 function MergeSurfaces(surf, surf1: TJKSurface): TJKSurface;
 function MergeSurfacesAt(surf: TJKSurface; edge: integer): boolean;
 function MergeSectors(sec, sec1: TJKSector): TJKSector;
-function MergeVertices(lev: TJKLevel; vxsel: TVXMultiSel): integer;
-// returns number of vertices merged
+function MergeVertices(lev: TJKLevel; vxsel: TVXMultiSel): integer;  // returns number of vertices merged
 
 procedure CalcDefaultUVNormals(surf: TJKSurface; orgvx: integer;
   var un, vn: TVector);
@@ -265,7 +262,7 @@ procedure GetLevelPal(l: TJKLevel; var pal: TCMPPal);
 procedure OffsetByNode(lev: TJKLevel; nnode: integer; var x, y, z: double);
 procedure UnOffsetByNode(lev: TJKLevel; nnode: integer; var x, y, z: double);
 
-{index bound checking functions}
+// index bound checking functions
 function CheckSectorIndex(lev: TJKLevel; sc: integer): boolean;
 function CheckSectorSurfaceIndex(sec: TJKSector; sf: integer): boolean;
 function CheckSectorVertexIndex(sec: TJKSector; vx: integer): boolean;
@@ -281,7 +278,7 @@ function CheckLightIndex(lev: TJKLevel; lt: integer): boolean;
 
 implementation
 
-uses Math, SysUtils, Jed_main, u_tbar, values, u_COGForm, Types, u_undo;
+uses System.Math, SysUtils, Jed_main, math, u_tbar, values, u_COGForm, Types, u_undo;
 
 Type
   TXData = record
@@ -341,7 +338,7 @@ begin
     with sec.surfaces[sf] do
     begin
       v := Vertices[0];
-      dist := SMult(normal.dx, normal.dy, normal.dz, x - v.x, y - v.y, z - v.z);
+      dist := normal.Dot(x - v.x, y - v.y, z - v.z);//SMult(normal.dx, normal.dy, normal.dz, x - v.x, y - v.y, z - v.z);
       case onsides of
         true:
           if dist < -0.00001 then
@@ -391,7 +388,7 @@ Function DoSectorsOverlap(sec1, sec2: TJKSector): boolean;
         v := sec2.Vertices[j];
 
         With surf.normal do
-          D := SMult(v.x - v0.x, v.y - v0.y, v.z - v0.z, dx, dy, dz);
+          D := VectorDot3(v.x - v0.x, v.y - v0.y, v.z - v0.z, dx, dy, dz); //SMult
         if D > 0.01 then
         begin
           onright := true;
@@ -683,78 +680,21 @@ begin
 
 end;
 
-Procedure CalcNormal(surf: TPolygon; var normal: TVector);
-var
-  x1, x2, x3, y1, y2, y3, z1, z2, z3: double;
-  n, cmn: integer;
-  cmax, cs: double;
+Procedure CalcNormal(const surf: TPolygon; var normal: TVector);
 begin
-  if surf.Vertices.count < 3 then exit;
-  
-  With surf.Vertices[0] do
+  // Newell's method to calculate polygon normal
+  normal := TVector.zero;
+  for var i := 0 to surf.vertices.Count - 1 do
     begin
-      x1 := x;
-      y1 := y;
-      z1 := z;
+      var vc := surf.vertices[i];
+      var vn := surf.vertices[(i + 1) mod surf.vertices.Count];
+      normal.x := normal.x + ((vc.y - vn.y) * (vc.z + vn.z));
+      normal.y := normal.y + ((vc.z - vn.z) * (vc.x + vn.x));
+      normal.z := normal.z + ((vc.x - vn.x) * (vc.y + vn.y));
     end;
-
-  With surf.Vertices[1] do
-    begin
-      x2 := x;
-      y2 := y;
-      z2 := z;
-    end;
-
-  n := 2;
-  cmax := 0;
-  cmn := 2;
-  While n < surf.Vertices.count do
-  begin
-    With surf.Vertices[n] do
-      begin
-        x3 := x;
-        y3 := y;
-        z3 := z;
-      end;
-
-    VMult(x2 - x1, y2 - y1, z2 - z1, x3 - x1, y3 - y1, z3 - z1, normal.dx,
-      normal.dy, normal.dz);
-
-    cs := sqrt(sqr(normal.dx) + sqr(normal.dy) + sqr(normal.dz));
-    if cs > 0.01 then
-      break;
-
-    { if not IsOnLine(X1,Y1,Z1,X2,Y2,Z2,X3,Y3,Z3) then break; }
-    if cs > cmax then
-      begin
-        cmax := cs;
-        cmn := n;
-      end;
-    inc(n);
-  end;
-
-  if n >= surf.Vertices.count then
-  begin
-    With surf.Vertices[cmn] do
-      begin
-        x3 := x;
-        y3 := y;
-        z3 := z;
-      end;
-
-    VMult(x2 - x1, y2 - y1, z2 - z1, x3 - x1, y3 - y1, z3 - z1, normal.dx,
-      normal.dy, normal.dz);
-    cs := sqrt(sqr(normal.dx) + sqr(normal.dy) + sqr(normal.dz));
-    { raise Exception.Create('Invalid polygon'); }
-  end;
-
-  if cs <> 0 then
-    begin
-      normal.dx := normal.dx / cs;
-      normal.dy := normal.dy / cs;
-      normal.dz := normal.dz / cs;
-    end;
+  normal.Normalize;
 end;
+
 
 (* Function FindTri(surf:TJKSurface;nv1:integer;var nv2,nv3:integer):boolean;
   var i:integer;
@@ -862,10 +802,10 @@ begin
     selected edge }
 
   With surf do
-    VMult(v1.x - v0.x, v1.y - v0.y, v1.z - v0.z, normal.dx, normal.dy,
-      normal.dz, a.dx, a.dy, a.dz);
+    VectorCross3(v1.x - v0.x, v1.y - v0.y, v1.z - v0.z, normal.dx, normal.dy,
+      normal.dz, a.dx, a.dy, a.dz); //VMult
 
-  If not Normalize(a) then
+  If a.Normalize = 0 then
     exit;
 
   cdist := -1;
@@ -875,8 +815,7 @@ begin
   begin
     v2 := surf.Vertices[n];
 
-    dist := Abs(SMult(a.dx, a.dy, a.dz, v2.x - v1.x, v2.y - v1.y, v2.z - v1.z));
-
+    dist := Abs(a.Dot(v2.x - v1.x, v2.y - v1.y, v2.z - v1.z)); //Abs(SMult(a.dx, a.dy, a.dz, v2.x - v1.x, v2.y - v1.y, v2.z - v1.z));
     if dist > cdist then
     begin
       cn := n;
@@ -927,18 +866,6 @@ begin
     (tv1.v - tv2.v);
 end;
 
-Procedure VMult(x1, y1, z1, x2, y2, z2: double; var x, y, z: double);
-begin
-  x := y1 * z2 - y2 * z1;
-  y := x2 * z1 - x1 * z2;
-  z := x1 * y2 - x2 * y1;
-end;
-
-Function SMult(x1, y1, z1, x2, y2, z2: double): double;
-begin
-  result := x1 * x2 + y1 * y2 + z1 * z2;
-end;
-
 Function IsOnLine(x1, y1, z1, x2, y2, z2, x, y, z: double): boolean;
 var
   dx, dy, dz: double;
@@ -976,8 +903,7 @@ var
 begin
   vx := surf.Vertices[0];
   With surf do
-    result := Abs(SMult(normal.dx, normal.dy, normal.dz, x - vx.x, y - vx.y,
-      z - vx.z));
+    result := Abs(normal.Dot(x - vx.x, y - vx.y, z - vx.z));//Abs(SMult(normal.dx, normal.dy, normal.dz, x - vx.x, y - vx.y, z - vx.z));
 end;
 
 { Function DistToPlane(surf:TPolygon;x,y,z:double):double;
@@ -1061,8 +987,8 @@ var
   k: double;
 begin
   result := false;
-  dist1 := SMult(x1 - pX, y1 - pY, z1 - pZ, normal.dx, normal.dy, normal.dz);
-  dist2 := SMult(x2 - pX, y2 - pY, z2 - pZ, normal.dx, normal.dy, normal.dz);
+  dist1 := VectorDot3(x1 - pX, y1 - pY, z1 - pZ, normal.dx, normal.dy, normal.dz); //SMult
+  dist2 := VectorDot3(x2 - pX, y2 - pY, z2 - pZ, normal.dx, normal.dy, normal.dz);
   if dist1 = dist2 then
     exit;
 
@@ -1098,12 +1024,12 @@ end;
 
 Procedure TranslateVX(v: TJKVertex; dx, dy, dz: double);
 begin
-  if v.Mark <> 0 then
+  if v.mark <> 0 then
     exit;
   v.x := v.x + dx;
   v.y := v.y + dy;
   v.z := v.z + dz;
-  v.Mark := 1;
+  v.mark := 1;
 end;
 
 Procedure RecalcSector(sec: TJKSector);
@@ -1121,7 +1047,7 @@ begin
         continue;
       for sf1 := 0 to adjoin.sector.surfaces.count - 1 do
         adjoin.sector.surfaces[sf1].RecalcAll;
-      adjoin.sector.Mark := 0;
+      adjoin.sector.mark := 0;
     end;
 end;
 
@@ -1651,7 +1577,7 @@ begin
   for i := 0 to vs.count - 1 do
     With vs[i] do
     begin
-      dist := SMult(cnormal.dx, cnormal.dy, cnormal.dz, x - cx, y - cy, z - cz);
+      dist := cnormal.Dot(x - cx, y - cy, z - cz);//SMult(cnormal.dx, cnormal.dy, cnormal.dz, x - cx, y - cy, z - cz);
       if IsClose(dist, 0) then
         Mark := 0
       else if dist < 0 then
@@ -1763,11 +1689,11 @@ begin
     nleft := 0;
     nright := 0;
     for sf := 0 to vc - 1 do
-      With surf.Vertices[sf] do
+      With surf.vertices[sf] do
         begin
-          if Mark = 1 then
+          if mark = 1 then
             inc(nright);
-          if Mark = -1 then
+          if mark = -1 then
             inc(nleft);
         end;
 
@@ -1779,10 +1705,10 @@ begin
 
     { vxs:=TJKVertices.Create; }
 
-    for sf := 0 to surf.Vertices.count - 1 do
+    for sf := 0 to surf.vertices.count - 1 do
       With cd^[sf] do
         begin
-          v1 := surf.Vertices[sf];
+          v1 := surf.vertices[sf];
           if (v1.Mark = 1) or (v1.Mark = 0) then
             nsf.AddVertex(v1);
           if vx <> nil then
@@ -1792,17 +1718,17 @@ begin
     surf.sector.surfaces.Add(nsf);
     nsf.NewRecalcAll;
 
-    vxs := surf.Vertices;
-    surf.Vertices := TJKVertices.Create;
+    vxs := surf.vertices;
+    surf.vertices := TJKVertices.Create;
 
     for sf := 0 to vxs.count - 1 do
       With cd^[sf] do
         begin
           v1 := vxs[sf];
-          if (v1.Mark = -1) or (v1.Mark = 0) then
-            surf.Vertices.Add(v1);
+          if (v1.mark = -1) or (v1.mark = 0) then
+            surf.vertices.Add(v1);
           if vx <> nil then
-            surf.InsertVertex(surf.Vertices.count, vx);
+            surf.InsertVertex(surf.vertices.count, vx);
         end;
 
     { surf.sector.surfaces.Add(nsf);
@@ -1813,35 +1739,34 @@ begin
     { Remove edges that lie on the clipping plane and face the wrong way }
 
     With surf do { Find "right" vector }
-      VMult(normal.dx, normal.dy, normal.dz, cnormal.dx, cnormal.dy, cnormal.dz,
-        rvec.dx, rvec.dy, rvec.dz);
+      rvec := normal.Cross(cnormal);
+//      VMult(normal.dx, normal.dy, normal.dz, cnormal.dx, cnormal.dy, cnormal.dz,
+//        rvec.dx, rvec.dy, rvec.dz);
 
-    For i := surf.Vertices.count - 1 downto 0 do
+    For i := surf.vertices.count - 1 downto 0 do
       begin
-        v0 := surf.Vertices[surf.PrevVX(i)];
-        v1 := surf.Vertices[i];
-        v2 := surf.Vertices[surf.NextVX(i)];
-        if (v0.Mark <> 0) or (v1.Mark <> 0) or (v2.Mark <> 0) then
+        v0 := surf.vertices[surf.PrevVX(i)];
+        v1 := surf.vertices[i];
+        v2 := surf.vertices[surf.NextVX(i)];
+        if (v0.mark <> 0) or (v1.mark <> 0) or (v2.mark <> 0) then
           continue;
 
-        if (SMult(v2.x - v1.x, v2.y - v1.y, v2.z - v1.z, rvec.dx, rvec.dy,
-          rvec.dz) < 0) or (SMult(v1.x - v0.x, v1.y - v0.y, v1.z - v0.z, rvec.dx,
-          rvec.dy, rvec.dz) < 0) then
-          surf.Vertices.Delete(i);
+        if (VectorDot3(v2.x - v1.x, v2.y - v1.y, v2.z - v1.z, rvec.dx, rvec.dy, rvec.dz) < 0)
+          or (VectorDot3(v1.x - v0.x, v1.y - v0.y, v1.z - v0.z, rvec.dx, rvec.dy, rvec.dz) < 0) then //SMult
+          surf.vertices.Delete(i);
       end;
 
-    For i := nsf.Vertices.count - 1 downto 0 do
+    For i := nsf.vertices.count - 1 downto 0 do
       begin
-        v0 := nsf.Vertices[nsf.PrevVX(i)];
-        v1 := nsf.Vertices[i];
-        v2 := nsf.Vertices[nsf.NextVX(i)];
-        if (v0.Mark <> 0) or (v1.Mark <> 0) or (v2.Mark <> 0) then
+        v0 := nsf.vertices[nsf.PrevVX(i)];
+        v1 := nsf.vertices[i];
+        v2 := nsf.vertices[nsf.NextVX(i)];
+        if (v0.mark <> 0) or (v1.mark <> 0) or (v2.mark <> 0) then
           continue;
 
-        if (SMult(v2.x - v1.x, v2.y - v1.y, v2.z - v1.z, rvec.dx, rvec.dy,
-          rvec.dz) > 0) or (SMult(v1.x - v0.x, v1.y - v0.y, v1.z - v0.z, rvec.dx,
-          rvec.dy, rvec.dz) > 0) then
-          nsf.Vertices.Delete(i);
+        if (VectorDot3(v2.x - v1.x, v2.y - v1.y, v2.z - v1.z, rvec.dx, rvec.dy, rvec.dz) > 0)
+          or (VectorDot3(v1.x - v0.x, v1.y - v0.y, v1.z - v0.z, rvec.dx, rvec.dy, rvec.dz) > 0) then //SMult
+          nsf.vertices.Delete(i);
       end;
 
     For sf := 0 to vc - 1 do
@@ -2264,8 +2189,8 @@ begin
           end;
         0:
           With surf do
-            if SMult(cnormal.dx, cnormal.dy, cnormal.dz, normal.dx, normal.dy,
-              normal.dz) < 0 then
+            if cnormal.Dot(normal) < 0 then
+            //if SMult(cnormal.dx, cnormal.dy, cnormal.dz, normal.dx, normal.dy, normal.dz) < 0 then
             begin
               surf.sector := sec1;
               sec1.surfaces.Add(surf);
@@ -2275,15 +2200,15 @@ begin
     end;
 
     { Split vertices between two sectors }
-    For sf := sec.Vertices.count - 1 downto 0 do
+    For sf := sec.vertices.count - 1 downto 0 do
     begin
-      v1 := sec.Vertices[sf];
+      v1 := sec.vertices[sf];
       case v1.Mark of
         - 1:
           begin
             v1.sector := sec1;
-            sec1.Vertices.Add(v1);
-            sec.Vertices.Delete(sf);
+            sec1.vertices.Add(v1);
+            sec.vertices.Delete(sf);
           end;
       end;
     end;
@@ -2310,8 +2235,8 @@ begin
     surf1.NewRecalcAll;
 
     With surf do
-      if SMult(cnormal.dx, cnormal.dy, cnormal.dz, normal.dx, normal.dy,
-        normal.dz) > 0 then
+      if cnormal.Dot(normal) > 0 then
+      //if SMult(cnormal.dx, cnormal.dy, cnormal.dz, normal.dx, normal.dy, normal.dz) > 0 then
       begin
         sec.surfaces.Add(surf);
         surf1.sector := sec1;
@@ -2368,10 +2293,13 @@ var
       v1 := bysurf.Vertices[i];
       v2 := bysurf.Vertices[bysurf.NextVX(i)];
       vec.SetCoords(v2.x - v1.x, v2.y - v1.y, v2.z - v1.z);
-      if not Normalize(vec) then
+      //if not Normalize(vec) then
+      if vec.Normalize = 0 then      
         continue;
-      VMult(vec.dx, vec.dy, vec.dz, bysurf.normal.dx, bysurf.normal.dy,
-        bysurf.normal.dz, vec.dx, vec.dy, vec.dz);
+
+      vec := vec.Cross(bysurf.normal);
+//      VMult(vec.dx, vec.dy, vec.dz, bysurf.normal.dx, bysurf.normal.dy,
+//        bysurf.normal.dz, vec.dx, vec.dy, vec.dz);
       b := CleaveSurface(surf, vec, v1.x, v1.y, v1.z);
       if b then;
     end;
@@ -2395,8 +2323,8 @@ begin
   v1 := surf1.Vertices[0];
   v2 := surf2.Vertices[0];
 
-  D := SMult(surf1.normal.dx, surf1.normal.dy, surf1.normal.dz, surf2.normal.dx,
-    surf2.normal.dy, surf2.normal.dz);
+   D := surf1.normal.Dot(surf2.normal);
+  //D := SMult(surf1.normal.dx, surf1.normal.dy, surf1.normal.dz, surf2.normal.dx, surf2.normal.dy, surf2.normal.dz);
 
   if D > -0.9999 then
   begin
@@ -2404,8 +2332,7 @@ begin
     exit;
   end;
 
-  if Abs(SMult(v2.x - v1.x, v2.y - v1.y, v2.z - v1.z, surf1.normal.dx,
-    surf1.normal.dy, surf1.normal.dz)) > 0.0001 then
+  if Abs(VectorDot3(v2.x - v1.x, v2.y - v1.y, v2.z - v1.z, surf1.normal.dx, surf1.normal.dy, surf1.normal.dz)) > 0.0001 then //SMult
   begin
     PanMessage(mt_warning, 'The surfaces are not placed back to back');
     exit;
@@ -2437,7 +2364,7 @@ Function ConnectSectors(sec1, sec2: TJKSector): boolean;
     for i := 0 to bysec.surfaces.count - 1 do
     begin
       surf := bysec.surfaces[i];
-      if VLen(surf.normal) = 0 then
+      if surf.normal.Length = 0 then  //Vlen
         continue;
       v := surf.Vertices[0];
       b := CleaveSector(sec, surf.normal, v.x, v.y, v.z);
@@ -2464,24 +2391,24 @@ begin { ConnectSectors }
   Result := true;
 end;
 
-Function VLen(const v: TVector): double;
-begin
-  result := sqrt(sqr(v.dx) + sqr(v.dy) + sqr(v.dz));
-end;
+//Function VLen(const v: TVector): double;
+//begin
+//  result := sqrt(sqr(v.dx) + sqr(v.dy) + sqr(v.dz));
+//end;
 
-Function Normalize(var normal: TVector): boolean;
-var
-  dist: double;
-begin
-  result := false;
-  dist := sqrt(sqr(normal.dx) + sqr(normal.dy) + sqr(normal.dz));
-  if dist = 0 then
-    exit;
-  normal.dx := normal.dx / dist;
-  normal.dy := normal.dy / dist;
-  normal.dz := normal.dz / dist;
-  result := true;
-end;
+//Function Normalize(var normal: TVector): boolean;
+//var
+//  dist: double;
+//begin
+//  result := false;
+//  dist := sqrt(sqr(normal.dx) + sqr(normal.dy) + sqr(normal.dz));
+//  if dist = 0 then
+//    exit;
+//  normal.dx := normal.dx / dist;
+//  normal.dy := normal.dy / dist;
+//  normal.dz := normal.dz / dist;
+//  result := true;
+//end;
 
 Procedure CalcDefaultUVNormals(surf: TJKSurface; orgvx: integer;
   var un, vn: TVector);
@@ -2498,10 +2425,12 @@ begin
     dz := v2.z - v1.z;
   end;
 
-  Normalize(un);
+  un.Normalize;
+  //Normalize(un);
   With surf do
-    VMult(un.dx, un.dy, un.dz, normal.dx, normal.dy, normal.dz, vn.dx,
-      vn.dy, vn.dz);
+    vn := un.Cross(normal);
+//    VMult(un.dx, un.dy, un.dz, normal.dx, normal.dy, normal.dz, vn.dx,
+//      vn.dy, vn.dz);
 end;
 
 Function IsVFlipped(surf: TJKSurface; nv1, nv2: integer;
@@ -2524,8 +2453,9 @@ begin
     if VXEq(vx, v1) or VXEq(vx, v2) then
       continue;
     tv := surf.txvertices[i];
-    dv := UVRound(SMult(v.dx, v.dy, v.dz, vx.x - v1.x, vx.y - v1.y, vx.z - v1.z)
-      * PixelPerUnit);
+    dv := UVRound(v.Dot(vx.x - v1.x, vx.y - v1.y, vx.z - v1.z) * PixelPerUnit);
+//    dv := UVRound(SMult(v.dx, v.dy, v.dz, vx.x - v1.x, vx.y - v1.y, vx.z - v1.z)
+//      * PixelPerUnit);
     result := (dv > 0) <> ((tv.v - tv1.v) > 0);
     exit;
   end;
@@ -2623,8 +2553,8 @@ begin
     d1 := tv2.u - tv1.u;
   end;
 
-  d2 := SMult(un.dx, un.dy, un.dz, v2.x - v1.x, v2.y - v1.y, v2.z - v1.z) *
-    PixelPerUnit;
+  d2 := un.Dot(v2.x - v1.x, v2.y - v1.y, v2.z - v1.z) * PixelPerUnit;
+  //d2 := SMult(un.dx, un.dy, un.dz, v2.x - v1.x, v2.y - v1.y, v2.z - v1.z) * PixelPerUnit;
   surf.uscale := Abs(d1 / d2);
   surf.uscale := IfThen(IsNan(surf.uscale) or IsInfinite(surf.uscale), 1, surf.uscale);
 
@@ -2639,20 +2569,18 @@ begin
     d1 := tv2.v - tv1.v;
   end;
 
-  d2 := SMult(vn.dx, vn.dy, vn.dz, v2.x - v1.x, v2.y - v1.y, v2.z - v1.z) *
-    PixelPerUnit;
+  d2 := vn.Dot(v2.x - v1.x, v2.y - v1.y, v2.z - v1.z) * PixelPerUnit;
+  // d2 := SMult(vn.dx, vn.dy, vn.dz, v2.x - v1.x, v2.y - v1.y, v2.z - v1.z) * PixelPerUnit;
   surf.vscale := Abs(d1 / d2);
   surf.vscale := IfThen(IsNan(surf.vscale) or IsInfinite(surf.vscale), 1, surf.vscale);
-
 end;
 
-Procedure SysCalcUVNormalsFrom(surf: TJKSurface; nv1: integer;
-  var un, vn: TVector);
+Procedure SysCalcUVNormalsFrom(surf: TJKSurface; nv1: integer; var un, vn: TVector);
 var
   nv2, nv3: integer;
   v1, v2, v3: TJKVertex;
   tv1, tv2, tv3: TTXVertex;
-  a, b, av: TVector;
+  a, b: TVector;
   du1, dv1, du2, dv2: double;
   D: double;
 begin
@@ -2689,11 +2617,13 @@ begin
     exit;
   end;
 
-  v1 := surf.Vertices[nv1];
+  v1  := surf.vertices[nv1];
   tv1 := surf.txvertices[nv1];
-  v2 := surf.Vertices[nv2];
+
+  v2  := surf.vertices[nv2];
   tv2 := surf.txvertices[nv2];
-  v3 := surf.Vertices[nv3];
+
+  v3  := surf.vertices[nv3];
   tv3 := surf.txvertices[nv3];
 
   a.SetCoords(v1.x - v2.x, v1.y - v2.y, v1.z - v2.z);
@@ -2701,30 +2631,37 @@ begin
 
   du1 := tv1.u - tv2.u;
   dv1 := tv1.v - tv2.v;
+
   du2 := tv3.u - tv2.u;
   dv2 := tv3.v - tv2.v;
 
-  un.dx := dv2 * a.dx - dv1 * b.dx;
-  un.dy := dv2 * a.dy - dv1 * b.dy;
-  un.dz := dv2 * a.dz - dv1 * b.dz;
+  un := dv2 * a - dv1 * b;
+//  un.dx := dv2 * a.dx - dv1 * b.dx;
+//  un.dy := dv2 * a.dy - dv1 * b.dy;
+//  un.dz := dv2 * a.dz - dv1 * b.dz;
 
-  vn.dx := du2 * a.dx - du1 * b.dx;
-  vn.dy := du2 * a.dy - du1 * b.dy;
-  vn.dz := du2 * a.dz - du1 * b.dz;
+  vn := du2 * a - du1 * b;
+//  vn.dx := du2 * a.dx - du1 * b.dx;
+//  vn.dy := du2 * a.dy - du1 * b.dy;
+//  vn.dz := du2 * a.dz - du1 * b.dz;
 
   if dv2 * du1 < dv1 * du2 then
-    un.SetCoords(-un.dx, -un.dy, -un.dz);
+    un := -un;
+    //un.SetCoords(-un.dx, -un.dy, -un.dz);
   if du2 * dv1 < du1 * dv2 then
-    vn.SetCoords(-vn.dx, -vn.dy, -vn.dz);
+    vn := -vn;
+    //vn.SetCoords(-vn.dx, -vn.dy, -vn.dz);
 
-  if not Normalize(un) then
+  //if not Normalize(un) then
+  if un.Normalize = 0 then   
   begin
     un := a;
-    Normalize(un);
+    un.Normalize; //Normalize(un);
   end;
 
-  With surf.normal do
-    VMult(dx, dy, dz, un.dx, un.dy, un.dz, av.dx, av.dy, av.dz);
+  var av := surf.normal.Cross(un);
+//  with surf.normal do
+//    VMult(dx, dy, dz, un.dx, un.dy, un.dz, av.dx, av.dy, av.dz);
 
   { if Smult(vn.dx,vn.dy,vn.dz,av.dx,av.dy,av.dz)>=0 then vn:=av
     else SetVec(vn,-av.dx,-av.dy,-av.dz); }
@@ -2733,14 +2670,12 @@ begin
   UpdateSurfUVData(surf, un, vn);
 end;
 
-Procedure CalcUVNormalsFrom(surf: TJKSurface; nv1, nv2: integer;
-  var un, vn: TVector);
+Procedure CalcUVNormalsFrom(surf: TJKSurface; nv1, nv2: integer; var un, vn: TVector);
 begin
   SysCalcUVNormalsFrom(surf, nv1, un, vn);
 end;
 
-Procedure CalcUVNormalsFromVX(surf: TJKSurface; nvx: integer;
-  var un, vn: TVector);
+Procedure CalcUVNormalsFromVX(surf: TJKSurface; nvx: integer; var un, vn: TVector);
 begin
   SysCalcUVNormalsFrom(surf, nvx, un, vn);
 end;
@@ -2788,15 +2723,19 @@ begin
   for var i := 0 to surf.Vertices.count - 1 do
     With surf.txvertices[i], surf.Vertices[i] do
     begin
-      u := UVRound(refu + SMult(un.dx, un.dy, un.dz, x - refx, y - refy,
-        z - refz) * PixelPerUnit * surf.uscale);
+        u := UVRound(refu + un.Dot(x - refx, y - refy, z - refz) * PixelPerUnit * surf.uscale);
+//      u := UVRound(refu + SMult(un.dx, un.dy, un.dz, x - refx, y - refy,
+//        z - refz) * PixelPerUnit * surf.uscale);
 
-      if surf.FaceFlags and FF_SF_FLIP <> 0 then
-        v := UVRound(refv + SMult(-vn.dx, -vn.dy, -vn.dz, x - refx, y - refy,
-          z - refz) * PixelPerUnit * surf.vscale)
+      //surf.FaceFlags and FF_SF_FLIP <> 0
+      if BitTest(surf.FaceFlags, FF_SF_FLIP) <> 0 then
+        v := UVRound(refv + (-vn).Dot(x - refx, y - refy, z - refz) * PixelPerUnit * surf.vscale)
+//        v := UVRound(refv + SMult(-vn.dx, -vn.dy, -vn.dz, x - refx, y - refy,
+//          z - refz) * PixelPerUnit * surf.vscale)
       else
-        v := UVRound(refv + SMult(vn.dx, vn.dy, vn.dz, x - refx, y - refy,
-          z - refz) * PixelPerUnit * surf.vscale);
+        v := UVRound(refv + vn.Dot(x - refx, y - refy, z - refz) * PixelPerUnit * surf.vscale)
+//        v := UVRound(refv + SMult(vn.dx, vn.dy, vn.dz, x - refx, y - refy,
+//          z - refz) * PixelPerUnit * surf.vscale);
     end;
 end;
 
@@ -2804,10 +2743,12 @@ Procedure ApplyTXDataToVX(surf: TJKSurface; vx: integer; const txd: TXData);
 begin
   With surf.txvertices[vx], surf.Vertices[vx] do
   begin
-    u := UVRound(txd.u + SMult(txd.un.dx, txd.un.dy, txd.un.dz, x - txd.x,
-      y - txd.y, z - txd.z) * PixelPerUnit * surf.uscale);
-    v := UVRound(txd.v + SMult(txd.vn.dx, txd.vn.dy, txd.vn.dz, x - txd.x,
-      y - txd.y, z - txd.z) * PixelPerUnit * surf.vscale);
+    u := UVRound(txd.u + txd.un.Dot(x - txd.x, y - txd.y, z - txd.z) * PixelPerUnit * surf.uscale);
+    v := UVRound(txd.v + txd.vn.Dot(x - txd.x, y - txd.y, z - txd.z) * PixelPerUnit * surf.vscale);
+//    u := UVRound(txd.u + SMult(txd.un.dx, txd.un.dy, txd.un.dz, x - txd.x,
+//      y - txd.y, z - txd.z) * PixelPerUnit * surf.uscale);
+//    v := UVRound(txd.v + SMult(txd.vn.dx, txd.vn.dy, txd.vn.dz, x - txd.x,
+//      y - txd.y, z - txd.z) * PixelPerUnit * surf.vscale);
   end;
 end;
 
@@ -2883,18 +2824,21 @@ begin
 
     if (x<x1) or (x>x2) or (y<y1) or (y>y2) or (z<z1) or (z>z2) then exit; }
 
-  For i := 0 to vc - 1 do
-  begin
-    v1 := surf.Vertices[i];
-    v2 := surf.Vertices[NextIdx(i, vc)];
-    With surf do
-      VMult(normal.dx, normal.dy, normal.dz, v2.x - v1.x, v2.y - v1.y,
-        v2.z - v1.z, vct.dx, vct.dy, vct.dz);
-    dist := SMult(vct.dx, vct.dy, vct.dz, x - v1.x, y - v1.y, z - v1.z);
-    if (dist < -CloseEnough) then
-      exit;
-    { if dist<=0 then exit; }
-  end;
+  for i := 0 to vc - 1 do
+    begin
+      v1 := surf.Vertices[i];
+      v2 := surf.Vertices[NextIdx(i, vc)];
+
+      vct := surf.normal.Cross(v2.x - v1.x, v2.y - v1.y, v2.z - v1.z);
+      dist := vct.Dot(x - v1.x, y - v1.y, z - v1.z);
+  //    With surf do
+  //      VMult(normal.dx, normal.dy, normal.dz, v2.x - v1.x, v2.y - v1.y,
+  //        v2.z - v1.z, vct.dx, vct.dy, vct.dz);
+      //dist := SMult(vct.dx, vct.dy, vct.dz, x - v1.x, y - v1.y, z - v1.z);
+      if (dist < -CloseEnough) then
+        exit;
+      { if dist<=0 then exit; }
+    end;
   result := true;
 end;
 
@@ -3019,7 +2963,7 @@ begin
   box.z2 := real_max(z1, z2);
 end;
 
-Function Do2DBoxesIntersect(const box1, box2: T2DBox): boolean;
+Function Do2DBoxesIntersect(const box1, box2: TBox2): boolean;
 begin
   result := false;
   if (box1.x2 < box2.x1) then
@@ -3033,13 +2977,13 @@ begin
   result := true;
 end;
 
-Function IsPointIn2DBox(const box: T2DBox; x, y: double): boolean;
+Function IsPointIn2DBox(const box: TBox2; x, y: double): boolean;
 begin
   result := (x - box.x1 >= -CloseEnough) and (x - box.x2 <= CloseEnough) and
     (y - box.y1 >= -CloseEnough) and (y - box.y2 <= CloseEnough);
 end;
 
-Procedure Set2DBox(var box: T2DBox; x1, x2, y1, y2: double);
+Procedure Set2DBox(var box: TBox2; x1, x2, y1, y2: double);
 begin
   box.x1 := real_min(x1, x2);
   box.x2 := real_max(x1, x2);
@@ -3802,19 +3746,24 @@ var
     With surf do
       for i := 0 to Vertices.count - 1 do
       begin
-        v0 := Vertices[PrevVX(i)];
-        v1 := Vertices[i];
-        v2 := Vertices[NextVX(i)];
+        v0 := vertices[PrevVX(i)];
+        v1 := vertices[i];
+        v2 := vertices[NextVX(i)];
 
         e1.SetCoords(v1.x - v0.x, v1.y - v0.y, v1.z - v0.z);
         e2.SetCoords(v2.x - v1.x, v2.y - v1.y, v2.z - v1.z);
 
-        if not Normalize(e1) then
+        //if not Normalize(e1) then
+        if e1.Normalize = 0 then
           continue;
-        Normalize(e2);
-        if IsClose(e1.dx, e2.dx) and IsClose(e1.dy, e2.dy) and
-          IsClose(e1.dz, e2.dz) then
+
+        //Normalize(e2);
+        e2.Normalize;
+        if e1 = e2 then
           continue;
+//        if IsClose(e1.dx, e2.dx) and IsClose(e1.dy, e2.dy) and
+//          IsClose(e1.dz, e2.dz) then
+//          continue;
         vxs0.Add(v1);
       end;
 
@@ -3830,12 +3779,17 @@ var
         e1.SetCoords(v1.x - v0.x, v1.y - v0.y, v1.z - v0.z);
         e2.SetCoords(v2.x - v1.x, v2.y - v1.y, v2.z - v1.z);
 
-        if not Normalize(e1) then
+        //if not Normalize(e1) then
+        if e1.Normalize = 0 then
           continue;
-        Normalize(e2);
-        if IsClose(e1.dx, e2.dx) and IsClose(e1.dy, e2.dy) and
-          IsClose(e1.dz, e2.dz) then
+
+        e2.Normalize;
+        if e1 = e2 then
           continue;
+//        Normalize(e2);
+//        if IsClose(e1.dx, e2.dx) and IsClose(e1.dy, e2.dy) and
+//          IsClose(e1.dz, e2.dz) then
+//          continue;
         vxs1.Add(v1);
       end;
 
@@ -4065,8 +4019,7 @@ begin
   end;
 end;
 
-Procedure CreateCubeSec(s: TJKSector; x, y, z: double;
-  const pnormal, edge: TVector);
+Procedure CreateCubeSec(s: TJKSector; x, y, z: double; const pnormal, edge: TVector);
 var
   nsec: TJKSector;
   asurf, osurf, nsurf: TJKSurface;
@@ -4079,23 +4032,26 @@ begin
   asurf := nsec.newsurface;
   nsec.surfaces.Add(asurf);
 
-  VMult(pnormal.dx, pnormal.dy, pnormal.dz, edge.dx, edge.dy, edge.dz,
-    enormal.dx, enormal.dy, enormal.dz);
+  // Returns cross product of pnormal x edge, i.e.: perpendicular up vector
+  enormal := pnormal.Cross(edge).Normalized;
+//  VMult(pnormal.dx, pnormal.dy, pnormal.dz, edge.dx, edge.dy, edge.dz, enormal.dx, enormal.dy, enormal.dz);
+//  Normalize(enormal);
 
-  Normalize(enormal);
-
+  // lower edge
   nvx := nsec.NewVertex;
   nvx.x := x;
   nvx.y := y;
   nvx.z := z;
   asurf.AddVertex(nvx);
+
   nvx := nsec.NewVertex;
   nvx.x := x + edge.dx;
   nvx.y := y + edge.dy;
   nvx.z := z + edge.dz;
   asurf.AddVertex(nvx);
 
-  a := VLen(edge);
+  // upper edge
+  a := edge.Length; //Vlen(edge);
 
   nvx := nsec.NewVertex;
   nvx.x := x + edge.dx + a * enormal.dx;
@@ -4157,8 +4113,7 @@ begin
   nsec.Renumber;
 end;
 
-Procedure CreateCube(lev: TJKLevel; x, y, z: double;
-  const pnormal, edge: TVector);
+Procedure CreateCube(lev: TJKLevel; x, y, z: double; const pnormal, edge: TVector);
 var
   nsec: TJKSector;
 begin
@@ -4169,32 +4124,68 @@ begin
   JedMain.SectorAdded(nsec);
 end;
 
-Function GetNearestVX(lev: TJKLevel; pX, pY, pZ: double; var rx, ry, rz: double;
-  mdist: double): boolean;
-var
-  s, v: integer;
-  cmdist, cdist: double;
+function GetNearestVertexToLine(vertices: TVertices; lx, ly, lz: double; lineNormal: TVector; radius: double;  var vx, vy, vz: double): boolean;
 begin
-  rx := pX;
-  ry := pY;
-  rz := pZ;
+  Result := false;
+
+  var nearestDist := sqr(radius);
+  for var vix := 0 to vertices.Count - 1 do
+    begin
+      // Calculate vector rejection to get closest vector between view line ray and vertex
+      //
+      //        V
+      //        x
+      //       /|
+      //      / |
+      //  lv /  | p
+      //    /   |
+      //   /    |
+      //  /     |
+      // x--->--x------- line
+      // L |
+      //  line normal
+      //
+      var v := vertices[vix];
+      var lv: TVector;
+      VectorSub3(v.x, v.y, v.z, lx, ly, lz, lv.x, lv.y, lv.z);
+
+      var p := lv - lv.ProjectOnToNormal(lineNormal);
+      var dist := p.LengthSqr;
+      if dist <= nearestDist then
+      begin
+        nearestDist := dist;
+        vx := v.x;
+        vy := v.y;
+        vz := v.z;
+        Result := true;
+      end;
+    end;
+end;
+
+function GetNearestWorldVertexToLine(lev: TJKLevel; lx, ly, lz: double; lineNormal: TVector; radius: double;  var vx, vy, vz: double): boolean;
+begin
+  vx := lx;
+  vy := ly;
+  vz := lz;
   result := false;
-  cmdist := sqr(mdist);
-  for s := 0 to lev.sectors.count - 1 do
+  var nearestDist := sqr(radius);
+  for var s := 0 to lev.sectors.count - 1 do
     With lev.sectors[s] do
-      For v := 0 to Vertices.count - 1 do
-        With Vertices[v] do
-        begin
-          cdist := sqr(x - pX) + sqr(y - pY) + sqr(z - pZ);
-          if cdist <= cmdist then
-          begin
-            cmdist := cdist;
-            rx := x;
-            ry := y;
-            rz := z;
-            result := true;
-          end;
-        end;
+    begin
+      if not  ToolBar.IsLayerVisible(layer) then
+        continue;
+      Result := GetNearestVertexToLine(vertices, lx, ly, lz, lineNormal, radius, vx, vy, vz);
+    end;
+end;
+
+function GetNearestWorldVertexToLine(lev: TJKLevel; linePoint: Tvector; lineNormal: TVector; radius: double;  var vx, vy, vz: double): boolean;
+begin
+  Result := GetNearestWorldVertexToLine(level, linePoint.x, linePoint.y, linePoint.z, lineNormal, radius, vx, vy, vz);
+end;
+
+function GetNearestWorldVertexToLine(lev: TJKLevel; linePoint: Tvector; lineNormal: TVector; radius: double;  var v: TVector): boolean; overload;
+begin
+  Result := GetNearestWorldVertexToLine(level, linePoint.x, linePoint.y, linePoint.z, lineNormal, radius, v.x, v.y, v.z);
 end;
 
 Procedure RotatePoint(ax1, ay1, az1, ax2, ay2, az2: double; angle: double;
@@ -4208,17 +4199,22 @@ begin
   nz.dx := ax2 - ax1;
   nz.dy := ay2 - ay1;
   nz.dz := az2 - az1;
-  Normalize(nz);
+  nz.Normalize;
+  //Normalize(nz);
+
   D := nz.dx * x + nz.dy * y + nz.dz * z;
   PlaneLineXn(nz, D, ax1, ay1, az1, ax2, ay2, az2, pX, pY, pZ);
   nx.dx := x - pX;
   nx.dy := y - pY;
   nx.dz := z - pZ;
-  l := VLen(nx);
+  l := nx.Normalize; //Vlen(nx);
   if IsClose(l, 0) then
     exit;
-  Normalize(nx);
-  VMult(nz.dx, nz.dy, nz.dz, nx.dx, nx.dy, nx.dz, ny.dx, ny.dy, ny.dz);
+  //Normalize(nx);
+
+  ny := nz.Cross(nx);
+  //VMult(nz.dx, nz.dy, nz.dz, nx.dx, nx.dy, nx.dz, ny.dx, ny.dy, ny.dz);
+
   u := cos(angle / 180 * Pi) * l;
   v := sin(angle / 180 * Pi) * l;
   x := pX + nx.dx * u + ny.dx * v;
@@ -4512,30 +4508,33 @@ begin
   cz := sz / sec.Vertices.count;
 end;
 
-Procedure SysCalcSurfData(surf: TJKSurface; var xv, yv: TVector;
+Procedure SysCalcSurfData(const surf: TJKSurface; var xv, yv: TVector;
   var minx, miny, maxx, maxy: double);
 var
   v0, v1: TJKVertex;
   i: integer;
   x, y: double;
 begin
-  v0 := surf.Vertices[0];
-  v1 := surf.Vertices[1];
+  v0 := surf.vertices[0];
+  v1 := surf.vertices[1];
   xv.SetCoords(v1.x - v0.x, v1.y - v0.y, v1.z - v0.z);
 
-  if not Normalize(xv) then;
-  With surf.normal do
-    VMult(dx, dy, dz, xv.dx, xv.dy, xv.dz, yv.dx, yv.dy, yv.dz);
+  //if not Normalize(xv) then;
+  if xv.Normalize = 0 then;
+
+  yv := surf.normal.Cross(xv);
+//  With surf.normal do
+//    VMult(dx, dy, dz, xv.dx, xv.dy, xv.dz, yv.dx, yv.dy, yv.dz);
 
   minx := 1E20;
   miny := 1E20;
   maxx := -1E20;
   maxy := -1E20;
-  For i := 1 to surf.Vertices.count - 1 do
+  For i := 1 to surf.vertices.count - 1 do
   begin
     v1 := surf.Vertices[i];
-    x := SMult(v1.x - v0.x, v1.y - v0.y, v1.z - v0.z, xv.dx, xv.dy, xv.dz);
-    y := SMult(v1.x - v0.x, v1.y - v0.y, v1.z - v0.z, yv.dx, yv.dy, yv.dz);
+    x := VectorDot3(v1.x - v0.x, v1.y - v0.y, v1.z - v0.z, xv.dx, xv.dy, xv.dz);   // SMult
+    y := VectorDot3(v1.x - v0.x, v1.y - v0.y, v1.z - v0.z, yv.dx, yv.dy, yv.dz);
     if x < minx then
       minx := x;
     if y < miny then
@@ -4582,7 +4581,7 @@ begin
 
 end;
 
-Procedure CalcSurfCenter(surf: TJKSurface; var cx, cy, cz: double);
+Procedure CalcSurfCenter(const surf: TJKSurface; var cx, cy, cz: double);
 var
   xv, yv: TVector;
   minx, miny, maxx, maxy: double;
@@ -4852,8 +4851,8 @@ begin
       v.z := sd.cz + sd.sfactor * (v.z - sd.cz);
     scale_vec:
       begin
-        D := SMult(v.x - sd.cx, v.y - sd.cy, v.z - sd.cz, sd.vec.dx, sd.vec.dy,
-          sd.vec.dz);
+        D := VectorDot3(v.x - sd.cx, v.y - sd.cy, v.z - sd.cz, sd.vec.dx, sd.vec.dy,
+          sd.vec.dz); // SMult
         D := (sd.sfactor - 1) * D;
         v.x := v.x + D * sd.vec.dx;
         v.y := v.y + D * sd.vec.dy;
@@ -4992,8 +4991,8 @@ begin
       z := sd.cz + sd.sfactor * (z - sd.cz);
     scale_vec:
       begin
-        D := SMult(x - sd.cx, y - sd.cy, z - sd.cz, sd.vec.dx, sd.vec.dy,
-          sd.vec.dz);
+        D := VectorDot3(x - sd.cx, y - sd.cy, z - sd.cz, sd.vec.dx, sd.vec.dy,
+          sd.vec.dz); //SMult
         D := sd.sfactor - D;
         x := x + D * sd.vec.dx;
         y := y + D * sd.vec.dy;
@@ -5066,29 +5065,28 @@ begin
   v.Mark := 1;
 end;
 
-Procedure FlipVertexOverPlane(v: TJKVertex; const pnorm: TVector;
-  cx, cy, cz: double);
+Procedure FlipXYZ(var x, y, z: double; const pnorm: TVector; cx, cy, cz: double);
 var
   D: double;
 begin
-  if v.Mark <> 0 then
-    exit;
-  D := SMult(pnorm.dx, pnorm.dy, pnorm.dz, v.x - cx, v.y - cy, v.z - cz);
-  v.x := v.x - pnorm.dx * 2 * D;
-  v.y := v.y - pnorm.dy * 2 * D;
-  v.z := v.z - pnorm.dz * 2 * D;
-  v.Mark := 1;
-end;
-
-Procedure FlipXYZ(var x, y, z: double; const pnorm: TVector;
-  cx, cy, cz: double);
-var
-  D: double;
-begin
-  D := SMult(pnorm.dx, pnorm.dy, pnorm.dz, x - cx, y - cy, z - cz);
+  D := pnorm.Dot(x - cx, y - cy, z - cz); //SMult(pnorm.dx, pnorm.dy, pnorm.dz, x - cx, y - cy, z - cz);
   x := x - pnorm.dx * 2 * D;
   y := y - pnorm.dy * 2 * D;
   z := z - pnorm.dz * 2 * D;
+end;
+
+Procedure FlipVertexOverPlane(v: TJKVertex; const pnorm: TVector; cx, cy, cz: double);
+var
+  D: double;
+begin
+  if v.mark <> 0 then
+    exit;
+//  D := pnorm.Dot(v.x - cx, v.y - cy, v.z - cz); //SMult(pnorm.dx, pnorm.dy, pnorm.dz, v.x - cx, v.y - cy, v.z - cz);
+//  v.x := v.x - pnorm.dx * 2 * D;
+//  v.y := v.y - pnorm.dy * 2 * D;
+//  v.z := v.z - pnorm.dz * 2 * D;
+  FlipXYZ(v.x, v.y, v.z, pnorm, cx, cy, cz);
+  v.Mark := 1;
 end;
 
 Procedure FlipSurface(surf: TJKSurface);
@@ -5097,12 +5095,12 @@ var
   vx: TJKVertex;
   tv: TTXVertex;
 begin
-  for i := 0 to (surf.Vertices.count div 2) - 1 do
+  for i := 0 to (surf.vertices.count div 2) - 1 do
     begin
-      n := surf.Vertices.count - i - 1;
-      vx := surf.Vertices[i];
-      surf.Vertices[i] := surf.Vertices[n];
-      surf.Vertices[n] := vx;
+      n := surf.vertices.count - i - 1;
+      vx := surf.vertices[i];
+      surf.vertices[i] := surf.vertices[n];
+      surf.vertices[n] := vx;
 
       tv := surf.txvertices[i];
       surf.txvertices[i] := surf.txvertices[n];
@@ -5383,25 +5381,33 @@ begin
     nv1 := -1;
     nv2 := 0;
   end;
-  VMult(surf.normal.dx, surf.normal.dy, surf.normal.dz, surf1.normal.dx,
-    surf1.normal.dy, surf1.normal.dz, lv.dx, lv.dy, lv.dz);
 
-  if Normalize(lv) then
+  lv := surf.normal.Cross(surf1.normal);
+//  VMult(surf.normal.dx, surf.normal.dy, surf.normal.dz, surf1.normal.dx,
+//    surf1.normal.dy, surf1.normal.dz, lv.dx, lv.dy, lv.dz);
+
+  //if Normalize(lv) then
+  if lv.Normalize <> 0 then
   begin
-    VMult(surf.normal.dx, surf.normal.dy, surf.normal.dz, lv.dx, lv.dy, lv.dz,
-      p1v.dx, p1v.dy, p1v.dz);
-    VMult(surf1.normal.dx, surf1.normal.dy, surf1.normal.dz, lv.dx, lv.dy,
-      lv.dz, p2v.dx, p2v.dy, p2v.dz);
+    p1v := surf.normal.Cross(lv);
+//    VMult(surf.normal.dx, surf.normal.dy, surf.normal.dz, lv.dx, lv.dy, lv.dz,
+//      p1v.dx, p1v.dy, p1v.dz);
 
-    a := SMult(p1v.dx, p1v.dy, p1v.dz, un.dx, un.dy, un.dz);
-    b := SMult(lv.dx, lv.dy, lv.dz, un.dx, un.dy, un.dz);
-    un.SetCoords(a * p2v.dx + b * lv.dx, a * p2v.dy + b * lv.dy,
-      a * p2v.dz + b * lv.dz);
+    p2v := surf1.normal.Cross(lv);
+//    VMult(surf1.normal.dx, surf1.normal.dy, surf1.normal.dz, lv.dx, lv.dy,
+//      lv.dz, p2v.dx, p2v.dy, p2v.dz);
 
-    a := SMult(p1v.dx, p1v.dy, p1v.dz, vn.dx, vn.dy, vn.dz);
-    b := SMult(lv.dx, lv.dy, lv.dz, vn.dx, vn.dy, vn.dz);
-    vn.SetCoords(a * p2v.dx + b * lv.dx, a * p2v.dy + b * lv.dy,
-      a * p2v.dz + b * lv.dz);
+    a := p1v.Dot(un); //SMult(p1v.dx, p1v.dy, p1v.dz, un.dx, un.dy, un.dz);
+    b := lv.Dot(un); //SMult(lv.dx, lv.dy, lv.dz, un.dx, un.dy, un.dz);
+    un := p2v * a + lv * b;
+//    un.SetCoords(a * p2v.dx + b * lv.dx, a * p2v.dy + b * lv.dy,
+//      a * p2v.dz + b * lv.dz);
+
+    a := p1v.Dot(vn); // SMult(p1v.dx, p1v.dy, p1v.dz, vn.dx, vn.dy, vn.dz);
+    b := lv.Dot(vn); // SMult(lv.dx, lv.dy, lv.dz, vn.dx, vn.dy, vn.dz);
+    vn := p2v * a + lv * b;
+//    vn.SetCoords(a * p2v.dx + b * lv.dx, a * p2v.dy + b * lv.dy,
+//      a * p2v.dz + b * lv.dz);
   end;
 
   SaveSecUndo(surf1.sector, ch_changed, sc_both);
@@ -5489,9 +5495,12 @@ begin
       v2 := Vertices[n];
       n := NextVX(n);
       v3 := Vertices[n];
-      VMult(v3.x - v2.x, v3.y - v2.y, v3.z - v2.z, v1.x - v2.x, v1.y - v2.y,
-        v1.z - v2.z, v.dx, v.dy, v.dz);
-      if SMult(v.dx, v.dy, v.dz, normal.dx, normal.dy, normal.dz) < -0.0001 then
+
+      VectorCross3(v3.x - v2.x, v3.y - v2.y, v3.z - v2.z,
+        v1.x - v2.x, v1.y - v2.y,v1.z - v2.z,
+        v.dx, v.dy, v.dz); //VMult
+      //if SMult(v.dx, v.dy, v.dz, normal.dx, normal.dy, normal.dz) < -0.0001 then
+      if v.Dot(normal) < -0.0001 then
         exit;
     end;
   result := true;
@@ -5507,12 +5516,11 @@ begin
   for i := 0 to sec.surfaces.count - 1 do
     With sec.surfaces[i] do
     begin
-      v0 := Vertices[0];
-      for j := 0 to sec.Vertices.count - 1 do
+      v0 := vertices[0];
+      for j := 0 to sec.vertices.count - 1 do
       begin
-        v := sec.Vertices[j];
-        D := SMult(v.x - v0.x, v.y - v0.y, v.z - v0.z, normal.dx, normal.dy,
-          normal.dz);
+        v := sec.vertices[j];
+        D := VectorDot3(v.x - v0.x, v.y - v0.y, v.z - v0.z, normal.dx, normal.dy, normal.dz); //SMult
         If D < -0.001 then
           exit;
       end;
@@ -5691,7 +5699,7 @@ begin
 
   for j := 0 to sec.Vertices.count - 1 do
   begin
-    v := sec.Vertices[j];
+    v := sec.vertices[j];
     nv := newsc.NewVertex;
     nv.x := (v.x - cx) * nx.dx + (v.y - cy) * ny.dx + (v.z - cz) * nz.dx
       + dx + cx;
@@ -5706,15 +5714,16 @@ begin
   for i := 0 to sec.surfaces.count - 1 do
   begin
     sf := sec.surfaces[i];
-    sf1 := newsc.newsurface;
+    sf1 := newsc.NewSurface;
     sf1.Assign(sf);
     if sf.adjoin <> nil then
       sf1.nadj := 1;
     newsc.surfaces.Add(sf1);
-    for j := 0 to sf.Vertices.count - 1 do
+
+    for j := 0 to sf.vertices.count - 1 do
     begin
       v := sf.Vertices[j];
-      sf1.AddVertex(newsc.Vertices[v.Num]);
+      sf1.AddVertex(newsc.vertices[v.Num]);
       sf1.txvertices[j].Assign(sf.txvertices[j]);
     end;
 
@@ -5760,31 +5769,42 @@ var
         break;
       end;
     end;
+
     if (sf1 = nil) and (sf2 = nil) then
       vec := surf.normal
     else if (sf1 <> nil) and (sf2 = nil) then
-    begin
-      VMult(surf.normal.dx, surf.normal.dy, surf.normal.dz, sf1.normal.dx,
-        sf1.normal.dy, sf1.normal.dz, vec1.dx, vec1.dy, vec1.dz);
-      VMult(vec1.dx, vec1.dy, vec1.dz, sf1.normal.dx, sf1.normal.dy,
-        sf1.normal.dz, vec.dx, vec.dy, vec.dz);
-      if VLen(vec) < 0.01 then
-        vec := sf.normal;
-    end
-    else
-    begin
-      VMult(sf1.normal.dx, sf1.normal.dy, sf1.normal.dz, sf2.normal.dx,
-        sf2.normal.dy, sf2.normal.dz, vec.dx, vec.dy, vec.dz);
-      if VLen(vec) < 0.01 then
       begin
-        VMult(surf.normal.dx, surf.normal.dy, surf.normal.dz, sf1.normal.dx,
-          sf1.normal.dy, sf1.normal.dz, vec1.dx, vec1.dy, vec1.dz);
-        VMult(vec1.dx, vec1.dy, vec1.dz, sf1.normal.dx, sf1.normal.dy,
-          sf1.normal.dz, vec.dx, vec.dy, vec.dz);
-        if VLen(vec) < 0.01 then
+        vec1 := surf.normal.Cross(sf1.normal);
+  //      VMult(surf.normal.dx, surf.normal.dy, surf.normal.dz, sf1.normal.dx,
+  //        sf1.normal.dy, sf1.normal.dz, vec1.dx, vec1.dy, vec1.dz);
+
+        vec := vec1.Cross(sf1.normal);
+  //      VMult(vec1.dx, vec1.dy, vec1.dz, sf1.normal.dx, sf1.normal.dy,
+  //        sf1.normal.dz, vec.dx, vec.dy, vec.dz);
+        //if VLen(vec) < 0.01 then
+        if vec.Length < 0.01 then
           vec := sf.normal;
+      end
+    else
+      begin
+        vec := sf1.normal.Cross(sf2.normal);
+  //      VMult(sf1.normal.dx, sf1.normal.dy, sf1.normal.dz, sf2.normal.dx,
+  //        sf2.normal.dy, sf2.normal.dz, vec.dx, vec.dy, vec.dz);
+  //      if VLen(vec) < 0.01 then
+        if vec.Length < 0.01 then
+        begin
+          vec1 := surf.normal.Cross(sf1.normal);
+  //        VMult(surf.normal.dx, surf.normal.dy, surf.normal.dz, sf1.normal.dx,
+  //          sf1.normal.dy, sf1.normal.dz, vec1.dx, vec1.dy, vec1.dz);
+
+          vec := vec1.Cross(sf1.normal);
+  //        VMult(vec1.dx, vec1.dy, vec1.dz, sf1.normal.dx, sf1.normal.dy,
+  //          sf1.normal.dz, vec.dx, vec.dy, vec.dz);
+  //        if VLen(vec) < 0.01 then
+          if vec.Length < 0.01 then
+            vec := sf.normal;
+        end;
       end;
-    end;
   end;
 
 begin
@@ -5798,35 +5818,38 @@ begin
     y0 := y;
     z0 := z;
   end;
+
   for i := 0 to surf.Vertices.count - 1 do
-  begin
-    vx := surf.Vertices[i];
-    With surf, vx do
-      a := Abs(D - (normal.dx * x + normal.dy * y + normal.dz * z));
-    if a <= 0.001 then
-      continue;
-    GetLineVec(vx, vec);
-    With vx do
-      if PlaneLineXn(surf.normal, D, x, y, z, x + vec.dx, y + vec.dy,
-        z + vec.dz, ax, ay, az) then
-      begin
-        if (sqr(vx.x - ax) + sqr(vx.y - ay) + sqr(vx.z - az)) < 1 then
+    begin
+      vx := surf.Vertices[i];
+      With surf, vx do
+        a := Abs(D - normal.Dot(x, y, z));
+        //a := Abs(D - (normal.dx * x + normal.dy * y + normal.dz * z));
+      if a <= 0.001 then
+        continue;
+
+      GetLineVec(vx, vec);
+      With vx do
+        if PlaneLineXn(surf.normal, D, x, y, z, x + vec.dx, y + vec.dy,
+          z + vec.dz, ax, ay, az) then
         begin
-          vx.x := ax;
-          vx.y := ay;
-          vx.z := az;
+          if (sqr(vx.x - ax) + sqr(vx.y - ay) + sqr(vx.z - az)) < 1 then
+          begin
+            vx.x := ax;
+            vx.y := ay;
+            vx.z := az;
+          end
+          else
+            result := false;
         end
         else
+        begin
+          PanMessageFmt(mt_info,
+            'Couldn''t force vertex %d,%d to plane of surface %d,%d',
+            [sec.Num, vx.Num, sec.Num, surf.Num]);
           result := false;
-      end
-      else
-      begin
-        PanMessageFmt(mt_info,
-          'Couldn''t force vertex %d,%d to plane of surface %d,%d',
-          [sec.Num, vx.Num, sec.Num, surf.Num]);
-        result := false;
-      end;
-  end;
+        end;
+    end;
   surf.RecalcAll;
   JedMain.SectorChanged(sec);
 end;
@@ -5946,10 +5969,11 @@ var
       { Check if the intersection is close to the end of line
         if it is, check if the surface is facing the light.
         if it doesn't, block. Otherwise - don't }
-      dist := sqr(x - x2) + sqr(y - y2) + sqr(z - z2);
+      dist := VectorDistSqr3(x, y, z, x2, y2, z2);// sqr(x - x2) + sqr(y - y2) + sqr(z - z2);
       if dist < 0.0001 then
         exit;
-      dist := sqr(x - x1) + sqr(y - y1) + sqr(z - z1);
+
+      dist := VectorDistSqr3(x, y, z, x1, y1, z1); //sqr(x - x1) + sqr(y - y1) + sqr(z - z1);
       if dist < 0.0001 then
         exit;
       { begin
@@ -6061,30 +6085,29 @@ begin { CalcLighting }
             lt := lev.Lights[l];
 
             { Check if the light is in front of surface }
+            if surf.normal.Dot(lt.position.Sub(v0.x, v0.y, v0.z)) < 0.001 then
+              continue;
+//            With surf do
+//              if SMult(normal.dx, normal.dy, normal.dz, lt.position.x - v0.x,
+//                lt.position.y - v0.y, lt.position.z - v0.z) < 0.001 then
+//                continue;
 
-            With surf do
-              if SMult(normal.dx, normal.dy, normal.dz, lt.position.x - v0.x,
-                lt.position.y - v0.y, lt.position.z - v0.z) < 0.001 then
-                continue;
-
-            for v := 0 to surf.Vertices.count - 1 do
+            for v := 0 to surf.vertices.count - 1 do
             begin
               { Check distance from the point to light }
               cv := surf.Vertices[v];
 
-              dist := sqrt(sqr(lt.position.x - cv.x) + sqr(lt.position.y - cv.y) +
-                sqr(lt.position.z - cv.z));
+              dist := lt.position.Distance(cv.x, cv.y, cv.z); //sqrt(sqr(lt.position.x - cv.x) + sqr(lt.position.y - cv.y) +sqr(lt.position.z - cv.z));
               if dist >= lt.range then
                 continue;
 
               { if light and vertex aren't in the same sector }
               { Check if the light is blocked }
-              if (s <> lt.Mark) and (lt.flags and LF_NoBlock = 0) then
+              if (s <> lt.mark) and (lt.flags and LF_NoBlock = 0) then
                 if IsBlocked(lt.position.x, lt.position.y, lt.position.z, cv.x, cv.y, cv.z) then
                   continue;
 
               { Light vertex }
-
               With surf.txvertices[v] do
               begin
                   var intf := lt.Intensity * sqr((lt.range - dist) / lt.range);
@@ -6123,7 +6146,7 @@ begin
     (z - real_min(z1, z2) > -1E-4) and (real_max(z1, z2) - z > -1E-4);
 end;
 
-Function IsPointOnSurfaceNew(surf: TJKSurface; x, y, z: double): boolean;
+Function IsPointOnSurfaceNew(const surf: TJKSurface; const x, y, z: double): boolean;
 var
   xv, yv: TVector;
 
@@ -6137,15 +6160,21 @@ var
   x1, x2, y1, y2, z1, z2: double;
 begin
   result := false;
-  With surf.normal do
-    if Abs(dx) < 0.99 then
-      VMult(dx, dy, dz, 1, 0, 0, xv.dx, xv.dy, xv.dz)
-    else
-      VMult(dx, dy, dz, 0, 1, 0, xv.dx, xv.dy, xv.dz);
-  Normalize(xv);
+  if Abs(surf.normal.dx) < 0.99 then
+    xv := surf.normal.Cross(TVector.right).Normalized
+  else
+    xv := surf.normal.Cross(TVector.forward).Normalized;
 
-  With surf.normal do
-    VMult(dx, dy, dz, xv.dx, xv.dy, xv.dz, yv.dx, yv.dy, yv.dz);
+//  With surf.normal do
+//    if Abs(dx) < 0.99 then
+//      VMult(dx, dy, dz, 1, 0, 0, xv.dx, xv.dy, xv.dz)
+//    else
+//      VMult(dx, dy, dz, 0, 1, 0, xv.dx, xv.dy, xv.dz);
+//  Normalize(xv);
+
+  yv := surf.normal.Cross(xv);
+//  With surf.normal do
+//    VMult(dx, dy, dz, xv.dx, xv.dy, xv.dz, yv.dx, yv.dy, yv.dz);
 
   With surf do
   begin
@@ -6154,17 +6183,17 @@ begin
     z0 := z;
   end;
 
-  ppx := SMult(x - x0, y - y0, z - z0, xv.dx, xv.dy, xv.dz);
-  ppy := SMult(x - x0, y - y0, z - z0, yv.dx, yv.dy, yv.dz);
+  ppx := VectorDot3(x - x0, y - y0, z - z0, xv.dx, xv.dy, xv.dz); // SMult
+  ppy := VectorDot3(x - x0, y - y0, z - z0, yv.dx, yv.dy, yv.dz);
 
   p1x := 0;
   p1y := 0;
 
-  For i := 0 to surf.Vertices.count - 1 do
+  For i := 0 to surf.vertices.count - 1 do
   begin
-    v1 := surf.Vertices[surf.NextVX(i)];
-    p2x := SMult(v1.x - x0, v1.y - y0, v1.z - z0, xv.dx, xv.dy, xv.dz);
-    p2y := SMult(v1.x - x0, v1.y - y0, v1.z - z0, yv.dx, yv.dy, yv.dz);
+    v1 := surf.vertices[surf.NextVX(i)];
+    p2x := VectorDot3(v1.x - x0, v1.y - y0, v1.z - z0, xv.dx, xv.dy, xv.dz); // SMult
+    p2y := VectorDot3(v1.x - x0, v1.y - y0, v1.z - z0, yv.dx, yv.dy, yv.dz);
 
     dist := (p1x - ppx) * (p2y - ppy) - (p2x - ppx) * (p1y - ppy);
     if (dist < -CloseEnough) then
@@ -6172,7 +6201,6 @@ begin
 
     p1x := p2x;
     p1y := p2y;
-
   end;
 
   result := true;
@@ -6188,20 +6216,23 @@ var
   k: double;
 begin
   result := false;
-  if surf.Vertices.count = 0 then
+  if surf.vertices.count = 0 then
     exit;
-  with surf.Vertices[0] do
+
+  with surf.vertices[0] do
   begin
     x0 := x;
     y0 := y;
     z0 := z;
   end;
 
-  With surf.normal do
-  begin
-    dist1 := SMult(dx, dy, dz, x1 - x0, y1 - y0, z1 - z0);
-    dist2 := SMult(dx, dy, dz, x2 - x0, y2 - y0, z2 - z0);
-  end;
+  dist1 := surf.normal.Dot(x1 - x0, y1 - y0, z1 - z0);
+  dist2 := surf.normal.Dot(x2 - x0, y2 - y0, z2 - z0);
+//  With surf.normal do
+//  begin
+//    dist1 := SMult(dx, dy, dz, x1 - x0, y1 - y0, z1 - z0);
+//    dist2 := SMult(dx, dy, dz, x2 - x0, y2 - y0, z2 - z0);
+//  end;
 
   if (dist1 > 0.0001) and (dist2 > 0.0001) then
     exit;
@@ -6269,13 +6300,11 @@ var
       then
         continue;
 
-      { If a surface doesn't face the ray, skip }
-      With surf.normal do
-        if SMult(lvec.dx, lvec.dy, lvec.dz, dx, dy, dz) <= -0.0001 then
+      // If a surface doesn't face the ray, skip
+      if lvec.Dot(surf.normal) <= -0.0001 then //SMult(lvec.dx, lvec.dy, lvec.dz, dx, dy, dz)
           continue;
 
       { Check if ray intersects the surface }
-
       if IsSurfCrossed(surf, lt.position.x, lt.position.y, lt.position.z, vx.x, vx.y, vx.z) then
       begin
         result := CanReach(surf.adjoin.sector);
@@ -6301,14 +6330,14 @@ var
     i: integer;
   begin
     for i := 0 to lev.sectors.count - 1 do
-      lev.sectors[i].Mark := 0;
+      lev.sectors[i].mark := 0;
     result := not CanReach(lsec);
   end;
 
 begin
   { Find sectors for lights }
   nl := 0;
-  for l := 0 to lev.Lights.count - 1 do
+  for l := 0 to lev.lights.count - 1 do
     With lev.Lights[l] do
     begin
       Mark := FindSectorForXYZ(lev, position.x, position.y, position.z);
@@ -6341,21 +6370,21 @@ begin
     for sf := 0 to sec.surfaces.count - 1 do
     begin
       surf := sec.surfaces[sf];
-      if surf.Vertices.count = 0 then
+      if surf.vertices.count = 0 then
         continue; { Just in case }
 
-      for l := 0 to lev.Lights.count - 1 do
+      for l := 0 to lev.lights.count - 1 do
       begin
-        lt := Level.Lights[l];
-        if lt.Mark = -1 then
+        lt := level.lights[l];
+        if lt.mark = -1 then
           continue;
-        lsec := Level.sectors[lt.Mark];
-        range2 := sqr(lt.range);
-        vx := surf.Vertices[0];
-        { if a surface doesn't face the light, skip it }
 
-        With surf.normal do
-          D := SMult(lt.position.x - vx.x, lt.position.y - vx.y, lt.position.z - vx.z, dx, dy, dz);
+        lsec := level.sectors[lt.mark];
+        range2 := sqr(lt.range);
+        vx := surf.vertices[0];
+
+        // if a surface doesn't face the light, skip it
+        D := lt.position.Sub(vx.x, vx.y, vx.z).Dot(surf.normal);// With surf.normal do SMult(lt.position.x - vx.x, lt.position.y - vx.y, lt.position.z - vx.z, dx, dy, dz);
         if D <= 0 then
           continue;
 
@@ -6368,10 +6397,11 @@ begin
             panMessageFmt(mt_info,'Light %d',[l]);
             end; }
 
-          vx := surf.Vertices[v];
-          lvec.SetCoords(lt.position.x - vx.x, lt.position.y - vx.y, lt.position.z - vx.z);
+          vx := surf.vertices[v];
+          lvec := lt.position.Sub(vx.x, vx.y, vx.z);
+          //lvec.SetCoords(lt.position.x - vx.x, lt.position.y - vx.y, lt.position.z - vx.z);
 
-          dist2 := sqr(lvec.dx) + sqr(lvec.dy) + sqr(lvec.dz);
+          dist2 := lvec.Dot(lvec); //sqr(lvec.dx) + sqr(lvec.dy) + sqr(lvec.dz);
           if dist2 >= range2 then
             continue; { Light is out of range }
 
@@ -6394,7 +6424,7 @@ begin
               r:=r+lt.Intensity*dist2*lt.r;
               g:=g+lt.Intensity*dist2*lt.g;
               b:=b+lt.Intensity*dist2*lt.b; }
-            var intf := lt.Intensity * sqr((lt.range - dist) / lt.range);
+            var intf := lt.intensity * sqr((lt.range - dist) / lt.range);
             if CurrentProject = JKDF2 then
                color := MakeColor(color.Intensity + intf)
             else

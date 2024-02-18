@@ -85,7 +85,7 @@ interface
 uses u_pj3dos, Geometry, Classes, J_Level, Forms, Windows, Messages,
      Images, graph_files, Graphics, files, fileOperations, misc_utils,
      lev_utils, sysUtils, GlobalVars, ExtCtrls, Generics.Collections,
-     Generics.Defaults, Jed_Main, Math;
+     Generics.Defaults, Jed_Main, System.Math;
 
 const
   FrontPlane     = 0.008;  // jones3D engine 0.0156;
@@ -116,20 +116,20 @@ T3DPoly=class
   geo: TGeoMode;
   light: TLightMode;
 
-  ambientLight: TColorF; // Sector colors
+  ambientLight: TColorF; // sector colors
   extraLight: TColorF;   // face light color
   tint: TColorF;         // sector tint
 
-  normal:Tvector;
-  vxds:TList;
-  tx:T3DPTexture;
+  normal: TVector;
+  vxds: TList;
+  tx: T3DPTexture;
 
   distance: Double; // Distance from camera
 
   Constructor Create;
-  Destructor Destroy;override;
+  Destructor Destroy; override;
   Function AddVXD:TVXDets;
-  Function GetVXD(n:integer):TVXDets;
+  Function GetVXD(n:integer): TVXDets;
   Procedure RecalcDistance;
 
   Function GetLitColor(color: TColorF): TColorF;
@@ -174,7 +174,7 @@ end;
 TPickType=(pk_nothing,pk_surface,pk_thing);
 
 TPreviewRender=class
-  CamX,CamY,CamZ:Double;
+  CamX, CamY, CamZ: Double;
   PCH,YAW:Double;
   whandle:HWND;
   vwidth,vheight:integer;
@@ -263,7 +263,7 @@ private
   renderer: TPreviewRender;
 end;
 
-TNewPRenderer=class(TPreviewRender)
+TNewPRenderer = class(TPreviewRender)
   TXList,CmpList:TStringList;
   sectors: TSectors;
   things: TThings;
@@ -280,14 +280,14 @@ TNewPRenderer=class(TPreviewRender)
 
   Procedure ClearSectors;override;
   Procedure ClearThings;override;
-  Procedure AddSector(s:TJKSector);override;
-  Procedure DeleteSector(s:TJKSector);override;
-  Procedure UpdateSector(s:TJKSector);override;
-  Procedure AddThing(th:TJKThing);override;
-  Procedure DeleteThing(th:TJKThing);override;
-  Procedure UpdateThing(th:TJKThing);override;
+  Procedure AddSector(s: TJKSector);override;
+  Procedure DeleteSector(s: TJKSector);override;
+  Procedure UpdateSector(s: TJKSector);override;
+  Procedure AddThing(th: TJKThing);override;
+  Procedure DeleteThing(th: TJKThing);override;
+  Procedure UpdateThing(th: TJKThing);override;
 
-  Procedure SetViewToThing(th:TJKThing; zoomOut: Double = 0.0; pitchOffset: double = 0; yawOffset: double = 0);override;
+  Procedure SetViewToThing(th: TJKThing; zoomOut: Double = 0.0; pitchOffset: double = 0; yawOffset: double = 0);override;
 
   Procedure Redraw;override;
   Destructor Destroy;override;
@@ -332,11 +332,11 @@ Private
 
   Procedure Init;
   Function GetTexture(const name,cmp:string):T3DPTexture;
-  Procedure LoadMasterPal(l:TJKLevel);
-  Function SecToMesh(sec:TJKSector):T3DPMesh;
-  Function ThingToMesh(th:TJKThing):T3DPMesh;
-  Function BadThingMesh(th:TJKThing):T3DPMesh;
-  Function A3DOToMesh(th:TJKThing;a3do:TPJ3DO):T3DPMesh;
+  Procedure LoadMasterPal(l: TJKLevel);
+  Function SecToMesh(sec: TJKSector):T3DPMesh;
+  Function ThingToMesh(th: TJKThing):T3DPMesh;
+  Function BadThingMesh(th: TJKThing):T3DPMesh;
+  Function A3DOToMesh(th: TJKThing; a3do: TPJ3DO):T3DPMesh;
   Procedure RenderCircle(polys: TList<T3DPoly>; cx, cy, cz, rad: double);
 
   Procedure RenderWorldGeometry(const [Ref] frustrum: TClipFrustum);
@@ -348,11 +348,12 @@ Private
   Procedure RenderDebugPolys;
   Procedure RenderSelection(const [Ref] frustrum: TClipFrustum);
   Procedure RenderWireframe(const polys: TList<T3DPoly>; wireColor: TColorF);
-  Procedure FlushCaches; //  flushes rdCach & rdAlphaCache
+  Procedure FlushCaches; // flushes rdCach & rdAlphaCache
 end;
 
 
 implementation
+uses math;
 
 Constructor TPreviewRender.Create(aForm: TForm; geoMode: TGeoMode; lightMode: TLightMode);
 begin
@@ -821,10 +822,10 @@ end;
 
 class Function TNewPRenderer.IsInFront(const p,n: TVector; c: T3DPVertex; rad: single): integer;
 begin
-  Result:=0;
-  var d: double := Smult(c.x-p.x,c.y-p.y,c.z-p.z,n.dx,n.dy,n.dz);
-  if d>rad then Result:=1 else
-  if d>-rad then Result:=2 else result:=0;
+  Result := 0;
+  var d: double := VectorDot3(c.x-p.x, c.y-p.y, c.z-p.z, n.dx,n.dy,n.dz); //Smult
+  if d > rad then Result := 1 else
+  if d > -rad then Result := 2 else result := 0;
 end;
 
 class Function TNewPRenderer.IsInFront(const [ref] f: TClipFrustum; m: T3DPMesh): Boolean;
@@ -848,48 +849,46 @@ begin
   fn.SetCoords(ax2-ax1, ay2-ay1, az2-az1);
 
   {Front plane}
-  Normalize(fn);
-  fp.SetCoords(CamX+FrontPlane*fn.dx,CamY+FrontPlane*fn.dy,CamZ+FrontPlane*fn.dz);
+  //Normalize(fn);
+  fn.Normalize;
+  fp := fn.Scaled(FrontPlane).Add(CamX, CamY, CamZ);
+  //fp.SetCoords(CamX+FrontPlane*fn.dx, CamY+FrontPlane*fn.dy, CamZ+FrontPlane*fn.dz);
 
   {Left plane}
   GetWorldLine(0,0,ax1,ay1,az1,ax2,ay2,az2);
   GetWorldLine(0,vheight,bx1,by1,bz1,bx2,by2,bz2);
 
-  Vmult(bx1-ax1,by1-ay1,bz1-az1,
-       ax2-ax1,ay2-ay1,az2-az1,
-       ln.dx,ln.dy,ln.dz);
-  Normalize(ln);
-  lp.SetCoords(ax1,ay1,az1);
+  VectorCross3(bx1-ax1, by1-ay1, bz1-az1, ax2-ax1, ay2-ay1, az2-az1, ln.dx, ln.dy, ln.dz); // Vmult
+  ln.Normalize;
+  //Normalize(ln);
+  lp.SetCoords(ax1, ay1, az1);
 
   {Right plane}
-  GetWorldLine(vwidth,0,ax1,ay1,az1,ax2,ay2,az2);
-  GetWorldLine(vwidth,vheight,bx1,by1,bz1,bx2,by2,bz2);
+  GetWorldLine(vwidth, 0, ax1, ay1, az1, ax2, ay2, az2);
+  GetWorldLine(vwidth, vheight, bx1, by1, bz1, bx2, by2, bz2);
 
-  Vmult(ax2-ax1,ay2-ay1,az2-az1,
-       bx1-ax1,by1-ay1,bz1-az1,
-       rn.dx,rn.dy,rn.dz);
-  Normalize(rn);
-  rp.SetCoords(ax1,ay1,az1);
+  VectorCross3(ax2-ax1, ay2-ay1, az2-az1, bx1-ax1, by1-ay1, bz1-az1, rn.dx, rn.dy, rn.dz); // Vmult
+  rn.Normalize;
+  //Normalize(rn);
+  rp.SetCoords(ax1, ay1, az1);
 
   {Top plane}
-  GetWorldLine(0,0,ax1,ay1,az1,ax2,ay2,az2);
-  GetWorldLine(vwidth,0,bx1,by1,bz1,bx2,by2,bz2);
+  GetWorldLine(0, 0, ax1, ay1, az1, ax2, ay2, az2);
+  GetWorldLine(vwidth, 0, bx1, by1, bz1, bx2, by2, bz2);
 
-  Vmult(ax2-ax1,ay2-ay1,az2-az1,
-       bx1-ax1,by1-ay1,bz1-az1,
-       tn.dx,tn.dy,tn.dz);
-  Normalize(tn);
-  tp.SetCoords(ax1,ay1,az1);
+  VectorCross3(ax2-ax1, ay2-ay1, az2-az1, bx1-ax1, by1-ay1, bz1-az1, tn.dx, tn.dy, tn.dz); // Vmult
+  //Normalize(tn);
+  tn.Normalize;
+  tp.SetCoords(ax1, ay1, az1);
 
   {Bottom plane}
-  GetWorldLine(0,vheight,ax1,ay1,az1,ax2,ay2,az2);
-  GetWorldLine(vwidth,vheight,bx1,by1,bz1,bx2,by2,bz2);
+  GetWorldLine(0, vheight, ax1 ,ay1, az1, ax2, ay2, az2);
+  GetWorldLine(vwidth, vheight, bx1, by1, bz1, bx2, by2, bz2);
 
-  Vmult(bx1-ax1,by1-ay1,bz1-az1,
-       ax2-ax1,ay2-ay1,az2-az1,
-       bn.dx,bn.dy,bn.dz);
-  Normalize(bn);
-  bp.SetCoords(ax1,ay1,az1);
+  VectorCross3(bx1-ax1,by1-ay1,bz1-az1, ax2-ax1,ay2-ay1,az2-az1, bn.dx,bn.dy,bn.dz);  // Vmult
+  bn.Normalize;
+  //Normalize(bn);
+  bp.SetCoords(ax1, ay1, az1);
 
   Result.nearPlane.pos := fp;
   Result.nearPlane.normal := fn;
@@ -1097,28 +1096,31 @@ Procedure TNewPRenderer.RenderSelection(const [Ref] frustrum: TClipFrustum);
   Procedure AddMeshSurface(m: T3DPMesh; surfIdx: integer);
     begin
       if not IsInFront(frustrum, m) then exit;
-      if surfIdx > m.polys.Count - 1 then exit;
+      if surfIdx >= m.polys.Count then exit;
       rdCache.AddPoly(m.GetPoly(surfIdx));
     end;
 
   Procedure AddSectorMesh(secNum: integer);
     begin
-      AddMesh(GetMesh(SCList, sectors, Level.Sectors[secNum], secNum));
+      if not CheckSectorIndex(level, secNum) then // can be out of bound index in case it was just deleted
+        exit;
+      AddMesh(GetMesh(SCList, sectors, level.sectors[secNum], secNum));
     end;
 
   Procedure AddSectorSurface(secNum: integer; surfIdx: integer);
     begin
-      var m := GetMesh(SCList, sectors, Level.Sectors[secNum], secNum);
+      if not CheckSurfaceIndex(level, secNum, surfIdx) then // can be out of bound index in case it was just deleted
+        exit;
+      var m := GetMesh(SCList, sectors, level.sectors[secNum], secNum);
       if m = nil then exit;
-      if not IsInFront(frustrum, m) then exit;
-
-      if surfIdx >= m.polys.Count then exit;
-      rdCache.AddPoly(m.GetPoly(surfIdx));
+      AddMeshSurface(m, surfIdx);
     end;
 
   Procedure AddThingMesh(thNum: integer);
     begin
-      AddMesh(GetMesh(THList, things, Level.Things[thNum], thNum));
+      if not CheckThingIndex(level, thNum) then // can be out of bound index in case it was just deleted
+        exit;
+      AddMesh(GetMesh(THList, things, level.things[thNum], thNum));
     end;
 
 begin
@@ -1128,17 +1130,18 @@ begin
   EnableZTest(noClipSelectionOutline = false);
   try
     begin
-      case JedMain.Map_mode of
+      case JedMain.mapMode of
         MM_SC:
           begin
             // Current multiple selection
             wfColor := multipleSelectionColor;
             for var i := 0 to JedMain.scsel.Count - 1 do
-            begin
-              const sc = JedMain.scsel.GetSC(i);
-              if sc = JedMain.Cur_SC then continue;
-              AddSectorMesh(sc);
-            end;
+              begin
+                const sc = JedMain.scsel.GetSC(i);
+                if sc = JedMain.Cur_SC then continue;
+                AddSectorMesh(sc);
+              end;
+
             if JedMain.scsel.Count > 0 then FlushCaches;
 
             // Current selection
@@ -1299,7 +1302,7 @@ end;
 //end;
 
 
-Function IsPointOn3DPSurf(poly: T3DPoly; x, y, z: double):boolean;
+Function IsPointOn3DPSurf(const poly: T3DPoly; x, y, z: double): boolean;
 var
   vc,i: integer;
   v1,v2: TVXDets;
@@ -1315,12 +1318,15 @@ begin
       v1 := poly.GetVXD(i);
       v2 := poly.GetVXD(NextIdx(i,vc));
       With poly do
-        VMult(normal.dx, normal.dy, normal.dz,
-              v2.x - v1.x, v2.y - v1.y, v2.z - v1.z,
-              vct.dx, vct.dy, vct.dz);
-      dist := SMult(vct.dx, vct.dy, vct.dz,
-                  x - v1.x, y - v1.y, z - v1.z);
-      if (Dist < -CloseEnough ) then exit;
+        vct := normal.Cross(v2.x - v1.x, v2.y - v1.y, v2.z - v1.z);
+//        VMult(normal.dx, normal.dy, normal.dz,
+//              v2.x - v1.x, v2.y - v1.y, v2.z - v1.z,
+//              vct.dx, vct.dy, vct.dz);
+
+      dist := vct.Dot(x - v1.x, y - v1.y, z - v1.z);
+//      dist := SMult(vct.dx, vct.dy, vct.dz,
+//                  x - v1.x, y - v1.y, z - v1.z);
+      if (dist < -CloseEnough ) then exit;
       { if dist<=0 then exit;}
     end;
     Result := true;
@@ -1349,7 +1355,7 @@ var
    if m = nil then exit;
    cv.SetCoords(m.center.x - ax1, m.center.y - ay1, m.center.z - az1);
    c2 := sqr(cv.dx) + sqr(cv.dy) + sqr(cv.dz);
-   a  := SMult(lvec.dx, lvec.dy, lvec.dz, cv.dx, cv.dy, cv.dz);
+   a  := lvec.Dot(cv); //SMult(lvec.dx, lvec.dy, lvec.dz, cv.dx, cv.dy, cv.dz);
 
    if a < (-m.radius) then exit; {If behind the plane}
 
@@ -1361,7 +1367,8 @@ var
       p := m.GetPoly(i);
       if p.geo < Wireframe then continue;
 
-      if SMult(p.normal.dx, p.normal.dy, p.normal.dz, lvec.dx, lvec.dy, lvec.dz) > 0 then continue;
+      //if SMult(p.normal.dx, p.normal.dy, p.normal.dz, lvec.dx, lvec.dy, lvec.dz) > 0 then continue;
+      if p.normal.Dot(lvec) > 0 then continue;
 
       if p.vxds.count = 0 then continue;
       vxd := p.getVXD(0);
@@ -1374,7 +1381,7 @@ var
       if dist<0 then continue;
       if dist>cdist then continue;}
 
-      dist := SMult(ax - ax1, ay - ay1, az - az1, lvec.dx, lvec.dy, lvec.dz);
+      dist := VectorDot3(ax - ax1, ay - ay1, az - az1, lvec.dx, lvec.dy, lvec.dz); //SMult
       if dist < 0 then continue;
       if dist > cdist then continue;
       if not IsPointOn3DPSurf(p, ax, ay, az) then continue;
@@ -1390,9 +1397,10 @@ begin
 
  //getWorldLine(0,0,ax1,ay1,az1,ax2,ay2,az2);
  //rdDebugPickedPoly := nil;
- GetWorldLine(X,Y,ax1,ay1,az1,ax2,ay2,az2);
- lvec.SetCoords(ax2-ax1,ay2-ay1,az2-az1);
- Normalize(Lvec);
+ GetWorldLine(X, Y, ax1, ay1, az1, ax2, ay2, az2);
+ lvec.SetCoords(ax2-ax1, ay2-ay1, az2-az1);
+ lvec.Normalize;
+ //Normalize(Lvec);
 
  var frustum := GetCameraFrustum;
 
@@ -1406,7 +1414,7 @@ begin
   result := pk_surface;
   selSC  := Sectors[i];
   selSF  := n;
-  for j := 0 to selSC.Surfaces.count - 1 do
+  for j := 0 to selSC.surfaces.count - 1 do
    if selSC.surfaces[j].D3DID = n then
      begin
       SelSF := j;
@@ -1442,17 +1450,17 @@ begin
   Result:=nil;
 
   i:=TXlist.IndexOf(name+cmp);
-  if i<>-1 then
+  if i <> -1 then
   begin
-    Result:=T3DPTexture(TXList.Objects[i]);
+    Result := T3DPTexture(TXList.Objects[i]);
     exit;
   end;
 
   // Load palette
   if CurrentProject <> IJIM then
     begin
-      i:=CmpList.IndexOf(cmp);
-      if i<>-1 then pcmp:=Pointer(CmpList.Objects[i]) else
+      i := CmpList.IndexOf(cmp);
+      if i <> -1 then pcmp:=Pointer(CmpList.Objects[i]) else
         begin
           GetMem(pcmp,sizeof(pcmp^));
           if not LoadCmpTable(cmp,pcmp^) then PanMessage(mt_warning,Format('Cannot load %s',[cmp]));
@@ -1664,8 +1672,8 @@ begin
   result := nil;
   if th.a3DO = nil then exit;
 
-  Result        := T3DPMesh.Create;
-  Result.sec    := th.sec;
+  Result     := T3DPMesh.Create;
+  Result.sec := th.sec;
 
   var thlight := th.light;
   if thlight.a <= 0.01 then  // IJIM makes baked light from dynamic light when radius <= 0.01
@@ -1680,20 +1688,21 @@ begin
 //  if (th.flags and (TF_INVISIBLE or TF_DISABLED)) <> 0 then
 //    alpha := 0.80;
 
-  for i := 0 to th.a3DO.Meshes.count - 1 do
-    With th.a3Do.Meshes[i] do
-      for k := 0 to faces.count - 1 do
-        With Faces[k] do
+  for i := 0 to th.a3DO.meshes.count - 1 do
+    With th.a3Do.meshes[i] do
+      for k := 0 to faces.Count - 1 do
+        With faces[k] do
           begin
             mat := th.A3DO.GetMat(imat);
-            if (geo = 0) or (Mat = '') then continue;
+            if (geo = 0) or (mat = '') then continue;
 
             poly            := Result.AddPoly;
             poly.geo        := TGeoMode(geo);
             poly.light      := TLightMode(light);
-            poly.extraLight := ExtraLight;
+            poly.extraLight := extraLight;
             poly.normal     := normal;
-            CalcNormal;
+            lev_utils.CalcNormal(faces[k], poly.normal);
+            faces[k].CalcNormal;
 
             // Enable rendering fog for poly (IJIM) and mark poly as special
             poly.faceflags := LongInt(FaceFlags or FF_IJIM_FogEnabled);
@@ -1726,15 +1735,15 @@ begin
             { pim:=ttx.Itexture.GetImage;
             if pim=nil then;}
 
-            nvx := Vertices.Count;
+            nvx := vertices.Count;
             //if nvx>24 then nvx:=24;
 
             for j := 0 to nvx - 1 do
-              With TXVertices[j] do
+              With txVertices[j] do
                 begin
-                  ax := Vertices[j].x;
-                  ay := Vertices[j].y;
-                  az := Vertices[j].z;
+                  ax := vertices[j].x;
+                  ay := vertices[j].y;
+                  az := vertices[j].z;
                   MultVM3s(mx, ax, ay, az);
 
                   vd   := poly.AddVXD;
@@ -1959,7 +1968,7 @@ begin
             // Approximation of how light color is clamped (taken from OpenJKDF2 source code)
             Result.Clamp(ambientLight, ColorWhite);
 
-            if not (Math.IsZero(tint.r) and Math.IsZero(tint.g) and Math.IsZero(tint.b)) then
+            if not (IsZero(tint.r) and IsZero(tint.g) and IsZero(tint.b)) then
               begin
                 // Approximation of how TINT is Applied in JKDF2 (taken from OpenJKDF2 source code)
                 Result.r := Result.r + Result.r * (tint.r - (0.5 * (tint.g + tint.b)));

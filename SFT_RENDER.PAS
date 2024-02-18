@@ -44,12 +44,17 @@ Type
     Procedure SetColor(what, r, g, b: byte); override;
 
     Procedure EndScene; override;
+    Procedure SetPointSize(size: double); override;
     Procedure SetCulling(how: integer); override;
     Procedure DrawPolygon(p: TPolygon); override;
     Procedure DrawPolygons(ps: TPolygons); override;
     Procedure DrawPolygonsAt(ps: TPolygons;
       dx, dy, dz, pch, yaw, rol: double); override;
-    Procedure DrawLine(v1, v2: TVertex); override;
+    Procedure DrawLine(v1, v2: TVertex); overload; override;
+    Procedure DrawLine(p1, p2: TVector); overload; override;
+    Procedure DrawLine(p, direction: TVector; length: double); overload; override;
+    Procedure DrawLineAt(x1, y1, z1, x2, y2, z2: double); overload; override;
+    Procedure DrawLineAt(x, y, z: double; direction: TVector; length: double); overload; override;
     Procedure DrawVertex(x, y, Z: double); override;
     Procedure DrawCircle(cx, cy, cz, rad: double); override;
     Procedure DrawVertices(vxs: TVertices); override;
@@ -59,13 +64,20 @@ Type
     Procedure EndPick; override;
     Procedure PickPolygon(p: TPolygon; id: integer); override;
     Procedure PickPolygons(ps: TPolygons; id: integer); override;
+    Procedure PickPolygonsAt(ps: TPolygons; x, y, z, pitch, yaw, roll: double; id: integer); override;
     Procedure PickLine(v1, v2: TVertex; id: integer); override;
     Procedure PickVertex(x, y, Z: double; id: integer); override;
+
+    Function GetCameraAt(scX, scY: integer; var x, y, z: double): boolean; override;
     Function GetXYZonPlaneAt(scX, scY: integer; pnormal: TVector;
       pX, pY, pZ: double; var x, y, Z: double): boolean; override;
     Function GetGridAt(scX, scY: integer; var x, y, Z: double)
       : boolean; override;
-    Procedure SetPointSize(size: double); override;
+
+    Function GetCameraForward: TVector; override; // returns camera forward vector
+    Function GetCameraUp: TVector; override; // returns camera up vector
+    Function GetCameraRight: TVector; override;
+
     Procedure ProjectPoint(x, y, Z: double; Var WinX, WinY: integer); override;
     Procedure UnProjectPoint(WinX, WinY: double; WinZ: double;
       var x, y, Z: double); override;
@@ -85,7 +97,7 @@ Type
 
 implementation
 
-uses Jed_Main, Lev_utils;
+uses Jed_Main, Lev_utils, math;
 
 procedure DisableFPUExceptions;
 var
@@ -101,7 +113,7 @@ var
   pen: Hpen;
 begin
   With bgnd_clr do
-    SetColor(CL_BackGround, r, g, b);
+    SetColor(CL_BACKGROUND, r, g, b);
 
   // pen:=CreatePen(PS_SOLID,1,RGB(
 
@@ -497,12 +509,59 @@ begin
 end;
 
 Procedure TSFTRenderer.DrawLine(v1, v2: TVertex);
-var
+//var
+  //vx, vy, vz: single;
+begin
+   DrawLineAt(v1.x, v1.y, v1.z, v2.x, v2.y, v2.z);
+//  vx := cdx + v1.x;
+//  vy := cdy + v1.y;
+//  vz := cdz + v1.Z;
+//  MultVM3s(mx, vx, vy, vz);
+//  { vx:=vx;
+//    vy:=vy;
+//    vz:=vz; }
+//
+//  { Project }
+//  { if vz<1 then exit;
+//    px:=wcx+round(vx/vz);
+//    py:=wcy+Round(vy/vz); }
+//
+//  MoveTo(vx, vy);
+//  vx := cdx + v2.x;
+//  vy := cdy + v2.y;
+//  vz := cdz + v2.Z;
+//  MultVM3s(mx, vx, vy, vz);
+//  { vx:=vx;
+//    vy:=vy;
+//    vz:=vz; }
+//
+//  { Project }
+//  { px:=wcx+round(vx);
+//    py:=wcy+Round(vy); }
+//  { if vz<1 then exit;
+//    px:=wcx+round(vx/vz);
+//    py:=wcy+Round(vy/vz); }
+//
+//  LineTo(vx, vy);
+end;
+
+Procedure TSFTRenderer.DrawLine(p1, p2: TVector);
+begin
+  DrawLineAt(p1.x, p1.y, p1.z, p2.x, p2.y, p2.z);
+end;
+
+Procedure TSFTRenderer.DrawLine(p, direction: TVector; length: double);
+begin
+  DrawLineAt(p.x, p.y, p.z, direction, length);
+end;
+
+Procedure TSFTRenderer.DrawLineAt(x1, y1, z1, x2, y2, z2: double);
+  var
   vx, vy, vz: single;
 begin
-  vx := cdx + v1.x;
-  vy := cdy + v1.y;
-  vz := cdz + v1.Z;
+  vx := cdx + x1;
+  vy := cdy + y1;
+  vz := cdz + z1;
   MultVM3s(mx, vx, vy, vz);
   { vx:=vx;
     vy:=vy;
@@ -514,9 +573,9 @@ begin
     py:=wcy+Round(vy/vz); }
 
   MoveTo(vx, vy);
-  vx := cdx + v2.x;
-  vy := cdy + v2.y;
-  vz := cdz + v2.Z;
+  vx := cdx + x2;
+  vy := cdy + y2;
+  vz := cdz + z2;
   MultVM3s(mx, vx, vy, vz);
   { vx:=vx;
     vy:=vy;
@@ -530,6 +589,11 @@ begin
     py:=wcy+Round(vy/vz); }
 
   LineTo(vx, vy);
+end;
+
+Procedure TSFTRenderer.DrawLineAt(x, y, z: double; direction: TVector; length: double);
+begin
+  DrawLineAt(x, y, z, x + direction.x * length, y + direction.y * length, z + direction.z * length);
 end;
 
 Destructor TSFTRenderer.Destroy;
@@ -549,7 +613,7 @@ begin
   UnProjectPoint(x, y, 1, pkX2, pkY2, pkZ2);
 
   pkv.SetCoords(pkX2 - pkX1, pkY2 - pkY1, pkZ2 - pkZ1);
-  Normalize(pkv);
+  pkv.Normalize; //Normalize(pkv);
 
   UnProjectPoint(x + 2, y + 2, 0, ax, ay, az);
   pdist2 := sqr(ax - pkX1) + sqr(ay - pkY1) + sqr(az - pkZ1);
@@ -577,15 +641,16 @@ begin
       ix, iy, iz) then
       exit;
 
-  for i := 0 to p.Vertices.count - 1 do
+  for i := 0 to p.vertices.count - 1 do
   begin
     v1 := p.Vertices[i];
     v2 := p.Vertices[p.NextVX(i)];
-    VMult(p.normal.dx, p.normal.dy, p.normal.dz, v2.x - v1.x, v2.y - v1.y,
-      v2.Z - v1.Z, en.dx, en.dy, en.dz);
-    if not Normalize(en) then
+    en := p.normal.Cross(v2.x - v1.x, v2.y - v1.y, v2.z - v1.z);
+//    VMult(p.normal.dx, p.normal.dy, p.normal.dz, v2.x - v1.x, v2.y - v1.y,
+//      v2.Z - v1.Z, en.dx, en.dy, en.dz);
+    if en.Normalize = 0 then
       continue;
-    if SMult(en.dx, en.dy, en.dz, ix - v1.x, iy - v1.y, iz - v1.Z) < -pdist then
+    if en.Dot(ix - v1.x, iy - v1.y, iz - v1.z) < -pdist then {SMult(en.dx, en.dy, en.dz, ix - v1.x, iy - v1.y, iz - v1.Z)}
       exit;
   end;
   Result := true;
@@ -609,6 +674,11 @@ begin
     end;
 end;
 
+Procedure TSFTRenderer.PickPolygonsAt(ps: TPolygons; x, y, z, pitch, yaw, roll: double; id: integer);
+begin
+    // TODO: implement
+end;
+
 Procedure TSFTRenderer.PickLine(v1, v2: TVertex; id: integer);
 var
   ax, ay, az, d, px1, py1, pz1, px2, py2, pz2: double;
@@ -616,37 +686,34 @@ var
 begin
   { project edge on camera plane. Picking line becomes a point - PK }
 
-  d := SMult(v1.x - pkX1, v1.y - pkY1, v1.Z - pkZ1, pkv.dx, pkv.dy, pkv.dz);
+  d := VectorDot3(v1.x - pkX1, v1.y - pkY1, v1.Z - pkZ1, pkv.dx, pkv.dy, pkv.dz); //SMult
   px1 := v1.x - d * pkv.dx;
   py1 := v1.y - d * pkv.dy;
   pz1 := v1.Z - d * pkv.dz;
 
-  d := SMult(v2.x - pkX1, v2.y - pkY1, v2.Z - pkZ1, pkv.dx, pkv.dy, pkv.dz);
+  d := VectorDot3(v2.x - pkX1, v2.y - pkY1, v2.Z - pkZ1, pkv.dx, pkv.dy, pkv.dz);
   px2 := v2.x - d * pkv.dx;
   py2 := v2.y - d * pkv.dy;
   pz2 := v2.Z - d * pkv.dz;
 
-  { if p1 and p2 are very close, don't select }
+  // if p1 and p2 are very close, don't select
   if sqr(px2 - px1) + sqr(py2 - py1) + sqr(pz2 - pz1) < 1E-8 then
     exit;
 
-  { Check that point PK is within the line }
-
-  if SMult(pkX1 - px1, pkY1 - py1, pkZ1 - pz1, px2 - px1, py2 - py1,
-    pz2 - pz1) < 0 then
+  // Check that point PK is within the line
+  if VectorDot3(pkX1 - px1, pkY1 - py1, pkZ1 - pz1, px2 - px1, py2 - py1, pz2 - pz1) < 0 then  //SMult
     exit;
-  if SMult(pkX1 - px2, pkY1 - py2, pkZ1 - pz2, px1 - px2, py1 - py2,
-    pz1 - pz2) < 0 then
+  if VectorDot3(pkX1 - px2, pkY1 - py2, pkZ1 - pz2, px1 - px2, py1 - py2, pz1 - pz2) < 0 then
     exit;
 
   { Find the distance from line to point }
-  VMult(px2 - px1, py2 - py1, pz2 - pz1, pkv.dx, pkv.dy, pkv.dz, ev.dx,
-    ev.dy, ev.dz);
+  VectorCross3(px2 - px1, py2 - py1, pz2 - pz1, pkv.dx, pkv.dy, pkv.dz, ev.dx,
+    ev.dy, ev.dz); //VMult
 
-  Normalize(ev);
+  ev.Normalize;
+  //Normalize(ev);
 
-  if abs(SMult(ev.dx, ev.dy, ev.dz, pkX1 - px1, pkY1 - py1, pkZ1 - pz1)) < pdist
-  then
+  if Abs(ev.Dot(pkX1 - px1, pkY1 - py1, pkZ1 - pz1)) < pdist then //abs(SMult(ev.dx, ev.dy, ev.dz, pkX1 - px1, pkY1 - py1, pkZ1 - pz1))
     Selected.Add(id);
 
 end;
@@ -660,9 +727,14 @@ begin
   ay := y - pkY1;
   az := Z - pkZ1;
   d2 := sqr(ax) + sqr(ay) + sqr(az) -
-    sqr(SMult(ax, ay, az, pkv.dx, pkv.dy, pkv.dz));
+    sqr(VectorDot3(ax, ay, az, pkv.dx, pkv.dy, pkv.dz));  //SMult
   if pdist2 >= d2 then
     Selected.Add(id);
+end;
+
+Function TSFTRenderer.GetCameraAt(scX, scY: integer; var x, y, z: double): boolean;
+begin
+  Result := GetXYZonPlaneAt(scX, scY, zv, -CamX, -CamY, -CamZ, x, y, z);
 end;
 
 Function TSFTRenderer.GetXYZonPlaneAt(scX, scY: integer; pnormal: TVector;
@@ -708,6 +780,21 @@ begin
     y := JKRound(y);
     Z := JKRound(Z);
   end;
+end;
+
+Function TSFTRenderer.GetCameraForward: TVector;
+begin
+  Result := zv;
+end;
+
+Function TSFTRenderer.GetCameraUp: TVector;
+begin
+  Result := yv;
+end;
+
+Function TSFTRenderer.GetCameraRight: TVector;
+begin
+  Result := xv;
 end;
 
 Procedure TSFTRenderer.UnProjectPoint(WinX, WinY: double; WinZ: double;
@@ -760,15 +847,15 @@ end;
 
 Procedure TSFTRenderer.SetCulling(how: integer);
 begin
-  docull := how <> r_CULLNONE;
-  cull_front := how = r_CULLFRONT;
+  docull := how <> R_CULLNONE;
+  cull_front := how = R_CULLFRONT;
 end;
 
 Procedure TSFTRenderer.SetColor(what, r, g, b: byte);
 begin
   Inherited SetColor(what, r, g, b);
   case what of
-    CL_BackGround:
+    CL_BACKGROUND:
       Dc.Brush.Color := RGB(r, g, b);
   else
     begin

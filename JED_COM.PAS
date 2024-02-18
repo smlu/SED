@@ -1059,7 +1059,7 @@ end;
 {JEDCOM}
 Function TJEDCOM.GetMapMode:Integer;
 begin
- result:=JedMain.Map_Mode;
+ result:=JedMain.mapMode;
 end;
 Procedure TJEDCOM.SetMapMode(mode:integer);
 begin

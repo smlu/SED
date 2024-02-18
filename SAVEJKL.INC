@@ -719,7 +719,7 @@ begin
       if not PointLight.Position.IsZero() then
         WriteFmt('AVERAGE LIGHT POSITION'#9'%.8f %.8f %.8f',
           [PointLight.Position.x, PointLight.Position.y, PointLight.Position.z]);
-       if not Math.IsZero(PointLight.minRange) or not Math.IsZero(PointLight.maxRange)  then
+       if not IsZero(PointLight.minRange) or not IsZero(PointLight.maxRange)  then
         WriteFmt('AVERAGE LIGHT FALLOFF'#9'%.8f %.8f',
           [PointLight.minRange, PointLight.maxRange]);
     end

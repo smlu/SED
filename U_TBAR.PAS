@@ -183,9 +183,9 @@ end;
 
 procedure TToolbar.EnableSnapToGrid(enable: boolean);
 begin
-  JedMain.SnapToGrid := enable;
-  CBGridStep.Enabled := JedMain.SnapToGrid;
-  CBGrid.Checked     := enable;
+  JedMain.bSnapToGrid := enable;
+  CBGridStep.Enabled  := JedMain.bSnapToGrid;
+  CBGrid.Checked      := enable;
 end;
 
 procedure TToolbar.CBGridClick(Sender: TObject);
@@ -693,10 +693,10 @@ begin
   DefTXScaleStep := TXScaleStep;
   DefPerpStep := PerpStep;
   DefP3DStep := P3DStep;
-  DefThingView := JedMain.Thing_view;
-  DefMselMode := JedMain.Msel_mode;
+  DefThingView := JedMain.thingView;
+  DefMselMode := JedMain.mselMode;
 
-  DefSnapToGrid := JedMain.SnapToGrid;
+  DefSnapToGrid := JedMain.bSnapToGrid;
   DefGridStep := JedMain.Renderer.GridStep;
   DefGridLine := JedMain.Renderer.GridLine;
   DefGridDot := JedMain.Renderer.GridDot;

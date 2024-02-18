@@ -884,11 +884,11 @@ GAdjoins.Free;
  RenumSecs;
  RenumThings;
 
- for i:=0 to Sectors.Count-1 do
+ for i:=0 to sectors.Count-1 do
  With Sectors[i] do
  begin
   Renumber;
-  for j:=0 to Surfaces.Count-1 do
+  for j:=0 to surfaces.Count-1 do
   begin
    tmpsurf:=Surfaces[j];
    tmpsurf.Recalc; // TODO: parse normals

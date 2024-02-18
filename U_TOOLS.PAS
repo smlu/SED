@@ -4,7 +4,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
-  StdCtrls, ComCtrls, ExtCtrls, FieldEdit, Math, globalVars, geometry;
+  StdCtrls, ComCtrls, ExtCtrls, FieldEdit, globalVars, geometry;
 
 type
   TToolForm = class(TForm)
@@ -93,7 +93,7 @@ var
 
 implementation
 
-uses Jed_Main, J_Level, Misc_utils, Lev_utils, U_Preview;
+uses Jed_Main, J_Level, Misc_utils, Lev_utils, U_Preview, System.Math;
 
 {$R *.DFM}
 
@@ -234,7 +234,7 @@ var
 begin
   With JedMain do
   begin
-    if map_mode <> MM_SF then
+    if mapMode <> MM_SF then
     begin
       ShowMessage('You must be in surface mode');
       exit;
@@ -265,21 +265,23 @@ begin
 
     sfsel.Clear;
 
-    d := SMult(surf1.normal.dx, surf1.normal.dy, surf1.normal.dz,
-      surf2.normal.dx, surf2.normal.dy, surf2.normal.dz);
+    d := surf1.normal.Dot(surf2.normal); //SMult(surf1.normal.dx, surf1.normal.dy, surf1.normal.dz, surf2.normal.dx, surf2.normal.dy, surf2.normal.dz);
     d := 180 - ArcCos(d) / pi * 180;
     vangle.SetAsFloat(d);
 
-    VMult(surf1.normal.dx, surf1.normal.dy, surf1.normal.dz, surf2.normal.dx,
-      surf2.normal.dy, surf2.normal.dz, vec.dx, vec.dy, vec.dz);
-    if not Normalize(vec) then
+    vec := surf1.normal.Cross(surf2.normal);
+//    VMult(surf1.normal.dx, surf1.normal.dy, surf1.normal.dz, surf2.normal.dx,
+//      surf2.normal.dy, surf2.normal.dz, vec.dx, vec.dy, vec.dz);
+    //if not Normalize(vec) then
+    if vec.Normalize = 0 then     
     begin
       ShowMessage('The surfaces are already coplanar');
       exit;
     end;
 
-    VMult(surf2.normal.dx, surf2.normal.dy, surf2.normal.dz, vec.dx, vec.dy,
-      vec.dz, lvec.dx, lvec.dy, lvec.dz);
+    lvec := surf2.normal.Cross(vec);
+//    VMult(surf2.normal.dx, surf2.normal.dy, surf2.normal.dz, vec.dx, vec.dy,
+//      vec.dz, lvec.dx, lvec.dy, lvec.dz);
 
     With surf1.vertices[0] do
     begin

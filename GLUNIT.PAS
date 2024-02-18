@@ -980,7 +980,6 @@ type
 
 var
  hgllib,hglulib:integer;
- 
  glBegin:Procedure (mode: GLenum);stdcall;
  glBindTexture: Procedure (target: GLenum; texture:GLuint); stdcall;
  glBlendFunc: Procedure (sfactor: GLenum; dfactor: GLenum); stdcall;
@@ -1035,6 +1034,7 @@ var
  glPopAttrib:Procedure;stdcall;
  glPushAttrib:Procedure (mask: GLbitfield);stdcall;
  glPushName:Procedure (name: GLuint);stdcall;
+ glReadPixels:Procedure (x, y: GLint;width, height: GLsizei; format, dtype: GLenum; data: PGLvoid); stdcall;
  glRenderMode:Function (mode: GLenum): GLint;stdcall;
  glRotated:Procedure (angle: GLdouble; x: GLdouble; y: GLdouble; z: GLdouble);stdcall;
  glScaled:Procedure (x: GLdouble; y: GLdouble; z: GLdouble);stdcall;
@@ -1177,6 +1177,7 @@ begin
  glPopAttrib:=LoadGLProc('glPopAttrib');
  glPushAttrib:=LoadGLProc('glPushAttrib');
  glPushName:=LoadGLProc('glPushName');
+ glReadPixels:=LoadGLProc('glReadPixels');
  glRenderMode:=LoadGLProc('glRenderMode');
  glRotated:=LoadGLProc('glRotated');
  glScaled:=LoadGLProc('glScaled');

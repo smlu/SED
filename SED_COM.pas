@@ -1211,7 +1211,7 @@ end;
 
 Function TSEDCOM.GetMapMode:Integer;
 begin
- result:=JedMain.Map_Mode;
+ result:=JedMain.mapMode;
 end;
 
 Procedure TSEDCOM.SetMapMode(mode:integer);

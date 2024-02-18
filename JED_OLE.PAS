@@ -617,7 +617,7 @@ type
 
 implementation
 uses Jed_Main, ResourcePicker, U_CogForm, ListRes, SysUtils, U_preview,
-     FlagEditor, U_SCFEdit, U_options, U_tbar, JED_COM;
+     FlagEditor, U_SCFEdit, U_options, U_tbar, JED_COM, math;
 
 Constructor TOleObjList.Create;
 begin
@@ -2025,7 +2025,7 @@ end;
 
 Function TJEDApp.GetMapMode:integer;
 begin
- result:=JedMain.Map_Mode;
+ result:=JedMain.mapMode;
 end;
 
 Procedure TJEDApp.SetMapMode(mode:integer);
@@ -2557,9 +2557,9 @@ end;
 Procedure TJEDApp.SetGridAxes(xx,xy,xz,yx,yy,yz:double);
 var z:Tvector;
 begin
- VMult(xx,xy,xz,yx,yy,yz,
-       z.dx,z.dy,z.dz);
- if VLen(z)=0 then exit;
+ VectorCross3(xx,xy,xz,yx,yy,yz,
+       z.dx,z.dy,z.dz); //VMult
+ if z.Length = 0 then exit;
  With JedMain.Renderer do
  begin
   SetZ(z.dx,z.dy,z.dz);
@@ -2611,9 +2611,9 @@ end;
 Procedure TJEDApp.SetCamAxes(xx,xy,xz,yx,yy,yz:double);
 var z:Tvector;
 begin
- VMult(xx,xy,xz,yx,yy,yz,
+ VectorCross3(xx,xy,xz,yx,yy,yz,
        z.dx,z.dy,z.dz);
- if VLen(z)=0 then exit;
+ if z.Length = 0 then exit;
  With JedMain.Renderer do
  begin
   SetZ(z.dx,z.dy,z.dz);

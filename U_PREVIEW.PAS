@@ -171,28 +171,25 @@ begin
   Reset;
 
   Progress.Reset(Level.Sectors.Count + Level.Things.Count);
-
   Progress.msg := 'Loading sectors...';
-
-  for i := 0 to Level.Sectors.Count - 1 do
+  for i := 0 to level.sectors.Count - 1 do
   begin
     Progress.step;
-    sec := Level.Sectors[i];
+    sec := level.sectors[i];
     if not P3DVisLayers then
       SysAddSector(sec)
-    else if ToolBar.IsLayerVisible(sec.Layer) then
+    else if ToolBar.IsLayerVisible(sec.layer) then
       SysAddSector(sec);
   end;
 
   Progress.msg := 'Loading things...';
-
-  for i := 0 to Level.Things.Count - 1 do
+  for i := 0 to level.things.Count - 1 do
   begin
     Progress.step;
-    th := Level.Things[i];
+    th := level.things[i];
     if not P3DVisLayers then
       SysAddThing(th)
-    else if ToolBar.IsLayerVisible(th.Layer) then
+    else if ToolBar.IsLayerVisible(th.layer) then
       SysAddThing(th);
   end;
 
@@ -274,10 +271,11 @@ begin
       SetStayOnTop(self, P3DOnTop);
       show;
       if Render3D = nil then
-      begin
-        Hide;
-        exit;
-      end;
+        begin
+          Hide;
+          exit;
+        end;
+
       ReloadLevel;
       GoToPlayer(0, 1);
     end;
@@ -744,7 +742,7 @@ var
 begin
     cpch := 0;
     cyaw := 0;
-    case JedMain.Map_mode of
+    case JedMain.mapMode of
         MM_SC:
             FindCenter(Level.Sectors[JedMain.Cur_SC], cx, cy, cz);
         { MM_VX: with Level.Sectors[Cur_SC].Vertices[Cur_VX] do begin cx:=x; cy:=y; cz:=z; end; }
@@ -791,7 +789,7 @@ end;
 
 procedure TPreview3D.MenuSetThingToCameraClick(Sender: TObject);
 begin
-   case JedMain.Map_mode of
+   case JedMain.mapMode of
       MM_TH:
         begin
           var curth := level.Things[JedMain.Cur_TH];
@@ -811,7 +809,7 @@ end;
 procedure TPreview3D.Commands1Click(Sender: TObject);
 begin
     MenuSetThingToCamera.Enabled := false;
-    if JedMain.Map_mode = MM_TH then
+    if JedMain.mapMode = MM_TH then
       MenuSetThingToCamera.Enabled := true;
 end;
 
@@ -976,7 +974,7 @@ end;
 
 procedure TPreview3D.FormDblClick(Sender: TObject);
 begin
-  case JedMain.Map_mode of
+  case JedMain.mapMode of
     MM_SF:
       ItemEdit.DoPickTexture;
     MM_TH:
@@ -1201,7 +1199,7 @@ Procedure TPreview3D.TranslateSelectedThings(dx, dy, dz: double; localForward: b
   var d: TVector;
 begin
   // Function translates selected thing(s) in the direction of current selected thing
-  if JedMain.Map_mode = MM_TH then
+  if JedMain.mapMode = MM_TH then
     begin
       StartUndoRec('Translate Thing(s)');
       d.dx := dx;

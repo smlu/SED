@@ -554,7 +554,7 @@ begin
         Dc.Pen.Color := RGB(r, g, b);
         Dc.Brush.Color := RGB(r, g, b);
       end;
-    CL_BackGround:
+    CL_BACKGROUND:
       Dc.Brush.Color := RGB(r, g, b);
   end;
 end;

@@ -20,8 +20,8 @@ Const
   ppunit = 16; { Pixels per unit }
 
   CL_FRONT = 0;
-  CL_Back = 0;
-  CL_BackGround = 1;
+  CL_BACK = 0;
+  CL_BACKGROUND = 1;
   { CL_GRID=2; }
   R_CULLNONE = 0;
   R_CULLBACK = -1;
@@ -43,7 +43,7 @@ type
     hViewer: HWND;
     CamX, CamY, CamZ: double;
     //Pch,Yaw,Rol:double;
-    xv, yv, zv: Tvector;
+    xv, yv, zv: Tvector; // view basis vectors
     scale: double;
     vpx, vpy, vpw, vph: integer; { viewport }
     FSelected: TIntList;
@@ -52,8 +52,8 @@ type
     { Grid variables }
     gnormal: Tvector;
     gxnormal, gynormal: Tvector;
-    GridX, GridY, GridZ: double;
-    GridLine, GridDot, GridStep: double;
+    gridX, gridY, gridZ: double;
+    gridLine, gridDot, gridStep: double;
 
   Private
      lplane, rplane, uplane, bplane: TPlane;
@@ -79,7 +79,11 @@ type
     Procedure DrawPolygon(p: TPolygon); virtual; abstract;
     Procedure DrawPolygonsAt(ps: TPolygons; dx, dy, dz, pch, yaw, rol: double); virtual; abstract;
     Procedure DrawPolygons(ps: TPolygons); virtual; abstract;
-    Procedure DrawLine(v1, v2: TVertex); virtual; abstract;
+    Procedure DrawLine(v1, v2: TVertex); overload; virtual; abstract;
+    Procedure DrawLine(p1, p2: TVector); overload; virtual;  abstract;
+    Procedure DrawLine(p, direction: TVector; length: double); overload; virtual;  abstract;
+    Procedure DrawLineAt(x1, y1, z1, x2, y2, z2: double); overload; virtual; abstract;
+    Procedure DrawLineAt(x, y, z: double; direction: TVector; length: double); overload; virtual; abstract;
     Procedure DrawVertex(x, y, z: double); virtual; abstract;
     Procedure DrawVertices(vxs: TVertices); virtual; abstract;
     Procedure DrawCircle(cx, cy, cz, rad: double); virtual; abstract;
@@ -109,15 +113,18 @@ type
     Procedure SetZ(dx, dy, dz: double);
     Procedure SetX(dx, dy, dz: double);
     Procedure SetY(dx, dy, dz: double);
-    Function GetXYZonPlaneAt(scX, scY: integer; pnormal: Tvector;
-      pX, pY, pZ: double; var x, y, z: double): boolean; virtual; abstract;
-    Function GetGridAt(scX, scY: integer; var x, y, z: double): boolean;
-      virtual; abstract;
-    Procedure GetNearestGrid(iX, iY, iZ: double; Var x, y, z: double);
-    Procedure ProjectPoint(x, y, z: double; Var WinX, WinY: integer);
-      virtual; abstract;
-    Procedure UnProjectPoint(WinX, WinY: double; WinZ: double;
-      var x, y, z: double); virtual; abstract;
+
+    Function GetCameraAt(scX, scY: integer; var x, y, z: double): boolean; virtual; abstract; // Translate "D position to camera view position
+    Function GetXYZonPlaneAt(scX, scY: integer; pnormal: Tvector; pX, pY, pZ: double; var x, y, z: double): boolean; virtual; abstract;
+    Function GetGridAt(scX, scY: integer; var x, y, z: double): boolean; virtual; abstract;
+    Procedure GetNearestGrid(iX, iY, iZ: double; var x, y, z: double);
+
+    Function GetCameraForward: TVector; virtual; abstract; // returns camera forward basis vector
+    Function GetCameraUp: TVector; virtual; abstract; // returns camera up basis vector
+    Function GetCameraRight: TVector; virtual; abstract; // returns camera right basis vector
+
+    Procedure ProjectPoint(x, y, z: double; Var WinX, WinY: integer); virtual; abstract;
+    Procedure UnProjectPoint(WinX, WinY: double; WinZ: double; var x, y, z: double); virtual; abstract;
     Function HandleWMQueryPal: integer; virtual; abstract;
     Function HandleWMChangePal: integer; virtual; abstract;
     Function IsPolygonFacing(p: TPolygon): boolean; virtual; abstract;
@@ -125,7 +132,7 @@ type
 
 implementation
 
-uses Lev_utils;
+uses Lev_utils, math;
 
 Procedure TRenderer.SetViewPort(x, y, w, h: integer);
 begin
@@ -159,7 +166,7 @@ begin
   GridLine := 1;
   Initialize;
   SetColor(CL_FRONT, 255, 255, 255);
-  SetColor(CL_Back, 127, 127, 127);
+  SetColor(CL_BACK, 127, 127, 127);
 end;
 
 Procedure TRenderer.SetColor(what, r, g, b: byte);
@@ -171,7 +178,7 @@ begin
         Front_clr.g := g;
         Front_clr.b := b;
       end;
-    CL_BackGround:
+    CL_BACKGROUND:
       begin
         bgnd_clr.r := r;
         bgnd_clr.g := g;
@@ -207,9 +214,9 @@ begin
   g.dx := dx;
   g.dy := dy;
   g.dz := dz;
-  Normalize(g);
+  var len := g.Normalize;//Normalize(g);
 
-  if IsClose(Vlen(g), 0) then
+  if IsClose(len, 0) then //VLen
     exit;
   gnormal := g;
 end;
@@ -221,14 +228,14 @@ begin
   g.dx := dx;
   g.dy := dy;
   g.dz := dz;
-  Normalize(g);
-
-  if IsClose(Vlen(g), 0) then
+  var len := g.Normalize;//Normalize(g);
+  if IsClose(len, 0) then // Vlen(g)
     exit;
 
   gxnormal := g;
-  VMult(gnormal.dx, gnormal.dy, gnormal.dz, gxnormal.dx, gxnormal.dy,
-    gxnormal.dz, gynormal.dx, gynormal.dy, gynormal.dz);
+  gynormal := gnormal.Cross(gxnormal);
+//  VMult(gnormal.dx, gnormal.dy, gnormal.dz, gxnormal.dx, gxnormal.dy,
+//    gxnormal.dz, gynormal.dx, gynormal.dy, gynormal.dz);
 end;
 
 Procedure TRenderer.SetGridYNormal(dx, dy, dz: double);
@@ -236,9 +243,12 @@ begin
   gxnormal.dx := dx;
   gxnormal.dy := dy;
   gxnormal.dz := dz;
-  Normalize(gxnormal);
-  VMult(gnormal.dx, gnormal.dy, gnormal.dz, gxnormal.dx, gxnormal.dy,
-    gxnormal.dz, gynormal.dx, gynormal.dy, gynormal.dz);
+  gxnormal.Normalize;
+ // Normalize(gxnormal);
+
+  gynormal := gnormal.Cross(gxnormal);
+//  VMult(gnormal.dx, gnormal.dy, gnormal.dz, gxnormal.dx, gxnormal.dy,
+//    gxnormal.dz, gynormal.dx, gynormal.dy, gynormal.dz);
 end;
 
 Procedure TRenderer.SetZ(dx, dy, dz: double);
@@ -248,9 +258,11 @@ begin
   g.dx := dx;
   g.dy := dy;
   g.dz := (dz);  // TODO: If dz is negative the scene is mirroved. Abs. dz fixes this but the scene can't be then turned upside down.
-  Normalize(g);
+  var len := g.Normalize;
+  //Normalize(g);
 
-  if IsClose(Vlen(g), 0) then
+  //if IsClose(Vlen(g), 0) then
+  if IsClose(len, 0) then  
     exit;
   zv := g;
 end;
@@ -260,10 +272,14 @@ begin
   xv.dx := dx;
   xv.dy := dy;
   xv.dz := dz;
-  Normalize(xv);
-  VMult(zv.dx, zv.dy, zv.dz, xv.dx, xv.dy, xv.dz, yv.dx, yv.dy, yv.dz);
+  xv.Normalize;
+  //Normalize(xv);
 
-  VMult(yv.dx, yv.dy, yv.dz, zv.dx, zv.dy, zv.dz, xv.dx, xv.dy, xv.dz);
+  yv := zv.Cross(xv);
+  //VMult(zv.dx, zv.dy, zv.dz, xv.dx, xv.dy, xv.dz, yv.dx, yv.dy, yv.dz);
+
+  xv := yv.Cross(zv);
+  //VMult(yv.dx, yv.dy, yv.dz, zv.dx, zv.dy, zv.dz, xv.dx, xv.dy, xv.dz);
 end;
 
 Procedure TRenderer.SetY(dx, dy, dz: double);
@@ -271,10 +287,14 @@ begin
   yv.dx := dx;
   yv.dy := dy;
   yv.dz := dz;
-  Normalize(yv);
-  VMult(yv.dx, yv.dy, yv.dz, zv.dx, zv.dy, zv.dz, xv.dx, xv.dy, xv.dz);
+  yv.Normalize;
+  //Normalize(yv);
 
-  VMult(zv.dx, zv.dy, zv.dz, xv.dx, xv.dy, xv.dz, yv.dx, yv.dy, yv.dz);
+  xv := yv.Cross(zv);
+  //VMult(yv.dx, yv.dy, yv.dz, zv.dx, zv.dy, zv.dz, xv.dx, xv.dy, xv.dz);
+
+  yv := zv.Cross(xv);
+  //VMult(zv.dx, zv.dy, zv.dz, xv.dx, xv.dy, xv.dz, yv.dx, yv.dy, yv.dz);
 end;
 
 Procedure TRenderer.DrawGrid;
@@ -287,14 +307,14 @@ var
 begin
   v1 := TVertex.Create;
   v2 := TVertex.Create;
-  n := Round(GridSize / GridDot);
+  n := Round(GridSize / gridDot);
 
   For i := -(n div 2 - 1) to n div 2 - 1 do
     for j := -(n div 2 - 1) to n div 2 - 1 do
     begin
-      x := GridX + (i * GridDot * gxnormal.dx) + (j * GridDot * gynormal.dx);
-      y := GridY + (i * GridDot * gxnormal.dy) + (j * GridDot * gynormal.dy);
-      z := GridZ + (i * GridDot * gxnormal.dz) + (j * GridDot * gynormal.dz);
+      x := gridX + (i * gridDot * gxnormal.dx) + (j * GridDot * gynormal.dx);
+      y := gridY + (i * gridDot * gxnormal.dy) + (j * GridDot * gynormal.dy);
+      z := gridZ + (i * gridDot * gxnormal.dz) + (j * GridDot * gynormal.dz);
       DrawVertex(x, y, z);
     end;
 
@@ -304,13 +324,13 @@ begin
 
   For i := -n div 2 to n div 2 do
   begin
-    v1.x := GridX + (i * GridLine * gxnormal.dx) + (gsize2 * gynormal.dx);
-    v1.y := GridY + (i * GridLine * gxnormal.dy) + (gsize2 * gynormal.dy);
-    v1.z := GridZ + (i * GridLine * gxnormal.dz) + (gsize2 * gynormal.dz);
+    v1.x := gridX + (i * gridLine * gxnormal.dx) + (gsize2 * gynormal.dx);
+    v1.y := gridY + (i * gridLine * gxnormal.dy) + (gsize2 * gynormal.dy);
+    v1.z := gridZ + (i * gridLine * gxnormal.dz) + (gsize2 * gynormal.dz);
 
-    v2.x := GridX + (i * GridLine * gxnormal.dx) + (-gsize2 * gynormal.dx);
-    v2.y := GridY + (i * GridLine * gxnormal.dy) + (-gsize2 * gynormal.dy);
-    v2.z := GridZ + (i * GridLine * gxnormal.dz) + (-gsize2 * gynormal.dz);
+    v2.x := gridX + (i * gridLine * gxnormal.dx) + (-gsize2 * gynormal.dx);
+    v2.y := gridY + (i * gridLine * gxnormal.dy) + (-gsize2 * gynormal.dy);
+    v2.z := gridZ + (i * gridLine * gxnormal.dz) + (-gsize2 * gynormal.dz);
     DrawLine(v1, v2);
   end;
 
@@ -320,38 +340,38 @@ begin
     v1.y := GridY + (gsize2 * gxnormal.dy) + (i * GridLine * gynormal.dy);
     v1.z := GridZ + (gsize2 * gxnormal.dz) + (i * GridLine * gynormal.dz);
 
-    v2.x := GridX + (i * GridLine * gynormal.dx) + (-gsize2 * gxnormal.dx);
-    v2.y := GridY + (i * GridLine * gynormal.dy) + (-gsize2 * gxnormal.dy);
-    v2.z := GridZ + (i * GridLine * gynormal.dz) + (-gsize2 * gxnormal.dz);
+    v2.x := GridX + (i * gridLine * gynormal.dx) + (-gsize2 * gxnormal.dx);
+    v2.y := GridY + (i * gridLine * gynormal.dy) + (-gsize2 * gxnormal.dy);
+    v2.z := GridZ + (i * gridLine * gynormal.dz) + (-gsize2 * gxnormal.dz);
     DrawLine(v1, v2);
   end;
 
   With clGridX do
     SetColor(CL_FRONT, r, g, b);
 
-  v1.x := GridX;
-  v1.y := GridY;
-  v1.z := GridZ;
-  v2.x := GridX + gsize2 * gxnormal.dx;
-  v2.y := GridY + gsize2 * gxnormal.dy;
-  v2.z := GridZ + gsize2 * gxnormal.dz;
+  v1.x := gridX;
+  v1.y := gridY;
+  v1.z := gridZ;
+  v2.x := gridX + gsize2 * gxnormal.dx;
+  v2.y := gridY + gsize2 * gxnormal.dy;
+  v2.z := gridZ + gsize2 * gxnormal.dz;
   DrawLine(v1, v2);
 
   With clGridY do
     SetColor(CL_FRONT, r, g, b);
-  v1.x := GridX;
-  v1.y := GridY;
-  v1.z := GridZ;
-  v2.x := GridX + gsize2 * gynormal.dx;
-  v2.y := GridY + gsize2 * gynormal.dy;
-  v2.z := GridZ + gsize2 * gynormal.dz;
+  v1.x := gridX;
+  v1.y := gridY;
+  v1.z := gridZ;
+  v2.x := gridX + gsize2 * gynormal.dx;
+  v2.y := gridY + gsize2 * gynormal.dy;
+  v2.z := gridZ + gsize2 * gynormal.dz;
   DrawLine(v1, v2);
 
   v1.Free;
   v2.Free;
 end;
 
-Procedure TRenderer.GetNearestGrid(iX, iY, iZ: double; Var x, y, z: double);
+Procedure TRenderer.GetNearestGrid(iX, iY, iZ: double; var x, y, z: double);
 var
   revgs, ld: double;
   GridD: double;
@@ -360,18 +380,17 @@ begin
   revgs := 1 / GridStep;
 
   With gxnormal do
-    pX := SMult(dx, dy, dz, iX - GridX, iY - GridY, iZ - GridZ);
+    pX := VectorDot3(dx, dy, dz, iX - gridX, iY - GridY, iZ - GridZ); // SMult
 
   With gynormal do
-    pY := SMult(dx, dy, dz, iX - GridX, iY - GridY, iZ - GridZ);
+    pY := VectorDot3(dx, dy, dz, iX - gridX, iY - GridY, iZ - GridZ);
 
   pX := Round(pX * revgs) * GridStep;
   pY := Round(pY * revgs) * GridStep;
 
-  x := GridX + (pX * gxnormal.dx) + (pY * gynormal.dx);
-  y := GridY + (pX * gxnormal.dy) + (pY * gynormal.dy);
-  z := GridZ + (pX * gxnormal.dz) + (pY * gynormal.dz);
-
+  x := gridX + (pX * gxnormal.dx) + (pY * gynormal.dx);
+  y := gridY + (pX * gxnormal.dy) + (pY * gynormal.dy);
+  z := gridZ + (pX * gxnormal.dz) + (pY * gynormal.dz);
 end;
 
 Procedure TRenderer.BeginRectPick(x1, y1, x2, y2: integer);
@@ -399,9 +418,11 @@ begin
 
   With lplane do
   begin
-    VMult(px3 - px1, py3 - py1, pz3 - pz1, px2 - px1, py2 - py1, pz2 - pz1,
-      norm.dx, norm.dy, norm.dz);
-    Normalize(norm);
+    VectorCross3(px3 - px1, py3 - py1, pz3 - pz1, px2 - px1, py2 - py1, pz2 - pz1,
+      norm.dx, norm.dy, norm.dz);// VMult
+    //Normalize(norm);
+    norm.Normalize;
+
     x := px1;
     y := py1;
     z := pz1;
@@ -414,12 +435,14 @@ begin
 
   With rplane do
   begin
-    VMult(px2 - px1, py2 - py1, pz2 - pz1, px3 - px1, py3 - py1, pz3 - pz1,
-      norm.dx, norm.dy, norm.dz);
+    VectorCross3(px2 - px1, py2 - py1, pz2 - pz1, px3 - px1, py3 - py1, pz3 - pz1,
+      norm.dx, norm.dy, norm.dz);//VMult
+    norm.Normalize;
+
     x := px1;
     y := py1;
     z := pz1;
-    Normalize(norm);
+    //Normalize(norm);
   end;
 
   { Top plane }
@@ -429,12 +452,14 @@ begin
 
   With uplane do
   begin
-    VMult(px2 - px1, py2 - py1, pz2 - pz1, px3 - px1, py3 - py1, pz3 - pz1,
-      norm.dx, norm.dy, norm.dz);
+    VectorCross3(px2 - px1, py2 - py1, pz2 - pz1, px3 - px1, py3 - py1, pz3 - pz1,
+      norm.dx, norm.dy, norm.dz); //VMult
+    norm.Normalize;
+
     x := px1;
     y := py1;
     z := pz1;
-    Normalize(norm);
+    //Normalize(norm);
   end;
 
   { Bottom plane }
@@ -444,12 +469,14 @@ begin
 
   With bplane do
   begin
-    VMult(px3 - px1, py3 - py1, pz3 - pz1, px2 - px1, py2 - py1, pz2 - pz1,
-      norm.dx, norm.dy, norm.dz);
+    VectorCross3(px3 - px1, py3 - py1, pz3 - pz1, px2 - px1, py2 - py1, pz2 - pz1,
+      norm.dx, norm.dy, norm.dz); //VMult
+    norm.Normalize;
+
     x := px1;
     y := py1;
     z := pz1;
-    Normalize(norm);
+    //Normalize(norm);
   end;
 
 end;
@@ -489,8 +516,7 @@ end;
 
 Function IsInFront(x, y, z: double; const pl: TPlane): boolean;
 begin
-  Result := SMult(x - pl.x, y - pl.y, z - pl.z, pl.norm.dx, pl.norm.dy,
-    pl.norm.dz) > 0;
+  Result := VectorDot3(x - pl.x, y - pl.y, z - pl.z, pl.norm.dx, pl.norm.dy, pl.norm.dz) > 0; // SMult
 end;
 
 Function TRenderer.IsVertexInRect(x, y, z: double): boolean;

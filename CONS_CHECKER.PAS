@@ -290,7 +290,7 @@ begin { Check }
             (surf.vertices.Count > ijim_MaxTrackSurfVerts) then
             AddWarning(Format('More than %d vertices in a track surface', [ijim_MaxTrackSurfVerts]), surf);
 
-      if not IsClose(vlen(surf.normal), 1) then
+      if not IsClose(surf.normal.Length, 1) then
         AddWarning('Incorrect normal - surface must be invalid!', surf);
       if surf.adjoin <> nil then
       begin

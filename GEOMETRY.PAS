@@ -2,7 +2,7 @@ unit Geometry;
 
 interface
 
-uses GlobalVars, Classes, Math, misc_utils;
+uses GlobalVars, Classes, System.Math, misc_utils;
 
 const
   // Polygon face flags
@@ -32,15 +32,77 @@ type
   TGeoMode   = (NotDrawn = 0, Vertex = 1, Wireframe = 2, Solid = 3, Texture = 4);
   TLightMode = (None = 0, Lit = 1, Diffuse = 2, Gouraud = 3, Gouraud2 = 4, Gouraud3 = 5, VertexDiffuseOnly = -1); // VertexDiffuseOnly - is internal type, to not be used in the game
 
-  TVector2d = record
+  TVector2 = record
     x, y: double;
-    Function IsZero: Boolean;
+    function IsZero: Boolean;
+
+    function Add(const v: TVector2): TVector2; inline;
+    function Cross(const v: TVector2): double; inline;
+    function Distance(const v: TVector2): double; overload; inline;
+    function Distance(const x, y: double): double; overload; inline;
+    function DistanceSqr(const v: TVector2): double; overload; inline;
+    function DistanceSqr(const x, y: double): double; overload; inline;
+    function Dot(const v: TVector2): double; inline;
+    function Length: double; inline;
+    function LengthSqr: double; inline;
+    function Normalize: double; inline; // normalize this vector and returns magnitude
+    function Normalized: TVector2; inline; // returns normalized this vector
+    procedure Scale(const scalar: double); inline; // scales this vector
+    Function Scaled(const scalar: double): TVector2; inline; // returns scaled this vector
+    Function Sub(const v: TVector2): TVector2; inline;
+
+    class operator Add(const a, b: TVector2): TVector2; inline;
+    class operator Multiply(const v: TVector2; const scalar: double): TVector2; inline;
+    class operator Multiply(const scalar: double; const v: TVector2): TVector2; inline;
+    class operator Negative(const v: TVector2): TVector2; inline;
+    class operator Subtract(const a, b: TVector2): TVector2; inline;
+    class operator Equal(const a, b: TVector2): Boolean;
+    class operator NotEqual(const a, b: TVector2): Boolean;
   end;
 
   TVector = record
-    Function IsZero: Boolean;
-    Procedure GetCoords(var x, y, z: double);
-    Procedure SetCoords(dx, dy, dz: double);
+    class function back: TVector; inline; static;
+    class function down: TVector; inline; static;
+    class function forward: TVector; inline; static;
+    class function left: TVector; inline; static;
+    class function right: TVector; inline; static;
+    class function up: TVector; inline; static;
+    class function zero: TVector; inline; static;
+
+    function IsZero: Boolean;
+    procedure GetCoords(var x, y, z: double);
+    procedure SetCoords(const dx, dy, dz: double);
+
+    function Add(const v: TVector): TVector; overload; inline;
+    function Add(const x, y, z: double): TVector; overload; inline;
+    function Cross(const v: TVector): TVector; overload; inline;
+    function Cross(const x, y, z: double): TVector; overload; inline;
+    function Distance(const v: TVector): double; overload; inline;
+    function Distance(const x, y, z: double): double; overload; inline;
+    function DistanceSqr(const v: TVector): double; overload; inline;
+    function DistanceSqr(const x, y, z: double): double; overload; inline;
+    function Dot(const v: TVector): double; overload; inline;
+    function Dot(const x, y, z: double): double; overload; inline;
+    function Length: double; inline;
+    function LengthSqr: double; inline;
+    function Normalize: double; inline; // Normalize this vector and returns magnitude
+    function Normalized: TVector; inline; // Returns normalized this vector
+    function Project(const v: TVector): TVector; overload; inline; // Projects this vector onto vector v resulting in projected vector
+    function Project(const x, y, z: double): TVector; overload; inline; // Projects this vector onto vector (x, y, z) resulting in projected vector
+    function ProjectOnToNormal(const normal: TVector): TVector; overload; inline; // Projects this vector onto normal unit vector v resulting in projected vector
+    function ProjectOnToNormal(const nx, ny, nz: double): TVector; overload; inline; // Projects this normal unit vector onto vector (nx, ny, nz) resulting in projected vector
+    procedure Scale(const scalar: double); inline; // Dcales this vector
+    Function Scaled(const scalar: double): TVector; inline; // Returns scaled this vector
+    Function Sub(const v: TVector): TVector; overload; inline;
+    function Sub(const x, y, z: double): TVector; overload; inline;
+
+    class operator Add(const a, b: TVector): TVector; inline;
+    class operator Multiply(const v: TVector; const scalar: double): TVector; inline;
+    class operator Multiply(const scalar: double; const v: TVector): TVector; inline;
+    class operator Negative(const v: TVector): TVector; inline;
+    class operator Subtract(const a, b: TVector): TVector; inline;
+    class operator Equal(const a, b: TVector): Boolean;
+    class operator NotEqual(const a, b: TVector): Boolean;
 
     case integer of
       0:
@@ -49,21 +111,14 @@ type
         (x, y, z: double);
   end;
 
-
-  T3DPoint = record
-    x, y, z: double;
-    Function IsZero: Boolean;
+  TBox2 = record
+    x1, y1, x2, y2: double;
   end;
 
   TBox = record
-    X1, Y1, Z1, X2, Y2, Z2: double;
+    x1, y1, z1, x2, y2, z2: double;
   end;
-
   PBox = ^TBox;
-
-  T2DBox = record
-    X1, Y1, X2, Y2: double;
-  end;
 
   TVertex = class
     x, y, z: Float;
@@ -72,7 +127,7 @@ type
     mark: integer;
   end;
 
-  TMat3x3 = array [0 .. 2, 0 .. 2] of double;
+  TMat3x3  = array [0 .. 2, 0 .. 2] of double;
   TMat3x3s = array [0 .. 2, 0 .. 2] of single;
 
   TTXVertex = class
@@ -98,12 +153,12 @@ type
   end;
 
   TPolygon = class
-    FaceFlags: Longint;
+    faceFlags: Longint;
     geo, light, tex: integer;
-    ExtraLight: TColorF;
+    extraLight: TColorF;
     normal: TVector;
-    Vertices: TVertices;
-    TXVertices: TTXVertices;
+    vertices: TVertices;
+    txVertices: TTXVertices;
     num: integer;
     { d:double; }
     Constructor Create;
@@ -141,7 +196,8 @@ Function FindVX(Vertices: TVertices; x, y, z: double): integer;
 
 implementation
 
-Uses lev_utils;
+Uses lev_utils, math;
+
 
 Constructor TTXVertex.Create;
 begin
@@ -218,12 +274,11 @@ var
   v0, v: TVertex;
   d: double;
 begin
-  v0 := Vertices[0];
-  for i := 1 to Vertices.count - 1 do
+  v0 := vertices[0];
+  for i := 1 to vertices.count - 1 do
   begin
-    v := Vertices[i];
-    d := SMult(normal.dx, normal.dy, normal.dz, v.x - v0.x, v.y - v0.y,
-      v.z - v0.z);
+    v := vertices[i];
+    d := normal.Dot(v.x - v0.x, v.y - v0.y, v.z - v0.z); //SMult(normal.dx, normal.dy, normal.dz, v.x - v0.x, v.y - v0.y, v.z - v0.z);
     v.x := v.x - d * normal.dx;
     v.y := v.y - d * normal.dy;
     v.z := v.z - d * normal.dz;
@@ -291,6 +346,7 @@ begin
     Result := 0;
     exit;
   end;
+
   xsum := 0;
   ysum := 0;
   zsum := 0;
@@ -310,13 +366,17 @@ begin
   begin
     v1 := Vertices[i];
     v2 := Vertices[NextVx(i)];
-    VMult(normal.dx, normal.dy, normal.dz, v2.x - v1.x, v2.y - v1.y,
-      v2.z - v1.z, en.dx, en.dy, en.dz);
-    Normalize(en);
-    d := Abs(SMult(en.dx, en.dy, en.dz, v1.x - xsum, v1.y - ysum, v1.z - zsum));
+
+    en := normal.Cross(v2.x - v1.x, v2.y - v1.y, v2.z - v1.z).Normalized;
+//    VMult(normal.dx, normal.dy, normal.dz, v2.x - v1.x, v2.y - v1.y,
+//      v2.z - v1.z, en.dx, en.dy, en.dz);
+//    Normalize(en);
+
+    d := Abs(en.Dot(v1.x - xsum, v1.y - ysum, v1.z - zsum));//Abs(SMult(en.dx, en.dy, en.dz, v1.x - xsum, v1.y - ysum, v1.z - zsum));
     if d > Result then
       Result := d;
   end;
+
   Result := JKRound(Result * 2);
   if Result < 0.0001 then
     Result := 0.01;
@@ -420,14 +480,157 @@ begin
   List[n] := p;
 end;
 
-function TVector2d.IsZero: Boolean;
+function TVector2.IsZero: Boolean;
 begin
-   Result := Math.IsZero(x) and Math.IsZero(y);
+   Result := System.Math.IsZero(x) and System.Math.IsZero(y);
+end;
+
+function TVector2.Add(const v: TVector2): TVector2;
+begin
+  VectorAdd2(x, y, v.x, v.y, Result.x, Result.y);
+end;
+
+function TVector2.Cross(const v: TVector2): double;
+begin
+  Result := VectorCross2(x, y, v.x, v.y);
+end;
+
+function TVector2.Distance(const v: TVector2): double;
+begin
+  Result := Distance(v.x, v.y);
+end;
+
+function TVector2.Distance(const x, y: double): double;
+begin
+  Result := VectorDist2(self.x, self.y, x, y);
+end;
+
+function TVector2.DistanceSqr(const v: TVector2): double;
+begin
+  Result := DistanceSqr(v.x, v.y);
+end;
+
+function TVector2.DistanceSqr(const x, y: double): double;
+begin
+  Result := VectorDistSqr2(self.x, self.y, x, y);
+end;
+
+function TVector2.Dot(const v: TVector2): double;
+begin
+  Result := VectorDot2(x, y, v.x, v.y);
+end;
+
+function TVector2.Length: double;
+begin
+  Result := VectorLen2(x, y);
+end;
+
+function TVector2.LengthSqr: double;
+begin
+  Result := VectorLenSqr2(x, y);
+end;
+
+function TVector2.Normalize: double;
+begin
+  Result := VectorNormalize2(x, y);
+end;
+
+function TVector2.Normalized: TVector2;
+begin
+  VectorNormalize2(x, y, Result.x, Result.y);
+end;
+
+procedure TVector2.Scale(const scalar: double);
+begin
+  VectorScale2(x, y, scalar, x, y);
+end;
+
+Function TVector2.Scaled(const scalar: double): TVector2;
+begin
+  Result := self;
+  Result.Scale(scalar);
+end;
+
+function TVector2.Sub(const v: TVector2): TVector2;
+begin
+  VectorSub2(x, y, v.x, v.y, Result.x, Result.y);
+end;
+
+class operator TVector2.Add(const a, b: TVector2): TVector2;
+begin
+  Result := a.Add(b);
+end;
+
+class operator TVector2.Multiply(const v: TVector2; const scalar: double): TVector2;
+begin
+  Result := v.Scaled(scalar);
+end;
+
+class operator TVector2.Multiply(const scalar: double; const v: TVector2): TVector2;
+begin
+  Result := v.Scaled(scalar);
+end;
+
+class operator TVector2.Negative(const v: TVector2): TVector2;
+begin
+  Result.x := -v.x;
+  Result.y := -v.y;
+end;
+
+class operator TVector2.Subtract(const a, b: TVector2): TVector2;
+begin
+  Result := a.Sub(b);
+end;
+
+class operator TVector2.Equal(const a, b: TVector2): Boolean;
+begin
+  Result := SameValue(a.x, b.x, CloseEnough) and
+    SameValue(a.y, b.y, CloseEnough);
+end;
+
+class operator TVector2.NotEqual(const a, b: TVector2): Boolean;
+begin
+  Result := not (a =  b);
+end;
+
+class function TVector.back: TVector;
+begin
+  Result.SetCoords(0.0, -1.0, 0.0);
+end;
+
+class function TVector.down: TVector;
+begin
+  Result.SetCoords(0.0, 0.0, -1.0);
+end;
+
+class function TVector.forward: TVector;
+begin
+  Result.SetCoords(0.0, 1.0, 0.0);
+end;
+
+class function TVector.left: TVector;
+begin
+  Result.SetCoords(-1.0, 0.0, 0.0);
+end;
+
+class function TVector.right: TVector;
+begin
+  Result.SetCoords(1.0, 0.0, 0.0);
+end;
+
+class function TVector.up: TVector;
+begin
+  Result.SetCoords(0.0, 0.0, 1.0);
+end;
+
+class function TVector.zero: TVector;
+begin
+  Result.SetCoords(0.0, 0.0, 0.0);
 end;
 
 function TVector.IsZero: Boolean;
 begin
-   Result := Math.IsZero(x) and Math.IsZero(y) and Math.IsZero(z);
+   Result := System.Math.IsZero(x) and System.Math.IsZero(y) and System.Math.IsZero(z);
 end;
 
 procedure TVector.GetCoords(var x, y, z: double);
@@ -437,19 +640,164 @@ begin
   z := self.dz;
 end;
 
-Procedure TVector.SetCoords(dx, dy, dz: double);
+Procedure TVector.SetCoords(const dx, dy, dz: double);
 begin
   self.dx := dx;
   self.dy := dy;
   self.dz := dz;
 end;
 
-function T3DPoint.IsZero: Boolean;
+function TVector.Add(const v: TVector): TVector;
 begin
-   Result := Math.IsZero(x) and Math.IsZero(y) and Math.IsZero(z);
+  Result := Add(v.x, v.y, v.z);
 end;
 
-Function FindVX(Vertices: TVertices; x, y, z: double): integer;
+function TVector.Add(const x, y, z: double): TVector;
+begin
+  VectorAdd3(self.x, self.y, self.z, x, y, z, Result.x, Result.y, Result.z);
+end;
+
+function TVector.Cross(const v: TVector): TVector;
+begin
+  Result := self.Cross(v.x, v.y, v.z);
+end;
+
+function TVector.Cross(const x, y, z: double): TVector;
+begin
+  VectorCross3(self.x, self.y, self.z, x, y, z, Result.x, Result.y, Result.z);
+end;
+
+function TVector.Distance(const v: TVector): double;
+begin
+  Result := Distance(v.x, v.y, v.z);
+end;
+
+function TVector.Distance(const x, y, z: double): double;
+begin
+  Result := VectorDist3(self.x, self.y, self.z, x, y, z);
+end;
+
+function TVector.DistanceSqr(const v: TVector): double;
+begin
+  Result := DistanceSqr(v.x, v.y, v.z);
+end;
+
+function TVector.DistanceSqr(const x, y, z: double): double;
+begin
+  Result := VectorDistSqr3(self.x, self.y, self.z, x, y, z);
+end;
+
+function TVector.Dot(const v: TVector): double;
+begin
+  Result := Dot(v.x, v.y, v.z);
+end;
+
+function TVector.Dot(const x, y, z: double): double;
+begin
+  Result := VectorDot3(self.x, self.y, self.z, x, y, z);
+end;
+
+function TVector.Length: double;
+begin
+  Result := VectorLen3(x, y, z);
+end;
+
+function TVector.LengthSqr: double;
+begin
+  Result := VectorLenSqr3(x, y, z);
+end;
+
+function TVector.Normalize: double;
+begin
+  Result := VectorNormalize3(x, y, z);
+end;
+
+function TVector.Normalized: TVector;
+begin
+  VectorNormalize3(x, y, z, Result.x, Result.y, Result.z);
+end;
+
+function TVector.Project(const v: TVector): TVector;
+begin
+  Result := Project(v.x, v.y, v.z);
+end;
+
+function TVector.Project(const x, y, z: double): TVector;
+begin
+  VectorProject3(self.x, self.y, self.z, x, y, z, Result.x, Result.y, Result.z);
+end;
+
+function TVector.ProjectOnToNormal(const normal: TVector): TVector;
+begin
+  Result := ProjectOnToNormal(normal.x, normal.y, normal.z);
+end;
+
+function TVector.ProjectOnToNormal(const nx, ny, nz: double): TVector;
+begin
+  VectorProjectOnToNormal3(self.x, self.y, self.z, nx, ny, nz, Result.x, Result.y, Result.z);
+end;
+
+procedure TVector.Scale(const scalar: double);
+begin
+    VectorScale3(x, y, z, scalar, x ,y, z);
+end;
+
+function TVector.Scaled(const scalar: double): TVector;
+begin
+  Result := self;
+  Result.Scale(scalar);
+end;
+
+function TVector.Sub(const v: TVector): TVector;
+begin
+  Result := Sub( v.x, v.y, v.z);
+end;
+
+function TVector.Sub(const x, y, z: double): TVector;
+begin
+  VectorSub3(self.x, self.y, self.z, x, y, z, Result.x, Result.y, Result.z);
+end;
+
+class operator TVector.Add(const a, b: TVector): TVector;
+begin
+  Result := a.Add(b);
+end;
+
+class operator TVector.Multiply(const v: TVector; const scalar: double): TVector;
+begin
+  Result := v.Scaled(scalar);
+end;
+
+class operator TVector.Multiply(const scalar: double; const v: TVector): TVector;
+begin
+  Result := v.Scaled(scalar);
+end;
+
+class operator TVector.Negative(const v: TVector): TVector;
+begin
+  Result.x := -v.x;
+  Result.y := -v.y;
+  Result.z := -v.z;
+end;
+
+class operator TVector.Subtract(const a, b: TVector): TVector;
+begin
+  Result := a.Sub(b);
+end;
+
+class operator TVector.Equal(const a, b: TVector): Boolean;
+begin
+  Result := SameValue(a.x, b.x, CloseEnough) and
+    SameValue(a.y, b.y, CloseEnough) and
+    SameValue(a.z, b.z, CloseEnough);
+end;
+
+class operator TVector.NotEqual(const a, b: TVector): Boolean;
+begin
+  Result := not (a = b);
+end;
+
+function FindVX(Vertices: TVertices; x, y, z: double): integer;
 var
   v: TVertex;
   i: integer;

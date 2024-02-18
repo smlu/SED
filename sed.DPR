@@ -17,7 +17,7 @@ uses
   Containers in 'Containers.pas',
   FileOperations in 'FileOperations.pas',
   FileDialogs in 'FileDialogs.pas' {GetFileOpen},
-  Unit1 in 'Unit1.pas' {Form1},
+  UNIT1 in 'UNIT1.PAS' {Form1},
   values in 'values.pas',
   u_templates in 'u_templates.pas',
   ListRes in 'ListRes.pas',
@@ -84,7 +84,8 @@ uses
   pjgeometry in 'pjgeometry.pas',
   u_3doform in 'u_3doform.pas' {UrqForm},
   JED_COM in 'JED_COM.PAS',
-  JED_PLUGINS in 'JED_PLUGINS.PAS';
+  JED_PLUGINS in 'JED_PLUGINS.PAS',
+  math in 'math.pas';
 
 {$R *.RES}
 {$R SEDstatic.res}

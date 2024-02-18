@@ -5,7 +5,7 @@ unit J_Level;
 interface
 
 uses Classes, Files, Tools, SysUtils, misc_utils,
-  GlobalVars, Geometry, FileOperations, Values, U_3dos, StrUtils, Math,
+  GlobalVars, Geometry, FileOperations, Values, U_3dos, StrUtils,
   u_templates, Generics.Collections, System.Types;
 
 const
@@ -193,7 +193,7 @@ type
 
   TPointLight = record
     color: TColorF;
-    position: T3DPoint;
+    position: TVector;
     minRange: double;  // minimum light range at which light will still illuminate
     maxRange: double;  // maximum light intensity range before it starts to falloff
   end;
@@ -347,7 +347,7 @@ Function GetfrFR(thfr: integer): integer;
 implementation
 
 uses ProgressDialog, lev_utils, cog_utils, ListRes, U_CogForm,
-  U_options, graph_files;
+  U_options, graph_files, System.Math;
 
 { Lights }
 
@@ -672,8 +672,8 @@ Procedure TJKSurface.CheckIfFloor;
 var
   cosa: double;
 begin
-  cosa := Smult(normal.dx, normal.dy, normal.dz, 0, 0, 1);
-  if (cosa <= 1) and (cosa > cos(PI / 4)) then//Round(Math.RadToDeg(Math.ArcCos(cosa))) <= 45 then//(cosa > cos(PI / 4)) then
+  cosa := normal.Dot(TVector.Up); //Smult(normal.dx, normal.dy, normal.dz, 0, 0, 1);
+  if (cosa <= 1) and (cosa > cos(PI / 4)) then //Round(Math.RadToDeg(Math.ArcCos(cosa))) <= 45 then//(cosa > cos(PI / 4)) then
     SurfFlags := SurfFlags or SF_Floor or SF_Collision
   else
     SurfFlags := SurfFlags and (-1 xor SF_Floor);
@@ -684,12 +684,12 @@ var
   v1, v2: TJKVertex;
 begin
   Result := false;
-  if Vertices.count < 2 then
+  if vertices.count < 2 then
     exit;
-  v1 := Vertices[0];
-  v2 := Vertices[1];
+  v1 := vertices[0];
+  v2 := vertices[1];
   v.SetCoords(v2.X - v1.X, v2.Y - v1.Y, v2.Z - v1.Z);
-  Result := Normalize(v);
+  Result := v.Normalize <> 0; //Normalize(v);
 end;
 
 Function TJKSurface.GetVXs: TJKVertices;

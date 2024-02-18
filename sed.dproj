@@ -139,7 +139,7 @@
         <DCCReference Include="FileDialogs.pas">
             <Form>GetFileOpen</Form>
         </DCCReference>
-        <DCCReference Include="Unit1.pas">
+        <DCCReference Include="UNIT1.PAS">
             <Form>Form1</Form>
         </DCCReference>
         <DCCReference Include="values.pas"/>
@@ -261,6 +261,7 @@
         </DCCReference>
         <DCCReference Include="JED_COM.PAS"/>
         <DCCReference Include="JED_PLUGINS.PAS"/>
+        <DCCReference Include="math.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>
@@ -282,8 +283,8 @@
                     <Source Name="MainSource">sed.DPR</Source>
                 </Source>
                 <Excluded_Packages>
-                    <Excluded_Packages Name="$(BDSBIN)\dcloffice2k270.bpl">Microsoft Office 2000 Sample Automation Server Wrapper Components</Excluded_Packages>
-                    <Excluded_Packages Name="$(BDSBIN)\dclofficexp270.bpl">Microsoft Office XP Sample Automation Server Wrapper Components</Excluded_Packages>
+                    <Excluded_Packages Name="$(BDSBIN)\dcloffice2k280.bpl">Microsoft Office 2000 Sample Automation Server Wrapper Components</Excluded_Packages>
+                    <Excluded_Packages Name="$(BDSBIN)\dclofficexp280.bpl">Microsoft Office XP Sample Automation Server Wrapper Components</Excluded_Packages>
                 </Excluded_Packages>
             </Delphi.Personality>
             <Platforms>

@@ -1773,7 +1773,7 @@ var
   clp: TClipboard;
   tx, ty, tz, tpch, tyaw, trol: double;
 begin
-  case JedMain.Map_mode of
+  case JedMain.mapMode of
     MM_VX:
       begin
         if Cur_VX = nil then
@@ -1818,8 +1818,8 @@ begin
               SaveSecUndo(sec, ch_changed, sc_val);
               with sec.PointLight do
                 begin
-                  Color := lt.color;
-                  Position := T3DPoint(lt.position);
+                  color := lt.color;
+                  position := lt.position;
                   minRange := lt.Range;
                   maxRange := lt.Range / 4; // in IJIM levels the light max range is at 1/4 of min range
                 end;
@@ -1856,7 +1856,7 @@ begin
     if s[i] in ['\', '/', ':', '(', ')'] then
       s[i] := ' ';
 
-  case JedMain.Map_mode of
+  case JedMain.mapMode of
     MM_VX:
       begin
         if Cur_VX = nil then

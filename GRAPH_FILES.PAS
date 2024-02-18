@@ -2,7 +2,7 @@ unit graph_files;
 
 interface
 
-uses Images, Graphics, Files, FileOperations, SysUtils, Misc_Utils, Math;
+uses Images, Graphics, Files, FileOperations, SysUtils, Misc_Utils, System.Math;
 
 type
   TMatHeader = record
