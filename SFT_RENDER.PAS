@@ -278,7 +278,7 @@ begin
   { Smult dx,dy,dz on 0,-1,0
     Basically - check dy }
 
-  Result := dz > 0;
+  Result := dz < 0;
 end;
 
 Procedure TSFTRenderer.DrawPolygon(p: TPolygon);
@@ -857,11 +857,11 @@ begin
   case what of
     CL_BACKGROUND:
       Dc.Brush.Color := RGB(r, g, b);
-  else
-    begin
-      Dc.pen.Color := RGB(r, g, b);
-      Dc.Brush.Color := RGB(r, g, b);
-    end;
+    else // front & back
+      begin
+        Dc.pen.Color := RGB(r, g, b);
+        Dc.Brush.Color := RGB(r, g, b);
+      end;
   end;
 end;
 

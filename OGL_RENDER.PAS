@@ -92,7 +92,7 @@ Type
     Procedure RenderLine(v1, v2: TVertex);
     Procedure RenderLineAt(x1, y1, z1, x2, y2, z2: double);
     Function CreateOGLPalette(const pd: TPIXELFORMATDESCRIPTOR): Integer;
-    Function CanRenderWirePolygon(p: TPolygon): boolean;
+    Function IsWirePolygonInView(p: TPolygon): boolean;
   end;
 
 implementation
@@ -354,18 +354,39 @@ begin
   RenderPoly(p);
 end;
 
-Function TOGLRenderer.CanRenderWirePolygon(p: TPolygon): Boolean;
-  var m: integer;
+Function TOGLRenderer.IsWirePolygonInView(p: TPolygon): Boolean;
+  var cullmode: integer;
+    vp: TViewPortArray;
+  pmx, mmx: TMatrixDblArray;
+  campos, vdir: TVector;
+
 begin
   Result := BitMaskTest(p.FaceFlags, FF_DoubleSided);
   if not Result and glIsEnabled(GL_CULL_FACE) then
   begin
+    glGetIntegerv(GL_CULL_FACE_MODE, @cullmode);
+    if cullmode = GL_FRONT_AND_BACK then
+      exit;
+
+    if perspective then
+      begin
+        //SetRenderMatrix;
+        glGetIntegerv(GL_VIEWPORT, @vp);
+        glGetDoublev(GL_MODELVIEW_MATRIX, @mmx);
+        glGetDoublev(GL_PROJECTION_MATRIX, @pmx);
+
+        gluUnProject(0, vp[3] - 0, 0, mmx, pmx, vp, campos.x, campos.y, campos.z);
+        with p.vertices[0] do
+          vdir := -campos.Sub(x, y, z);
+      end
+    else // ortho
+      vdir := GetCameraForward;
+
     // Note this method works ok only for convex polygons
-    glGetIntegerv(GL_CULL_FACE_MODE, @m);
-    var dot := zv.Dot(p.normal); //SMult(zv.x, zv.y, zv.z, p.normal.x, p.normal.y, p.normal.z);
-    if (m = GL_FRONT) and (dot > 0) then
+    var dot := vdir.Dot(p.normal);
+    if (cullmode = GL_FRONT) and (dot < 0) then
       exit
-    else if (m = GL_BACK) and (dot <= 0) then
+    else if (cullmode = GL_BACK) and (dot >= 0) then
       exit;
   end;
   Result := true;
@@ -385,7 +406,7 @@ begin
   try
     for i := 0 to ps.count - 1 do
     begin
-      if not CanRenderWirePolygon(ps[i]) then continue;
+      if not IsWirePolygonInView(ps[i]) then continue;
       with ps[i] do
       begin
         n := vertices.count;
@@ -437,7 +458,7 @@ Procedure TOGLRenderer.RenderPoly(p: TPolygon);
 var
   i, n, m: Integer;
 begin
-  if not CanRenderWirePolygon(p) then
+  if not IsWirePolygonInView(p) then
     exit;
 
   n := p.vertices.count;
@@ -850,13 +871,13 @@ begin
         bgnd_clr.g := g;
         bgnd_clr.b := b;
       end;
-  else
-    begin
-      glColor3ub(r, g, b);
-      Front_clr.r := r;
-      Front_clr.g := g;
-      Front_clr.b := b;
-    end;
+    else // front or back
+      begin
+        glColor3ub(r, g, b);
+        Front_clr.r := r;
+        Front_clr.g := g;
+        Front_clr.b := b;
+      end;
   end;
 end;
 
