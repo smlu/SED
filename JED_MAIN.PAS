@@ -8102,7 +8102,7 @@ Procedure LoadDLLPlugin(const dll: string);
             sedplstd := GetProcAddress(hmod, 'SEDPluginLoadStdCall');
             if Assigned(sedplstd) then
             begin
-                if not sedplstd(GetSEDCOM) then
+                if not sedplstd(GetSedCOM) then
                     PanMessageFmt(mt_warning, 'Plug-in %s returned error while executing!', [dll]);
                 exit;
             end;
@@ -8110,7 +8110,7 @@ Procedure LoadDLLPlugin(const dll: string);
             sedpl := GetProcAddress(hmod, 'SEDPluginLoad');
             if Assigned(sedpl) then
             begin
-                if not sedpl(GetSEDCOM) then
+                if not sedpl(GetSedCOM) then
                     PanMessageFmt(mt_warning, 'Plug-in %s returned error while executing!', [dll]);
                 exit;
             end;

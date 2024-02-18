@@ -3,29 +3,28 @@ unit sed_plugins;
 interface
 
 const
-
-SEDCloseEnough = 10e-5;
+sedCloseEnough = 10e-5;
 
 {Get/SetProjectType, NewLevel}
-spt_JKDF2 = 0;
-spt_MOTS  = 1;
-spt_IJIM  = 2;
+spt_jkdf2 = 0;
+spt_mots  = 1;
+spt_ijim  = 2;
 
 {Get/SetLevelHeader flags}
 lh_version     = 1;
 lh_gravity     = 2;
 lh_skyZ        = 4;
-lh_cSkyOffs    = 8;
-lh_HorDist     = $10;
-lh_HorPPR      = $20;
-lh_HSkyOffs    = $40;
-lh_MipMapDist  = $80;
-lh_LODDist     = $100;
-lh_PerspDist   = $200;
-lh_GouraudDist = $400;
+lh_cskyOffs    = 8;
+lh_horDist     = $10;
+lh_horPPR      = $20;
+lh_hskyOffs    = $40;
+lh_mipmapDist  = $80;
+lh_lodDist     = $100;
+lh_perspDist   = $200;
+lh_gouraudDist = $400;
 lh_ppu         = $800;
-lh_MasterCMP   = $1000;
-lh_Fog         = $2000;
+lh_masterCmp   = $1000;
+lh_fog         = $2000;
 lh_all         = $2FFF;
 
 {Get/SetSector flags}
@@ -44,13 +43,13 @@ s_all        = $FFFF;
 {Get/SetSurface flags}
 sf_adjoin      = 1;
 sf_adjoinflags = 2;
-sf_SurfFlags   = 4;
-sf_FaceFlags   = 8;
-sf_Material    = $10;
+sf_surfflags   = 4;
+sf_faceflags   = 8;
+sf_material    = $10;
 sf_geo         = $20;
 sf_light       = $40;
 sf_tex         = $80;
-sf_ExtraLight  = $100;
+sf_extralight  = $100;
 sf_txscale     = $200;
 sf_all         = $3FF;
 
@@ -72,13 +71,13 @@ lt_layer        = $20;
 lt_all          = $FF;
 
 {Map Mode constants}
-MM_SC = 0; {Sectors}
-MM_SF = 1; {surfaces}
-MM_VX = 2; {vertices}
-MM_TH = 3; {Things}
-MM_ED = 4; {Edges}
-MM_LT = 5; {Lights}
-MM_FR = 6; {frames}
+mm_sc = 0; {Sectors}
+mm_sf = 1; {surfaces}
+mm_vx = 2; {vertices}
+mm_th = 3; {Things}
+mm_ed = 4; {Edges}
+mm_lt = 5; {Lights}
+mm_fr = 6; {frames}
 
 {SurfaceUpdate "how" constant}
 su_texture    = 1;
@@ -92,6 +91,7 @@ uc_added    = 1;
 uc_deleted  = 2;
 sc_values   = 1;
 sc_geometry = 2;
+sc_all      = 3;
 
 {COG value types}
 ct_unknown  = 0;
@@ -135,9 +135,9 @@ ef_adjoin    = 3;
 ef_thing     = 4;
 ef_face      = 5;
 ef_light     = 6;
-ef_geo       = 7;
+ef_geomode   = 7;
 ef_lightmode = 8;
-ef_tex       = 9;
+ef_texmode   = 9;
 
 {PanMessage constants}
 msg_info    = 0;
@@ -145,9 +145,9 @@ msg_warning = 1;
 msg_error   = 2;
 
 {SendKey flags}
-sk_Ctrl  = 1;
-sk_Shift = 2;
-sk_Alt   = 4;
+sk_ctrl  = 1;
+sk_shift = 2;
+sk_alt   = 4;
 
 {GetConsErrorType constants}
 ce_normal  = 0;
@@ -161,24 +161,24 @@ cei_surface = 2;
 cei_thing   = 3;
 cei_cog     = 4;
 
-{GetSEDString constants}
-SS_ProjectDir  = 1;
-SS_SEDDir      = 2;
-SS_GameDir     = 3;
-SS_LevelFile   = 4;
-SS_ConfigFile  = 5; // ex js_jedregkey
-SS_LECLogoJK   = 6;
-SS_Recent1     = 7;
-SS_Recent2     = 8;
-SS_Recent3     = 9;
-SS_Recent4     = 10;
-SS_Res1gob     = 11;
-SS_Res2gob     = 12;
-SS_SPGOB       = 13;
-SS_MP1GOB      = 14;
-SS_MP2GOB      = 15;
-SS_MP3GOB      = 16;
-SS_LECLogoIJIM = 17;
+{GetSedString constants}
+ss_projectDir  = 1;
+ss_sedDir      = 2;
+ss_gameDir     = 3;
+ss_levelFile   = 4;
+ss_configFile  = 5; // ex js_jedregkey
+ss_lecLogoJK   = 6;
+ss_recent1     = 7;
+ss_recent2     = 8;
+ss_recent3     = 9;
+ss_recent4     = 10;
+ss_res1Gob     = 11;
+ss_res2Gob     = 12;
+ss_spGob       = 13;
+ss_mp1Gob      = 14;
+ss_mp2Gob      = 15;
+ss_mp3Gob      = 16;
+ss_lecLogoIJIM = 17;
 
 {GetJEDWindow constants}
 sw_Main         =0;
@@ -213,7 +213,7 @@ rv_GridYAxis = 16;
 rv_GridZAxis = 17;
 
 {SetRenderColor constants}
-rc_current    = 0;
+rc_Current    = 0;
 rc_Background = 1;
 
 {SetCulling constants}
@@ -228,37 +228,37 @@ cr_Software = 2;
 
 type
 
-TSEDVector3 = record
+TSedVector3 = record
   case integer of
     0: (dx,dy,dz: double);
     1: (x,y,z: double);
-    2: (pitch,yaw,roll: double);
+    2: (pitch, yaw, roll: double);
 end;
 
-TSEDColor = record
+TSedColor = record
     r, g, b, a: single;  // a - alpha or light intensity
 end;
 
-TSEDBox = record
-  p1: TSEDVector3;
-  p2: TSEDVector3;
+TSedBox = record
+  p1: TSedVector3;
+  p2: TSedVector3;
 end;
 
-TSEDPointLight = record
-  color: TSEDColor;
-  position: TSEDVector3;
-  minRange: double;  // minimum light range at which light will still illuminate
+TSedPointLight = record
+  color: TSedColor;
+  position: TSedVector3;
+  minRange: double;  // minimum light range at which light will still illuminate objects
   maxRange: double;  // maximum light intensity range before it starts to falloff
 end;
 
-TSEDFog = record
+TSedFog = record
   enabled: Boolean;
-  color: TSEDColor;
+  color: TSedColor;
   fogStart: double;
   fogEnd: double;
 end;
 
-TSEDLevelHeader = record
+TSedLevelHeader = record
   version: Longint;
   gravity: double;
   ceilingSkyZ: double;
@@ -270,56 +270,56 @@ TSEDLevelHeader = record
   lodDist: array[0..3] of double;
   perspDist, GouraudDist: double;
   pixelPerUnit: double;
-  masterCMP: PChar;
-  fog: TSEDFog;
+  aMasterCmp: PChar;
+  fog: TSedFog;
 end;
 
-TSEDSectorRec = record
+TSedSectorRec = record
   flags: longint;
-  ambient: TSEDColor;
-  extraLight: TSEDColor;
-  pointLight: TSEDPointLight;
-  colorMap: PChar;
-  tint: TSEDColor;
-  sound: PChar;
+  ambient: TSedColor;
+  extraLight: TSedColor;
+  pointLight: TSedPointLight;
+  aColorMap: PChar;
+  tint: TSedColor;
+  aSound: PChar;
   soundVolume: double;
-  thrust: TSEDVector3;
+  thrust: TSedVector3;
   layer: longint;
 end;
 
-TSEDSurfaceRec = record
-  adjoinSec, AdjoinSurf: longint;
+TSedSurfaceRec = record
+  adjoinSec, adjoinSurf: longint;
   adjoinflags,
   surfflags,
   faceflags: Longint;
-  material: PChar;
+  aMaterial: PChar;
   geo,light,tex: longint;
-  extraLight: TSEDColor;
+  extraLight: TSedColor;
   uscale,vscale: single;
 end;
 
-TSEDThingRec = record
-  name: PChar;
-  Sector: Longint;
-  position: TSEDVector3;
-  rotation: TSEDVector3;
+TSedThingRec = record
+  aName: PChar;
+  sector: Longint;
+  position: TSedVector3;
+  rotation: TSedVector3;
   layer: longint;
 end;
 
-TSEDLightRec = record
+TSedLightRec = record
   flags: longint;
   layer: longint;
-  color: TSEDColor;
+  color: TSedColor;
   intensity: double;
   range: double;
-  position: TSEDVector3;
+  position: TSedVector3;
 end;
 
 {endtype}
 
 { Wireframe renderer interface}
 {JED 0.93}
-ISEDWFRenderer = class
+ISedWFRenderer = class
   {OLE2 crap. ignore}
   function QueryInterface(iid: pointer; var obj): LongInt; virtual; stdcall; abstract;
   function AddRef: Longint; virtual; stdcall; abstract;
@@ -363,7 +363,7 @@ ISEDWFRenderer = class
   Function IsLineInRect(x1,y1,z1,x2,y2,z2:double):boolean;virtual;stdcall;abstract;
   Function IsVertexInRect(X,Y,Z:double):boolean;virtual;stdcall;abstract;
 
-  Function GetXYZonPlaneAt(scX,scY:integer;pnormal:TSEDVector3; pX,pY,pZ:double; var X,Y,Z:double):Boolean;virtual;stdcall;abstract;
+  Function GetXYZonPlaneAt(scX,scY:integer; const pnormal:TSedVector3; pX,pY,pZ:double; var X,Y,Z:double):Boolean;virtual;stdcall;abstract;
   Function GetGridAt(scX,scY:integer;var X,Y,Z:double):boolean;virtual;stdcall;abstract;
   Procedure GetNearestGridNode(iX,iY,iZ:double; Var X,Y,Z:double);virtual;stdcall;abstract;
   Procedure ProjectPoint(x,y,z:double; Var WinX,WinY:integer);virtual;stdcall;abstract;
@@ -372,39 +372,38 @@ ISEDWFRenderer = class
 
   Function HandleWMQueryPal:integer;virtual;stdcall;abstract;
   Function HandleWMChangePal:integer;virtual;stdcall;abstract;
-
 end;
 
-ISEDLevel = class
+ISedLevel = class
   {OLE2 crap. ignore}
   function QueryInterface(iid: pointer; var obj): LongInt; virtual; stdcall; abstract;
   function AddRef: Longint; virtual; stdcall; abstract;
   function Release: Longint; virtual; stdcall; abstract;
 
   {Level header}
-  Procedure GetLevelHeader(var lh: TSEDLevelHeader; flags: Integer); virtual;stdcall;abstract;
-  Procedure SetLevelHeader(const lh: TSEDLevelHeader; flags: Integer); virtual;stdcall;abstract;
+  Procedure GetLevelHeader(var lh: TSedLevelHeader; flags: Integer); virtual;stdcall;abstract;
+  Procedure SetLevelHeader(const lh: TSedLevelHeader; flags: Integer); virtual;stdcall;abstract;
 
   Function NumSectors: Integer; virtual;stdcall;abstract;
   Function NumThings: Integer; virtual;stdcall;abstract;
   Function NumLights: Integer; virtual;stdcall;abstract;
-  Function NumCOGs: Integer; virtual;stdcall;abstract;
+  Function NumCogs: Integer; virtual;stdcall;abstract;
 
   {Sectors}
   Function SectorAdd: Integer;virtual;stdcall;abstract;
   Procedure SectorDelete(n: Integer);virtual;stdcall;abstract;
 
-  Procedure SectorGet(sec: Integer; var rec: TSEDSectorRec; flags: Integer); virtual;stdcall;abstract;
-  Procedure SectorSet(sec: Integer; const rec: TSEDSectorRec; flags: Integer); virtual;stdcall;abstract;
+  Procedure SectorGet(sec: Integer; var rec: TSedSectorRec; flags: Integer); virtual;stdcall;abstract;
+  Procedure SectorSet(sec: Integer; const rec: TSedSectorRec; flags: Integer); virtual;stdcall;abstract;
 
   Function SectorNumVertices(sec: Integer): Integer; virtual;stdcall;abstract;
   Function SectorNumSurfaces(sec: Integer): Integer; virtual;stdcall;abstract;
 
-  Procedure SectorGetVertex(sec, vn: Integer; var vert: TSEDVector3); virtual;stdcall;abstract;
-  Procedure SectorSetVertex(sec, vn: Integer; vert: TSEDVector3); virtual;stdcall;abstract;
+  Procedure SectorGetVertex(sec, vn: Integer; var vert: TSedVector3); virtual;stdcall;abstract;
+  Procedure SectorSetVertex(sec, vn: Integer; const vert: TSedVector3); virtual;stdcall;abstract;
 
-  Function SectorAddVertex(sec: Integer; vert: TSEDVector3): Integer; virtual;stdcall;abstract;
-  Function SectorFindVertex(sec: Integer; vert: TSEDVector3): Integer; virtual;stdcall;abstract;
+  Function SectorAddVertex(sec: Integer; const vert: TSedVector3): Integer; virtual;stdcall;abstract;
+  Function SectorFindVertex(sec: Integer; const vert: TSedVector3): Integer; virtual;stdcall;abstract;
   Function SectorDeleteVertex(sec: Integer; vn: Integer): Integer; virtual;stdcall;abstract;
 
   Function SectorAddSurface(sec: Integer): Integer; virtual;stdcall;abstract;
@@ -412,9 +411,9 @@ ISEDLevel = class
   Procedure SectorUpdate(sec: Integer); virtual;stdcall;abstract;
 
   {Surfaces}
-  Procedure SurfaceGet(sec, surf: Integer; var rec: TSEDSurfaceRec; flags: Integer); virtual;stdcall;abstract;
-  Procedure SurfaceSet(sec, surf: Integer; const rec: TSEDSurfaceRec; flags: Integer); virtual;stdcall;abstract;
-  Procedure SurfaceGetNormal(sec,surf: Integer; var normal: TSEDVector3); virtual;stdcall;abstract;
+  Procedure SurfaceGet(sec, surf: Integer; var rec: TSedSurfaceRec; flags: Integer); virtual;stdcall;abstract;
+  Procedure SurfaceSet(sec, surf: Integer; const rec: TSedSurfaceRec; flags: Integer); virtual;stdcall;abstract;
+  Procedure SurfaceGetNormal(sec,surf: Integer; var normal: TSedVector3); virtual;stdcall;abstract;
   Procedure SurfaceUpdate(sec, surf: Integer; how: Integer); virtual;stdcall;abstract;
   Function SurfaceNumVertices(sec, surf: Integer): Integer; virtual;stdcall;abstract;
   Function SurfaceGetVertexNum(sec, surf, vn: Integer): Integer; virtual;stdcall;abstract;
@@ -424,68 +423,67 @@ ISEDLevel = class
   Procedure SurfaceDeleteVertex(sec, surf: Integer; n: Integer) ;virtual;stdcall;abstract;
   Procedure SurfaceGetVertexUV(sec, surf, vn: Integer; var u,v: single); virtual;stdcall;abstract;
   Procedure SurfaceSetVertexUV(sec, surf, vn: integer; u,v: single); virtual;stdcall;abstract;
-  Procedure SurfaceGetVertexLight(sec, surf, vn: Integer; var color: TSEDColor); virtual; stdcall; abstract;
-  Procedure SurfaceSetVertexLight(sec, surf, vn: Integer; const color: TSEDColor); virtual; stdcall; abstract;
+  Procedure SurfaceGetVertexLight(sec, surf, vn: Integer; var color: TSedColor); virtual; stdcall; abstract;
+  Procedure SurfaceSetVertexLight(sec, surf, vn: Integer; const color: TSedColor); virtual; stdcall; abstract;
 
   {Things}
   Function ThingAdd: Integer; virtual; stdcall;abstract;
   Procedure ThingDelete(th: Integer); virtual;stdcall;abstract;
-  Procedure ThingGet(th: Integer; var rec:TSEDThingRec; flags: Integer); virtual;stdcall;abstract;
-  Procedure ThingSet(th: Integer; const rec:TSEDThingRec; flags: Integer); virtual;stdcall;abstract;
+  Procedure ThingGet(th: Integer; var rec:TSedThingRec; flags: Integer); virtual;stdcall;abstract;
+  Procedure ThingSet(th: Integer; const rec:TSedThingRec; flags: Integer); virtual;stdcall;abstract;
   Procedure ThingUpdate(th: Integer); virtual;stdcall;abstract;
 
   {Lights}
   Function LightAdd:Integer; virtual;stdcall;abstract;
   Procedure LightDelete(lt: Integer);virtual;stdcall;abstract;
-  Procedure LightGet(lt: Integer; var rec: TSEDLightRec; flags: Integer); virtual;stdcall;abstract;
-  Procedure LightSet(lt: Integer; const rec: TSEDLightRec; flags: Integer); virtual;stdcall;abstract;
+  Procedure LightGet(lt: Integer; var rec: TSedLightRec; flags: Integer); virtual;stdcall;abstract;
+  Procedure LightSet(lt: Integer; const rec: TSedLightRec; flags: Integer); virtual;stdcall;abstract;
   Procedure LightUpdate(lt:integer); virtual;stdcall;abstract;
 
   {Layers}
   Function NumLayers: Integer; virtual;stdcall;abstract;
   Function LayerGetName(n: Integer): PChar; virtual;stdcall;abstract;
-  Function LayerAdd(name: PChar): Integer; virtual;stdcall;abstract;
+  Function LayerAdd(const name: PChar): Integer; virtual;stdcall;abstract;
 
   {JED 0.92}
-  Function NumThingValues(th: Integer): Integer; virtual;stdcall;abstract;
+  Function ThingNumValues(th: Integer): Integer; virtual;stdcall;abstract;
   Function ThingValueGetName(th, n: Integer): PChar; virtual;stdcall;abstract;
   Function ThingValueGetData(th, n: Integer): PChar; virtual;stdcall;abstract;
-  Procedure ThingValueSetData(th,n: Integer;val: PChar); virtual;stdcall;abstract;
+  Procedure ThingValueSetData(th,n: Integer; const val: PChar); virtual;stdcall;abstract;
 
-  Function ThingValueAdd(th: integer; name,val: PChar): Integer; virtual;stdcall;abstract;
-  Procedure ThingValueInsert(th,n: Integer; name,val: PChar); virtual;stdcall;abstract;
+  Function ThingValueAdd(th: integer; const name, val: PChar): Integer; virtual;stdcall;abstract;
+  Procedure ThingValueInsert(th,n: Integer; const name,val: PChar); virtual;stdcall;abstract;
   Procedure ThingValueDelete(th,n: Integer); virtual;stdcall;abstract;
 
-  Procedure ThingFrameGet(th,n: Integer; var pos, rot: TSEDVector3); virtual;stdcall;abstract;
-  Procedure ThingFrameSet(th,n: Integer; pos, rot: TSEDVector3); virtual;stdcall;abstract;
+  Procedure ThingFrameGet(th,n: Integer; var pos, pyr: TSedVector3); virtual;stdcall;abstract;
+  Procedure ThingFrameSet(th,n: Integer; const pos, pyr: TSedVector3); virtual;stdcall;abstract;
 
   {COGs}
-  Function COGAdd(name: PChar): Integer; virtual;stdcall;abstract;
-  Procedure COGDelete(n: Integer); virtual;stdcall;abstract;
-  Procedure COGUpdate(cg: Integer); virtual;stdcall;abstract;
-  Function COGGetFilename(cg: Integer): PChar; virtual;stdcall;abstract;
+  Function CogAdd(const name: PChar): Integer; virtual;stdcall;abstract;
+  Procedure CogDelete(n: Integer); virtual;stdcall;abstract;
+  Procedure CogUpdate(cg: Integer); virtual;stdcall;abstract;
+  Function CogGetFilename(cg: Integer): PChar; virtual;stdcall;abstract;
 
-  Function NumCOGValues(cg: Integer): Integer; virtual;stdcall;abstract;
+  Function CogNumValues(cg: Integer): Integer; virtual;stdcall;abstract;
+  Function CogValueGetName(cg,n: Integer): PChar; virtual;stdcall;abstract;
+  Function CogValueGetType(cg,n: Integer): Integer; virtual;stdcall;abstract;
 
-  Function COGValueGetName(cg,n: Integer): PChar; virtual;stdcall;abstract;
-  Function COGValueGetType(cg,n: Integer): Integer; virtual;stdcall;abstract;
+  Function CogValueGet(cg,n: Integer): PChar; virtual;stdcall;abstract;
+  Function CogValueSet(cg,n: Integer; const val: PChar): Boolean; virtual;stdcall;abstract;
 
-  Function COGValueGet(cg,n: Integer): PChar; virtual;stdcall;abstract;
-  Function COGValueSet(cg,n: Integer; val:PChar): Boolean; virtual;stdcall;abstract;
-
-  Function COGValueAdd(cg: Integer; name,val: PChar; vtype: Integer): Integer; virtual;stdcall;abstract;
-  Procedure COGValueInsert(cg,n: Integer; name,val:PChar; vtype: Integer); virtual;stdcall;abstract;
-  Procedure COGValueDelete(cg,n: integer); virtual;stdcall;abstract;
+  Function CogValueAdd(cg: Integer; const name,val: PChar; vtype: Integer): Integer; virtual;stdcall;abstract;
+  Procedure CogValueInsert(cg,n: Integer; const name,val: PChar; vtype: Integer); virtual;stdcall;abstract;
+  Procedure CogValueDelete(cg,n: integer); virtual;stdcall;abstract;
 end;
 
-ISED = class
+ISed = class
   {OLE2 crap. Ignore}
   function QueryInterface(iid: pointer; var obj): LongInt; virtual; stdcall; abstract;
   function AddRef: Longint; virtual; stdcall; abstract;
   function Release: Longint; virtual; stdcall; abstract;
 
   Function GetVersion: double; virtual;stdcall;abstract; {version}
-  Function GetLevel: ISEDLevel; virtual;stdcall;abstract; {SEDApp OLE interafce}
+  Function GetLevel: ISedLevel; virtual;stdcall;abstract; {SedApp OLE interafce}
 
   Function GetMapMode: Integer; virtual;stdcall;abstract;
   Procedure SetMapMode(mode: Integer); virtual;stdcall;abstract;
@@ -505,41 +503,41 @@ ISED = class
   Procedure SetCurrentFrame(th,fr: Integer);virtual;stdcall;abstract;
 
   Procedure NewLevel(kind: integer); virtual;stdcall;abstract; // SED 0.1.0
-  Procedure LoadLevel(name: PChar); virtual;stdcall;abstract;
+  Procedure LoadLevel(const name: PChar); virtual;stdcall;abstract;
 
   {Different level editing functions}
-  procedure RotateVector(var vec: TSEDVector3; pyr: TSEDVector3); virtual; stdcall; abstract;
-  procedure RotatePoint(p, pivot: TSEDVector3; angle: double; var p2: TSEDVector3); virtual; stdcall; abstract;
-  procedure GetPYR(const x, y, z: TSEDVector3; var pyr: TSEDVector3); virtual; stdcall; abstract;
+  procedure RotateVector(var vec: TSedVector3; const pyr: TSedVector3); virtual; stdcall; abstract;
+  procedure RotatePoint(const p, pivot: TSedVector3; angle: double; var p2: TSedVector3); virtual; stdcall; abstract;
+  procedure GetPYR(const x, y, z: TSedVector3; var pyr: TSedVector3); virtual; stdcall; abstract;
 
   function MergeSectors(sec1, sec2: Integer): Integer; virtual; stdcall; abstract;
-  function CleaveSector(sec: Integer; const cnormal: TSEDVector3; cp: TSEDVector3): Integer; virtual; stdcall; abstract;
-  Function CreateCubicSector(p: TSEDVector3; const pnormal, edge: TSEDVector3): Integer; virtual; stdcall; abstract;
+  function CleaveSector(sec: Integer; const cnormal: TSedVector3; const cp: TSedVector3): Integer; virtual; stdcall; abstract;
+  Function CreateCubicSector(const pos: TSedVector3; const pnormal, edge: TSedVector3): Integer; virtual; stdcall; abstract;
   function IsSectorConvex(sec: Integer): boolean; virtual; stdcall; abstract;
-  function IsInSector(sec: Integer; p: TSEDVector3): boolean; virtual; stdcall; abstract;
+  function IsInSector(sec: Integer; const p: TSedVector3): boolean; virtual; stdcall; abstract;
   function DoSectorsOverlap(sec1, sec2: Integer): boolean; virtual; stdcall; abstract;
-  procedure FindBoundingBox(sec: Integer; var box: TSEDBox); virtual; stdcall; abstract;
-  procedure FindBoundingSphere(sec: Integer; var center: TSEDVector3; radius: double); virtual; stdcall; abstract;
-  function FindCollideBox(sec: Integer; const bbox: TSEDBox; center: TSEDVector3; var cbox: TSEDBox): boolean; virtual; stdcall; abstract;
+  procedure FindBoundingBox(sec: Integer; var box: TSedBox); virtual; stdcall; abstract;
+  procedure FindBoundingSphere(sec: Integer; var center: TSedVector3; radius: double); virtual; stdcall; abstract;
+  function FindCollideBox(sec: Integer; const bbox: TSedBox; const center: TSedVector3; var cbox: TSedBox): boolean; virtual; stdcall; abstract;
   function FindSectorForThing(th: Integer): Integer; virtual; stdcall; abstract;
   function FindSectorForXYZ(X, Y, Z: double): Integer; virtual; stdcall; abstract;
 
-  procedure FindSurfaceCenter(sec, surf: Integer; var center: TSEDVector3); virtual; stdcall; abstract;
+  procedure FindSurfaceCenter(sec, surf: Integer; var center: TSedVector3); virtual; stdcall; abstract;
   function IsSurfaceConvex(sec, surf: Integer): boolean; virtual; stdcall; abstract;
   function IsSurfacePlanar(sec, surf: Integer): boolean; virtual; stdcall; abstract;
-  function IsPointOnSurface(sec, surf: Integer; p: TSEDVector3): boolean; virtual; stdcall; abstract;
+  function IsPointOnSurface(sec, surf: Integer; const p: TSedVector3): boolean; virtual; stdcall; abstract;
 
-  function CleaveSurface(sec, surf: Integer; const cnormal: TSEDVector3; cp: TSEDVector3): Integer; virtual; stdcall; abstract;
-  function CleaveEdge(sec, surf, ed: Integer; const cnormal: TSEDVector3; cp: TSEDVector3): boolean; virtual; stdcall; abstract;
+  function CleaveSurface(sec, surf: Integer; const cnormal: TSedVector3; cp: TSedVector3): Integer; virtual; stdcall; abstract;
+  function CleaveEdge(sec, surf, ed: Integer; const cnormal: TSedVector3; cp: TSedVector3): boolean; virtual; stdcall; abstract;
   function ExtrudeSurface(sec, surf: Integer; by: double): Integer; virtual; stdcall; abstract;
   function JoinSurfaces(sec1, surf1, sec2, surf2: Integer): boolean; virtual; stdcall; abstract;
   function MergeSurfaces(sec, surf1, surf2: Integer): Integer; virtual; stdcall; abstract;
   function PlanarizeSurface(sec, surf: Integer): boolean; virtual; stdcall; abstract;
 
-  procedure CalculateDefaultUVNormals(sec, surf: Integer; orgvx: Integer; var un, vn: TSEDVector3); virtual; stdcall; abstract;
-  procedure CalculateUVNormals(sec, surf: Integer; var un, vn: TSEDVector3); virtual; stdcall; abstract;
-  procedure ArrangeTexture(sec, surf: Integer; orgvx: Integer; const un, vn: TSEDVector3); virtual; stdcall; abstract;
-  procedure ArrangeTextureBy(sec, surf: Integer; const un, vn: TSEDVector3; refp: TSEDVector3; refu, refv: double); virtual; stdcall; abstract;
+  procedure CalculateDefaultUVNormals(sec, surf: Integer; orgvx: Integer; var un, vn: TSedVector3); virtual; stdcall; abstract;
+  procedure CalculateUVNormals(sec, surf: Integer; var un, vn: TSedVector3); virtual; stdcall; abstract;
+  procedure ArrangeTexture(sec, surf: Integer; orgvx: Integer; const un, vn: TSedVector3); virtual; stdcall; abstract;
+  procedure ArrangeTextureBy(sec, surf: Integer; const un, vn: TSedVector3; const refp: TSedVector3; refu, refv: double); virtual; stdcall; abstract;
   function IsTextureFlipped(sec, surf: Integer): boolean; virtual; stdcall; abstract;
   function StitchSurfaces(sc1, sf1, sc2, sf2: Integer): boolean; virtual; stdcall; abstract;
 
@@ -552,7 +550,7 @@ ISED = class
   Function MakeAdjoinFromSectorUp(sec: Integer; surf: Integer; firstSec: Integer): Boolean; virtual; stdcall; abstract;
   Function UnAdjoin(sec: Integer; surf: Integer): Boolean; virtual; stdcall; abstract;
 
-  Procedure StartUndo(name: PChar); virtual; stdcall; abstract;
+  Procedure StartUndo(const name: PChar); virtual; stdcall; abstract;
   Procedure SaveUndoForThing(n: Integer; change: Integer); virtual; stdcall; abstract;
   Procedure SaveUndoForLight(n: Integer; change: Integer); virtual; stdcall; abstract;
   Procedure SaveUndoForSector(n: Integer; change: Integer; whatPart: Integer); virtual; stdcall; abstract;
@@ -591,18 +589,18 @@ ISED = class
   Function FindSelectedFrame(th, fr: Integer): Integer; virtual; stdcall; abstract;
   Function FindSelectedLight(lt: Integer): Integer; virtual; stdcall; abstract;
 
-  Procedure Save(name: PChar); virtual; stdcall; abstract;
-  Procedure SaveSED(name: PChar); virtual; stdcall; abstract;
+  Procedure Save(const filename: PChar); virtual; stdcall; abstract;
+  Procedure SaveAsSed(const filename: PChar); virtual; stdcall; abstract;
   Procedure UpdateMap; virtual; stdcall; abstract;
-  Procedure SetPickerCMP(cmp: PChar); virtual; stdcall; abstract;
-  Function PickResource(what: Integer; cur: PChar): PChar; virtual; stdcall; abstract;
+  Procedure SetPickerCmp(const cmp: PChar); virtual; stdcall; abstract;
+  Function PickResource(what: Integer; const cur: PChar): PChar; virtual; stdcall; abstract;
   Function EditFlags(what: Integer; flags: LongInt): LongInt; virtual; stdcall; abstract;
 
   Procedure ReloadTemplates; virtual; stdcall; abstract;
-  Procedure PanMessage(mType: Integer; msg: PChar); virtual; stdcall; abstract;
+  Procedure PanMessage(mType: Integer; const msg: PChar); virtual; stdcall; abstract;
   Procedure SendKey(shift: Integer; key: Integer); virtual; stdcall; abstract;
-  Function ExecuteMenu(itemRef: PChar): Boolean; virtual; stdcall; abstract;
-  Function GetSEDSetting(name: PChar): Variant; virtual; stdcall; abstract;
+  Function ExecuteMenu(const itemRef: PChar): Boolean; virtual; stdcall; abstract;
+  Function GetSedSetting(const name: PChar): Variant; virtual; stdcall; abstract;
   Function IsLayerVisible(n: Integer): Boolean; virtual; stdcall; abstract;
 
   procedure CheckConsistencyErrors; virtual; stdcall; abstract;
@@ -616,24 +614,24 @@ ISED = class
   Function GetConsistencyErrorThing(n: Integer): Integer; virtual; stdcall; abstract;
   Function GetConsistencyErrorCOG(n: Integer): Integer; virtual; stdcall; abstract;
   Function IsPreviewActive: Boolean; virtual; stdcall; abstract;
-  Function GetSEDString(what: Integer): PChar; virtual; stdcall; abstract;
+  Function GetSedString(what: Integer): PChar; virtual; stdcall; abstract;
   Function GetProjectType: Integer; virtual; stdcall; abstract; // SED 0.1.0
   Procedure SetProjectType(kind: Integer); virtual; stdcall; abstract; // SED 0.1.0
 
   {JED 0.93}
-  Function GetSEDWindow(whichOne: Integer): Integer; virtual; stdcall; abstract;
+  Function GetSedWindow(whichOne: Integer): Integer; virtual; stdcall; abstract;
 
-  Function FileExtractExt(path: PChar): PChar; virtual; stdcall; abstract;
-  Function FileExtractPath(path: PChar): PChar; virtual; stdcall; abstract;
-  Function FileExtractName(path: PChar): PChar; virtual; stdcall; abstract;
-  Function FindProjectDirFile(name: PChar): PChar; virtual; stdcall; abstract;
-  Function IsFileContainer(path: PChar): Boolean; virtual; stdcall; abstract;
-  Function IsFileInContainer(path: PChar): Boolean; virtual; stdcall; abstract;
+  Function FileExtractExt(const filename: PChar): PChar; virtual; stdcall; abstract;
+  Function FileExtractPath(const filename: PChar): PChar; virtual; stdcall; abstract;
+  Function FileExtractName(const filename: PChar): PChar; virtual; stdcall; abstract;
+  Function FindProjectDirFile(const filename: PChar): PChar; virtual; stdcall; abstract;
+  Function IsFileContainer(const filename: PChar): Boolean; virtual; stdcall; abstract;
+  Function IsFileInContainer(const filename: PChar): Boolean; virtual; stdcall; abstract;
 
-  Function FileOpenDialog(fName: PChar; filter: PChar): PChar; virtual; stdcall; abstract;
+  Function FileOpenDialog(const name: PChar; filter: PChar): PChar; virtual; stdcall; abstract;
 
-  Function OpenFile(name: PChar): Integer; virtual; stdcall; abstract;
-  Function OpenGameFile(name: PChar): Integer; virtual; stdcall; abstract;
+  Function OpenFile(const filename: PChar): Integer; virtual; stdcall; abstract;
+  Function OpenGameFile(const filename: PChar): Integer; virtual; stdcall; abstract;
   Function ReadFile(handle: Integer; buf: Pointer; size: LongInt): Integer; virtual; stdcall; abstract;
   Procedure SetFilePos(handle: Integer; pos: LongInt); virtual; stdcall; abstract;
   Function GetFilePos(handle: Integer): LongInt; virtual; stdcall; abstract;
@@ -641,50 +639,46 @@ ISED = class
   Function GetFileName(handle: Integer): PChar; virtual; stdcall; abstract;
   Procedure CloseFile(handle: Integer); virtual; stdcall; abstract;
 
-  Function OpenTextFile(name: PChar): Integer; virtual; stdcall; abstract;
-  Function OpenGameTextFile(name: PChar): Integer; virtual; stdcall; abstract;
+  Function OpenTextFile(const filename: PChar): Integer; virtual; stdcall; abstract;
+  Function OpenGameTextFile(const filename: PChar): Integer; virtual; stdcall; abstract;
   Function GetTextFileName(handle: Integer): PChar; virtual; stdcall; abstract;
   Function ReadTextFileString(handle: Integer): PChar; virtual; stdcall; abstract;
   Function TextFileEOF(handle: Integer): Boolean; virtual; stdcall; abstract;
   Function TextFileCurrentLine(handle: Integer): Integer; virtual; stdcall; abstract;
   Procedure CloseTextFile(handle: Integer); virtual; stdcall; abstract;
 
-  Function GOBOpen(name: PChar): Integer; virtual; stdcall; abstract;
-  Function GOBNumFiles(handle: Integer): Integer; virtual; stdcall; abstract;
-  Function GOBGetFilename(handle: Integer; n: Integer): PChar; virtual; stdcall; abstract;
-  Function GOBGetFullFilename(handle: Integer; n: Integer): PChar; virtual; stdcall; abstract;
-  Function GOBGetFileSize(handle: Integer; n: Integer): LongInt; virtual; stdcall; abstract;
-  Function GOBGetFileOffset(handle: Integer; n: Integer): LongInt; virtual; stdcall; abstract;
-  Procedure GOBClose(handle: Integer); virtual; stdcall; abstract;
+  Function GobOpen(const filename: PChar): Integer; virtual; stdcall; abstract;
+  Function GobNumFiles(handle: Integer): Integer; virtual; stdcall; abstract;
+  Function GobGetFilename(handle: Integer; n: Integer): PChar; virtual; stdcall; abstract;
+  Function GobGetFullFilename(handle: Integer; n: Integer): PChar; virtual; stdcall; abstract;
+  Function GobGetFileSize(handle: Integer; n: Integer): LongInt; virtual; stdcall; abstract;
+  Function GobGetFileOffset(handle: Integer; n: Integer): LongInt; virtual; stdcall; abstract;
+  Procedure GobClose(handle: Integer); virtual; stdcall; abstract;
 
-  Function CreateWFRenderer(wnd: Integer; whichOne: Integer): ISEDWFRenderer; virtual; stdcall; abstract;
+  Function CreateWFRenderer(wnd: Integer; whichOne: Integer): ISedWFRenderer; virtual; stdcall; abstract;
 end;
 
 
 {cvtstop}
-
-
  {The function that SED calls to load your plug-in
- must be named SEDPluginLoad (register calling) or
- SEDPluginLoadStdCall (standard stack calling)
- and have one parameter ISED interface object. The
+ must be named SedPluginLoad (register calling) or
+ SedPluginLoadStdCall (standard stack calling)
+ and have one parameter ISed interface object. The
  function should return true if the plug-in was
  loaded/activated successfully and false otherwise.
  Warning! Names are case-sensitive}
 
-
 // This is how the Plug-in entry function should be declared
-// Function TSEDPluginLoadStdCall(sed:ISED):boolean;stdcall;
+// Function TSedPluginLoadStdCall(sed: ISed): boolean; stdcall;
 // The old style:
-// Function TSEDPluginLoad(sed:ISED):boolean;
+// Function TSedPluginLoad(sed:ISed):boolean;
 // is still supported, but not recommended
 
-TSEDPluginLoad = Function(sed:ISED):boolean;
-TSEDPluginLoadStdCall = Function(sed:ISED):Boolean;stdcall;
+TSedPluginLoad = Function(sed: ISed): Boolean;
+TSedPluginLoadStdCall = Function(sed: ISed): Boolean; stdcall;
 
 
 {General purpose functions. Local}
-
 Procedure SetVector(var vec: TSEDVector3; dx, dy, dz: Double);
 Function DotProduct(const vec1, vec2: TSEDVector3): Double;
 
