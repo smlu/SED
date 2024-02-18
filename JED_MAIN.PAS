@@ -1856,6 +1856,14 @@ begin
     if (Key = VK_MENU) or (Key = VK_LMENU) then
         exit;
 
+    if Key = VK_NUMPAD5 then
+      begin
+        // Experimental
+        renderer.perspective := not renderer.perspective;
+        invalidate;
+        exit;
+      end;
+
     if Shift = [ssCtrl, ssAlt] then
         case Key of
             Ord('Z'):
@@ -4200,7 +4208,7 @@ begin
 //                end;
                 surf.Recalc;
                 FindUVScales(surf);
-                if CompareValue(surf.normal.z, 0.6, CloseEnough) = GreaterThanValue then // If less LE 40ï¿½
+                if CompareValue(surf.normal.z, 0.6, CloseEnough) = GreaterThanValue then // If less LE 40°
                   surf.SurfFlags := surf.SurfFlags or SF_Floor;
             end;
         end;
@@ -4817,6 +4825,7 @@ begin
             SetGridNormal(0, 0, 1);
             SetGridXNormal(1, 0, 0);
             Scale := 0.5;
+            perspective := false;
         end;
 
         Cur_SC := IfThen(Level.sectors.Count = 0, -1, 0);

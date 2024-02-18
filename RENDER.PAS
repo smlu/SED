@@ -59,8 +59,10 @@ type
      lplane, rplane, uplane, bplane: TPlane;
 
   Public
-     Function DpiFactor:double;
+     Function DpiFactor: double;
      Function DpiScale: double;
+
+     var perspective: boolean;
 
   Public
     Property Selected: TIntList read FSelected;

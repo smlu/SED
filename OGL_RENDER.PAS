@@ -29,7 +29,6 @@ Type
     hglc: HGLRC;
     glx1, glx2, glz1, glz2: double;
 
-    Perspective: boolean;
     { mode:TRenderStyle; }
     selectBuf: array [1 .. 2048] of GLInt;
     { R_style:TRenderStyle; }
@@ -150,6 +149,9 @@ begin
   glMatrixMode(GL_MODELVIEW);
   glLoadIdentity;
 
+//  if perspective then
+//   glScalef(1.0, 1.0, -1.0);
+
 
   //glScaleD(1.0, IfThen(zv.dz <0, -1,1) , 1.0);
   //glTranslated(CamX, CamY, CamZ);
@@ -189,11 +191,13 @@ begin
   dpx := vpw / ppunit * DpiScale;
   dpy := vph / vpw * dpx;
 
-  GlOrtho(-dpx / 2, dpx / 2, -dpy / 2, dpy / 2, -ZRange / 2, ZRange / 2);
+  //glOrtho(-dpx / 2, dpx / 2, -dpy / 2, dpy / 2, -ZRange / 2, ZRange / 2);
 
-   //gluPerspective(90,1,0.01,zrange);
-
-   //glFrustum(-dpx/2,dpx/2,-dpy/2,dpy/2,0.01,Zrange/2);
+  if perspective then
+    gluPerspective(60, vpw / vph, 0.01, zrange)
+    //glFrustum(-dpx, dpx,-dpy,dpy, 0.01,Zrange)
+  else
+    glOrtho(-dpx / 2, dpx / 2, -dpy / 2, dpy / 2, -ZRange / 2, ZRange / 2);
 
   SetCamera;
 end;
@@ -212,7 +216,10 @@ begin
   dpx := vpw / ppunit * DpiScale;
   dpy := vph / vpw * dpx;
   { glFrustum(glx1,glx2,gly1,gly2,-ZRange/2,Zrange/2); }
-  GlOrtho(-dpx / 2, dpx / 2, -dpy / 2, dpy / 2, -ZRange / 2, ZRange / 2);
+  if perspective then
+    gluPerspective(60, vpw / vph, 0.01, zrange)
+  else
+    glOrtho(-dpx / 2, dpx / 2, -dpy / 2, dpy / 2, -ZRange / 2, ZRange / 2);
 
   SetCamera;
 
@@ -306,11 +313,11 @@ begin
   SwapBuffers(hdc);
 
   // Uncomment this block to have anti-aliased lines
-  //glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	//glEnable(GL_BLEND);
-	//glEnable(GL_LINE_SMOOTH);
-	//glHint (GL_LINE_SMOOTH_HINT, GL_NICEST);
-  //glLineWidth(1.0); //1.3 for diagonal lines
+//  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+//  glEnable(GL_BLEND);
+//  glEnable(GL_LINE_SMOOTH);
+//  glHint (GL_LINE_SMOOTH_HINT, GL_NICEST);
+//  glLineWidth(1.0); //1.3 for diagonal lines
   ////////////////////////////////////////////
 
 
@@ -438,14 +445,18 @@ begin
 //  else
 //    glBegin(GL_Polygon);
 //  end;
+  glPushAttrib(GL_ENABLE_BIT);
+  //glLineStipple(2, $00FF);
+  glEnable(GL_LINE_STIPPLE);
   glBegin(GL_LINE_LOOP);
     for i := 0 to p.vertices.count - 1 do
       with p.vertices[i] do
       begin
-        glVertex3d(x, y, Z);
+        glVertex3d(x, y, z);
         // glNormal3d(p.Normal.dx,p.normal.dz, p.normal.dy);
       end;
   glEnd;
+  //glPopAttrib();
 end;
 
 Procedure TOGLRenderer.DrawVertex(x, y, Z: double);
@@ -654,7 +665,7 @@ begin
   glGetDoublev(GL_MODELVIEW_MATRIX, @mmx);
   glGetDoublev(GL_PROJECTION_MATRIX, @pmx);
 
-  gluUnProject(scX, vp[3] - scY, 0, mmx, pmx, vp, ax1, ay1, az1);
+  gluUnProject(scX, vp[3] - scY, -1, mmx, pmx, vp, ax1, ay1, az1);
   gluUnProject(scX, vp[3] - scY, 1, mmx, pmx, vp, ax2, ay2, az2);
 
   { ay1:=-ay1;
@@ -668,6 +679,9 @@ begin
     (abs(Z) < ZRange);
   if not Result then
     exit;
+
+  // note, this rounding makes flickering when
+  // moving viewport with mouse at  super zoom-in level.
   x := JKRound(x);
   y := JKRound(y);
   Z := JKRound(Z);
