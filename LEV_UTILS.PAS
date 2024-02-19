@@ -164,7 +164,8 @@ procedure FlipSectorsOverPlane(lev: TJKLevel; scsel: TSCMultiSel;
   const pnorm: TVector; pX, pY, pZ: double);
 
 // Functions for retrieving nearest vertex  to the line defined by lx, ly, lt and lineNormal
-function GetNearestVertexToLine(vertices: TVertices; lx, ly, lz: double; lineNormal: TVector; radius: double; var vx, vy, vz: double): boolean;
+function GetNearestVertexToLine(vertices: TVertices; lx, ly, lz: double; lineNormal: TVector; radius: double; var vx, vy, vz: double): boolean; overload;
+function GetNearestVertexToLine(vertices: TVertices; lx, ly, lz: double; lineNormal: TVector; radius: double; var vx, vy, vz, minDistanceSqr: double): boolean; overload;
 function GetNearestWorldVertexToLine(lev: TJKLevel; lx, ly, lz: double; lineNormal: TVector; radius: double; var vx, vy, vz: double): boolean; overload;
 function GetNearestWorldVertexToLine(lev: TJKLevel; linePoint: Tvector; lineNormal: TVector; radius: double; var vx, vy, vz: double): boolean; overload;
 function GetNearestWorldVertexToLine(lev: TJKLevel; linePoint: Tvector; lineNormal: TVector; radius: double; var v: TVector): boolean; overload;
@@ -4124,11 +4125,11 @@ begin
   JedMain.SectorAdded(nsec);
 end;
 
-function GetNearestVertexToLine(vertices: TVertices; lx, ly, lz: double; lineNormal: TVector; radius: double;  var vx, vy, vz: double): boolean;
+function GetNearestVertexToLine(vertices: TVertices; lx, ly, lz: double; lineNormal: TVector; radius: double; var vx, vy, vz, minDistanceSqr: double): boolean;
 begin
   Result := false;
 
-  var nearestDist := sqr(radius);
+  minDistanceSqr := sqr(radius);
   for var vix := 0 to vertices.Count - 1 do
     begin
       // Calculate vector rejection to get closest vector between view line ray and vertex
@@ -4151,9 +4152,9 @@ begin
 
       var p := lv - lv.ProjectOnToNormal(lineNormal);
       var dist := p.LengthSqr;
-      if dist <= nearestDist then
+      if dist <= minDistanceSqr then
       begin
-        nearestDist := dist;
+        minDistanceSqr := dist;
         vx := v.x;
         vy := v.y;
         vz := v.z;
@@ -4161,20 +4162,37 @@ begin
       end;
     end;
 end;
+function GetNearestVertexToLine(vertices: TVertices; lx, ly, lz: double; lineNormal: TVector; radius: double; var vx, vy, vz: double): boolean;
+  var ds : double;
+begin
+  Result := GetNearestVertexToLine(vertices, lx, ly, lz, lineNormal, radius, vx, vy, vz, ds);
+end;
 
 function GetNearestWorldVertexToLine(lev: TJKLevel; lx, ly, lz: double; lineNormal: TVector; radius: double;  var vx, vy, vz: double): boolean;
+  var dx, dy, dz, ddist: double;
 begin
   vx := lx;
   vy := ly;
   vz := lz;
-  result := false;
-  var nearestDist := sqr(radius);
+  Result := false;
+  var minDistSqr := sqr(radius);
+
   for var s := 0 to lev.sectors.count - 1 do
     With lev.sectors[s] do
     begin
-      if not  ToolBar.IsLayerVisible(layer) then
+      if not ToolBar.IsLayerVisible(layer) then
         continue;
-      Result := GetNearestVertexToLine(vertices, lx, ly, lz, lineNormal, radius, vx, vy, vz);
+
+      if GetNearestVertexToLine(vertices, lx, ly, lz, lineNormal, radius, dx, dy, dz, ddist) then
+      begin
+        if ddist < minDistSqr then
+        begin
+          Result := true;
+          vx := dx;
+          vy := dy;
+          vz := dz;
+        end;
+      end;
     end;
 end;
 
