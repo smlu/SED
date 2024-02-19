@@ -41,7 +41,7 @@ type
   TRenderer = class
     hpal: integer;
     hViewer: HWND;
-    CamX, CamY, CamZ: double;
+    camX, camY, camZ: double;
     //Pch,Yaw,Rol:double;
     xv, yv, zv: Tvector; // view basis vectors
     scale: double;
@@ -65,13 +65,19 @@ type
      var perspective: boolean;
 
   Public
-    Property Selected: TIntList read FSelected;
+    Property selected: TIntList read FSelected;
+
+
     Constructor Create(TheViewer: HWND);
     Destructor Destroy; Override;
     Procedure Initialize; virtual; abstract;
     Procedure SetViewPort(x, y, w, h: integer); virtual;
     Procedure SetColor(what, r, g, b: byte); virtual;
+
+    Function GetPointSize: double; virtual; abstract;
     Procedure SetPointSize(size: double); virtual; abstract;
+    Property pointSize: double read GetPointSize write SetPointSize;
+
     { Procedure SetRenderStyle(rstyle:TRenderStyle);virtual;abstract; }
     Procedure BeginScene; virtual; abstract;
     Procedure EndScene; virtual; abstract;

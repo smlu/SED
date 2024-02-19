@@ -44,6 +44,8 @@ Type
     Procedure SetColor(what, r, g, b: byte); override;
 
     Procedure EndScene; override;
+
+    Function GetPointSize: double; override;
     Procedure SetPointSize(size: double); override;
     Procedure SetCulling(how: integer); override;
     Procedure DrawPolygon(p: TPolygon); override;
@@ -827,6 +829,11 @@ begin
 
   WinX := wcx + round(vx);
   WinY := wcy + round(vy);
+end;
+
+Function TSFTRenderer.GetPointSize: double;
+begin
+  Result := halfpsize * 2;
 end;
 
 Procedure TSFTRenderer.SetPointSize(size: double);

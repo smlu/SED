@@ -141,27 +141,28 @@ Var
   JKDir, MOTSDir, IJIMDir: String;
   IJIMExe: String;
   GameDir: String;
-
-  //IsMots: boolean;
-
   CurrentProject: TProjectType;
 
   D3DDevice: String = 'Direct3D HAL';
 
-  P3DAPI: integer = 0;
-  P3DOnTop: boolean;
-  P3DFullLit: boolean = false;
-  P3DColoredLights: boolean = true;
-  P3DX, P3DY: integer;
-  P3DWinSize: integer = 0;
+  P3DAPI: Integer = 0;
+  P3DOnTop: Boolean;
+  P3DFullLit: Boolean = false;
+  P3DColoredLights: Boolean = true;
+  P3DX, P3DY: Integer;
+  P3DWinSize: Integer = 0;
   P3DGamma: double = 1;
-  P3DVisLayers: boolean = false;
-  P3DThings: boolean = true;
+  P3DVisLayers: Boolean = false;
+  P3DThings: Boolean = true;
 
-  WireframeAPI: integer = 1; // 1 - OpenGlL
-  WF_InvertCulling: boolean = false;
-  WF_DoubleBuf: boolean = true;
-  MapRot: integer = 0;
+  WireframeAPI: Integer = 1; // 1 - OpenGlL
+  WF_InvertCulling: Boolean = false;
+  WF_DoubleBuf: Boolean = true;
+  WF_GeoVertSize: Integer = 5;
+  WF_ObjVertSize: Integer = 5;
+
+  MapRot: Integer = 0;
+  VertSnapMaxDist: Double = 0.2;
 
   AutoSave: boolean = false;
   SaveInterval: integer = 0;
@@ -199,7 +200,7 @@ Var
   DefGridLine: double = 1;
   DefGridDot: double = 0.2;
   DefShape: string = 'Cube';
-  defGridSize: double = 10;
+  DefGridSize: double = 10;
   GridMoveStep: double = 0.001;
 
   NewOnFloor: boolean = false;

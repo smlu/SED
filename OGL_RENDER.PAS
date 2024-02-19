@@ -42,6 +42,7 @@ Type
     { Procedure SetRenderStyle(rstyle:TRenderStyle);override; }
     Procedure EndScene; override;
 
+    Function GetPointSize: double; override;
     Procedure SetPointSize(size: double); override;
     Procedure SetColor(what, r, g, b: byte); override;
     Procedure SetCulling(how: Integer); override;
@@ -831,6 +832,11 @@ begin
   gluProject(x, y, z, mmx, pmx, vp, WX, WY, WZ);
   WinX := Round(WX);
   WinY := vp[3] - Round(WY);
+end;
+
+Function TOGLRenderer.GetPointSize: double;
+begin
+   glGetDoublev(GL_POINT_SIZE, @Result);
 end;
 
 Procedure TOGLRenderer.SetPointSize(size: double);

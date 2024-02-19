@@ -290,8 +290,12 @@ type
         procedure PickThing(th: TThing; id: integer);
         procedure PickThingAt(th: TThing; x, y, z, pitch, yaw, roll: double; id: integer);
 
+        // Renderer stuff
         function ZoomIn: boolean;
         function ZoomOut: boolean;
+
+        procedure SetRendererGeoVertexSize;
+        procedure SetRendererObjVertexSize;
 
     public
         { Project vars }
@@ -305,7 +309,6 @@ type
 
         { }
         bSnapToGrid: boolean;
-        vxsnapMaxDist: double;
         renderer: TRenderer;
         ListID: Integer;
         hdc: HDC;
@@ -1133,6 +1136,7 @@ var
 
     procedure RenderWorldGeometry(mode: TRenderMode);
     begin
+      SetRendererGeoVertexSize;
       for var s := 0 to level.sectors.Count - 1 do
         begin
           sec := level.sectors[s];
@@ -1158,22 +1162,14 @@ begin
             renderer.SetColor(CL_FRONT, r, g, b);
 
         ps := 1;// * DpiScale(1, Screen.PixelsPerInch);
-        renderer.SetPointSize(ps);
+        renderer.pointSize := ps;
         renderer.DrawGrid;
 
         if mapMode = MM_VX then
         begin
-            renderer.SetPointSize(4);
             With clVertex do
                 renderer.SetColor(CL_FRONT, r, g, b);
             RenderWorldGeometry(RM_VERTEX);
-//            for s := 0 to level.sectors.Count - 1 do
-//            begin
-//                sec := level.sectors[s];
-//                if ToolBar.IsLayerVisible(sec.layer) then
-//                    renderer.DrawVertices(sec.vertices);
-//            end;
-            renderer.SetPointSize(ps);
         end;
 
         // Draw level geometry
@@ -1182,28 +1178,17 @@ begin
         if not bMapGeoBackfaceCull then
           begin
             SetCullingAndDrawColor(R_CULLFRONT, clMapGeoBack);
-
             RenderWorldGeometry(RM_POLYGON);
           end;
-//        for s := 0 to level.sectors.Count - 1 do
-//        begin
-//            sec := level.sectors[s];
-//            if ToolBar.IsLayerVisible(sec.layer) then
-//                renderer.DrawPolygons(sec.surfaces);
-//        end;
 
         // Render frontfaces of level geometry
         SetCullingAndDrawColor(R_CULLBACK, clMapGeo);
         RenderWorldGeometry(RM_POLYGON);
-//          for s := 0 to level.sectors.Count - 1 do
-//          begin
-//              sec := level.sectors[s];
-//              if ToolBar.IsLayerVisible(sec.layer) then
-//                  renderer.DrawPolygons(sec.surfaces);
-//          end;
 
         renderer.SetCulling(R_CULLNONE);
-        renderer.SetPointSize(4);
+        SetRendererObjVertexSize;
+
+        // Render objects
 
         if (not bThingsHidden) or (mapMode = MM_TH) then
         begin
@@ -1236,7 +1221,6 @@ begin
             With clFrame do
                 renderer.SetColor(CL_FRONT, r, g, b);
 
-            renderer.SetPointSize(4);
             for th := 0 to level.things.Count - 1 do
             begin
                 thing := level.things[th];
@@ -1249,10 +1233,10 @@ begin
             end;
         end;
 
-        { Draw extra stuff }
+        // Draw extra stuff
+        SetRendererGeoVertexSize;
         With clExtra do
             renderer.SetColor(CL_FRONT, r, g, b);
-        renderer.SetCulling(R_CULLNONE);
         for s := 0 to extraObjs.Count - 1 do
           begin
               obj := extraObjs[s];
@@ -1331,7 +1315,7 @@ begin
             begin
                 With clMSel do
                     renderer.SetColor(CL_FRONT, r, g, b);
-                renderer.SetPointSize(4);
+                SetRendererGeoVertexSize;
                 for s := 0 to vxsel.Count - 1 do
                 begin
                     vxsel.GetSCVX(s, sc, vx);
@@ -1396,32 +1380,29 @@ begin
                 end;
             MM_SF:
                 begin
+                    surf := level.sectors[Cur_SC].surfaces[Cur_SF];
                     if sfsel.FindSF(Cur_SC, Cur_SF) = -1 then
                       SetCullingAndDrawColor(R_CULLFRONT, clMapSelBack)
                     else
                       SetCullingAndDrawColor(R_CULLFRONT, clSelMSelBack);
 
-                    renderer.DrawPolygon(level.sectors[Cur_SC].surfaces[Cur_SF]);
+                    renderer.DrawPolygon(surf);
 
                     if sfsel.FindSF(Cur_SC, Cur_SF) = -1 then
                       SetCullingAndDrawColor(R_CULLBACK, clMapSel)
                     else
                       SetCullingAndDrawColor(R_CULLBACK, clSelMSel);
 
-                    renderer.DrawPolygon(level.sectors[Cur_SC].surfaces[Cur_SF]);
+                    renderer.DrawPolygon(surf);
 
-                    With level.sectors[Cur_SC].surfaces[Cur_SF].vertices[0] do
-                        renderer.DrawVertex(X, Y, z);
-                    { v1:=TJKVertex.Create;
-                      With level.Sectors[Cur_SC].surfaces[Cur_SF] do
-                      With Vertices[0] do
-                      begin
-                      v1.x:=x+normal.dx*0.2;
-                      v1.y:=y+normal.dy*0.2;
-                      v1.z:=z+normal.dz*0.2;
-                      Renderer.DrawLine(vertices[0],v1);
-                      end;
-                      v1.free; }
+                    // draw surf first vert
+                    With surf.vertices[0] do
+                        renderer.DrawVertex(x, y, z);
+
+                    // draw surf normal
+//                    var v0: TVector;
+//                    CalcSurfCenter(surf, v0.x, v0.y, v0.z);
+//                    Renderer.DrawLine(v0, surf.normal, 0.2);
                 end;
             MM_ED:
                 With level.sectors[Cur_SC].surfaces[Cur_SF] do
@@ -1437,7 +1418,8 @@ begin
                     v1 := vertices[Cur_ED];
                     v2 := vertices[NextVX(Cur_ED)];
                     renderer.DrawLine(v1, v2);
-                    renderer.SetPointSize(4);
+
+                    SetRendererGeoVertexSize;
                     renderer.DrawVertex(v1.x, v1.y, v1.z);
 
                     dx := v2.x - v1.x;
@@ -2911,7 +2893,6 @@ begin
     if csel = -1 then
     begin
         renderer.BeginPick(X, Y);
-        renderer.SetPointSize(4);
         Case mapMode of
             MM_SC:
                 for s := 0 to level.sectors.Count - 1 do
@@ -2945,65 +2926,80 @@ begin
                                 end;
                 end;
             MM_TH:
-                For th := 0 to level.things.Count - 1 do
                 begin
-                    thing := level.things[th];
-                    if ToolBar.IsLayerVisible(thing.layer) then
-                      PickThing(thing, th);
+                    SetRendererObjVertexSize;
+                    for th := 0 to level.things.Count - 1 do
+                    begin
+                        thing := level.things[th];
+                        if ToolBar.IsLayerVisible(thing.layer) then
+                          PickThing(thing, th);
+                    end;
                 end;
             MM_FR:
-                For th := 0 to level.things.Count - 1 do
                 begin
-                    thing := level.things[th];
-                    if not ToolBar.IsLayerVisible(thing.layer) then
-                        continue;
+                    SetRendererObjVertexSize;
+                    for th := 0 to level.things.Count - 1 do
+                    begin
+                        thing := level.things[th];
+                        if not ToolBar.IsLayerVisible(thing.layer) then
+                            continue;
 
-                    with thing Do
-                        renderer.PickVertex(x, y, z, th * 65536 + 65535);
-                    for fr := 0 to thing.vals.Count - 1 do
-                        with thing.vals[fr] do
-                        begin
-                            if atype <> at_frame then
-                                continue;
+                        with thing Do
+                            renderer.PickVertex(x, y, z, th * 65536 + 65535);
+                        for fr := 0 to thing.vals.Count - 1 do
+                            with thing.vals[fr] do
+                            begin
+                                if atype <> at_frame then
+                                    continue;
 
-                            GetFrame(fx, fy, fz, pch, yaw, rol);
-                            if frsel.FindFR(th, fr) <> -1 then
-                               PickThingAt(thing, fx, fy, fz, pch, yaw, rol, th * 65536 + fr)
-                            else
-                              renderer.PickVertex(fx, fy, fz, th * 65536 + fr);
-                        end;
+                                GetFrame(fx, fy, fz, pch, yaw, rol);
+                                if frsel.FindFR(th, fr) <> -1 then
+                                   PickThingAt(thing, fx, fy, fz, pch, yaw, rol, th * 65536 + fr)
+                                else
+                                  renderer.PickVertex(fx, fy, fz, th * 65536 + fr);
+                            end;
+                    end;
                 end;
             MM_VX:
-                for s := 0 to level.sectors.Count - 1 do
                 begin
-                    sec := level.sectors[s];
-                    if ToolBar.IsLayerVisible(sec.layer) then
-                        With sec do
-                            for VX := 0 to vertices.Count - 1 do
-                                With vertices[VX] do
-                                    renderer.PickVertex(X, Y, z,
-                                      s + VX * 65536);
+                    SetRendererGeoVertexSize;
+                    for s := 0 to level.sectors.Count - 1 do
+                    begin
+                        sec := level.sectors[s];
+                        if ToolBar.IsLayerVisible(sec.layer) then
+                            With sec do
+                                for VX := 0 to vertices.Count - 1 do
+                                    With vertices[VX] do
+                                        renderer.PickVertex(X, Y, z,
+                                          s + VX * 65536);
+                    end;
                 end;
             MM_LT:
-                for th := 0 to level.lights.Count - 1 do
                 begin
-                    light := level.lights[th];
-                    if ToolBar.IsLayerVisible(light.layer) then
-                        With light do
-                            renderer.PickVertex(position.x, position.y, position.z, th);
+                    SetRendererObjVertexSize;
+                    for th := 0 to level.lights.Count - 1 do
+                    begin
+                        light := level.lights[th];
+                        if ToolBar.IsLayerVisible(light.layer) then
+                            With light do
+                                renderer.PickVertex(position.x, position.y, position.z, th);
+                    end;
                 end;
             MM_Extra:
-                for s := 0 to ExtraObjs.Count - 1 do
                 begin
-                    obj := ExtraObjs[s];
-                    if obj is TVertex then
-                        With TJKVertex(obj) do
-                            renderer.PickVertex(X, Y, z, s)
-                    else if obj is TExtraLine then
-                        With TExtraLine(obj) do
-                            renderer.PickLine(v1, v2, s)
-                    else if obj is TPolygon then
-                        renderer.PickPolygon(TPolygon(obj), s);
+                    SetRendererGeoVertexSize;
+                    for s := 0 to ExtraObjs.Count - 1 do
+                    begin
+                        obj := ExtraObjs[s];
+                        if obj is TVertex then
+                            With TJKVertex(obj) do
+                                renderer.PickVertex(X, Y, z, s)
+                        else if obj is TExtraLine then
+                            With TExtraLine(obj) do
+                                renderer.PickLine(v1, v2, s)
+                        else if obj is TPolygon then
+                            renderer.PickPolygon(TPolygon(obj), s);
+                    end;
                 end;
         end;
         renderer.EndPick;
@@ -3557,7 +3553,7 @@ Procedure TJedMain.Do_ProceedDrag(X, Y: Integer; snapToVx: boolean; snapToAxis, 
         if snapToVx then
            begin
               var vxpos: TVector;
-              if not GetNearestWorldVertexToLine(level, curRefPos + dvec, renderer.GetCameraForward, vxsnapMaxDist, vxpos) then
+              if not GetNearestWorldVertexToLine(level, curRefPos + dvec, renderer.GetCameraForward, VertSnapMaxDist, vxpos) then
                 exit;
               dvec := vxpos - curRefPos;
             end
@@ -4766,7 +4762,6 @@ begin
             perspective := false;
         end;
 
-        vxsnapMaxDist := 0.2;
         Cur_SC := IfThen(Level.sectors.Count = 0, -1, 0);
         Cur_SF := IfThen(Level.sectors.Count = 0, -1, 0);
         Cur_TH := IfThen(Level.things.Count  = 0, -1, 0);
@@ -5380,7 +5375,7 @@ begin
     exit;
 
   if snapToVertex then
-    GetNearestWorldVertexToLine(Level, x, y, z, renderer.GetCameraForward, vxsnapMaxDist, x, y, z)
+    GetNearestWorldVertexToLine(level, x, y, z, renderer.GetCameraForward, VertSnapMaxDist, x, y, z)
   else if bSnapToGrid then
     renderer.GetNearestGrid(x, y, z, x, y, z);
 end;
@@ -9536,6 +9531,17 @@ begin
 
   renderer.scale := System.Math.Min(renderer.scale * 1.5, 3.5);  // max zoom out
   Result := true;
+end;
+
+
+procedure TJedMain.SetRendererGeoVertexSize;
+begin
+  renderer.pointSize := WF_GeoVertSize;
+end;
+
+procedure TJedMain.SetRendererObjVertexSize;
+begin
+  renderer.pointSize := WF_ObjVertSize;
 end;
 
 end.
