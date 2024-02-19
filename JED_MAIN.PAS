@@ -477,6 +477,7 @@ type
 
         Procedure ResetEditor(DefaultParams: boolean);
         Procedure ResettingEditor;
+        Procedure ResetCamera;
         Procedure SetLevelName;
         Procedure ReDraw;
         Procedure DrawThing(th: TThing);
@@ -2355,16 +2356,7 @@ begin
     case Key of
         VK_HOME:
           begin
-             With renderer do
-              begin
-                  CamX := 0;
-                  CamY := 0;
-                  CamZ := 0;
-                  rPch := 0;
-                  rYaw := 0;
-                  rRol := 0;
-                  scale := 0.5;
-              end;
+            ResetCamera;
           end;
         VK_BACK:
             ClearMultiSelection;
@@ -4730,6 +4722,26 @@ begin
     MsgForm.msgs.Clear;
 end;
 
+Procedure TJedMain.ResetCamera;
+begin
+  if renderer = nil then
+    exit;
+
+    with renderer do
+      begin
+        camX := 0;
+        camY := 0;
+        camZ := 0;
+
+        rPch := 0;
+        rYaw := 0;
+        rRol := 0;
+        scale := 4;
+
+        SetRendFromPYR;
+      end;
+end;
+
 Procedure TJedMain.ResetEditor;
 var
     i: Integer;
@@ -4743,23 +4755,17 @@ begin
     begin
         With renderer do
         begin
-            CamX := 0;
-            CamY := 0;
-            CamZ := 0;
             SetZ(0, 0, 1);
             SetX(1, 0, 0);
-
-            rPch := 0;
-            rYaw := 0;
-            rRol := 0;
 
             GridX := 0;
             GridY := 0;
             GridZ := 0;
             SetGridNormal(0, 0, 1);
             SetGridXNormal(1, 0, 0);
-            scale := 0.5;
+
             perspective := false;
+            ResetCamera;
         end;
 
         Cur_SC := IfThen(Level.sectors.Count = 0, -1, 0);
