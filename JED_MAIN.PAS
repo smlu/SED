@@ -3066,25 +3066,25 @@ end;
 
 procedure TJedMain.PickThingAt(th: TThing; x, y, z, pitch, yaw, roll: double; id: integer);
 begin
+  renderer.PickVertex(x,y,z, id);
   case thingView of
         cv_Boxes:
             begin
-                if th.bbox.x1 <> th.bbox.x2 then
+              if th.bbox.x1 <> th.bbox.x2 then
                 begin
                   BoxToPolys(th.bbox, tcube);
                   renderer.PickPolygonsAt(tcube, x, y, z, pitch, yaw, roll, id);
-                end;
+                end
             end;
         cv_Wireframes:
             begin
                 if th.a3DO <> nil then
-                begin
-                  for var i := 0 to th.a3DO.Meshes.Count - 1 do
-                    renderer.PickPolygonsAt(th.a3DO.meshes[i].faces, x, y, z, pitch, yaw, roll, id);
-                end;
+                  begin
+                    for var i := 0 to th.a3DO.Meshes.Count - 1 do
+                      renderer.PickPolygonsAt(th.a3DO.meshes[i].faces, x, y, z, pitch, yaw, roll, id);
+                  end;
             end;
     end;
-    renderer.DrawVertex(x, y, z);
 end;
 
 { Cleave mouse functions }
