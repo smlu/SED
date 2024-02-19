@@ -43,6 +43,8 @@ type
     procedure CB3DOPrevClick(Sender: TObject);
     procedure SBPCHChange(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
+    procedure TVGroupsCollapsing(Sender: TObject; Node: TTreeNode;
+      var AllowCollapse: Boolean);
   private
     { Private declarations }
     { ProjDir:String;
@@ -58,10 +60,10 @@ type
     oldOnClick: TNotifyEvent;
 
     Procedure AddGobGroup(const gob, dir: String; perm: boolean);
-    Procedure AddProjDirGroup(const mask: String);
-    Procedure AddProjSubDirGroup(const subdir, mask: String);
+    Function AddProjDirGroup(const mask: String): TTreeNode;
+    Function AddProjSubDirGroup(const subdir, mask: String; parent: TTreeNode = nil): TTreeNode;
 
-    Procedure AddDirGroup(const dir, name, mask: String);
+    Function AddDirGroup(const dir, name, mask: String): TTreeNode;
     Procedure SaveCurrentGroup(var s: String);
     Procedure SetResName(const s: string); { Doesn't call OnChange }
     Procedure ChangeResName(const s: string); { Always calls OnChange }
@@ -223,6 +225,7 @@ begin
   if Node = nil then
     Node := TVGroups.Items.GetFirstNode;
   TVGroups.Selected := Node;
+  TVGroups.FullExpand;
   { TVGroupsChange(Nil,Node); }
   { TVGroups.Items[0].Focused:=true; }
 end;
@@ -291,7 +294,7 @@ begin
   end;
 end;
 
-Procedure TResPicker.AddProjSubDirGroup(const subdir, mask: String);
+Function TResPicker.AddProjSubDirGroup(const subdir, mask: String; parent: TTreeNode): TTreeNode;
 var
   sl: TStringList;
 begin
@@ -300,15 +303,15 @@ begin
   sl := TStringList.Create;
   ListDirMask(ProjectDir + subdir, mask, sl);
   { if sl.count=0 then sl.free else }
-  TVGroups.Items.AddObject(nil, subdir, sl);
+  Result := TVGroups.Items.AddChildObject(parent, subdir, sl);
 end;
 
-Procedure TResPicker.AddProjDirGroup(const mask: String);
+Function TResPicker.AddProjDirGroup(const mask: String): TTreeNode;
 begin
-  AddDirGroup(ProjectDir, 'Project Directory', mask);
+  Result := AddDirGroup(ProjectDir, 'Project Directory', mask);
 end;
 
-Procedure TResPicker.AddDirGroup(const dir, name, mask: String);
+Function TResPicker.AddDirGroup(const dir, name, mask: String): TTreeNode;
 var
   sl: TStringList;
 begin
@@ -316,7 +319,7 @@ begin
   begin
     sl := TStringList.Create;
     ListDirMask(dir, mask, sl);
-    TVGroups.Items.AddObject(nil, Name, sl);
+    Result := TVGroups.Items.AddObject(nil, Name, sl);
   end;
 end;
 
@@ -543,12 +546,15 @@ begin
   SetCMP(Level.GetMasterCMP);
   Try
     ClearGroups;
+
+    var pn := AddProjDirGroup('*.3do');
+    AddProjSubDirGroup('3do\', '*.3do', pn);
+
     AddGobGroup(Res1_gob, '3do', true);
     AddGobGroup(Res2_gob, '3do', true);
-    AddProjDirGroup('*.3do');
-    AddProjSubDirGroup('3do\', '*.3do');
+
     if CurrentProject = IJIM then
-      AddDirGroup(IJIMDir + '3do\', 'Install>3do', '*.3do');
+      AddDirGroup(GameDir + '3do\', 'Install>3do', '*.3do');
 
     case CurrentProject of
       TProjectType.JKDF2:
@@ -950,6 +956,12 @@ begin
     SetItemList(TStringList(Node.Data));
 end;
 
+procedure TResPicker.TVGroupsCollapsing(Sender: TObject; Node: TTreeNode;
+  var AllowCollapse: Boolean);
+begin
+  AllowCollapse := False;
+end;
+
 Procedure TResPicker.SetCMP(const cmp: string);
 begin
   if CurrentProject = TProjectType.IJIM then
@@ -1053,9 +1065,11 @@ end;
 Function TResPicker.PickCMP(const CurCMP: string): string;
 begin
   ClearGroups;
+
+  var pn := AddProjDirGroup('*.cmp');
+  AddProjSubDirGroup('misc\cmp\', '*.cmp', pn);
   AddGobGroup(Res2_gob, 'misc\cmp', true);
-  AddProjDirGroup('*.cmp');
-  AddProjSubDirGroup('misc\cmp\', '*.cmp');
+
   ResetGroups('');
   ChangeResName(CurCMP);
   if ShowModal = idOK then
@@ -1067,16 +1081,22 @@ end;
 Function TResPicker.PickSecSound(CurWav: string): string;
 begin
   ClearGroups;
+
+  var pn := AddProjDirGroup('*.wav');
+  AddProjSubDirGroup('sound\', '*.wav', pn);
+  if CurrentProject <> IJIM  then
+    AddProjSubDirGroup('voice\', '*.wav', pn);
+
   AddGobGroup(Res1_gob, 'sound', true);
   AddGobGroup(Res2_gob, 'sound', true);
-  AddGobGroup(Res1_gob, 'voice', true);
+  if CurrentProject <> IJIM  then
+    AddGobGroup(Res1_gob, 'voice', true);
+
   if CurrentProject = TProjectType.MOTS then
     AddGobGroup(Res2_gob, 'voiceuu', true);
-  AddProjDirGroup('*.wav');
-  AddProjSubDirGroup('sound\', '*.wav');
-  AddProjSubDirGroup('voice\', '*.wav');
-  if CurrentProject = IJIM then
-    AddDirGroup(IJIMDir + 'sound\', 'Install>sound', '*.wav');
+
+  if CurrentProject = IJIM  then
+    AddDirGroup(GameDir + 'sound\', 'Install>sound', '*.wav');
 
   case CurrentProject of
     TProjectType.JKDF2:
@@ -1098,17 +1118,18 @@ end;
 Function TResPicker.PickMAT(CurMAT: string): string;
 begin
   ClearGroups;
+
+  var pn := AddProjDirGroup('*.mat');
+  AddProjSubDirGroup('mat\', '*.mat', pn);
+  if CurrentProject <> IJIM then
+      AddProjSubDirGroup('3do\mat\', '*.mat', pn);
+
   AddGobGroup(Res1_gob, 'mat', true);
   AddGobGroup(Res2_gob, 'mat', true);
-  AddProjDirGroup('*.mat');
-  AddProjSubDirGroup('mat\', '*.mat');
   if CurrentProject <> IJIM then
-    begin
-      AddProjSubDirGroup('3do\mat\', '*.mat');
-      AddGobGroup(Res2_gob, '3do\mat', true);
-    end
+    AddGobGroup(Res2_gob, '3do\mat', true)
   else
-    AddDirGroup(IJIMDir + 'mat\', 'Install>mat', '*.mat');
+    AddDirGroup(GameDir + 'mat\', 'Install>mat', '*.mat');
 
   case CurrentProject of
     TProjectType.JKDF2:
@@ -1133,16 +1154,19 @@ end;
 Function TResPicker.PickCOG(CurCog: string): string;
 begin
   ClearGroups;
+
+  var pn := AddProjDirGroup('*.cog');
+  AddProjSubDirGroup('cog\', '*.cog', pn);
+
   AddGobGroup(sp_gob, 'cog', true);
   AddGobGroup(mp1_gob, 'cog', true);
   AddGobGroup(mp2_gob, 'cog', true);
   AddGobGroup(mp3_gob, 'cog', true);
   AddGobGroup(Res1_gob, 'cog', true);
   AddGobGroup(Res2_gob, 'cog', true);
-  AddProjDirGroup('*.cog');
-  AddProjSubDirGroup('cog\', '*.cog');
+
   if CurrentProject = IJIM then
-      AddDirGroup(IJIMDir + 'cog\', 'Install>cog', '*.cog');
+      AddDirGroup(GameDir + 'cog\', 'Install>cog', '*.cog');
 
   case CurrentProject of
     TProjectType.JKDF2:
@@ -1182,8 +1206,10 @@ var
   sl: TStringList;
 begin
   ClearGroups;
-  AddDirGroup(GameDir + 'Resource\Video\', 'Resource\Video on HD',  '*.smk;*.san');
+
   AddProjDirGroup('*.jkl;*.smk;*.san');
+  AddDirGroup(GameDir + 'Resource\Video\', 'Resource\Video on HD',  '*.smk;*.san');
+
   ResetGroups('');
   ChangeResName(seq);
   if ShowModal = idOK then
@@ -1209,12 +1235,16 @@ end;
 Function TResPicker.PickAI(const CurAI: string): string;
 begin
   ClearGroups;
+
+  var pn := AddProjDirGroup('*.ai;*.ai0;*.ai2');
+  AddProjSubDirGroup('misc\ai\', '*.ai;*.ai0;*.ai2', pn);
+
   AddGobGroup(Res1_gob, 'misc\ai', true);
   AddGobGroup(Res2_gob, 'misc\ai', true);
-  AddProjDirGroup('*.ai;*.ai0;*.ai2');
-  AddProjSubDirGroup('misc\ai\', '*.ai;*.ai0;*.ai2');
+
   if CurrentProject = IJIM then
-      AddDirGroup(IJIMDir + 'misc\ai\', 'Install>misc\ai', '*.ai');
+      AddDirGroup(GameDir + 'misc\ai\', 'Install>misc\ai', '*.ai');
+
   ResetGroups('');
   ChangeResName(CurAI);
   if ShowModal = idOK then
@@ -1226,11 +1256,14 @@ end;
 Function TResPicker.PickKEY(const CurKEY: string): string;
 begin
   ClearGroups;
+
+  var pn := AddProjDirGroup('*.key');
+  AddProjSubDirGroup('3do\key\', '*.key', pn);
+
   AddGobGroup(Res2_gob, '3do\key', true);
-  AddProjDirGroup('*.key');
-  AddProjSubDirGroup('3do\key\', '*.key');
   if CurrentProject = IJIM then
-      AddDirGroup(IJIMDir + '3do\key\', 'Install>3do\key', '*.key');
+      AddDirGroup(GameDir + '3do\key\', 'Install>3do\key', '*.key');
+
   ResetGroups('');
   ChangeResName(CurKEY);
   if ShowModal = idOK then
@@ -1242,12 +1275,16 @@ end;
 Function TResPicker.PickSND(const CurSND: string): string;
 begin
   ClearGroups;
+
+  var pn := AddProjDirGroup('*.snd');
+  AddProjSubDirGroup('misc\snd\', '*.snd', pn);
+
   AddGobGroup(Res1_gob, 'misc\snd', true);
   AddGobGroup(Res2_gob, 'misc\snd', true);
-  AddProjDirGroup('*.snd');
-  AddProjSubDirGroup('misc\snd\', '*.snd');
+
   if CurrentProject = IJIM then
-      AddDirGroup(IJIMDir + 'misc\snd\', 'Install>misc\snd', '*.snd');
+      AddDirGroup(GameDir + 'misc\snd\', 'Install>misc\snd', '*.snd');
+
   ResetGroups('');
   ChangeResName(CurSND);
   if ShowModal = idOK then
@@ -1259,11 +1296,14 @@ end;
 Function TResPicker.PickPUP(const CurPUP: string): string;
 begin
   ClearGroups;
+
+  var pn := AddProjDirGroup('*.pup');
+  AddProjSubDirGroup('misc\pup\', '*.pup', pn);
+
   AddGobGroup(Res2_gob, 'misc\pup', true);
-  AddProjDirGroup('*.pup');
-  AddProjSubDirGroup('misc\pup\', '*.pup');
   if CurrentProject = IJIM then
-      AddDirGroup(IJIMDir + 'misc\pup\', 'Install>misc\pup', '*.pup');
+      AddDirGroup(GameDir + 'misc\pup\', 'Install>misc\pup', '*.pup');
+
   ResetGroups('');
   ChangeResName(CurPUP);
   if ShowModal = idOK then
@@ -1275,12 +1315,16 @@ end;
 Function TResPicker.PickSPR(const CurSPR: string): string;
 begin
   ClearGroups;
+
+  var pn := AddProjDirGroup('*.spr');
+  AddProjSubDirGroup('misc\spr\', '*.spr', pn);
+
   AddGobGroup(Res1_gob, 'misc\spr', true);
   AddGobGroup(Res2_gob, 'misc\spr', true);
-  AddProjDirGroup('*.spr');
-  AddProjSubDirGroup('misc\spr\', '*.spr');
+
   if CurrentProject = IJIM then
-      AddDirGroup(IJIMDir + 'misc\spr\', 'Install>misc\spr', '*.spr');
+      AddDirGroup(GameDir + 'misc\spr\', 'Install>misc\spr', '*.spr');
+
   ResetGroups('');
   ChangeResName(CurSPR);
   if ShowModal = idOK then
@@ -1292,12 +1336,16 @@ end;
 Function TResPicker.PickPAR(const CurPAR: string): string;
 begin
   ClearGroups;
+
+  var pn := AddProjDirGroup('*.par');
+  AddProjSubDirGroup('misc\par\', '*.par', pn);
+
   AddGobGroup(Res1_gob, 'misc\par', true);
   AddGobGroup(Res2_gob, 'misc\par', true);
-  AddProjDirGroup('*.par');
-  AddProjSubDirGroup('misc\par\', '*.par');
+
   if CurrentProject = IJIM then
-      AddDirGroup(IJIMDir + 'misc\par\', 'Install>misc\par', '*.par');
+      AddDirGroup(GameDir + 'misc\par\', 'Install>misc\par', '*.par');
+
   ResetGroups('');
   ChangeResName(CurPAR);
   if ShowModal = idOK then
@@ -1309,9 +1357,13 @@ end;
 Function TResPicker.PickPER(const CurPER: string): string;
 begin
   ClearGroups;
+
+  var pn := AddProjDirGroup('*.per');
+  AddProjSubDirGroup('misc\per\', '*.per', pn);
+
   AddGobGroup(Res2_gob, 'misc\per', true);
-  AddProjDirGroup('*.per');
-  AddProjSubDirGroup('misc\per\', '*.per');
+
+
   ResetGroups('');
   ChangeResName(CurPER);
   if ShowModal = idOK then
