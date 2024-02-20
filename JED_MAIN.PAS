@@ -290,6 +290,8 @@ type
         procedure PickThing(th: TThing; id: integer);
         procedure PickThingAt(th: TThing; x, y, z, pitch, yaw, roll: double; id: integer);
 
+        function IsCleaveMapMode: Boolean;
+
         // Renderer stuff
         function ZoomIn: boolean;
         function ZoomOut: boolean;
@@ -2562,10 +2564,11 @@ begin
                 ExtrudeSurface(surf, surf.ExtrudeSize);
                 SetCurSF(Cur_SC, Cur_SF);
             end;
-        Ord('S'):
+        Ord('S'): // set sector map mode
             SetMapMode(MM_SC);
         Ord('C'):
-            SetMouseMode(MM_Cleave);
+            if IsCleaveMapMode then
+              SetMouseMode(MM_Cleave);
 //        Ord('W'):
 //            SetMouseMode(MM_Ruler);
         Ord('F'):
@@ -3076,10 +3079,21 @@ begin
     end;
 end;
 
+function TJedMain.IsCleaveMapMode: Boolean;
+begin
+  Result := (mapMode = MM_SC) or (mapMode = MM_SF) or (mapMode = MM_ED);
+end;
+
 { Cleave mouse functions }
 
 Procedure TJedMain.Do_StartCleave(X, Y: Integer; snapToVertex: boolean);
 begin
+    if not IsCleaveMapMode then
+    begin
+      CancelMouseMode;
+      exit;
+    end;
+
     if bCleaveStarted then
       ReDraw;
         
@@ -7943,11 +7957,11 @@ begin
             end;
         MM_ED:
             begin
-                StartUndoRec('Cleave Edge');
+                StartUndoRec('Cleave Edge(s)');
                 edsel.AddED(Cur_SC, Cur_SF, Cur_ED);
                 for i := 0 to edsel.Count - 1 do
                   begin
-                    edsel.GetSCSFED(i, nsf, nsf, ned);
+                    edsel.GetSCSFED(i, nsc, nsf, ned);
                     var sec := level.sectors[nsc];
                     if ToolBar.IsLayerVisible(sec.Layer) then
                       CleaveEdge(sec.surfaces[nsf], ned, norm, X, Y, z);
