@@ -11,7 +11,6 @@ type
     ProgramIcon: TImage;
     LBVersion: TLabel;
     OKButton: TButton;
-    JEDHome: TButton;
     Timer: TTimer;
     Memo: TMemo;
     ScrollBox: TScrollBox;
@@ -19,11 +18,15 @@ type
     ScrollBox1: TScrollBox;
     Label2: TLabel;
     LabelMemo: TLabel;
+    LBHomePageUrl: TLabel;
     procedure OKButtonClick(Sender: TObject);
-    procedure JEDHomeClick(Sender: TObject);
     procedure TimerTimer(Sender: TObject);
     procedure FormShow(Sender: TObject);
     procedure FormHide(Sender: TObject);
+    procedure LBHomePageUrlMouseEnter(Sender: TObject);
+    procedure LBHomePageUrlMouseLeave(Sender: TObject);
+    procedure LBHomePageUrlMouseUp(Sender: TObject; Button: TMouseButton;
+      Shift: TShiftState; X, Y: Integer);
   private
     { Private declarations }
     scrollPos: integer;
@@ -37,6 +40,7 @@ var
   Jed_about: TJed_about;
 
 implementation
+ uses Clipbrd;
 
 {$R *.DFM}
 
@@ -45,14 +49,28 @@ begin
   Jed_about.Hide;
 end;
 
-procedure TJed_about.JEDHomeClick(Sender: TObject);
+procedure TJed_about.LBHomePageUrlMouseEnter(Sender: TObject);
 begin
-  if ShellExecute(Handle, 'open', 'https://github.com/smlu/sed', nil, nil,
-    0) < 32 then
-  begin
-    MessageBeep(0);
+  LBHomePageUrl.Font.Color := $00FF0080;
+  Screen.Cursor := crHandPoint;
+end;
+
+procedure TJed_about.LBHomePageUrlMouseLeave(Sender: TObject);
+begin
+  LBHomePageUrl.Font.Color := clBlue;
+  Screen.Cursor := crDefault;
+end;
+
+procedure TJed_about.LBHomePageUrlMouseUp(Sender: TObject; Button: TMouseButton;
+  Shift: TShiftState; X, Y: Integer);
+begin
+  case Button of
+    TMouseButton.mbLeft: ShellExecute(Handle, 'open', 'https://github.com/smlu/sed', nil, nil, SW_SHOWNORMAL);
+    TMouseButton.mbRight: Clipboard.AsText := LBHomePageUrl.Caption;
+    TMouseButton.mbMiddle: Clipboard.AsText := LBHomePageUrl.Caption;
   end;
-End;
+
+end;
 
 Procedure TJed_about.ScrollStep;
 begin
