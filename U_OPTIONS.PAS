@@ -538,7 +538,7 @@ begin
   UDSaveInt.Position := SaveInterval;
 
   NewCtl(@UndoEnabled, dt_bool, CBUndo);
-  NewCtl(@UDUndoStackSize, dt_int, EBUndoStackSize);
+  NewCtl(@UndoStackSize, dt_int, EBUndoStackSize);
   UDUndoStackSize.Max := UndoMaxStackSize;
   UDUndoStackSize.Position := UndoStackSize;
 
@@ -644,6 +644,10 @@ begin
         on exception do;
       end;
     end;
+
+    // Select first item in the list
+    LBColors.ItemIndex := 0;
+    LBColorsClick(nil);
 end;
 
 Function TOptions.IsVarChanged(var v): boolean;
