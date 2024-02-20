@@ -1663,6 +1663,7 @@ begin
     AddKBItem(miMap, 'Zoom at cursor', 'C', [ssShift]);
     AddKBItem(miMap, 'Zoom in', Chr(VK_ADD), []);
     AddKBItem(miMap, 'Zoom out', Chr(VK_SUBTRACT), []);
+    AddKBItem(miMap, 'Center View', Chr(VK_HOME), []);
     AddKBItem(miMap, 'View To Grid', Chr(VK_MULTIPLY), []);
 
     AddKBItem(miGrid, 'Top view&&grid', '1', [ssShift]);
@@ -3609,10 +3610,10 @@ begin
     With renderer do
     begin
         if not GetXYZonPlaneAt(X, Y, renderer.zv, CamX, CamY, CamZ, nx, ny, nz)
-        then exit;
+          then exit;
 
         if not GetXYZonPlaneAt(camTranslatePos.X, camTranslatePos.Y, renderer.zv, CamX, CamY, CamZ, nx1, ny1, nz1)
-        then exit;
+          then exit;
 
         const s = Min(renderer.DpiScale * 10000.0, 1.0);
         CamX := CamX + (nx - nx1)*s;
@@ -3989,8 +3990,7 @@ begin
         With renderer do
           begin
               var ny := renderer.zv;
-              if not GetXYZonPlaneAt(MousePos.X, MousePos.Y, ny, CamX, CamY, CamZ,
-                dx, dy, dz) then
+              if not GetXYZonPlaneAt(MousePos.X, MousePos.Y, ny, CamX, CamY, CamZ, dx, dy, dz) then
                   exit;
 
               var zoomed := false;
@@ -8016,7 +8016,7 @@ begin
           z.SetCoords(0, 0, 1);
           gX.SetCoords(1, 0, 0);
           gZ.SetCoords(0, 0, 1);
-          Scale := 1;
+          scale := 4;
           cmx := 0;
           cmy := 0;
           cmz := 0;
@@ -9525,7 +9525,10 @@ begin
   Result := false;
   if (renderer = nil) or renderer.perspective then
     exit;
-  renderer.scale := renderer.scale / 1.5;
+
+  renderer.scale := renderer.scale * 1.5;
+  if ZoomLocked then
+    renderer.scale := Min(renderer.scale, ZoomMax);
   Result := true;
 end;
 
@@ -9535,10 +9538,11 @@ begin
   if (renderer = nil) or renderer.perspective then
     exit;
 
-  renderer.scale := System.Math.Min(renderer.scale * 1.5, 3.5);  // max zoom out
+  renderer.scale := renderer.scale / 1.5;
+  if ZoomLocked then
+    renderer.scale := Max(renderer.scale, ZoomMin);
   Result := true;
 end;
-
 
 procedure TJedMain.SetRendererGeoVertexSize;
 begin

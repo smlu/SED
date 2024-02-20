@@ -159,10 +159,15 @@ Var
   WF_InvertCulling: Boolean = false;
   WF_DoubleBuf: Boolean = true;
   WF_GeoVertSize: Integer = 5;
+  WF_VertMinSize: Integer = 1;
+  WF_VertMaxSize: Integer = 10;
   WF_ObjVertSize: Integer = 5;
 
   MapRot: Integer = 0;
   VertSnapMaxDist: Double = 0.2;
+  ZoomLocked: Boolean = true;
+  ZoomMin: Double = 1.0;
+  ZoomMax: Double = 5000;
 
   AutoSave: boolean = false;
   SaveInterval: integer = 0;

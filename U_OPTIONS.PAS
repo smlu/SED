@@ -5,7 +5,7 @@ interface
 uses
   Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
   StdCtrls, FileCtrl, ComCtrls, misc_utils, ExtCtrls, Buttons, D3D_PRender,
-  FieldEdit, J_Level, tbar_tools, GlobalVars, iniFiles;
+  FieldEdit, J_Level, tbar_tools, GlobalVars, iniFiles, Vcl.Mask;
 
 type
   TTextEdit = TEdit;
@@ -78,6 +78,17 @@ type
     CBSaveEditorLayers: TCheckBox;
     GBIJIM: TGroupBox;
     cbInvrtCull: TCheckBox;
+    ebVertSnapMaxDist: TLabeledEdit;
+    ebGeoVertSize: TLabeledEdit;
+    gbRenderOptions: TGroupBox;
+    ebObjVertSize: TLabeledEdit;
+    udGeoVertSize: TUpDown;
+    udObjVertSize: TUpDown;
+    gbMapEdit: TGroupBox;
+    gbLockZoom: TGroupBox;
+    ebZoomMin: TLabeledEdit;
+    ebZoomMax: TLabeledEdit;
+    cbLockZoom: TCheckBox;
     procedure BNOKClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure SBHelpClick(Sender: TObject);
@@ -91,14 +102,21 @@ type
     procedure BtnBrowseIJIMDirClick(Sender: TObject);
     procedure BtnBrowseIJIMExeClick(Sender: TObject);
     procedure CBUndoClick(Sender: TObject);
+    procedure cbLockZoomClick(Sender: TObject);
+
   private
     { Private declarations }
     ctls: TList;
-    vGamma: TValInput;
+    viGamma: TValInput;
+    viVertSnapMaxDist: TValInput;
+    viZoomMin: TValInput;
+    viZoomMax: TValInput;
+
     Procedure InitControls;
     Procedure SetControls;
     Procedure GetControls;
     Procedure OnSetData;
+
   public
     Function SetOptions(curPage: TTabSheet): boolean;
     Function IsVarChanged(var v): boolean;
@@ -106,10 +124,10 @@ type
   end;
 
 Procedure ReadConfigFile;
-Procedure WriteConfigFile(IsExit: boolean);
+Procedure WriteConfigFile(bExit: boolean);
 Function SetProjectType(kind: TProjectType): boolean;
 
-Function GetSetting(const name: string): variant;
+Function GetSetting(const settingName: string): variant;
 
 const
   P3D_d3d5 = 0;
@@ -136,8 +154,8 @@ type
 
   TRegValue = record
     d_type: TDataType;
-    Section: string;
-    Name: string;
+    section: string;
+    name: string;
     data: Pointer;
     onExit: boolean;
   end;
@@ -157,7 +175,7 @@ type
 const
   NoConfile: boolean = false;
 
-  RegValues: array [0 .. 86] of TRegValue = (
+  regValues: array [0 .. 92] of TRegValue = (
     (d_type: dt_str; Section: 'JKDF2'; Name: 'Dir'; data: @JKDir; onExit: false),
     (d_type: dt_str; Section: 'MOTS'; Name: 'Dir'; data: @MOTSDir; onExit: false),
 
@@ -184,13 +202,21 @@ const
     (d_type: dt_int; Section: 'Editor'; Name: 'WFAPI'; data: @WireframeAPI; onExit: false),
     (d_type: dt_int; Section: 'Editor'; Name: 'WFInvertCulling'; data: @WF_InvertCulling; onExit: false),
     (d_type: dt_bool; Section: 'Editor'; Name: 'WFDBUF'; data: @WF_DoubleBuf; onExit: false),
+    (d_type: dt_int; Section: 'Editor'; Name: 'WFGeoVertSize'; data: @WF_GeoVertSize; onExit: false),
+    (d_type: dt_int; Section: 'Editor'; Name: 'WFObjVertSize'; data: @WF_ObjVertSize; onExit: false),
+
     (d_type: dt_bool; Section: 'Editor'; Name: 'UndoEnabled'; data: @UndoEnabled; onExit: false),
     (d_type: dt_int; Section: 'Editor'; Name: 'UndoSize'; data: @UndoStackSize; onExit: false),
     (d_type: dt_int; Section: 'Editor'; Name: 'MapRot'; data: @MapRot; onExit: false),
+    (d_type: dt_double; Section: 'Editor'; Name: 'VertSnapMaxDist'; data: @VertSnapMaxDist; onExit: false),
+    (d_type: dt_bool; Section: 'Editor'; Name: 'ZoomLocked'; data: @ZoomLocked; onExit: false),
+    (d_type: dt_double; Section: 'Editor'; Name: 'ZoomMin'; data: @ZoomMin; onExit: false),
+    (d_type: dt_double; Section: 'Editor'; Name: 'ZoomMax'; data: @ZoomMax; onExit: false),
+
     (d_type: dt_int; Section: 'Editor'; Name: 'SaveInterval'; data: @SaveInterval; onExit: false),
     (d_type: dt_bool; Section: 'Editor'; Name: 'AutoSave'; data: @AutoSave; onExit: false),
-    (d_type: dt_bool; Section: 'Editor'; Name: 'NewOnFloor'; data: @NewOnFloor; onExit: false),
 
+    (d_type: dt_bool; Section: 'Editor'; Name: 'NewOnFloor'; data: @NewOnFloor; onExit: false),
     (d_type: dt_bool; Section: 'Editor'; Name: 'MoveFrames'; data: @MoveFrames; onExit: false),
     (d_type: dt_bool; Section: 'Editor'; Name: 'GOBSmart'; data: @GOBSmart; onExit: false),
     (d_type: dt_bool; Section: 'Editor'; Name: 'CheckOverlaps'; data: @CheckOverlaps; onExit: false),
@@ -257,21 +283,21 @@ const
     (d_type: dt_int; Section: 'Editor'; Name: 'Tbar.H'; data: @TbarPos.H; onExit: true),
     (d_type: dt_bool; Section: 'Editor'; Name: 'Tbar.OnTop'; data: @TbOnTop; onExit: true));
 
-Function GetSetting(const name: string): variant;
+Function GetSetting(const settingName: string): variant;
 var
   i: integer;
 begin
   result := 0;
-  for i := 0 to Sizeof(RegValues) div Sizeof(TRegValue) - 1 do
-    With RegValues[i] do
+  for i := 0 to Sizeof(regValues) div Sizeof(TRegValue) - 1 do
+    With regValues[i] do
     begin
-      if CompareText(name, Name) <> 0 then
+      if CompareText(name, settingName) <> 0 then
         continue;
       case d_type of
         dt_int:
-          result := integer(data^);
+          result := Integer(data^);
         dt_str:
-          result := String(data^);
+          result := string(data^);
         dt_bool:
           result := boolean(data^);
         dt_double:
@@ -294,20 +320,20 @@ begin
   try
     try
       FormatSettings.DecimalSeparator:='.';
-      for var i := 0 to Sizeof(RegValues) div Sizeof(TRegValue) - 1 do
-        With RegValues[i] do
+      for var i := 0 to Sizeof(regValues) div Sizeof(TRegValue) - 1 do
+        With regValues[i] do
         begin
           Try
             Case d_type of
               dt_int:
-                integer(data^) := conf.ReadInteger(Section, Name, integer(data^));
+                integer(data^) := conf.ReadInteger(section, name, integer(data^));
               dt_str:
-                String(data^) := conf.ReadString(Section, Name, String(data^));
+                String(data^) := conf.ReadString(section, name, String(data^));
               dt_bool:
-                boolean(data^) := conf.ReadBool(Section, Name, boolean(data^));
+                boolean(data^) := conf.ReadBool(section, name, boolean(data^));
               dt_double:
               begin
-                var d := conf.ReadFloat(Section, Name, 0.0);
+                var d := conf.ReadFloat(section, Name, 0.0);
                 Double(data^) := conf.ReadFloat(Section, Name, Double(data^));
               end;
             end;
@@ -327,62 +353,25 @@ begin
   end;
 
 end;
-//
-//Procedure ReadRegistry;
-//var
-//  Reg: TRegistry;
-//  i: integer;
-//begin
-//  ReadConfigFile();
-//  exit;
-//  Reg := TRegistry.Create;
-//  if not Reg.OpenKey(RegBase, false) then
-//  begin
-//    Reg.Free;
-//    NoKey := true;
-//    exit;
-//  end;
-//  for i := 0 to Sizeof(RegValues) div Sizeof(TRegValue) - 1 do
-//    With RegValues[i] do
-//    begin
-//      Try
-//        Case d_type of
-//          dt_int:
-//            integer(data^) := Reg.ReadInteger(Name);
-//          dt_str:
-//            String(data^) := Reg.ReadString(Name);
-//          dt_bool:
-//            boolean(data^) := Reg.ReadBool(Name);
-//          dt_double:
-//            Double(data^) := Reg.ReadFloat(Name);
-//        end;
-//      except
-//        On ERegistryException do;
-//      end;
-//    end;
-//  Reg.Free;
-//  if D3DDevice = '' then
-//    D3DDevice := 'RGB Emulation';
-//end;
 
-Procedure WriteConfigFile(IsExit: boolean);
+Procedure WriteConfigFile(bExit: boolean);
 begin
   const conf = TMemIniFile.Create(GetConfigFilePath(), TEncoding.UTF8, (*caseSensitive=*)false);
   try
     try
-      For var i := 0 to Sizeof(RegValues) div Sizeof(TRegValue) - 1 do
-        With RegValues[i] do
-          if IsExit = onExit then
+      For var i := 0 to Sizeof(regValues) div Sizeof(TRegValue) - 1 do
+        With regValues[i] do
+          if bExit = onExit then
           begin
             Case d_type of
               dt_int:
-                conf.WriteInteger(Section, Name, integer(data^));
+                conf.WriteInteger(Section, name, integer(data^));
               dt_str:
-                conf.WriteString(Section, Name, String(data^));
+                conf.WriteString(Section, name, String(data^));
               dt_bool:
-                conf.WriteBool(Section, Name, boolean(data^));
+                conf.WriteBool(Section, name, boolean(data^));
               dt_double:
-                conf.WriteFloat(Section, Name, Double(data^));
+                conf.WriteFloat(Section, name, Double(data^));
             end;
           end;
     except
@@ -394,35 +383,6 @@ begin
     conf.Free;
   end;
 end;
-
-//Procedure WriteRegistry(IsExit: boolean);
-//var
-//  Reg: TRegistry;
-//  i: integer;
-//begin
-//    WriteConfigFile(IsExit);
-//    exit;
-//  Reg := TRegistry.Create;
-//  Reg.OpenKey(RegBase, true);
-//  For i := 0 to Sizeof(RegValues) div Sizeof(TRegValue) - 1 do
-//    With RegValues[i] do
-//      if IsExit = onExit then
-//      begin
-//        Case d_type of
-//          dt_int:
-//            Reg.WriteInteger(Name, integer(data^));
-//          dt_str:
-//            Reg.WriteString(Name, String(data^));
-//          dt_bool:
-//            Reg.WriteBool(Name, boolean(data^));
-//          dt_double:
-//            Reg.WriteFloat(Name, Double(data^));
-//        end;
-//      end;
-//  Reg.Free;
-//end;
-
-
 
 Function TOptions.SetOptions(curPage: TTabSheet): boolean;
 var
@@ -513,7 +473,7 @@ Procedure TOptions.InitControls;
       ctl.c_type := ct_sbar
     else if ctrl.ClassType = TValInput then
       ctl.c_type := ct_vinput
-    else if ctrl.ClassType = TEdit then
+    else if (ctrl.ClassType = TEdit) or (ctrl.ClassType = TLabeledEdit) then
       ctl.c_type := ct_edit
     else
       ctl.c_type := ct_unkn;
@@ -535,7 +495,11 @@ Procedure TOptions.InitControls;
   end;
 
 begin
-  vGamma := TValInput.Create(EBGamma);
+  viGamma := TValInput.Create(EBGamma);
+  viVertSnapMaxDist := TValInput.Create(TEdit(ebVertSnapMaxDist));
+  viZoomMin := TValInput.Create(TEdit(ebZoomMin));
+  viZoomMax := TValInput.Create(TEdit(ebZoomMax));
+
   NewCtl(@JKDir, dt_str, JkDirEdit);
   NewCtl(@MOTSDir, dt_str, MotsDirEdit);
   NewCtl(@IJIMDir, dt_str, IJIMDirEdit);
@@ -545,14 +509,29 @@ begin
   NewCtl(@P3DOnTop, dt_bool, CBP3DOnTop);
   NewCtl(@P3DCOloredLights, dt_bool, CBColored);
   NewCtl(@P3DFullLit, dt_bool, CBFullLight);
-  NewCtl(@P3DGamma, dt_double, vGamma);
+  NewCtl(@P3DGamma, dt_double, viGamma);
   NewCtl(@P3DVisLayers, dt_bool, CB3DLayers);
   NewCtl(@P3DThings, dt_bool, CBShowThings);
   NewCtl(@P3DAPI, dt_int, RGAPI);
   NewCtl(@WireframeAPI, dt_int, RGWireframe);
   NewCtl(@WF_InvertCulling, dt_bool, cbInvrtCull);
   NewCtl(@WF_DoubleBuf, dt_bool, CBDbuf);
+
+  NewCtl(@WF_GeoVertSize, dt_int, ebGeoVertSize);
+  udGeoVertSize.Max := WF_VertMaxSize;
+  udGeoVertSize.Min := WF_VertMinSize;
+  udGeoVertSize.Position := WF_GeoVertSize;
+
+  NewCtl(@WF_ObjVertSize, dt_int, ebObjVertSize);
+  udObjVertSize.Max := WF_VertMaxSize;
+  udObjVertSize.Min := WF_VertMinSize;
+  udObjVertSize.Position := WF_ObjVertSize;
+
   NewCtl(@MapRot, dt_int, RGMapRot);
+  NewCtl(@VertSnapMaxDist, dt_double, viVertSnapMaxDist);
+  NewCtl(@ZoomLocked, dt_bool, cbLockZoom);
+  NewCtl(@ZoomMin, dt_double, viZoomMin);
+  NewCtl(@ZoomMax, dt_double, viZoomMax);
 
   NewCtl(@AutoSave, dt_bool, CBAutoSave);
   NewCtl(@SaveInterval, dt_int, EBSaveInt);
@@ -664,7 +643,6 @@ begin
       except
         on exception do;
       end;
-
     end;
 end;
 
@@ -838,10 +816,10 @@ begin
     end;
 
     if not SetOptions(JK) then
-    begin
-      SaveSettings := false;
-      Application.Terminate;
-    end
+      begin
+        SaveSettings := false;
+        Application.Terminate;
+      end
     else
       WriteConfigFile(false);
   end;
@@ -1003,6 +981,12 @@ end;
 procedure TOptions.CBAutoSaveClick(Sender: TObject);
 begin
   EBSaveInt.Enabled := CBAutoSave.Checked;
+end;
+
+procedure TOptions.cbLockZoomClick(Sender: TObject);
+begin
+  ebZoomMin.Enabled := cbLockZoom.Checked;
+  ebZoomMax.Enabled := cbLockZoom.Checked;
 end;
 
 procedure TOptions.CBUndoClick(Sender: TObject);

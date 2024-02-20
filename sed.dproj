@@ -151,7 +151,7 @@
         <DCCReference Include="values.pas"/>
         <DCCReference Include="u_templates.pas"/>
         <DCCReference Include="ListRes.pas"/>
-        <DCCReference Include="U_Options.pas">
+        <DCCReference Include="U_OPTIONS.pas">
             <Form>Options</Form>
         </DCCReference>
         <DCCReference Include="U_CogForm.pas">

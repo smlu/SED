@@ -17,7 +17,7 @@ Const
   xrange = 20000;
   yrange = 20000;
   zrange = 20000;
-  ppunit = 16; { Pixels per unit }
+  ppunit = 32; { Pixels per unit }
 
   CL_FRONT = 0;
   CL_BACK = 0;
