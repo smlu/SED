@@ -33,7 +33,7 @@ Type
     how: (scale_xyz, scale_x, scale_y, scale_z, scale_vec);
   end;
 
-function MaxSurfaceVertices(lev: TJKLevel): integer; // returns max number of vertices surface can have baseed on level kind
+function MaxSurfaceVertices(const lev: TJKLevel): integer; // returns max number of vertices surface can have baseed on level kind
 
 function NextIdx(n, maxn: integer): integer;
 
@@ -42,11 +42,8 @@ function Isabove180(x, y: double; xa, ya, xb, yb: double): boolean;
 function DoIntersect(x11, y11, x12, y12, x21, y21, x22, y22: double): boolean;
 
 procedure MultVM3(const mx: TMat3x3; var x, y, z: double);
-
 procedure MultM3(var mx: TMat3x3; const bymx: TMat3x3);
-
 procedure MultVM3s(const mx: TMat3x3s; var x, y, z: single);
-
 procedure MultM3s(var mx: TMat3x3s; const bymx: TMat3x3s);
 
 procedure CreateRotMatrix(var mx: TMat3x3; pch, yaw, rol: double);
@@ -57,9 +54,9 @@ procedure ScaleMatrixS(var mx: TMat3x3s; scx, scy, scz: single);
 
 procedure CalcNormal(const surf: TPolygon; var normal: TVector);
 
-procedure FindBBox(sec: TJKSector; var box: TBox);
-procedure FindBSphere(sec: TJKSector; var cx, cy, cz, Rad: double);
-function FindCollideBox(sec: TJKSector; const bbox: TBox; cx, cy, cz: double;
+procedure FindBBox(const sec: TJKSector; var box: TBox);
+procedure FindBSphere(const sec: TJKSector; var cx, cy, cz, Rad: double);
+function FindCollideBox(const sec: TJKSector; const bbox: TBox; cx, cy, cz: double;
   var cbox: TBox): boolean;
 
 function DoBoxesIntersect(const box1, box2: TBox): boolean;
@@ -70,22 +67,22 @@ function Do2DBoxesIntersect(const box1, box2: TBox2): boolean;
 procedure Set2DBox(var box: TBox2; x1, x2, y1, y2: double);
 function IsPointIn2DBox(const box: TBox2; x, y: double): boolean;
 
-procedure FindCenter(sec: TJKSector; var cx, cy, cz: double);
-procedure CalcSecCenter(sec: TJKSector; var cx, cy, cz: double);
+procedure FindCenter(const sec: TJKSector; var cx, cy, cz: double);
+procedure CalcSecCenter(const sec: TJKSector; var cx, cy, cz: double);
 
 procedure CalcSurfCenter(const surf: TJKSurface; var cx, cy, cz: double);
-procedure CalcSurfRect(surf: TJKSurface; v1, v2, v3, v4: TVertex; by: double);
+procedure CalcSurfRect(const surf: TJKSurface; var v1, v2, v3, v4: TJKVertex; by: double);
 
 procedure RotateVector(var vec: TVector; pch, yaw, rol: double);
 procedure GetJKPYR(const x, y, z: TVector; var pch, yaw, rol: double);
 procedure CalcRotVecData(var rd: TVecRotData; pch, yaw, rol: double);
 procedure RotVecbyData(var vec: TVector; var rd: TVecRotData);
 
-function IsSurfConvex(surf: TJKSurface): boolean;
-function IsSurfPlanar(surf: TJKSurface): boolean;
-function IsSectorConvex(sec: TJKSector): boolean;
+function IsSurfConvex(const surf: TJKSurface): boolean;
+function IsSurfPlanar(const surf: TJKSurface): boolean;
+function IsSectorConvex(const sec: TJKSector): boolean;
 function IsOnLine(x1, y1, z1, x2, y2, z2, x, y, z: double): boolean;
-function DistToPlane(surf: TPolygon; x, y, z: double): double;
+function DistToPlane(const surf: TPolygon; x, y, z: double): double;
 
 { Do line and surface intersect }
 function PlaneLineXn(const normal: TVector; D: double;
@@ -93,15 +90,15 @@ function PlaneLineXn(const normal: TVector; D: double;
 function PlaneLineXnNew(const normal: TVector; pX, pY, pZ, x1, y1, z1, x2, y2,
   z2: double; var x, y, z: double): boolean;
 
-function IsPointOnSurface(surf: TJKSurface; x, y, z: double): boolean;
+function IsPointOnSurface(const surf: TJKSurface; x, y, z: double): boolean;
 function IsPointWithInLine(x, y, z, x1, y1, z1, x2, y2, z2: double): boolean;
 { Function SurfLineXn(surf:TJKSurface;x1,y1,z1,x2,y2,z2:double):integer; }
 
-function IsInSector(sec: TJKSector; x, y, z: double): boolean;
-function DoSectorsOverlap(sec1, sec2: TJKSector): boolean;
+function IsInSector(const sec: TJKSector; x, y, z: double): boolean;
+function DoSectorsOverlap(const sec1, sec2: TJKSector): boolean;
 
-function FindSectorForThing(thing: TJKThing): integer;
-function FindSectorForXYZ(lev: TJKLevel; x, y, z: double): integer;
+function FindSectorForThing(const thing: TJKThing): integer;
+function FindSectorForXYZ(const lev: TJKLevel; x, y, z: double): integer;
 function GetPreviousSector(const lev: TJKLevel; n: integer): integer; // Returns index of the previous sector on the visible layer or -1
 function GetPreviousThing(const lev: TJKLevel; n: integer): integer;  // Returns index of the previous thing on the visible layer or -1
 function GetPreviousLight(const lev: TJKLevel; n: integer): integer;  // Returns index of the previous light on the visible layer or -1
@@ -153,11 +150,11 @@ procedure FlipSurfaces(lev: TJKLevel; sfsel: TSFMultiSel);
 procedure FlipThings(lev: TJKLevel; thsel: TTHMultiSel; cx, cy, cz: double;
   how: integer);
 
-procedure FlipThingsOverPlane(lev: TJKLevel; thsel: TTHMultiSel; pnorm: TVector;
+procedure FlipThingsOverPlane(lev: TJKLevel; thsel: TTHMultiSel; const pnorm: TVector;
   cx, cy, cz: double);
-procedure FlipLightsOverPlane(lev: TJKLevel; ltsel: TLTMultiSel; pnorm: TVector;
+procedure FlipLightsOverPlane(lev: TJKLevel; ltsel: TLTMultiSel; const pnorm: TVector;
   cx, cy, cz: double);
-procedure FlipFramesOverPlane(lev: TJKLevel; frsel: TFRMultisel; pnorm: TVector;
+procedure FlipFramesOverPlane(lev: TJKLevel; frsel: TFRMultisel; const pnorm: TVector;
   cx, cy, cz: double);
 
 procedure FlipSectorsOverPlane(lev: TJKLevel; scsel: TSCMultiSel;
@@ -197,20 +194,17 @@ function MergeSurfacesAt(surf: TJKSurface; edge: integer): boolean;
 function MergeSectors(sec, sec1: TJKSector): TJKSector;
 function MergeVertices(lev: TJKLevel; vxsel: TVXMultiSel): integer;  // returns number of vertices merged
 
-procedure CalcDefaultUVNormals(surf: TJKSurface; orgvx: integer;
-  var un, vn: TVector);
-procedure CalcUVNormals(surf: TJKSurface; var un, vn: TVector);
-procedure CalcUVNormalsFrom(surf: TJKSurface; nv1, nv2: integer;
-  var un, vn: TVector);
-procedure CalcUV(surf: TJKSurface; orgvx: integer);
-procedure UpdateSurfUVData(surf: TJKSurface; var un, vn: TVector);
+procedure CalcDefaultUVNormals(const surf: TJKSurface; orgvx: integer; var un, vn: TVector);
+procedure CalcUVNormals(const surf: TJKSurface; var un, vn: TVector);
+procedure CalcUVNormalsFrom(const surf: TJKSurface; nv1, nv2: integer; var un, vn: TVector);
+procedure CalcUV(const surf: TJKSurface; orgvx: integer);
+procedure UpdateSurfUVData(const surf: TJKSurface; var un, vn: TVector);
 procedure FindUVScales(surf: TJKSurface);
 
-procedure ArrangeTexture(surf: TJKSurface; orgvx: integer;
-  const un, vn: TVector);
-procedure ArrangeTextureBy(surf: TJKSurface; const un, vn: TVector;
+procedure ArrangeTexture(const surf: TJKSurface; orgvx: integer; const un, vn: TVector);
+procedure ArrangeTextureBy(const surf: TJKSurface; const un, vn: TVector;
   refx, refy, refz, refu, refv: double);
-function IsTXFlipped(surf: TJKSurface): boolean;
+function IsTXFlipped(const surf: TJKSurface): boolean;
 procedure RemoveSurfRefs(lev: TJKLevel; surf: TJKSurface);
 procedure RemoveSecRefs(lev: TJKLevel; sec: TJKSector; opt: byte);
 
@@ -220,7 +214,7 @@ procedure RemoveSecRefs(lev: TJKLevel; sec: TJKSector; opt: byte);
 
 function StitchSurfaces(surf, surf1: TJKSurface): boolean;
 
-function FindCommonEdges(surf, withsurf: TJKSurface;
+function FindCommonEdges(const surf, withsurf: TJKSurface;
   var v11, v12, v21, v22: integer): boolean;
 
 procedure CalcLighting(lev: TJKLevel; scs: TSCMultiSel);
@@ -260,22 +254,22 @@ procedure DuplicateSector(sec, newsc: TJKSector; cx, cy, cz: double;
 
 procedure GetLevelPal(l: TJKLevel; var pal: TCMPPal);
 
-procedure OffsetByNode(lev: TJKLevel; nnode: integer; var x, y, z: double);
-procedure UnOffsetByNode(lev: TJKLevel; nnode: integer; var x, y, z: double);
+procedure OffsetByNode(const lev: TJKLevel; nnode: integer; var x, y, z: double);
+procedure UnOffsetByNode(const lev: TJKLevel; nnode: integer; var x, y, z: double);
 
 // index bound checking functions
-function CheckSectorIndex(lev: TJKLevel; sc: integer): boolean;
-function CheckSectorSurfaceIndex(sec: TJKSector; sf: integer): boolean;
-function CheckSectorVertexIndex(sec: TJKSector; vx: integer): boolean;
-function CheckSurfaceIndex(lev: TJKLevel; sc, sf: integer): boolean;
-function CheckSurfaceEdgeIndex(surf: TJKSurface; ed: integer): boolean;
-function CheckEdgeIndex(lev: TJKLevel; sc, sf, ed: integer): boolean;
-function CheckVertexIndex(lev: TJKLevel; sc, vx: integer): boolean;
-function CheckTemplateIndex(lev: TJKLevel; tmpl: integer): boolean;
-function CheckThingIndex(lev: TJKLevel; th: integer): boolean;
-function CheckFrameIndex(lev: TJKLevel; th, fr: integer): boolean;
-function CheckCogIndex(lev: TJKLevel; co: integer): boolean;
-function CheckLightIndex(lev: TJKLevel; lt: integer): boolean;
+function CheckSectorIndex(const lev: TJKLevel; sc: integer): boolean;
+function CheckSectorSurfaceIndex(const sec: TJKSector; sf: integer): boolean;
+function CheckSectorVertexIndex(const sec: TJKSector; vx: integer): boolean;
+function CheckSurfaceIndex(const lev: TJKLevel; sc, sf: integer): boolean;
+function CheckSurfaceEdgeIndex(const surf: TJKSurface; ed: integer): boolean;
+function CheckEdgeIndex(const lev: TJKLevel; sc, sf, ed: integer): boolean;
+function CheckVertexIndex(const lev: TJKLevel; sc, vx: integer): boolean;
+function CheckTemplateIndex(const lev: TJKLevel; tmpl: integer): boolean;
+function CheckThingIndex(const lev: TJKLevel; th: integer): boolean;
+function CheckFrameIndex(const lev: TJKLevel; th, fr: integer): boolean;
+function CheckCogIndex(const lev: TJKLevel; co: integer): boolean;
+function CheckLightIndex(const lev: TJKLevel; lt: integer): boolean;
 
 implementation
 
@@ -287,15 +281,14 @@ Type
     x, y, z, u, v: double;
   end;
 
-function MaxSurfaceVertices(lev: TJKLevel): integer;
+function MaxSurfaceVertices(const lev: TJKLevel): integer;
 begin
   Result := IfThen(lev.kind = IJIM, ijim_MaxSurfVerts, df_MaxSurfVerts);
 end;
 
-Procedure SaveTXData(surf: TJKSurface; vx: integer; var txd: TXData); forward;
-Procedure ApplyTXDataToVX(surf: TJKSurface; vx: integer;
-  const txd: TXData); forward;
-Procedure ApplyTXData(surf: TJKSurface; const txd: TXData); forward;
+Procedure SaveTXData(const surf: TJKSurface; vx: integer; var txd: TXData); forward;
+Procedure ApplyTXDataToVX(const surf: TJKSurface; vx: integer; const txd: TXData); forward;
+Procedure ApplyTXData(const surf: TJKSurface; const txd: TXData); forward;
 
 Procedure GetLevelPal(l: TJKLevel; var pal: TCMPPal);
 begin
@@ -327,7 +320,7 @@ begin
     result := n - 1;
 end;
 
-Function SysIsInSector(sec: TJKSector; x, y, z: double;
+Function SysIsInSector(const sec: TJKSector; x, y, z: double;
   onsides: boolean): boolean;
 var
   sf: integer;
@@ -335,7 +328,7 @@ var
   v: TJKVertex;
 begin
   result := false;
-  for sf := 0 to sec.surfaces.count - 1 do
+  for sf := 0 to sec.surfaces.Count - 1 do
     with sec.surfaces[sf] do
     begin
       v := Vertices[0];
@@ -353,49 +346,46 @@ begin
   result := true;
 end;
 
-Function IsInSector(sec: TJKSector; x, y, z: double): boolean;
+Function IsInSector(const sec: TJKSector; x, y, z: double): boolean;
 begin
   result := SysIsInSector(sec, x, y, z, true);
 end;
 
-Function IsInSecNS(sec: TJKSector; x, y, z: double): boolean;
+Function IsInSecNS(const sec: TJKSector; x, y, z: double): boolean;
 begin
   result := SysIsInSector(sec, x, y, z, false);
 end;
 
-Function DoSectorsOverlap(sec1, sec2: TJKSector): boolean;
+Function DoSectorsOverlap(const sec1, sec2: TJKSector): boolean;
 
-  Function DoThey(sec1, sec2: TJKSector): boolean;
+  Function DoThey(const sec1, sec2: TJKSector): boolean;
   var
-    i, j: integer;
-    v, v0: TJKVertex;
-    surf: TJKSurface;
-    D: double;
     onright: boolean;
   begin
     result := false;
 
-    for i := 0 to sec1.surfaces.count - 1 do
+    for var i := 0 to sec1.surfaces.Count - 1 do
     begin
-      surf := sec1.surfaces[i];
-      if surf.Vertices.count < 1 then
+      var surf := sec1.surfaces[i];
+      if surf.vertices.Count < 1 then
         continue;
-      v0 := surf.Vertices[0];
 
+      var v0 := surf.Vertices[0];
       onright := false;
 
-      for j := 0 to sec2.Vertices.count - 1 do
+      for var j := 0 to sec2.vertices.Count - 1 do
       begin
-        v := sec2.Vertices[j];
-
-        With surf.normal do
-          D := VectorDot3(v.x - v0.x, v.y - v0.y, v.z - v0.z, dx, dy, dz); //SMult
+//        With surf.normal do
+//          D := VectorDot3(v.x - v0.x, v.y - v0.y, v.z - v0.z, dx, dy, dz); //SMult
+        var v := sec2.vertices[j];
+        var D := surf.normal.Dot(v.x - v0.x, v.y - v0.y, v.z - v0.z);
         if D > 0.01 then
         begin
           onright := true;
           break;
         end;
       end;
+
       if not onright then
         exit;
     end;
@@ -406,7 +396,7 @@ begin
   result := DoThey(sec1, sec2) and DoThey(sec2, sec1);
 end;
 
-Procedure FindBBox(sec: TJKSector; var box: TBox);
+Procedure FindBBox(const sec: TJKSector; var box: TBox);
 var
   i: integer;
 begin
@@ -435,7 +425,7 @@ begin
     end;
 end;
 
-Procedure FindCenter(sec: TJKSector; var cx, cy, cz: double);
+Procedure FindCenter(const sec: TJKSector; var cx, cy, cz: double);
 var
   XSum, Ysum, ZSum: double;
   i: integer;
@@ -456,7 +446,7 @@ begin
   cz := ZSum / sec.Vertices.count;
 end;
 
-Procedure FindBSphere(sec: TJKSector; var cx, cy, cz, Rad: double);
+Procedure FindBSphere(const sec: TJKSector; var cx, cy, cz, Rad: double);
 var
   mdist: double;
   i: integer;
@@ -477,7 +467,7 @@ end;
 Const
   cbSteps = 25;
 
-Function FindCollideBox(sec: TJKSector; const bbox: TBox; cx, cy, cz: double;
+Function FindCollideBox(const sec: TJKSector; const bbox: TBox; cx, cy, cz: double;
   var cbox: TBox): boolean;
 var
   xplus, xminus, yplus, yminus, zplus, zminus: double;
@@ -841,7 +831,7 @@ begin
 
 end;
 
-Function IsTXFlipped(surf: TJKSurface): boolean;
+Function IsTXFlipped(const surf: TJKSurface): boolean;
 var
   nv1, nv2, nv3: integer;
   v1, v2, v3: TJKVertex;
@@ -851,9 +841,10 @@ begin
   nv1 := 0;
   if not FindTri(surf, nv1, nv2, nv3) then
     exit;
-  v1 := surf.Vertices[nv1];
-  v2 := surf.Vertices[nv2];
-  v3 := surf.Vertices[nv3];
+
+  v1 := surf.vertices[nv1];
+  v2 := surf.vertices[nv2];
+  v3 := surf.vertices[nv3];
   tv1 := surf.txvertices[nv1];
   tv2 := surf.txvertices[nv2];
   tv3 := surf.txvertices[nv3];
@@ -877,34 +868,34 @@ begin
   dz := z2 - z1;
 
   if not IsClose(dz, 0) then
-  begin
-    nx := x1 + (z - z1) * dx / dz;
-    ny := y1 + (z - z1) * dy / dz;
-    nz := z;
-  end
+    begin
+      nx := x1 + (z - z1) * dx / dz;
+      ny := y1 + (z - z1) * dy / dz;
+      nz := z;
+    end
   else if not IsClose(dx, 0) then
-  begin
-    nx := x;
-    ny := y1 + (x - x1) * dy / dx;
-    nz := z1 + (x - x1) * dz / dx;
+    begin
+      nx := x;
+      ny := y1 + (x - x1) * dy / dx;
+      nz := z1 + (x - x1) * dz / dx;
   end
   else
-  begin
-    nx := x1 + (y - y1) * dz / dy;
-    ny := y;
-    nz := z1 + (y - y1) * dz / dy;
-  end;
+    begin
+      nx := x1 + (y - y1) * dz / dy;
+      ny := y;
+      nz := z1 + (y - y1) * dz / dy;
+    end;
 
   result := IsClose(nx, x) and IsClose(ny, y) and IsClose(nz, z);
 end;
 
-Function DistToPlane(surf: TPolygon; x, y, z: double): double;
+Function DistToPlane(const surf: TPolygon; x, y, z: double): double;
 var
   vx: TVertex;
 begin
-  vx := surf.Vertices[0];
+  vx := surf.vertices[0];
   With surf do
-    result := Abs(normal.Dot(x - vx.x, y - vx.y, z - vx.z));//Abs(SMult(normal.dx, normal.dy, normal.dz, x - vx.x, y - vx.y, z - vx.z));
+    Result := Abs(normal.Dot(x - vx.x, y - vx.y, z - vx.z));//Abs(SMult(normal.dx, normal.dy, normal.dz, x - vx.x, y - vx.y, z - vx.z));
 end;
 
 { Function DistToPlane(surf:TPolygon;x,y,z:double):double;
@@ -1037,8 +1028,8 @@ Procedure RecalcSector(sec: TJKSector);
 var
   sf, sf1: integer;
 begin
-  ClearSCMarks(sec.Level);
-  for sf := 0 to sec.surfaces.count - 1 do
+  ClearSCMarks(sec.level);
+  for sf := 0 to sec.surfaces.Count - 1 do
     with sec.surfaces[sf] do
     begin
       RecalcAll;
@@ -1046,7 +1037,7 @@ begin
         continue;
       if adjoin.sector.Mark <> 0 then
         continue;
-      for sf1 := 0 to adjoin.sector.surfaces.count - 1 do
+      for sf1 := 0 to adjoin.sector.surfaces.Count - 1 do
         adjoin.sector.surfaces[sf1].RecalcAll;
       adjoin.sector.mark := 0;
     end;
@@ -1060,10 +1051,21 @@ Procedure TranslateSectors(lev: TJKLevel; scsel: TSCMultiSel; cursc: integer;
   var
     sf1, sf, v, i: integer;
   begin
+
+    // First check that all affected sectors are on visible layer
+    if not ToolBar.IsLayerVisible(sec.layer) then
+      exit;
+    for sf := 0 to sec.surfaces.count - 1 do   // check adjoin sectors
+      with sec.surfaces[sf] do
+        if (adjoin <> nil) and (not ToolBar.IsLayerVisible(adjoin.sector.layer)) then
+          exit;
+
+    // Now move sector(s)
     SaveSecUndo(sec, ch_changed, sc_geo);
 
-    for v := 0 to sec.Vertices.count - 1 do
-      TranslateVX(sec.Vertices[v], dx, dy, dz);
+    for v := 0 to sec.vertices.count - 1 do
+      TranslateVX(sec.vertices[v], dx, dy, dz);
+
     for sf := 0 to sec.surfaces.count - 1 do
       with sec.surfaces[sf] do
       begin
@@ -1071,13 +1073,11 @@ Procedure TranslateSectors(lev: TJKLevel; scsel: TSCMultiSel; cursc: integer;
           continue;
 
         SaveSecUndo(adjoin.sector, ch_changed, sc_geo);
-
-        for v := 0 to adjoin.Vertices.count - 1 do
-          TranslateVX(adjoin.Vertices[v], dx, dy, dz);
+        for v := 0 to adjoin.vertices.count - 1 do
+          TranslateVX(adjoin.vertices[v], dx, dy, dz);
       end;
 
     RecalcSector(sec);
-
     JedMain.SectorChanged(sec);
 
     for i := 0 to sec.surfaces.count - 1 do
@@ -1093,9 +1093,10 @@ var
   i: integer;
 begin
   ClearVXMarks(lev);
-  if cursc >= 0 then
+  if CheckSectorIndex(lev, cursc) and (scsel.FindSC(cursc) = -1) then
     MoveSec(lev.sectors[cursc], dx, dy, dz);
-  for i := 0 to scsel.count - 1 do
+
+  for i := 0 to scsel.Count - 1 do
     MoveSec(lev.sectors[scsel.getSC(i)], dx, dy, dz);
 end;
 
@@ -1106,7 +1107,13 @@ Procedure TranslateSurfaces(lev: TJKLevel; sfsel: TSFMultiSel;
   var
     v, sf: integer;
   begin
+    // Prevent moving surface if surface or it's adjoin are not on visable layer
+    if not ToolBar.IsLayerVisible(surf.sector.layer) then
+      exit;
+    if (surf.adjoin <> nil) and (not ToolBar.IsLayerVisible(surf.adjoin.sector.layer)) then
+      exit;
 
+    // Nove do the surface move
     SaveSecUndo(surf.sector, ch_changed, sc_geo);
 
     for v := 0 to surf.Vertices.count - 1 do
@@ -1115,8 +1122,8 @@ Procedure TranslateSurfaces(lev: TJKLevel; sfsel: TSFMultiSel;
     if surf.adjoin <> nil then
     begin
       SaveSecUndo(surf.adjoin.sector, ch_changed, sc_geo);
-      for v := 0 to surf.adjoin.Vertices.count - 1 do
-        TranslateVX(surf.adjoin.Vertices[v], dx, dy, dz);
+      for v := 0 to surf.adjoin.vertices.count - 1 do
+        TranslateVX(surf.adjoin.vertices[v], dx, dy, dz);
     end;
 
     for sf := 0 to surf.sector.surfaces.count - 1 do
@@ -1136,8 +1143,9 @@ var
   sc, sf: integer;
 begin
   ClearVXMarks(lev);
-  if (cursc >= 0) and (cursf >= 0) then
+  if CheckSurfaceIndex(lev, cursc, cursf) and (sfsel.FindSF(cursc, cursf) = -1) then
     MoveSurf(Level.sectors[cursc].surfaces[cursf]);
+
   for i := 0 to sfsel.count - 1 do
   begin
     sfsel.GetSCSF(i, sc, sf);
@@ -1152,10 +1160,14 @@ Procedure TranslateEdges(lev: TJKLevel; edsel: TEDMultiSel;
   var
     nv: integer;
   begin
+    // Prevent moving edge if not on visible surface
+    if not ToolBar.IsLayerVisible(surf.sector.layer) then
+      exit;
+
     SaveSecUndo(surf.sector, ch_changed, sc_geo);
 
-    TranslateVX(surf.Vertices[ed], dx, dy, dz);
-    TranslateVX(surf.Vertices[surf.NextVX(ed)], dx, dy, dz);
+    TranslateVX(surf.vertices[ed], dx, dy, dz);
+    TranslateVX(surf.vertices[surf.NextVX(ed)], dx, dy, dz);
     for nv := 0 to surf.sector.surfaces.count - 1 do
       surf.sector.surfaces[nv].RecalcAll;
     JedMain.SectorChanged(surf.sector);
@@ -1165,11 +1177,10 @@ var
   i: integer;
   sc, sf, ed: integer;
 begin
-  if (cursc < 0) or (cursf < 0) or (cured < 0) then
-    exit;
-
   ClearVXMarks(lev);
-  MoveED(lev.sectors[cursc].surfaces[cursf], cured);
+  if CheckEdgeIndex(level, cursc, cursf, cured) and (edsel.FindED(cursc, cursf, cured) = -1) then
+    MoveED(lev.sectors[cursc].surfaces[cursf], cured);
+
   for i := 0 to edsel.count - 1 do
   begin
     edsel.GetSCSFED(i, sc, sf, ed);
@@ -1184,6 +1195,10 @@ Procedure TranslateVertices(lev: TJKLevel; vxsel: TVXMultiSel;
   var
     nv: integer;
   begin
+    // Prevent moving vertex if not on visible surface
+    if not ToolBar.IsLayerVisible(vx.sector.layer) then
+      exit;
+
     SaveSecUndo(vx.sector, ch_changed, sc_geo);
 
     TranslateVX(vx, dx, dy, dz);
@@ -1196,15 +1211,14 @@ var
   i: integer;
   sc, vx: integer;
 begin
-  if (cursc < 0) or (curvx < 0) then
-    exit;
-
   ClearVXMarks(lev);
-  MoveVX(lev.sectors[cursc].Vertices[curvx]);
+  if  CheckVertexIndex(level, cursc, curvx) and (vxsel.FindVX(cursc, curvx) = -1) then
+    MoveVX(lev.sectors[cursc].vertices[curvx]);
+
   for i := 0 to vxsel.count - 1 do
   begin
     vxsel.GetSCVX(i, sc, vx);
-    MoveVX(lev.sectors[sc].Vertices[vx]);
+    MoveVX(lev.sectors[sc].vertices[vx]);
   end;
 end;
 
@@ -1221,10 +1235,13 @@ Procedure TranslateThingKeepFrame(lev: TJKLevel; curth: integer;
 var
   thing: TJKThing;
 begin
-  if curth < 0 then
+  if not CheckThingIndex(lev, curth) then
     exit;
 
-  thing := Level.Things[curth];
+  thing := level.things[curth];
+  if not ToolBar.IsLayerVisible(thing.layer) then // Prevent moving thing on invisible layer
+    exit;
+
   SaveThingUndo(thing, ch_changed);
   With thing do
   begin
@@ -1244,8 +1261,12 @@ Procedure TranslateThings(lev: TJKLevel; thsel: TTHMultiSel; curth: integer;
     tx, ty, tz, pch, yaw, rol: double;
     i: integer;
   begin
+    // Prevent moving thing on invisible layer
+    if not ToolBar.IsLayerVisible(thing.layer) then
+      exit;
+
     SaveThingUndo(thing, ch_changed);
-    With thing do
+    with thing do
     begin
       x := x + dx;
       y := y + dy;
@@ -1253,8 +1274,8 @@ Procedure TranslateThings(lev: TJKLevel; thsel: TTHMultiSel; curth: integer;
     end;
 
     if moveframes then
-      For i := 0 to thing.Vals.count - 1 do
-        With thing.Vals[i] do
+      For i := 0 to thing.vals.count - 1 do
+        With thing.vals[i] do
         begin
           if atype <> at_frame then
             continue;
@@ -1263,14 +1284,15 @@ Procedure TranslateThings(lev: TJKLevel; thsel: TTHMultiSel; curth: integer;
         end;
 
     JedMain.ThingChanged(thing);
-    JedMain.LayerThing(thing.Num);
+    JedMain.LayerThing(thing.num);
   end;
 
 var
   i: integer;
 begin
-  if (curth >= 0) and (thsel.FindTH(curth) = -1) then
+  if CheckThingIndex(lev, curth) and (thsel.FindTH(curth) = -1) then
     MoveTH(lev.Things[curth]);
+
   for i := 0 to thsel.count - 1 do
     MoveTH(lev.Things[thsel.GetTH(i)]);
 end;
@@ -1282,19 +1304,26 @@ var
   i, n: integer;
   x, y, z, pch, yaw, rol: double;
 begin
-  if (th < 0) then
+  if not CheckThingIndex(lev, th) then
     exit;
 
   n := frsel.AddFR(th, fr);
   for i := 0 to frsel.count - 1 do
   begin
     frsel.GetTHFR(i, th, fr);
-    vl := lev.Things[th].Vals[fr];
-    SaveThingUndo(lev.Things[th], ch_changed);
+    var thing := lev.things[th];
+
+    // Prevent moving thing on invisible layer
+    if not ToolBar.IsLayerVisible(thing.layer) then
+      continue;
+
+    vl := lev.things[th].vals[fr];
+    SaveThingUndo(thing, ch_changed);
     vl.GetFrame(x, y, z, pch, yaw, rol);
     vl.SetFrame(x + dx, y + dy, z + dz, pch, yaw, rol);
-    JedMain.ThingChanged(lev.Things[th]);
+    JedMain.ThingChanged(thing);
   end;
+
   frsel.DeleteN(n);
 end;
 
@@ -1303,8 +1332,12 @@ Procedure TranslateLights(lev: TJKLevel; ltsel: TLTMultiSel; curlt: integer;
 
   procedure MoveLT(light: TSedLight);
   begin
+     // Prevent moving light on invisible layer
+    if not ToolBar.IsLayerVisible(light.layer) then
+      exit;
+
     SaveLightUndo(light, ch_changed);
-    With light do
+    with light do
     begin
       position.x := position.x + dx;
       position.y := position.y + dy;
@@ -1316,10 +1349,11 @@ Procedure TranslateLights(lev: TJKLevel; ltsel: TLTMultiSel; curlt: integer;
 var
   i: integer;
 begin
-  if (curlt >= 0) and (ltsel.FindLT(curlt) = -1) then
+  if CheckLightIndex(lev, curlt) and (ltsel.FindLT(curlt) = -1) then
     MoveLT(lev.Lights[curlt]);
+
   for i := 0 to ltsel.count - 1 do
-    MoveLT(lev.Lights[ltsel.GetLT(i)]);
+    MoveLT(lev.lights[ltsel.GetLT(i)]);
 end;
 
 Procedure SetAdjoinParams(sf: TJKSurface);
@@ -1424,7 +1458,7 @@ begin
 
   for v := 0 to 3 do
     begin
-      osurf.AddVertex(nsec.Vertices[7 - v]);
+      osurf.AddVertex(nsec.vertices[7 - v]);
     end;
 
   nsec.surfaces.Add(osurf);
@@ -1434,34 +1468,34 @@ begin
   { Construct other surfaces }
   vc := 4;
 
-  nsurf := nsec.newsurface;
+  nsurf := nsec.NewSurface;
   nsurf.Assign(surf);
 
   for i := 0 to vc - 1 do
   begin
-    nsurf := nsec.newsurface;
+    nsurf := nsec.NewSurface;
     nsurf.Assign(surf);
 
-    nsurf.AddVertex(asurf.Vertices[i]);
+    nsurf.AddVertex(asurf.vertices[i]);
 
     if i = 0 then
-      nsurf.AddVertex(asurf.Vertices[vc - 1])
+      nsurf.AddVertex(asurf.vertices[vc - 1])
     else
-      nsurf.AddVertex(asurf.Vertices[i - 1]);
+      nsurf.AddVertex(asurf.vertices[i - 1]);
 
     if i = 0 then
-      nsurf.AddVertex(osurf.Vertices[0])
+      nsurf.AddVertex(osurf.vertices[0])
     else
-      nsurf.AddVertex(osurf.Vertices[vc - i]);
+      nsurf.AddVertex(osurf.vertices[vc - i]);
 
-    nsurf.AddVertex(osurf.Vertices[vc - i - 1]);
+    nsurf.AddVertex(osurf.vertices[vc - i - 1]);
     nsec.surfaces.Add(nsurf);
   end;
 
   // Update level and new sector
   lev.sectors.Add(nsec);
   lev.RenumSecs;
-  for i := 0 to nsec.surfaces.count - 1 do
+  for i := 0 to nsec.surfaces.Count - 1 do
     nsec.surfaces[i].NewRecalcAll;
   nsec.Renumber;
 
@@ -2058,14 +2092,13 @@ var
 var
   nleft, nright: integer;
 begin
-  lev := sec.Level;
-
-  SplitVertices(sec.Vertices, cnormal, cx, cy, cz);
+  lev := sec.level;
+  SplitVertices(sec.vertices, cnormal, cx, cy, cz);
 
   nleft  := 0;
   nright := 0;
-  For i := 0 to sec.Vertices.count - 1 do
-    With sec.Vertices[i] do
+  for i := 0 to sec.vertices.Count - 1 do
+    With sec.vertices[i] do
     begin
       if Mark = -1 then
         inc(nleft);
@@ -2078,7 +2111,7 @@ begin
 
   SaveSecUndo(sec, ch_changed, sc_both);
 
-  For sf := 0 to sec.surfaces.count - 1 do
+  for sf := 0 to sec.surfaces.Count - 1 do
   begin
     CleaveAdjoin(sec.surfaces[sf], cnormal, cx, cy, cz,
     SysCleaveSurface(sec.surfaces[sf], cnormal, cx, cy, cz));
@@ -2087,7 +2120,7 @@ begin
   vxs := TJKVertices.Create;
   try
     for sf := 0 to sec.surfaces.count - 1 do
-      With sec.surfaces[sf] do
+      with sec.surfaces[sf] do
       begin
         nleft := 0;
         for i := 0 to Vertices.count - 1 do
@@ -2096,14 +2129,15 @@ begin
             nleft := 1;
             break;
           end;
+
         { Don't take vertices from surfaces fully lying on the cleaving plane }
         if nleft = 0 then
           continue;
 
-        for i := 0 to Vertices.count - 1 do
+        for i := 0 to vertices.count - 1 do
         begin
-          v1 := Vertices[i];
-          v2 := Vertices[NextIdx(i, Vertices.count)];
+          v1 := vertices[i];
+          v2 := vertices[NextIdx(i, Vertices.count)];
           if (v1.Mark = 0) and (v2.Mark = 0) then
             AddVXs(vxs, v1, v2);
         end;
@@ -2125,7 +2159,7 @@ begin
 
     Repeat
       nv := vxs.count;
-      For sf := vxs.count div 2 - 1 downto 0 do
+      For sf := vxs.Count div 2 - 1 downto 0 do
       begin
         if vxs[sf * 2] = v1 then
         begin
@@ -2145,23 +2179,24 @@ begin
           break;
         end;
       end;
-    Until nv = vxs.count;
+    until nv = vxs.count;
+
     vxs.Clear;
 
-    if nsf[nsf.count - 1] = nsf[0] then
-      nsf.Delete(nsf.count - 1);
+    if nsf[nsf.Count - 1] = nsf[0] then
+      nsf.Delete(nsf.Count - 1);
 
     { Create new sector }
 
     sec1 := lev.NewSector;
-    sec1.Num := lev.sectors.count;
+    sec1.Num := lev.sectors.Count;
     sec1.Assign(sec);
     lev.sectors.Add(sec1);
 
     SaveSecUndo(sec1, ch_added, sc_both);
 
     { Create a copy of these vertices - for another sector }
-    For i := 0 to nsf.count - 1 do
+    For i := 0 to nsf.Count - 1 do
     begin
       v1 := sec1.NewVertex;
       v1.Assign(nsf[i]);
@@ -2170,13 +2205,13 @@ begin
 
     { Split surfaces between sectors }
 
-    For sf := sec.surfaces.count - 1 downto 0 do
+    For sf := sec.surfaces.Count - 1 downto 0 do
     begin
       sfside := 0;
       surf := sec.surfaces[sf];
-      for i := 0 to surf.Vertices.count - 1 do
+      for i := 0 to surf.vertices.count - 1 do
       begin
-        sfside := surf.Vertices[i].Mark;
+        sfside := surf.vertices[i].Mark;
         if sfside <> 0 then
           break;
       end;
@@ -2201,7 +2236,7 @@ begin
     end;
 
     { Split vertices between two sectors }
-    For sf := sec.vertices.count - 1 downto 0 do
+    For sf := sec.vertices.Count - 1 downto 0 do
     begin
       v1 := sec.vertices[sf];
       case v1.Mark of
@@ -2217,14 +2252,14 @@ begin
     { Now build the adjoining surfaces }
 
     surf := sec.newsurface;
-    For i := 0 to nsf.count - 1 do
+    For i := 0 to nsf.Count - 1 do
       surf.AddVertex(nsf[i]);
 
     surf1 := sec.newsurface;
-    For i := nsf.count - 1 downto 0 do
+    For i := nsf.Count - 1 downto 0 do
       surf1.AddVertex(nsf[i]);
 
-    if sec.surfaces.count > 0 then
+    if sec.surfaces.Count > 0 then
     begin
       surf.Assign(sec.surfaces[0]);
       surf1.Assign(sec.surfaces[0]);
@@ -2252,24 +2287,27 @@ begin
 
     { Make copies of vertices that may belong to another sector }
   Finally
-    For sf := 0 to sec1.surfaces.count - 1 do
+    For sf := 0 to sec1.surfaces.Count - 1 do
       With sec1.surfaces[sf] do
-        for i := 0 to Vertices.count - 1 do
+        for i := 0 to Vertices.Count - 1 do
         begin
           v1 := Vertices[i];
           if v1.Mark <> 0 then
             continue;
-          Vertices[i] := sec1.AddVertex(v1.x, v1.y, v1.z);
+          vertices[i] := sec1.AddVertex(v1.x, v1.y, v1.z);
           { nv:=nsf.IndexOf(v1);
             if nv<>-1 then Vertices[i]:=vxs[nv]; }
         end;
 
-    vxs.free;
-    nsf.free;
+    vxs.Free;
+    nsf.Free;
+
     sec.Renumber;
     JedMain.SectorChanged(sec);
+
     sec1.Renumber;
     JedMain.SectorAdded(sec1);
+
     RelayerSCThings(sec);
   end;
 end;
@@ -2289,10 +2327,10 @@ var
     b: boolean;
   begin
 
-    for i := 0 to bysurf.Vertices.count - 1 do
+    for i := 0 to bysurf.vertices.Count - 1 do
     begin
-      v1 := bysurf.Vertices[i];
-      v2 := bysurf.Vertices[bysurf.NextVX(i)];
+      v1 := bysurf.vertices[i];
+      v2 := bysurf.vertices[bysurf.NextVX(i)];
       vec.SetCoords(v2.x - v1.x, v2.y - v1.y, v2.z - v1.z);
       //if not Normalize(vec) then
       if vec.Normalize = 0 then      
@@ -2321,8 +2359,8 @@ begin
 
   { Check that surfaces are back to back }
 
-  v1 := surf1.Vertices[0];
-  v2 := surf2.Vertices[0];
+  v1 := surf1.vertices[0];
+  v2 := surf2.vertices[0];
 
    D := surf1.normal.Dot(surf2.normal);
   //D := SMult(surf1.normal.dx, surf1.normal.dy, surf1.normal.dz, surf2.normal.dx, surf2.normal.dy, surf2.normal.dz);
@@ -2333,7 +2371,7 @@ begin
     exit;
   end;
 
-  if Abs(VectorDot3(v2.x - v1.x, v2.y - v1.y, v2.z - v1.z, surf1.normal.dx, surf1.normal.dy, surf1.normal.dz)) > 0.0001 then //SMult
+  if Abs(surf1.normal.Dot(v2.x - v1.x, v2.y - v1.y, v2.z - v1.z)) > 0.0001 then //SMult,    VectorDot3(v2.x - v1.x, v2.y - v1.y, v2.z - v1.z, surf1.normal.dx, surf1.normal.dy, surf1.normal.dz)
   begin
     PanMessage(mt_warning, 'The surfaces are not placed back to back');
     exit;
@@ -2362,19 +2400,18 @@ Function ConnectSectors(sec1, sec2: TJKSector): boolean;
     v: TJKVertex;
   begin
 
-    for i := 0 to bysec.surfaces.count - 1 do
+    for i := 0 to bysec.surfaces.Count - 1 do
     begin
       surf := bysec.surfaces[i];
       if surf.normal.Length = 0 then  //Vlen
         continue;
-      v := surf.Vertices[0];
+      v := surf.vertices[0];
       b := CleaveSector(sec, surf.normal, v.x, v.y, v.z);
       if b then;
     end;
   end;
 
-var
-  lsec, i: integer;
+
 begin { ConnectSectors }
   Result := false;
   if not DoSectorsOverlap(sec1, sec2) then
@@ -2382,12 +2419,13 @@ begin { ConnectSectors }
     PanMessage(mt_warning, 'Sectors can''t be joined as they do not overlap.');
     exit;
   end;
-  lsec := sec1.Level.sectors.count;
+  var lecNum := sec1.level.sectors.Count;
   CleaveSecBySec(sec2, sec1);
   CleaveSecBySec(sec1, sec2);
   DeleteSector(sec2.Level, sec2.Num);
-  for i := 0 to sec1.surfaces.count - 1 do
-    MakeAdjoinSCUP(sec1.surfaces[i], lsec);
+
+  for var i := 0 to sec1.surfaces.Count - 1 do
+    MakeAdjoinSCUP(sec1.surfaces[i], lecNum);
 
   Result := true;
 end;
@@ -2411,15 +2449,14 @@ end;
 //  result := true;
 //end;
 
-Procedure CalcDefaultUVNormals(surf: TJKSurface; orgvx: integer;
-  var un, vn: TVector);
+Procedure CalcDefaultUVNormals(const surf: TJKSurface; orgvx: integer; var un, vn: TVector);
 var
   v1, v2: TJKVertex;
   i: integer;
 begin
-  v1 := surf.Vertices[orgvx];
-  v2 := surf.Vertices[NextIdx(orgvx, surf.Vertices.count)];
-  With un do
+  v1 := surf.vertices[orgvx];
+  v2 := surf.vertices[NextIdx(orgvx, surf.Vertices.count)];
+  with un do
   begin
     dx := v2.x - v1.x;
     dy := v2.y - v1.y;
@@ -2427,15 +2464,15 @@ begin
   end;
 
   un.Normalize;
-  //Normalize(un);
-  With surf do
-    vn := un.Cross(normal);
+  vn := un.Cross(surf.normal);
+
+  // Normalize(un);
+// With surf do
 //    VMult(un.dx, un.dy, un.dz, normal.dx, normal.dy, normal.dz, vn.dx,
 //      vn.dy, vn.dz);
 end;
 
-Function IsVFlipped(surf: TJKSurface; nv1, nv2: integer;
-  const u, v: TVector): boolean;
+Function IsVFlipped(surf: TJKSurface; nv1, nv2: integer; const u, v: TVector): boolean;
 var
   i: integer;
   vx, v1, v2: TJKVertex;
@@ -2513,7 +2550,7 @@ end;
 
   end; *)
 
-Procedure UpdateSurfUVData(surf: TJKSurface; var un, vn: TVector);
+Procedure UpdateSurfUVData(const surf: TJKSurface; var un, vn: TVector);
 var
   cosa, sina: double;
   a, b: TVector;
@@ -2576,7 +2613,7 @@ begin
   surf.vscale := IfThen(IsNan(surf.vscale) or IsInfinite(surf.vscale), 1, surf.vscale);
 end;
 
-Procedure SysCalcUVNormalsFrom(surf: TJKSurface; nv1: integer; var un, vn: TVector);
+Procedure SysCalcUVNormalsFrom(const surf: TJKSurface; nv1: integer; var un, vn: TVector);
 var
   nv2, nv3: integer;
   v1, v2, v3: TJKVertex;
@@ -2671,17 +2708,17 @@ begin
   UpdateSurfUVData(surf, un, vn);
 end;
 
-Procedure CalcUVNormalsFrom(surf: TJKSurface; nv1, nv2: integer; var un, vn: TVector);
+Procedure CalcUVNormalsFrom(const surf: TJKSurface; nv1, nv2: integer; var un, vn: TVector);
 begin
   SysCalcUVNormalsFrom(surf, nv1, un, vn);
 end;
 
-Procedure CalcUVNormalsFromVX(surf: TJKSurface; nvx: integer; var un, vn: TVector);
+Procedure CalcUVNormalsFromVX(const surf: TJKSurface; nvx: integer; var un, vn: TVector);
 begin
   SysCalcUVNormalsFrom(surf, nvx, un, vn);
 end;
 
-Procedure CalcUVNormals(surf: TJKSurface; var un, vn: TVector);
+Procedure CalcUVNormals(const surf: TJKSurface; var un, vn: TVector);
 begin
   CalcUVNormalsFromVX(surf, 0, un, vn);
 end;
@@ -2718,11 +2755,11 @@ end;
 //    Result := 40.0;
 //end;
 
-Procedure ArrangeTextureBy(surf: TJKSurface; const un, vn: TVector;
+Procedure ArrangeTextureBy(const surf: TJKSurface; const un, vn: TVector;
   refx, refy, refz, refu, refv: double);
 begin
-  for var i := 0 to surf.Vertices.count - 1 do
-    With surf.txvertices[i], surf.Vertices[i] do
+  for var i := 0 to surf.Vertices.Count - 1 do
+    With surf.txvertices[i], surf.vertices[i] do
     begin
         u := UVRound(refu + un.Dot(x - refx, y - refy, z - refz) * PixelPerUnit * surf.uscale);
 //      u := UVRound(refu + SMult(un.dx, un.dy, un.dz, x - refx, y - refy,
@@ -2740,9 +2777,9 @@ begin
     end;
 end;
 
-Procedure ApplyTXDataToVX(surf: TJKSurface; vx: integer; const txd: TXData);
+Procedure ApplyTXDataToVX(const surf: TJKSurface; vx: integer; const txd: TXData);
 begin
-  With surf.txvertices[vx], surf.Vertices[vx] do
+  With surf.txvertices[vx], surf.vertices[vx] do
   begin
     u := UVRound(txd.u + txd.un.Dot(x - txd.x, y - txd.y, z - txd.z) * PixelPerUnit * surf.uscale);
     v := UVRound(txd.v + txd.vn.Dot(x - txd.x, y - txd.y, z - txd.z) * PixelPerUnit * surf.vscale);
@@ -2753,17 +2790,16 @@ begin
   end;
 end;
 
-Procedure ArrangeTexture(surf: TJKSurface; orgvx: integer;
-  const un, vn: TVector);
+Procedure ArrangeTexture(const surf: TJKSurface; orgvx: integer; const un, vn: TVector);
 begin
   With surf.Vertices[orgvx], surf.txvertices[orgvx] do
     ArrangeTextureBy(surf, un, vn, x, y, z, u, v);
 end;
 
-Procedure SaveTXData(surf: TJKSurface; vx: integer; var txd: TXData);
+Procedure SaveTXData(const surf: TJKSurface; vx: integer; var txd: TXData);
 begin
   try
-    With surf.Vertices[vx], surf.txvertices[vx] do
+    With surf.vertices[vx], surf.txvertices[vx] do
     begin
       txd.x := x;
       txd.y := y;
@@ -2778,13 +2814,13 @@ begin
   end;
 end;
 
-Procedure ApplyTXData(surf: TJKSurface; const txd: TXData);
+Procedure ApplyTXData(const surf: TJKSurface; const txd: TXData);
 begin
   With txd do
     ArrangeTextureBy(surf, un, vn, x, y, z, u, v);
 end;
 
-Procedure CalcUV(surf: TJKSurface; orgvx: integer);
+Procedure CalcUV(const surf: TJKSurface; orgvx: integer);
 var
   un, vn: TVector;
 begin
@@ -2799,7 +2835,7 @@ begin
     (z >= real_min(z1, z2)) and (z <= real_max(z1, z2));
 end;
 
-Function IsPointOnSurface(surf: TJKSurface; x, y, z: double): boolean;
+Function IsPointOnSurface(const surf: TJKSurface; x, y, z: double): boolean;
 var
   vc, i: integer;
   v1, v2: TJKVertex;
@@ -2809,7 +2845,7 @@ var
 begin
   result := false;
 
-  vc := surf.Vertices.count;
+  vc := surf.vertices.count;
 
   { x1:=999999999;x2:=-999999999;
     y1:=999999999;y2:=-999999999;
@@ -2827,8 +2863,8 @@ begin
 
   for i := 0 to vc - 1 do
     begin
-      v1 := surf.Vertices[i];
-      v2 := surf.Vertices[NextIdx(i, vc)];
+      v1 := surf.vertices[i];
+      v2 := surf.vertices[NextIdx(i, vc)];
 
       vct := surf.normal.Cross(v2.x - v1.x, v2.y - v1.y, v2.z - v1.z);
       dist := vct.Dot(x - v1.x, y - v1.y, z - v1.z);
@@ -2843,12 +2879,12 @@ begin
   result := true;
 end;
 
-Function FindSectorForXYZ(lev: TJKLevel; x, y, z: double): integer;
+Function FindSectorForXYZ(const lev: TJKLevel; x, y, z: double): integer;
 var
   i: integer;
 begin
   result := -1;
-  for i := 0 to lev.sectors.count - 1 do
+  for i := 0 to lev.sectors.Count - 1 do
     if IsInSector(lev.sectors[i], x, y, z) then
     begin
       result := i;
@@ -2856,13 +2892,13 @@ begin
     end;
 end;
 
-Function FindSectorForThing(thing: TJKThing): integer;
+Function FindSectorForThing(const thing: TJKThing): integer;
 var
   i: integer;
 begin
   result := -1;
-  for i := 0 to thing.Level.sectors.count - 1 do
-    if IsInSector(thing.Level.sectors[i], thing.x, thing.y, thing.z) then
+  for i := 0 to thing.level.sectors.Count - 1 do
+    if IsInSector(thing.level.sectors[i], thing.x, thing.y, thing.z) then
     begin
       result := i;
       exit;
@@ -4506,7 +4542,7 @@ type
     m3: TMat3x3;
   end;
 
-Procedure CalcSecCenter(sec: TJKSector; var cx, cy, cz: double);
+Procedure CalcSecCenter(const sec: TJKSector; var cx, cy, cz: double);
 var
   sx, sy, sz: double;
   i: integer;
@@ -4514,16 +4550,17 @@ begin
   sx := 0;
   sy := 0;
   sz := 0;
-  for i := 0 to sec.Vertices.count - 1 do
-    With sec.Vertices[i] do
+  for i := 0 to sec.vertices.Count - 1 do
+    with sec.vertices[i] do
     begin
       sx := sx + x;
       sy := sy + y;
       sz := sz + z;
     end;
-  cx := sx / sec.Vertices.count;
-  cy := sy / sec.Vertices.count;
-  cz := sz / sec.Vertices.count;
+
+  cx := sx / sec.vertices.count;
+  cy := sy / sec.vertices.count;
+  cz := sz / sec.vertices.count;
 end;
 
 Procedure SysCalcSurfData(const surf: TJKSurface; var xv, yv: TVector;
@@ -4548,11 +4585,12 @@ begin
   miny := 1E20;
   maxx := -1E20;
   maxy := -1E20;
-  For i := 1 to surf.vertices.count - 1 do
+
+  for i := 1 to surf.vertices.Count - 1 do
   begin
-    v1 := surf.Vertices[i];
-    x := VectorDot3(v1.x - v0.x, v1.y - v0.y, v1.z - v0.z, xv.dx, xv.dy, xv.dz);   // SMult
-    y := VectorDot3(v1.x - v0.x, v1.y - v0.y, v1.z - v0.z, yv.dx, yv.dy, yv.dz);
+    v1 := surf.vertices[i];
+    x := xv.Dot(v1.x - v0.x, v1.y - v0.y, v1.z - v0.z); // VectorDot3(v1.x - v0.x, v1.y - v0.y, v1.z - v0.z, xv.dx, xv.dy, xv.dz);   // SMult
+    y := yv.Dot(v1.x - v0.x, v1.y - v0.y, v1.z - v0.z); // VectorDot3(v1.x - v0.x, v1.y - v0.y, v1.z - v0.z, yv.dx, yv.dy, yv.dz);
     if x < minx then
       minx := x;
     if y < miny then
@@ -4565,7 +4603,7 @@ begin
 
 end;
 
-Procedure CalcSurfRect(surf: TJKSurface; v1, v2, v3, v4: TVertex; by: double);
+Procedure CalcSurfRect(const surf: TJKSurface; var v1, v2, v3, v4: TJKVertex; by: double);
 var
   xv, yv: TVector;
   minx, miny, maxx, maxy: double;
@@ -4581,7 +4619,7 @@ var
 
 begin
   SysCalcSurfData(surf, xv, yv, minx, miny, maxx, maxy);
-  v0 := surf.Vertices[0];
+  v0 := surf.vertices[0];
 
   x := (maxx - minx) / 2;
   y := (maxy - miny) / 2;
@@ -4596,7 +4634,6 @@ begin
   CalcVX(minx, maxy, v2);
   CalcVX(maxx, maxy, v3);
   CalcVX(maxx, miny, v4);
-
 end;
 
 Procedure CalcSurfCenter(const surf: TJKSurface; var cx, cy, cz: double);
@@ -4609,7 +4646,8 @@ begin
   SysCalcSurfData(surf, xv, yv, minx, miny, maxx, maxy);
   x := (maxx - minx) / 2;
   y := (maxy - miny) / 2;
-  v0 := surf.Vertices[0];
+  v0 := surf.vertices[0];
+
   cx := v0.x + x * xv.dx + y * yv.dx;
   cy := v0.y + x * xv.dy + y * yv.dy;
   cz := v0.z + x * xv.dz + y * yv.dz;
@@ -4692,21 +4730,32 @@ var
   var
     i, j: integer;
   begin
-    SaveSecUndo(sec, ch_changed, sc_geo);
-    for i := 0 to sec.Vertices.count - 1 do
-      RotateVertex(sec.Vertices[i], rd);
+    // First check that all affected sectors are on visible layer
+    if not ToolBar.IsLayerVisible(sec.layer) then
+      exit;
+    for i := 0 to sec.surfaces.count - 1 do   // check adjoin sectors
+      with sec.surfaces[i] do
+        if (adjoin <> nil) and (not ToolBar.IsLayerVisible(adjoin.sector.layer)) then
+          exit;
 
-    for i := 0 to sec.surfaces.count - 1 do
+    SaveSecUndo(sec, ch_changed, sc_geo);
+    for i := 0 to sec.vertices.Count - 1 do
+      RotateVertex(sec.vertices[i], rd);
+
+    for i := 0 to sec.surfaces.Count - 1 do
       with sec.surfaces[i] do
       begin
         if adjoin = nil then
           continue;
+
         SaveSecUndo(adjoin.sector, ch_changed, sc_geo);
-        for j := 0 to adjoin.Vertices.count - 1 do
-          RotateVertex(adjoin.Vertices[j], rd);
+        for j := 0 to adjoin.vertices.Count - 1 do
+          RotateVertex(adjoin.vertices[j], rd);
       end;
+
     RecalcSector(sec);
     JedMain.SectorChanged(sec);
+
     for i := 0 to sec.surfaces.count - 1 do
       with sec.surfaces[i] do
       begin
@@ -4729,15 +4778,20 @@ Procedure RotateSurfaces(level: TJKLevel; sfsel: TSFMultiSel; axis: TVector;
   cx, cy, cz: double; angle: double);
 var
   rd: TRotateData;
-  sec: TJKSector;
 
   Procedure RotSurf(surf: TJKSurface);
   var
     i, j: integer;
   begin
-    SaveSecUndo(surf.Sector, ch_changed, sc_geo);
-    for i := 0 to surf.Vertices.count - 1 do
-      RotateVertex(surf.Vertices[i], rd);
+    // First check that all affected sectors are on visible layer
+    if not ToolBar.IsLayerVisible(surf.sector.layer) then
+      exit;
+    if (surf.adjoin <> nil) and not ToolBar.IsLayerVisible(surf.adjoin.sector.layer) then
+      exit;
+
+    SaveSecUndo(surf.sector, ch_changed, sc_geo);
+    for i := 0 to surf.vertices.Count - 1 do
+      RotateVertex(surf.vertices[i], rd);
 
     if surf.adjoin <> nil then
       begin
@@ -4767,7 +4821,7 @@ begin
 end;
 
 procedure RotatePYR(var pitch, yaw, roll: double; const axis: TVector; const angle: double);
-    Function ClampAngle(const angle: double) : double;
+    function ClampAngle(const angle: double) : double;
     begin
         Result := angle;
         if Result > 359 then
@@ -4794,9 +4848,12 @@ begin
   PrepareRotData(rd, axis, cx, cy, cz, angle);
   for i := 0 to thsel.count - 1 do
   begin
-    th := lev.Things[thsel.GetTH(i)];
-    SaveThingUndo(th, ch_changed);
+    // First check that thing is on visible layer
+    th := lev.things[thsel.GetTH(i)];
+    if not ToolBar.IsLayerVisible(th.layer) then
+      continue;
 
+    SaveThingUndo(th, ch_changed);
     if bRotatePYR then
       begin
         RotatePYR(th.PCH, th.YAW, th.ROL, axis, -angle);
@@ -4815,9 +4872,13 @@ var
   lt: TSedLight;
 begin
   PrepareRotData(rd, axis, cx, cy, cz, angle);
-  for i := 0 to ltsel.count - 1 do
+  for i := 0 to ltsel.Count - 1 do
   begin
-    lt := lev.Lights[ltsel.GetLT(i)];
+    // First check that light is on visible layer
+    lt := lev.lights[ltsel.GetLT(i)];
+    if not ToolBar.IsLayerVisible(lt.layer) then
+      continue;
+
     SaveLightUndo(lt, ch_changed);
     RotateXYZ(lt.position.x, lt.position.y, lt.position.z, rd);
     JedMain.LightChanged(lt);
@@ -4834,17 +4895,23 @@ var
   x, y, z, pch, yaw, rol: double;
 begin
   PrepareRotData(rd, axis, cx, cy, cz, angle);
-  for i := 0 to frsel.count - 1 do
+  for i := 0 to frsel.Count - 1 do
   begin
     frsel.GetTHFR(i, th, fr);
-    vl := lev.Things[th].Vals[fr];
-    SaveThingUndo(lev.Things[th], ch_changed);
+    var thing := lev.things[th];
+    if not ToolBar.IsLayerVisible(thing.layer) then
+      continue;
+
+    SaveThingUndo(thing, ch_changed);
+
+    vl := thing.vals[fr];
     vl.GetFrame(x, y, z, pch, yaw, rol);
     RotateXYZ(x, y, z, rd);
     if bRotatePYR then
       RotatePYR(pch, yaw, rol, axis, -angle);
+
     vl.SetFrame(x, y, z, pch, yaw, rol);
-    JedMain.ThingChanged(lev.Things[th]);
+    JedMain.ThingChanged(thing);
   end;
 end;
 
@@ -4883,28 +4950,34 @@ end;
 Procedure ScaleSectors(lev: TJKLevel; scsel: TSCMultiSel; const sd: TScaleData;
   scaletx: boolean);
 { Procedure ScaleSector(sec:TJKSector; sfactor:double); }
-var
-  i: integer;
-
   Procedure ScaleSec(sec: TJKSector);
   var
     i, j: integer;
   begin
+    // First check that all affected sectors are on visible layer
+    if not ToolBar.IsLayerVisible(sec.layer) then
+      exit;
+    for i := 0 to sec.surfaces.count - 1 do   // check adjoin sectors
+      with sec.surfaces[i] do
+        if (adjoin <> nil) and (not ToolBar.IsLayerVisible(adjoin.sector.layer)) then
+          exit;
+
     SaveSecUndo(sec, ch_changed, sc_geo);
 
-    for i := 0 to sec.Vertices.count - 1 do
-      ScaleVertex(sec.Vertices[i], sd);
+    for i := 0 to sec.vertices.Count - 1 do
+      ScaleVertex(sec.vertices[i], sd);
 
-    for i := 0 to sec.surfaces.count - 1 do
+    for i := 0 to sec.surfaces.Count - 1 do
       With sec.surfaces[i] do
       begin
         if scaletx then
-        begin
-          uscale := uscale / sd.sfactor;
-          vscale := vscale / sd.sfactor;
-        end;
+          begin
+            uscale := uscale / sd.sfactor;
+            vscale := vscale / sd.sfactor;
+          end;
         if adjoin = nil then
           continue;
+
         SaveSecUndo(adjoin.sector, ch_changed, sc_geo);
 
         if scaletx then
@@ -4912,14 +4985,14 @@ var
           adjoin.uscale := adjoin.uscale / sd.sfactor;
           adjoin.vscale := adjoin.vscale / sd.sfactor;
         end;
-        for j := 0 to adjoin.Vertices.count - 1 do
-          ScaleVertex(adjoin.Vertices[j], sd);
+        for j := 0 to adjoin.vertices.Count - 1 do
+          ScaleVertex(adjoin.vertices[j], sd);
       end;
 
     RecalcSector(sec);
     JedMain.SectorChanged(sec);
 
-    for i := 0 to sec.surfaces.count - 1 do
+    for i := 0 to sec.surfaces.Count - 1 do
       with sec.surfaces[i] do
       begin
         if adjoin = nil then
@@ -4930,7 +5003,7 @@ var
 
 begin
   ClearVXMarks(Level);
-  for i := 0 to scsel.count - 1 do
+  for var i := 0 to scsel.count - 1 do
     ScaleSec(lev.sectors[scsel.getSC(i)]);
 end;
 
@@ -4938,20 +5011,24 @@ end;
 Procedure ScaleSurfaces(level: TJKLevel; sfsel: TSFMultiSel; const sd: TScaleData;
   scaletx: boolean);
 var
-  i: integer;
   sc, sf: integer;
-  surf: TJKSurface;
 
   Procedure ScaleSurf(surf: TJKSurface);
   var
     i, j: integer;
   begin
-    With surf do
+    // First check that all affected sectors are on visible layer
+    if not ToolBar.IsLayerVisible(surf.sector.layer) then
+      exit;
+    if (surf.adjoin <> nil) and not ToolBar.IsLayerVisible(surf.adjoin.sector.layer) then
+      exit;
+
+    with surf do
     begin
       SaveSecUndo(Sector, ch_changed, sc_geo);
 
-      for i := 0 to Vertices.count - 1 do
-        ScaleVertex(Vertices[i], sd);
+      for i := 0 to vertices.Count - 1 do
+        ScaleVertex(vertices[i], sd);
 
       if scaletx then
         begin
@@ -4968,12 +5045,12 @@ var
               adjoin.uscale := adjoin.uscale / sd.sfactor;
               adjoin.vscale := adjoin.vscale / sd.sfactor;
             end;
-          for j := 0 to adjoin.Vertices.count - 1 do
-            ScaleVertex(adjoin.Vertices[j], sd);
+          for j := 0 to adjoin.vertices.Count - 1 do
+            ScaleVertex(adjoin.vertices[j], sd);
         end;
 
-      RecalcSector(Sector);
-      JedMain.SectorChanged(Sector);
+      RecalcSector(sector);
+      JedMain.SectorChanged(sector);
       if adjoin <> nil then
         JedMain.SectorChanged(adjoin.sector);
     end;
@@ -4982,10 +5059,10 @@ var
 begin
   ClearVXMarks(Level);
 
-  for i := 0 to sfsel.count - 1 do
+  for var i := 0 to sfsel.Count - 1 do
   begin
     sfsel.GetSCSF(i, sc, sf);
-    surf := level.sectors[sc].surfaces[sf];
+    var surf := level.sectors[sc].surfaces[sf];
     ScaleSurf(surf);
   end;
 end;
@@ -5009,8 +5086,10 @@ begin
       z := sd.cz + sd.sfactor * (z - sd.cz);
     scale_vec:
       begin
-        D := VectorDot3(x - sd.cx, y - sd.cy, z - sd.cz, sd.vec.dx, sd.vec.dy,
-          sd.vec.dz); //SMult
+//        D := VectorDot3(x - sd.cx, y - sd.cy, z - sd.cz, sd.vec.dx, sd.vec.dy,
+//          sd.vec.dz); //SMult
+
+        D := sd.vec.Dot(x - sd.cx, y - sd.cy, z - sd.cz);
         D := sd.sfactor - D;
         x := x + D * sd.vec.dx;
         y := y + D * sd.vec.dy;
@@ -5025,9 +5104,13 @@ var
   i: integer;
   th: TJKThing;
 begin
-  for i := 0 to thsel.count - 1 do
+  for i := 0 to thsel.Count - 1 do
   begin
-    th := lev.Things[thsel.GetTH(i)];
+    // Check that thing is on visible layer
+    th := lev.things[thsel.GetTH(i)];
+    if not ToolBar.IsLayerVisible(th.layer) then
+      continue;
+
     SaveThingUndo(th, ch_changed);
     ScaleXYZ(th.x, th.y, th.z, sd);
     JedMain.ThingChanged(th);
@@ -5040,9 +5123,13 @@ var
   i: integer;
   lt: TSedLight;
 begin
-  for i := 0 to ltsel.count - 1 do
+  for i := 0 to ltsel.Count - 1 do
   begin
-    lt := lev.Lights[ltsel.GetLT(i)];
+    // Check that light is on visible layer
+    lt := lev.lights[ltsel.GetLT(i)];
+    if not ToolBar.IsLayerVisible(lt.layer) then
+      continue;
+
     SaveLightUndo(lt, ch_changed);
     ScaleXYZ(lt.position.x, lt.position.y, lt.position.z, sd);
     JedMain.LightChanged(lt);
@@ -5056,21 +5143,28 @@ var
   vl: TTPLValue;
   x, y, z, pch, yaw, rol: double;
 begin
-  for i := 0 to frsel.count - 1 do
+  for i := 0 to frsel.Count - 1 do
   begin
     frsel.GetTHFR(i, th, fr);
-    vl := lev.Things[th].Vals[fr];
-    SaveThingUndo(lev.Things[th], ch_changed);
+    var thing := lev.things[th];
+
+    // Check that light is on visible layer
+    if not ToolBar.IsLayerVisible(thing.layer) then
+      continue;
+
+    SaveThingUndo(thing, ch_changed);
+    vl := thing.vals[fr];
     vl.GetFrame(x, y, z, pch, yaw, rol);
+
     ScaleXYZ(x, y, z, sd);
     vl.SetFrame(x, y, z, pch, yaw, rol);
-    JedMain.ThingChanged(lev.Things[th]);
+    JedMain.ThingChanged(thing);
   end;
 end;
 
 Procedure FlipVertex(v: TJKVertex; cx, cy, cz: double; how: integer);
 begin
-  if v.Mark <> 0 then
+  if v.mark <> 0 then
     exit;
   case how of
     rt_x:
@@ -5124,6 +5218,7 @@ begin
       surf.txvertices[i] := surf.txvertices[n];
       surf.txvertices[n] := tv;
     end;
+
   surf.Recalc;
 
   if IsTXFlipped(surf) then
@@ -5132,39 +5227,45 @@ begin
     BitClear(surf.FaceFlags, Integer(FF_SF_FLIP));
 end;
 
-Procedure FlipThingsOverPlane(lev: TJKLevel; thsel: TTHMultiSel; pnorm: TVector;
+Procedure FlipThingsOverPlane(lev: TJKLevel; thsel: TTHMultiSel; const pnorm: TVector;
   cx, cy, cz: double);
 var
   th: TJKThing;
   i: integer;
   D: double;
 begin
-  for i := 0 to thsel.count - 1 do
+  for i := 0 to thsel.Count - 1 do
   begin
-    th := lev.Things[thsel.GetTH(i)];
+    th := lev.things[thsel.GetTH(i)];
+    if not ToolBar.IsLayerVisible(th.layer) then
+      continue;
+
     SaveThingUndo(th, ch_changed);
     FlipXYZ(th.x, th.y, th.z, pnorm, cx, cy, cz);
     JedMain.ThingChanged(th);
   end;
 end;
 
-Procedure FlipLightsOverPlane(lev: TJKLevel; ltsel: TLTMultiSel; pnorm: TVector;
+Procedure FlipLightsOverPlane(lev: TJKLevel; ltsel: TLTMultiSel; const pnorm: TVector;
   cx, cy, cz: double);
 var
   rd: TRotateData;
   i: integer;
   lt: TSedLight;
 begin
-  for i := 0 to ltsel.count - 1 do
+  for i := 0 to ltsel.Count - 1 do
   begin
-    lt := lev.Lights[ltsel.GetLT(i)];
+    lt := lev.lights[ltsel.GetLT(i)];
+    if not ToolBar.IsLayerVisible(lt.layer) then
+      continue;
+
     SaveLightUndo(lt, ch_changed);
     FlipXYZ(lt.position.x, lt.position.y, lt.position.z, pnorm, cx, cy, cz);
     JedMain.LightChanged(lt);
   end;
 end;
 
-Procedure FlipFramesOverPlane(lev: TJKLevel; frsel: TFRMultisel; pnorm: TVector;
+Procedure FlipFramesOverPlane(lev: TJKLevel; frsel: TFRMultisel; const pnorm: TVector;
   cx, cy, cz: double);
 var
   i: integer;
@@ -5172,15 +5273,21 @@ var
   vl: TTPLValue;
   x, y, z, pch, yaw, rol: double;
 begin
-  for i := 0 to frsel.count - 1 do
+  for i := 0 to frsel.Count - 1 do
   begin
     frsel.GetTHFR(i, th, fr);
-    vl := lev.Things[th].Vals[fr];
-    SaveThingUndo(lev.Things[th], ch_changed);
+    var thing := lev.things[th];
+    if not ToolBar.IsLayerVisible(thing.layer) then
+      continue;
+
+    SaveThingUndo(thing, ch_changed);
+
+    vl := thing.Vals[fr];
     vl.GetFrame(x, y, z, pch, yaw, rol);
     FlipXYZ(x, y, z, pnorm, cx, cy, cz);
+
     vl.SetFrame(x, y, z, pch, yaw, rol);
-    JedMain.ThingChanged(lev.Things[th]);
+    JedMain.ThingChanged(thing);
   end;
 end;
 
@@ -5190,9 +5297,12 @@ var
   th: TJKThing;
   i: integer;
 begin
-  for i := 0 to thsel.count - 1 do
+  for i := 0 to thsel.Count - 1 do
   begin
-    th := lev.Things[thsel.GetTH(i)];
+    th := lev.things[thsel.GetTH(i)];
+    if not ToolBar.IsLayerVisible(th.layer) then
+      continue;
+
     SaveThingUndo(th, ch_changed);
     case how of
       rt_x:
@@ -5214,9 +5324,12 @@ var
   surf: TJKSurface;
 begin
   ClearVXMarks(lev);
-  for i := 0 to scsel.count - 1 do
+  for i := 0 to scsel.Count - 1 do
   begin
     sec := lev.sectors[scsel.getSC(i)];
+    if not ToolBar.IsLayerVisible(sec.layer) then
+      continue;
+
     SaveSecUndo(sec, ch_changed, sc_geo);
 
     for j := 0 to sec.surfaces.count - 1 do
@@ -5232,6 +5345,9 @@ begin
   for i := 0 to scsel.count - 1 do
   begin
     sec := lev.sectors[scsel.getSC(i)];
+    if not ToolBar.IsLayerVisible(sec.layer) then
+      continue;
+
     for j := 0 to sec.Vertices.count - 1 do
       FlipVertexOverPlane(sec.Vertices[j], pnorm, pX, pY, pZ);
 
@@ -5253,6 +5369,10 @@ begin
   for i := 0 to scsel.count - 1 do
   begin
     sec := lev.sectors[scsel.getSC(i)];
+    // First check that sector is on visible layer
+    if not ToolBar.IsLayerVisible(sec.layer) then
+      continue;
+
     SaveSecUndo(sec, ch_changed, sc_geo);
 
     for j := 0 to sec.surfaces.count - 1 do
@@ -5260,7 +5380,7 @@ begin
       surf := sec.surfaces[j];
       if surf.adjoin = nil then
         continue;
-      if scsel.FindSC(surf.adjoin.sector.Num) = -1 then
+      if scsel.FindSC(surf.adjoin.sector.num) = -1 then
         UnAdjoin(surf);
     end;
   end;
@@ -5268,6 +5388,9 @@ begin
   for i := 0 to scsel.count - 1 do
   begin
     sec := lev.sectors[scsel.getSC(i)];
+    if not ToolBar.IsLayerVisible(sec.layer) then
+      continue;
+
     for j := 0 to sec.Vertices.count - 1 do
       FlipVertex(sec.Vertices[j], cx, cy, cz, how);
 
@@ -5284,16 +5407,19 @@ var
   sc, sf: integer;
   surf: TJKSurface;
 begin
-  for i := 0 to sfsel.count - 1 do
+  for i := 0 to sfsel.Count - 1 do
   begin
     sfsel.GetSCSF(i, sc, sf);
-    surf := Level.sectors[sc].surfaces[sf];
+    if not ToolBar.IsLayerVisible(surf.sector.layer) then
+      continue;
+
+    surf := level.sectors[sc].surfaces[sf];
     FlipSurface(surf);
     JedMain.SectorChanged(surf.sector);
   end;
 end;
 
-Function FindCommonEdges(surf, withsurf: TJKSurface;
+Function FindCommonEdges(const surf, withsurf: TJKSurface;
   var v11, v12, v21, v22: integer): boolean;
 var
   v1, v2: TJKVertex;
@@ -5305,9 +5431,9 @@ var
     v2: TJKVertex;
   begin
     result := -1;
-    for i := 0 to asurf.Vertices.count - 1 do
+    for i := 0 to asurf.vertices.Count - 1 do
     begin
-      v2 := asurf.Vertices[i];
+      v2 := asurf.vertices[i];
       if IsClose(v.x, v2.x) and IsClose(v.y, v2.y) and IsClose(v.z, v2.z) then
       begin
         result := i;
@@ -5317,70 +5443,76 @@ var
   end;
 
 begin
-  result := false;
+  Result := False;
+
   n11 := -1;
   n12 := -1;
-  for i := 0 to surf.Vertices.count - 1 do
-  begin
-    n21 := FindVX(surf.Vertices[i], withsurf);
-    if n21 <> -1 then
+  for i := 0 to surf.vertices.Count - 1 do
     begin
-      n11 := i;
-      break;
+      n21 := FindVX(surf.vertices[i], withsurf);
+      if n21 <> -1 then
+      begin
+        n11 := i;
+        break;
+      end;
     end;
-  end;
 
   if n11 = -1 then
     exit;
+
   n12 := surf.NextVX(n11);
-  n22 := FindVX(surf.Vertices[n12], withsurf);
+  n22 := FindVX(surf.vertices[n12], withsurf);
   if n22 = -1 then
-  begin
-    n12 := surf.PrevVX(n11);
-    n22 := FindVX(surf.Vertices[n12], withsurf);
-  end;
+    begin
+      n12 := surf.PrevVX(n11);
+      n22 := FindVX(surf.vertices[n12], withsurf);
+    end;
+
   if n22 = -1 then
     exit;
-  result := true;
+
   v11 := n11;
   v12 := n12;
   v21 := n21;
   v22 := n22;
+  Result := True;
 end;
 
-Function FindCommonVXs(surf, withsurf: TJKSurface; var v1, v2: integer)
+Function FindCommonVXs(const surf, withsurf: TJKSurface; var v1, v2: integer)
   : boolean;
   Function FindVX(v: TJKVertex; asurf: TJKSurface): integer;
   var
     i: integer;
     v2: TJKVertex;
   begin
-    result := -1;
-    for i := 0 to asurf.Vertices.count - 1 do
+    Result := -1;
+
+    for i := 0 to asurf.vertices.Count - 1 do
     begin
       v2 := asurf.Vertices[i];
       if IsClose(v.x, v2.x) and IsClose(v.y, v2.y) and IsClose(v.z, v2.z) then
-      begin
-        result := i;
-        exit;
-      end;
+        begin
+          result := i;
+          exit;
+        end;
     end;
   end;
 
 var
   i, j: integer;
 begin
-  result := false;
-  for i := 0 to surf.Vertices.count - 1 do
+  Result := False;
+
+  for i := 0 to surf.vertices.Count - 1 do
   begin
-    j := FindVX(surf.Vertices[i], withsurf);
+    j := FindVX(surf.vertices[i], withsurf);
     if j <> -1 then
-    begin
-      v1 := i;
-      v2 := j;
-      result := true;
-      exit;
-    end;
+      begin
+        v1 := i;
+        v2 := j;
+        Result := True;
+        exit;
+      end;
   end;
 end;
 
@@ -5394,11 +5526,11 @@ begin
   If FindCommonVXs(surf, surf1, nv1, nv2) then
     CalcUVNormalsFromVX(surf, nv1, un, vn)
   else
-  begin
-    CalcUVNormals(surf, un, vn);
-    nv1 := -1;
-    nv2 := 0;
-  end;
+    begin
+      CalcUVNormals(surf, un, vn);
+      nv1 := -1;
+      nv2 := 0;
+    end;
 
   lv := surf.normal.Cross(surf1.normal);
 //  VMult(surf.normal.dx, surf.normal.dy, surf.normal.dz, surf1.normal.dx,
@@ -5479,43 +5611,45 @@ end;
   end;
   end; *)
 
-Function IsSurfPlanar(surf: TJKSurface): boolean;
+Function IsSurfPlanar(const surf: TJKSurface): boolean;
 var
   v: integer;
   vx: TJKVertex;
   D: double;
 begin
-  result := false;
+  Result := false;
   D := surf.CalcD;
-  for v := 0 to surf.Vertices.count - 1 do
+  for v := 0 to surf.vertices.Count - 1 do
   begin
-    vx := surf.Vertices[v];
+    vx := surf.vertices[v];
     With surf do
-      if Abs(normal.dx * vx.x + normal.dy * vx.y + normal.dz * vx.z - D) > 0.001
-      then
+      if Abs(normal.Dot(vx.x, vx.y, vx.z) - D) > 0.001 then
+      //if Abs(normal.dx * vx.x + normal.dy * vx.y + normal.dz * vx.z - D) > 0.001 then
         exit;
   end;
   result := true;
 end;
 
-Function IsSurfConvex(surf: TJKSurface): boolean;
+Function IsSurfConvex(const surf: TJKSurface): boolean;
 var
   i, n: integer;
   v1, v2, v3: TJKVertex;
   v: TVector;
 begin
   result := false;
-  for i := 0 to surf.Vertices.count - 1 do
-    With surf do
+  for i := 0 to surf.vertices.Count - 1 do
+    with surf do
     begin
-      v1 := Vertices[i];
-      n := NextVX(i);
-      v2 := Vertices[n];
-      n := NextVX(n);
-      v3 := Vertices[n];
+      v1 := vertices[i];
+
+      n  := NextVX(i);
+      v2 := vertices[n];
+
+      n  := NextVX(n);
+      v3 := vertices[n];
 
       VectorCross3(v3.x - v2.x, v3.y - v2.y, v3.z - v2.z,
-        v1.x - v2.x, v1.y - v2.y,v1.z - v2.z,
+        v1.x - v2.x, v1.y - v2.y, v1.z - v2.z,
         v.dx, v.dy, v.dz); //VMult
       //if SMult(v.dx, v.dy, v.dz, normal.dx, normal.dy, normal.dz) < -0.0001 then
       if v.Dot(normal) < -0.0001 then
@@ -5524,26 +5658,26 @@ begin
   result := true;
 end;
 
-Function IsSectorConvex(sec: TJKSector): boolean;
+Function IsSectorConvex(const sec: TJKSector): boolean;
 var
   i, j: integer;
   v0, v: TJKVertex;
   D: double;
 begin
-  result := false;
-  for i := 0 to sec.surfaces.count - 1 do
-    With sec.surfaces[i] do
+  Result := False;
+  for i := 0 to sec.surfaces.Count - 1 do
+    with sec.surfaces[i] do
     begin
       v0 := vertices[0];
-      for j := 0 to sec.vertices.count - 1 do
+      for j := 0 to sec.vertices.Count - 1 do
       begin
         v := sec.vertices[j];
-        D := VectorDot3(v.x - v0.x, v.y - v0.y, v.z - v0.z, normal.dx, normal.dy, normal.dz); //SMult
+        D := normal.Dot(v.x - v0.x, v.y - v0.y, v.z - v0.z); // VectorDot3(v.x - v0.x, v.y - v0.y, v.z - v0.z, normal.dx, normal.dy, normal.dz); //SMult
         If D < -0.001 then
           exit;
       end;
     end;
-  result := true;
+  Result := True;
 end;
 
 Procedure CalcRotVecData(var rd: TVecRotData; pch, yaw, rol: double);
@@ -5621,7 +5755,6 @@ begin
   rol := ArcCos(nz.dz) / Pi * 180;
   if nz.dx < 0 then
     rol := 360 - rol;
-
 end;
 
 Procedure RotateVector(var vec: TVector; pch, yaw, rol: double);
@@ -5729,25 +5862,25 @@ begin
 
   sec.Renumber;
 
-  for i := 0 to sec.surfaces.count - 1 do
+  for i := 0 to sec.surfaces.Count - 1 do
   begin
     sf := sec.surfaces[i];
     sf1 := newsc.NewSurface;
     sf1.Assign(sf);
+
     if sf.adjoin <> nil then
       sf1.nadj := 1;
     newsc.surfaces.Add(sf1);
 
-    for j := 0 to sf.vertices.count - 1 do
+    for j := 0 to sf.vertices.Count - 1 do
     begin
-      v := sf.Vertices[j];
-      sf1.AddVertex(newsc.vertices[v.Num]);
+      v := sf.vertices[j];
+      sf1.AddVertex(newsc.vertices[v.num]);
       sf1.txvertices[j].Assign(sf.txvertices[j]);
     end;
-
   end;
 
-  for i := 0 to newsc.surfaces.count - 1 do
+  for i := 0 to newsc.surfaces.Count - 1 do
     newsc.surfaces[i].RecalcAll;
   newsc.Renumber;
 end;
@@ -5771,7 +5904,7 @@ var
   begin
     sf1 := nil;
     sf2 := nil;
-    for i := 0 to sec.surfaces.count - 1 do
+    for i := 0 to sec.surfaces.Count - 1 do
     begin
       sf := sec.surfaces[i];
       if sf = surf then
@@ -5826,20 +5959,25 @@ var
   end;
 
 begin
-  result := true;
+  Result := False;
   sec := surf.sector;
+  if not ToolBar.IsLayerVisible(sec.layer) then
+    exit;
+
+  Result := True;
   SaveSecUndo(sec, ch_changed, sc_geo);
+
   D := surf.CalcD;
-  With surf.Vertices[0] do
+  with surf.vertices[0] do
   begin
     x0 := x;
     y0 := y;
     z0 := z;
   end;
 
-  for i := 0 to surf.Vertices.count - 1 do
+  for i := 0 to surf.vertices.Count - 1 do
     begin
-      vx := surf.Vertices[i];
+      vx := surf.vertices[i];
       With surf, vx do
         a := Abs(D - normal.Dot(x, y, z));
         //a := Abs(D - (normal.dx * x + normal.dy * y + normal.dz * z));
@@ -5850,23 +5988,23 @@ begin
       With vx do
         if PlaneLineXn(surf.normal, D, x, y, z, x + vec.dx, y + vec.dy,
           z + vec.dz, ax, ay, az) then
-        begin
-          if (sqr(vx.x - ax) + sqr(vx.y - ay) + sqr(vx.z - az)) < 1 then
           begin
-            vx.x := ax;
-            vx.y := ay;
-            vx.z := az;
+            if (sqr(vx.x - ax) + sqr(vx.y - ay) + sqr(vx.z - az)) < 1 then
+            begin
+              vx.x := ax;
+              vx.y := ay;
+              vx.z := az;
+            end
+            else
+              result := false;
           end
-          else
-            result := false;
-        end
         else
-        begin
-          PanMessageFmt(mt_info,
-            'Couldn''t force vertex %d,%d to plane of surface %d,%d',
-            [sec.Num, vx.Num, sec.Num, surf.Num]);
-          result := false;
-        end;
+          begin
+            PanMessageFmt(mt_info,
+              'Couldn''t force vertex %d,%d to plane of surface %d,%d',
+              [sec.Num, vx.Num, sec.Num, surf.Num]);
+            result := false;
+          end;
     end;
   surf.RecalcAll;
   JedMain.SectorChanged(sec);
@@ -5879,7 +6017,7 @@ var
   s, sf, v: integer;
 begin
   For s := 0 to scs.count - 1 do
-    With lev.sectors[scs.getSC(s)] do
+    with lev.sectors[scs.getSC(s)] do
     begin
       for sf := 0 to surfaces.count - 1 do
         With surfaces[sf] do
@@ -5904,7 +6042,7 @@ var
   sec: TJKSector;
   surf: TJKSurface;
 begin
-  for s := 0 to scs.count - 1 do
+  for s := 0 to scs.Count - 1 do
   begin
     sec := lev.sectors[scs.getSC(s)];
     if BitMaskTest(sec.flags, SECF_NOAMBINETLIGHT) then // skip calculating ambient light
@@ -5913,12 +6051,14 @@ begin
     vlight.SetToZero;
     sflight.SetToZero;
     nv := 0;
-    for sf := 0 to sec.surfaces.count - 1 do
+
+    for sf := 0 to sec.surfaces.Count - 1 do
     begin
       surf := sec.surfaces[sf];
       sflight := sflight + surf.ExtraLight;
-      inc(nv, surf.Vertices.count);
-      for v := 0 to surf.Vertices.count - 1 do
+      inc(nv, surf.Vertices.Count);
+
+      for v := 0 to surf.Vertices.Count - 1 do
         With surf.txvertices[v] do
         begin
           color.Normalize;
@@ -6010,9 +6150,9 @@ var
     SetBox(lbox, x1, x2, y1, y2, z1, z2);
     result := true;
 
-    if lt.Mark <> -1 then
-      With lev.sectors[lt.Mark] do
-        for lsf := 0 to surfaces.count - 1 do
+    if lt.mark <> -1 then
+      With lev.sectors[lt.mark] do
+        for lsf := 0 to surfaces.Count - 1 do
         begin
           if SurfBlocks(surfaces[lsf]) then
           begin
@@ -6022,7 +6162,7 @@ var
         end;
 
     With lev.sectors[s] do
-      for lsf := 0 to surfaces.count - 1 do
+      for lsf := 0 to surfaces.Count - 1 do
       begin
         if SurfBlocks(surfaces[lsf]) then
         begin
@@ -6031,10 +6171,10 @@ var
         end;
       end;
 
-    for ls := 0 to lev.sectors.count - 1 do
-      if (ls <> s) and (ls <> lt.Mark) then
+    for ls := 0 to lev.sectors.Count - 1 do
+      if (ls <> s) and (ls <> lt.mark) then
         With lev.sectors[ls] do
-          for lsf := 0 to surfaces.count - 1 do
+          for lsf := 0 to surfaces.Count - 1 do
           begin
             if SurfBlocks(surfaces[lsf]) then
             begin
@@ -6042,7 +6182,8 @@ var
               exit;
             end;
           end;
-    result := false;
+
+    Result := False;
   end;
 
 begin { CalcLighting }
@@ -6053,10 +6194,10 @@ begin { CalcLighting }
 
   { Precalculate surface data }
 
-  For s := 0 to lev.sectors.count - 1 do
+  For s := 0 to lev.sectors.Count - 1 do
     With lev.sectors[s] do
     begin
-      for sf := 0 to surfaces.count - 1 do
+      for sf := 0 to surfaces.Count - 1 do
         With surfaces[sf] do
           Mark := gsfs + sf;
       inc(gsfs, surfaces.count);
@@ -6065,42 +6206,42 @@ begin { CalcLighting }
   GetMem(sfd, gsfs * sizeof(TLCSurfData));
 
   try
-    For s := 0 to lev.sectors.count - 1 do
-      With lev.sectors[s] do
+    for s := 0 to lev.sectors.Count - 1 do
+      with lev.sectors[s] do
       begin
-        for sf := 0 to surfaces.count - 1 do
+        for sf := 0 to surfaces.Count - 1 do
           With surfaces[sf] do
           begin
-            csd := Pointer(sfd + Mark * sizeof(TLCSurfData));
+            csd := Pointer(sfd + mark * sizeof(TLCSurfData));
             csd^.D := CalcD;
             CalcSurfBBox(surfaces[sf], csd^.bbox);
           end;
       end;
 
     { Find sectors for lights }
-    for l := 0 to lev.Lights.count - 1 do
-      With lev.Lights[l] do
+    for l := 0 to lev.Lights.Count - 1 do
+      with lev.Lights[l] do
       begin
         Mark := FindSectorForXYZ(lev, position.x, position.y, position.z);
       end;
 
     { Calc lights }
 
-    Progress.Reset(lev.sectors.count);
+    Progress.Reset(lev.sectors.Count);
     Progress.Msg := 'Calculating lights';
 
-    For s := 0 to scs.count - 1 do
-      With lev.sectors[scs.getSC(s)] do
+    for s := 0 to scs.Count - 1 do
+      with lev.sectors[scs.getSC(s)] do
       begin
 
-        for sf := 0 to surfaces.count - 1 do
+        for sf := 0 to surfaces.Count - 1 do
         begin
           surf := surfaces[sf];
-          v0 := surf.Vertices[0];
+          v0 := surf.vertices[0];
 
-          for l := 0 to lev.Lights.count - 1 do
+          for l := 0 to lev.lights.Count - 1 do
           begin
-            lt := lev.Lights[l];
+            lt := lev.lights[l];
 
             { Check if the light is in front of surface }
             if surf.normal.Dot(lt.position.Sub(v0.x, v0.y, v0.z)) < 0.001 then
@@ -6110,10 +6251,10 @@ begin { CalcLighting }
 //                lt.position.y - v0.y, lt.position.z - v0.z) < 0.001 then
 //                continue;
 
-            for v := 0 to surf.vertices.count - 1 do
+            for v := 0 to surf.vertices.Count - 1 do
             begin
               { Check distance from the point to light }
-              cv := surf.Vertices[v];
+              cv := surf.vertices[v];
 
               dist := lt.position.Distance(cv.x, cv.y, cv.z); //sqrt(sqr(lt.position.x - cv.x) + sqr(lt.position.y - cv.y) +sqr(lt.position.z - cv.z));
               if dist >= lt.range then
@@ -6140,12 +6281,10 @@ begin { CalcLighting }
               end;
               { Intensity:=Intensity+lt.Intensity*(lt.range-dist)/lt.range; }
             end;
-
           end;
-
         end;
-        Progress.Step;
 
+        Progress.Step;
       end;
 
     CalcSectorAmbients(lev, scs);
@@ -6194,7 +6333,7 @@ begin
 //  With surf.normal do
 //    VMult(dx, dy, dz, xv.dx, xv.dy, xv.dz, yv.dx, yv.dy, yv.dz);
 
-  With surf do
+  with surf do
   begin
     x0 := x;
     y0 := y;
@@ -6207,7 +6346,7 @@ begin
   p1x := 0;
   p1y := 0;
 
-  For i := 0 to surf.vertices.count - 1 do
+  for i := 0 to surf.vertices.count - 1 do
   begin
     v1 := surf.vertices[surf.NextVX(i)];
     p2x := VectorDot3(v1.x - x0, v1.y - y0, v1.z - z0, xv.dx, xv.dy, xv.dz); // SMult
@@ -6226,7 +6365,7 @@ end;
 
 { Check if a line crosses the surface. It's meant to be used for adjoined
   surfaces, so all the marginal cases are treated as crossing }
-Function IsSurfCrossed(surf: TJKSurface;
+Function IsSurfCrossed(const surf: TJKSurface;
   x1, y1, z1, x2, y2, z2: double): boolean;
 var
   dist1, dist2: double;
@@ -6234,7 +6373,7 @@ var
   k: double;
 begin
   result := false;
-  if surf.vertices.count = 0 then
+  if surf.vertices.Count = 0 then
     exit;
 
   with surf.vertices[0] do
@@ -6273,7 +6412,6 @@ begin
   { Find if intersection is on surface }
 
   result := IsPointOnSurface(surf, pX, pY, pZ);
-
 end;
 
 Procedure CalcLightingNew(lev: TJKLevel; scs: TSCMultiSel);
@@ -6301,20 +6439,22 @@ var
     pX, pY, pZ: double;
   begin
     result := false;
-    if viasec.Mark <> 0 then
+    if viasec.mark <> 0 then
       exit;
+
     if viasec = vx.sector then
     begin
       result := true;
       exit;
     end;
-    viasec.Mark := 1;
 
-    for i := 0 to viasec.surfaces.count - 1 do
+    viasec.mark := 1;
+
+    for i := 0 to viasec.surfaces.Count - 1 do
     begin
       surf := viasec.surfaces[i];
       if (surf.adjoin = nil) { or (surf.geo>=4) }
-        or (surf.Vertices.count = 0) or (surf.AdjoinFlags and SAF_BlockLight <> 0)
+        or (surf.Vertices.Count = 0) or (surf.AdjoinFlags and SAF_BlockLight <> 0)
       then
         continue;
 
@@ -6347,23 +6487,23 @@ var
   var
     i: integer;
   begin
-    for i := 0 to lev.sectors.count - 1 do
+    for i := 0 to lev.sectors.Count - 1 do
       lev.sectors[i].mark := 0;
-    result := not CanReach(lsec);
+    Result := not CanReach(lsec);
   end;
 
 begin
   { Find sectors for lights }
   nl := 0;
-  for l := 0 to lev.lights.count - 1 do
-    With lev.Lights[l] do
-    begin
-      Mark := FindSectorForXYZ(lev, position.x, position.y, position.z);
-      if Mark = -1 then
-        PanMessageFmt(mt_warning, 'Light %d is not in any sector', [l])
-      else
-        inc(nl);
-    end;
+  for l := 0 to lev.lights.Count - 1 do
+    with lev.lights[l] do
+      begin
+        mark := FindSectorForXYZ(lev, position.x, position.y, position.z);
+        if mark = -1 then
+          PanMessageFmt(mt_warning, 'Light %d is not in any sector', [l])
+        else
+          inc(nl);
+      end;
 
   if nl = 0 then
   begin
@@ -6379,19 +6519,19 @@ begin
     dvx:=3;
     dl:=13; }
 
-  Progress.Reset(lev.sectors.count);
+  Progress.Reset(lev.sectors.Count);
   Progress.Msg := 'Calculating lights';
 
-  for s := 0 to scs.count - 1 do
+  for s := 0 to scs.Count - 1 do
   begin
     sec := lev.sectors[scs.getSC(s)];
-    for sf := 0 to sec.surfaces.count - 1 do
+    for sf := 0 to sec.surfaces.Count - 1 do
     begin
       surf := sec.surfaces[sf];
-      if surf.vertices.count = 0 then
+      if surf.vertices.Count = 0 then
         continue; { Just in case }
 
-      for l := 0 to lev.lights.count - 1 do
+      for l := 0 to lev.lights.Count - 1 do
       begin
         lt := level.lights[l];
         if lt.mark = -1 then
@@ -6406,7 +6546,7 @@ begin
         if D <= 0 then
           continue;
 
-        for v := 0 to surf.Vertices.count - 1 do
+        for v := 0 to surf.vertices.Count - 1 do
         begin
 
           { Debug }
@@ -6436,7 +6576,7 @@ begin
 
           dist2 := sqr((lt.range - dist) / lt.range);
 
-          With surf.txvertices[v] do
+          with surf.txvertices[v] do
           begin
             { Intensity:=Intensity+dist2*lt.Intensity;
               r:=r+lt.Intensity*dist2*lt.r;
@@ -6452,20 +6592,18 @@ begin
                 color.b := color.b + lt.color.b * intf;
               end;
           end;
-
         end; { for vx }
-
       end; { for l }
     end; { for sf }
+
     Progress.Step;
   end; { for s }
 
   CalcSectorAmbients(lev, scs);
   Progress.Hide;
-
 end;
 
-Procedure OffsetByNode(lev: TJKLevel; nnode: integer; var x, y, z: double);
+Procedure OffsetByNode(const lev: TJKLevel; nnode: integer; var x, y, z: double);
 var
   i, j: integer;
   hnode, hnode1: THNode;
@@ -6482,12 +6620,11 @@ begin
   z := z + hnode.z;
 
   hnode1 := hnode;
-
-  While hnode1.parent <> -1 do
+  while hnode1.parent <> -1 do
   begin
     hnode1 := lev.h3donodes[hnode1.parent];
 
-    With hnode1 do
+    with hnode1 do
       CreateRotMatrix(mx, pch, yaw, rol);
     MultVM3(mx, x, y, z);
     x := x + hnode1.x;
@@ -6497,7 +6634,7 @@ begin
 
 end;
 
-Procedure UnOffsetByNode(lev: TJKLevel; nnode: integer; var x, y, z: double);
+Procedure UnOffsetByNode(const lev: TJKLevel; nnode: integer; var x, y, z: double);
 var
   i, j, k: integer;
   hnode, hnode1: THNode;
@@ -6513,8 +6650,9 @@ begin { UnoffsetMeshes }
   { Trace back all parent nodes }
   branch.Clear;
   branch.Add(nnode);
+
   hnode1 := hnode;
-  While hnode1.parent <> -1 do
+  while hnode1.parent <> -1 do
   begin
     branch.Add(hnode1.parent);
     hnode1 := lev.h3donodes[hnode1.parent];
@@ -6525,7 +6663,7 @@ begin { UnoffsetMeshes }
   for k := branch.count - 1 downto 0 do
   begin
     hnode1 := lev.h3donodes[branch[k]];
-    With hnode1 do
+    with hnode1 do
       CreateRotMatrix(mx, pch, yaw, rol);
     rmx[0, 0] := mx[0, 0];
     rmx[0, 1] := mx[1, 0];
@@ -6546,22 +6684,22 @@ begin { UnoffsetMeshes }
   branch.free;
 end;
 
-Function CheckSectorIndex(lev: TJKLevel; sc: integer): boolean;
+Function CheckSectorIndex(const lev: TJKLevel; sc: integer): boolean;
 begin
   Result := (sc >= 0) and (sc < lev.sectors.Count);
 end;
 
-Function CheckSectorSurfaceIndex(sec: TJKSector; sf: integer): boolean;
+Function CheckSectorSurfaceIndex(const sec: TJKSector; sf: integer): boolean;
 begin
   Result := (sf >= 0) and (sf < sec.surfaces.Count);
 end;
 
-Function CheckSectorVertexIndex(sec: TJKSector; vx: integer): boolean;
+Function CheckSectorVertexIndex(const sec: TJKSector; vx: integer): boolean;
 begin
   Result := (vx >= 0) and (vx < sec.vertices.Count);
 end;
 
-Function CheckSurfaceIndex(lev: TJKLevel; sc, sf: integer): boolean;
+Function CheckSurfaceIndex(const lev: TJKLevel; sc, sf: integer): boolean;
 begin
   Result := (sf >= 0) and CheckSectorIndex(lev, sc);
   if not Result then
@@ -6569,12 +6707,12 @@ begin
   Result := sf < lev.sectors[sc].surfaces.Count;
 end;
 
-Function CheckSurfaceEdgeIndex(surf: TJKSurface; ed: integer): boolean;
+Function CheckSurfaceEdgeIndex(const surf: TJKSurface; ed: integer): boolean;
 begin
   Result := (ed >= 0) and (ed < surf.vertices.Count);
 end;
 
-Function CheckEdgeIndex(lev: TJKLevel; sc, sf, ed: integer): boolean;
+Function CheckEdgeIndex(const lev: TJKLevel; sc, sf, ed: integer): boolean;
 begin
   Result := (ed >= 0) and CheckSectorIndex(lev, sc);
   if not Result then
@@ -6585,10 +6723,10 @@ begin
   if not Result then
     exit;
 
-  Result := ed < sec.surfaces[sf].Vertices.Count;
+  Result := ed < sec.surfaces[sf].vertices.Count;
 end;
 
-Function CheckVertexIndex(lev: TJKLevel; sc, vx: integer): boolean;
+Function CheckVertexIndex(const lev: TJKLevel; sc, vx: integer): boolean;
 begin
   Result := (vx >= 0) and CheckSectorIndex(lev, sc);
   if not Result then
@@ -6596,17 +6734,17 @@ begin
   Result := vx < lev.sectors[sc].vertices.Count;
 end;
 
-Function CheckTemplateIndex(lev: TJKLevel; tmpl: integer): boolean;
+Function CheckTemplateIndex(const lev: TJKLevel; tmpl: integer): boolean;
 begin
   Result := (tmpl >= 0) and (tmpl < lev.templates.Count);
 end;
 
-Function CheckThingIndex(lev: TJKLevel; th: integer): boolean;
+Function CheckThingIndex(const lev: TJKLevel; th: integer): boolean;
 begin
   Result := (th >= 0) and (th < lev.things.Count);
 end;
 
-Function CheckFrameIndex(lev: TJKLevel; th, fr: integer): boolean;
+Function CheckFrameIndex(const lev: TJKLevel; th, fr: integer): boolean;
 begin
   Result := (fr >= -1) and CheckThingIndex(lev, th);
   if not Result then
@@ -6614,12 +6752,12 @@ begin
   Result := fr < lev.things[th].vals.Count;
 end;
 
-Function CheckCogIndex(lev: TJKLevel; co: integer): boolean;
+Function CheckCogIndex(const lev: TJKLevel; co: integer): boolean;
 begin
   Result := (co >= 0) and (co < lev.cogs.Count);
 end;
 
-Function CheckLightIndex(lev: TJKLevel; lt: integer): boolean;
+Function CheckLightIndex(const lev: TJKLevel; lt: integer): boolean;
 begin
   Result := (lt >= 0) and (lt < lev.lights.Count);
 end;

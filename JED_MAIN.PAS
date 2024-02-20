@@ -469,13 +469,13 @@ type
         Procedure Do_StartRotateGrid(X, Y: Integer);
         Procedure Do_RotateGrid(X, Y: Integer);
 
-        Procedure DO_StartCreateSC(X, Y: Integer; snapToVertex: boolean);
-        Procedure DO_ProceedCreateSC(X, Y: Integer; snapToVertex: boolean);
-        Procedure DO_EndCreateSC(X, Y: Integer; snapToVertex: boolean);
+        Procedure Do_StartCreateSC(X, Y: Integer; snapToVertex: boolean);
+        Procedure Do_ProceedCreateSC(X, Y: Integer; snapToVertex: boolean);
+        Procedure Do_EndCreateSC(X, Y: Integer; snapToVertex: boolean);
 
-        Procedure DO_StartRectSelect(X, Y: Integer);
-        Procedure DO_ProceedRectSelect(X, Y: Integer);
-        Procedure DO_EndRectSelect(X, Y: Integer);
+        Procedure Do_StartRectSelect(X, Y: Integer);
+        Procedure Do_ProceedRectSelect(X, Y: Integer);
+        Procedure Do_EndRectSelect(X, Y: Integer);
 
         Procedure ResetEditor(DefaultParams: boolean);
         Procedure ResettingEditor;
@@ -2323,15 +2323,15 @@ begin
                 miPasteClick(nil);
             Ord('P'):
                 if mapMode = MM_SF then
-                begin
-                    StartUndoRec('Flatten Surface');
-                    if FlattenSurface(Level.Sectors[Cur_SC].surfaces[Cur_SF])
-                    then
-                        PanMessage(mt_info, 'Surface planarized')
-                    else
-                        PanMessage(mt_info, 'Surface wasn''t fully planarized');
-                    Invalidate;
-                end;
+                  begin
+                      StartUndoRec('Flatten Surface');
+                      if FlattenSurface(Level.Sectors[Cur_SC].surfaces[Cur_SF])
+                        then
+                            PanMessage(mt_info, 'Surface planarized')
+                        else
+                            PanMessage(mt_info, 'Surface wasn''t fully planarized');
+                      Invalidate;
+                  end;
             Ord('X'):
                 if mapMode = MM_SF then
                 begin
@@ -2458,13 +2458,9 @@ begin
             begin
                 { CreateRotMatrix(mx,PCH,YAW,ROL); }
 
-                With renderer do
-                    nx.SetCoords(xv.dx * DpiScale, xv.dy * DpiScale, xv.dz * DpiScale);
-                With renderer do
-                    ny.SetCoords(yv.dx * DpiScale, yv.dy * DpiScale, yv.dz * DpiScale);
-                With renderer do
-                    nz.SetCoords(zv.dx * DpiScale, zv.dy * DpiScale, zv.dz * DpiScale);
-
+                nx := renderer.xv.Scaled(IfThen(renderer.perspective,  0.2, DpiScale));
+                ny := renderer.yv.Scaled(IfThen(renderer.perspective,  0.2, DpiScale));
+                nz := renderer.zv.Scaled(IfThen(renderer.perspective, -0.2, DpiScale));
                 case Key of
                     VK_LEFT:
                         begin
@@ -3227,7 +3223,7 @@ begin
     end;
 end;
 
-Procedure TJedMain.DO_StartRectSelect(X, Y: Integer);
+Procedure TJedMain.Do_StartRectSelect(X, Y: Integer);
 begin
     bRectSelStarted := true;
     rectSelOrg.X := X;
@@ -3236,7 +3232,7 @@ begin
     SetMouseMode(MM_RectSelect);
 end;
 
-Procedure TJedMain.DO_ProceedRectSelect(X, Y: Integer);
+Procedure TJedMain.Do_ProceedRectSelect(X, Y: Integer);
 begin
     Canvas.Pen.mode := pmXor;
     Canvas.Pen.Color := clRed;
@@ -3247,7 +3243,7 @@ begin
     reactSelPos.Y := Y;
 end;
 
-Procedure TJedMain.DO_EndRectSelect(X, Y: Integer);
+Procedure TJedMain.Do_EndRectSelect(X, Y: Integer);
 var
     i, SF, VX, ED, fr: Integer;
     ax, ay, az, pch, yaw, rol: double;
@@ -3578,22 +3574,22 @@ begin
     tvec :=  dragRefOrg - curRefPos + tvec;
     case mapMode of
         MM_SC:
-            TranslateSectors(Level, scsel, Cur_SC, tvec.x, tvec.y, tvec.z);
+            TranslateSectors(level, scsel, Cur_SC, tvec.x, tvec.y, tvec.z);
         MM_SF:
             TranslateSurfaces(Level, sfsel, Cur_SC, Cur_SF, tvec.x, tvec.y, tvec.z);
         MM_VX:
             TranslateVertices(Level, vxsel, Cur_SC, Cur_VX, tvec.x, tvec.y, tvec.z);
         MM_ED:
-            TranslateEdges(Level, edsel, Cur_SC, Cur_SF, Cur_ED, tvec.x, tvec.y, tvec.z);
+            TranslateEdges(level, edsel, Cur_SC, Cur_SF, Cur_ED, tvec.x, tvec.y, tvec.z);
         MM_TH:
-            TranslateThings(Level, thsel, Cur_TH, tvec.x, tvec.y, tvec.z, MoveFrames);
+            TranslateThings(level, thsel, Cur_TH, tvec.x, tvec.y, tvec.z, MoveFrames);
         MM_FR:
             if Cur_FR = -1 then
-                TranslateThingKeepFrame(Level, Cur_TH, tvec.x, tvec.y, tvec.z)
+                TranslateThingKeepFrame(level, Cur_TH, tvec.x, tvec.y, tvec.z)
             else
-                TranslateFrames(Level, frsel, Cur_TH, Cur_FR, tvec.x, tvec.y, tvec.z);
+                TranslateFrames(level, frsel, Cur_TH, Cur_FR, tvec.x, tvec.y, tvec.z);
         MM_LT:
-            TranslateLights(Level, ltsel, Cur_LT, tvec.x, tvec.y, tvec.z);
+            TranslateLights(level, ltsel, Cur_LT, tvec.x, tvec.y, tvec.z);
         MM_Extra:
             TranslateExtras(Cur_EX, tvec.x, tvec.y, tvec.z);
     end;
@@ -3807,7 +3803,7 @@ begin
 
 end;
 
-Procedure TJedMain.DO_StartCreateSC(X, Y: Integer; snapToVertex: boolean);
+Procedure TJedMain.Do_StartCreateSC(X, Y: Integer; snapToVertex: boolean);
 begin
     if bCreateSCStarted then
         ReDraw;
@@ -3827,7 +3823,7 @@ begin
     bCreateSCStarted := true;
 end;
 
-Procedure TJedMain.DO_ProceedCreateSC(X, Y: Integer; snapToVertex: boolean);
+Procedure TJedMain.Do_ProceedCreateSC(X, Y: Integer; snapToVertex: boolean);
 var
     fx, fy, fz: double;
 begin
@@ -3848,7 +3844,7 @@ begin
     cleaveCurPos2 := TPoint.Create(X, Y);
 end;
 
-Procedure TJedMain.DO_EndCreateSC(X, Y: Integer; snapToVertex: boolean);
+Procedure TJedMain.Do_EndCreateSC(X, Y: Integer; snapToVertex: boolean);
 var
     endPos, nx, ny, nz: TVector;
     vl: double;
@@ -6822,22 +6818,19 @@ end;
 
 Procedure TJedMain.TranslateObject(dx, dy, dz: double);
 var
-    sec: TJKSector;
-    surf: TJKSurface;
+
     i: Integer;
 begin
     case mapMode of
         MM_SC:
             begin
                 StartUndoRec('Translate Sector(s)');
-                sec := Level.Sectors[Cur_SC];
-                TranslateSectors(Level, scsel, Cur_SC, dx, dy, dz);
+                TranslateSectors(level, scsel, Cur_SC, dx, dy, dz);
             end;
         MM_SF:
             begin
                 StartUndoRec('Translate Surface(s)');
-                surf := Level.Sectors[Cur_SC].surfaces[Cur_SF];
-                TranslateSurfaces(Level, sfsel, Cur_SC, Cur_SF, dx, dy, dz);
+                TranslateSurfaces(level, sfsel, Cur_SC, Cur_SF, dx, dy, dz);
             end;
     end;
     Invalidate;

@@ -253,9 +253,9 @@ Destructor TPolygon.Destroy;
 var
   i: integer;
 begin
-  for i := 0 to TXVertices.count - 1 do
-    TXVertices[i].Free;
-  TXVertices.Free;
+  for i := 0 to TXVertices.Count - 1 do
+    txVertices[i].Free;
+  txVertices.Free;
 
 // Should not free list vertices because they can be owned by some other list e.g. TPolygons.VXList
 //  for i := 0 to Vertices.count - 1 do
@@ -275,7 +275,7 @@ var
   d: double;
 begin
   v0 := vertices[0];
-  for i := 1 to vertices.count - 1 do
+  for i := 1 to vertices.Count - 1 do
   begin
     v := vertices[i];
     d := normal.Dot(v.x - v0.x, v.y - v0.y, v.z - v0.z); //SMult(normal.dx, normal.dy, normal.dz, v.x - v0.x, v.y - v0.y, v.z - v0.z);
@@ -328,8 +328,8 @@ end;
 
 Function TPolygon.CalcD: double;
 begin
-  With Vertices[0] do
-    Result := normal.dx * x + normal.dy * y + normal.dz * z;
+  With vertices[0] do
+    Result := normal.Dot(x, y, z);//normal.dx * x + normal.dy * y + normal.dz * z;
 end;
 
 Function TPolygon.ExtrudeSize: double;
