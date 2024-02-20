@@ -89,7 +89,6 @@ uses
 
 {$R *.RES}
 {$R SEDstatic.res}
-{$R Ver_info.res}
 
 begin
   Application.Initialize;
@@ -124,5 +123,4 @@ begin
   Application.CreateForm(TUrqForm, UrqForm);
   Application.ShowHint := True;
   Application.Run;
-
 end.
