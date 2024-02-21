@@ -88,11 +88,17 @@ Function BitMaskTest(flags, mask: LongInt): Boolean;  // tests if all bits of ma
 Function MakeColor(r, g, b: single; a: single = 1.0): TColorF; overload;
 Function MakeColor(c: TJedColor): TColorF; overload;
 Function MakeColor(intensity: single): TColorF; overload;
-Function EncodeARGB(color: TColorF): UInt32;
+
+
 Function EncodeABGR(color: TColorF): UInt32;
 Function DecodeABGR(abgr: UInt32): TColorF;
+Function EncodeARGB(color: TColorF): UInt32;
+Function DecodeARGB(argb: UInt32): TColorF;
 Function EncodeBGR(color: TColorF): UInt32;
-Function DecodeBGR(bgr: UInt32): TColorF;
+Function DecodeBGR(bgr: UInt32; alpha: Single = 1.0): TColorF;
+Function EncodeRGB(color: TColorF): UInt32;
+Function DecodeRGB(bgr: UInt32; alpha: Single = 1.0): TColorF;
+
 Function IntensityToColor(i: single): TColorF;
 Function RgbToIntensity(rgb: TColorF): single;
 Function RgbaToIntensity(rgba: TColorF): single;
@@ -784,6 +790,28 @@ begin
   Result := MakeColor(intensity, intensity, intensity, 1.0);
 end;
 
+Function EncodeABGR(color: TColorF): UInt32;
+var
+  br, bg, bb, ba: byte;
+begin
+  // Big-endian encoded ABGR 32 bpp
+  br := ClampI(Round(color.r * 255), 0, 255);
+  bg := ClampI(Round(color.g * 255), 0, 255);
+  bb := ClampI(Round(color.b * 255), 0, 255);
+  ba := ClampI(Round(color.a * 255), 0, 255);
+  result := (br or (bg shl 8) or (bb shl 16) or (ba shl 24));
+end;
+
+Function DecodeABGR(abgr: UInt32): TColorF;
+var r, g, b, a: single;
+begin
+  r:= ClampF_01(Byte(abgr) / 255.0);
+  g:= ClampF_01(Byte(abgr shr 8) / 255.0);
+  b:= ClampF_01(Byte(abgr shr 16) / 255.0);
+  a:= ClampF_01(Byte(abgr shr 24) / 255.0);
+  Result := MakeColor(r, g, b, a);
+end;
+
 Function EncodeARGB(color: TColorF): UInt32;
 var
   br, bg, bb, ba: byte;
@@ -796,38 +824,40 @@ begin
   result := (bb or (bg shl 8) or (br shl 16) or (ba shl 24));
 end;
 
-Function EncodeABGR(color: TColorF): UInt32;
-var
-  br, bg, bb, ba: byte;
+Function DecodeARGB(argb: UInt32): TColorF;
+  var r, g, b, a: single;
 begin
-  // Big-endian encoded RGBA 32 bpp
-  br := ClampI(Round(color.r * 255), 0, 255);
-  bg := ClampI(Round(color.g * 255), 0, 255);
-  bb := ClampI(Round(color.b * 255), 0, 255);
-  ba := ClampI(Round(color.a * 255), 0, 255);
-  result := (ba or (bb shl 8) or (bg shl 16) or (br shl 24));
-end;
-
-Function DecodeABGR(abgr: UInt32): TColorF;
-var r, g, b, a: single;
-begin
-  r:= ClampF_01(Byte(abgr shr 24) / 255.0);
-  g:= ClampF_01(Byte(abgr shr 16) / 255.0);
-  b:= ClampF_01(Byte(abgr shr 8) / 255.0);
-  a:= ClampF_01(Byte(abgr) / 255.0);
+  r:= ClampF_01(Byte(argb shr 16) / 255.0);
+  g:= ClampF_01(Byte(argb shr 8) / 255.0);
+  b:= ClampF_01(Byte(argb) / 255.0);
+  a:= ClampF_01(Byte(argb shr 24) / 255.0);
   Result := MakeColor(r, g, b, a);
 end;
 
 Function EncodeBGR(color: TColorF): UInt32;
 begin
   Result := EncodeABGR(color);
-  Result := UInt32((Result shr 8) and not(255 shl 24)); // remove alpha
+  Result := UInt32(Result and not(255 shl 24)); // remove alpha
 end;
 
-Function DecodeBGR(bgr: UInt32): TColorF;
+Function DecodeBGR(bgr: UInt32; alpha: Single): TColorF;
 begin
-  bgr := UInt32(bgr shl 8) or 255; // add 1.0 alpha component
+  alpha := ClampF_01(alpha);
+  bgr := UInt32(bgr or Round(alpha * 255) shl 24); // add alpha component
   Result := DecodeABGR(bgr);
+end;
+
+Function EncodeRGB(color: TColorF): UInt32;
+begin
+  Result := EncodeARGB(color);
+  Result := UInt32(Result and not(255 shl 24)); // remove alpha
+end;
+
+Function DecodeRGB(bgr: UInt32; alpha: Single): TColorF;
+begin
+   alpha := ClampF_01(alpha);
+  bgr := UInt32(bgr or Round(alpha * 255) shl 24); // add alpha component
+  Result := DecodeARGB(bgr);
 end;
 
 Function IntensityToColor(i: single): TColorF;
