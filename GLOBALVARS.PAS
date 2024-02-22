@@ -5,7 +5,7 @@ interface
 uses SysUtils, Forms, graphics, Classes;
 
 Type
-  Float = double;
+  Float = Double;
   TInt = SmallInt;
   TFileName = String;
 

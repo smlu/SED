@@ -174,7 +174,7 @@ end;
 TPickType=(pk_nothing,pk_surface,pk_thing);
 
 TPreviewRender=class
-  CamX, CamY, CamZ: Double;
+  camX, camY, camZ: Double;
   PCH,YAW:Double;
   whandle:HWND;
   vwidth,vheight:integer;
@@ -311,7 +311,7 @@ TNewPRenderer = class(TPreviewRender)
   Procedure SetThing3DO(th:TJKThing;a3do:TPJ3DO);override;
 
 Protected
-  class Function IsInFront(const p,n: TVector; c: T3DPVertex; rad: single):integer; overload; static;
+  class Function IsInFront(const p,n: TVector; const c: T3DPVertex; radius: single) : Integer; overload; static;
   class Function IsInFront(const [ref] f: TClipFrustum; m: T3DPMesh): Boolean; overload; static;
   Function GetCameraFrustum: TClipFrustum;
 
@@ -820,22 +820,22 @@ begin
   CamZ := th.z - newPosZ;
 end;
 
-class Function TNewPRenderer.IsInFront(const p,n: TVector; c: T3DPVertex; rad: single): integer;
+class Function TNewPRenderer.IsInFront(const p,n: TVector; const c: T3DPVertex; radius: single): Integer;
 begin
   Result := 0;
-  var d: double := VectorDot3(c.x-p.x, c.y-p.y, c.z-p.z, n.dx,n.dy,n.dz); //Smult
-  if d > rad then Result := 1 else
-  if d > -rad then Result := 2 else result := 0;
+  var d: double := n.Dot(c.x - p.x, c.y - p.y, c.z - p.z);  // VectorDot3(c.x - p.x, c.y - p.y, c.z - p.z, n.dx, n.dy, n.dz); //Smult
+  if d >  radius then Result := 1 else
+  if d > -radius then Result := 2 else result := 0;
 end;
 
 class Function TNewPRenderer.IsInFront(const [ref] f: TClipFrustum; m: T3DPMesh): Boolean;
 begin
   Result :=
-     (isInFront(f.nearPlane.pos  , f.nearPlane.normal  , m.center, m.radius) <> 0) and
-     (isInFront(f.leftPlane.pos  , f.leftPlane.normal  , m.center, m.radius) <> 0) and
-     (isInFront(f.rightPlane.pos , f.rightPlane.normal , m.center, m.radius) <> 0) and
-     (isInFront(f.topPlane.pos   , f.topPlane.normal   , m.center, m.radius) <> 0) and
-     (isInFront(f.bottomPlane.pos, f.bottomPlane.normal, m.center, m.radius) <> 0);
+     (IsInFront(f.nearPlane.pos  , f.nearPlane.normal  , m.center, m.radius) <> 0) and
+     (IsInFront(f.leftPlane.pos  , f.leftPlane.normal  , m.center, m.radius) <> 0) and
+     (IsInFront(f.rightPlane.pos , f.rightPlane.normal , m.center, m.radius) <> 0) and
+     (IsInFront(f.topPlane.pos   , f.topPlane.normal   , m.center, m.radius) <> 0) and
+     (IsInFront(f.bottomPlane.pos, f.bottomPlane.normal, m.center, m.radius) <> 0);
 end;
 
 
@@ -909,13 +909,13 @@ end;
 Procedure TNewPRenderer.RenderWorldGeometry(const [Ref] frustrum: TClipFrustum);
 begin
   const alphaAdjoinMask = (FF_RD_Adjoin or FF_Transluent);
-  for var i:=0 to sclist.count-1 do
+  for var i := 0 to sclist.Count - 1 do
     begin
-      var m:=sclist[i];
-      if m=nil then continue;
+      var m := sclist[i];
+      if m = nil then continue;
       if not IsInFront(frustrum, m) then continue;
 
-      for var j:=0 to m.polys.count-1 do
+      for var j := 0 to m.polys.Count - 1 do
         begin
           var poly := m.GetPoly(j);
           //if poly.geo = NotDrawn then continue;
@@ -1544,16 +1544,16 @@ begin
 
         // Make sky poly unlit
         if BitMaskTest(sec.Flags, SECF_3DO) or
-          BitMaskTest(SurfFlags, SF_SkyHorizon) or
-          BitMaskTest(SurfFlags, SF_SkyCeiling) then
+          BitMaskTest(surfflags, SF_SkyHorizon) or
+          BitMaskTest(surfflags, SF_SkyCeiling) then
           poly.light := TLightMode.None;
 
         if sec.level.kind = JKDF2 then // JKDF2 doesn't support tex clamping?
-          poly.faceflags := LongInt(poly.faceflags and not(FF_TexClampX or FF_TexClampY));
+          BitClear(poly.faceflags, FF_TexClampX or FF_TexClampY);
 
         // Mark poly to render fog (IJIM)
-        if BitTest(SurfFlags, SF_SkyHorizon or SF_SkyCeiling) = 0 then
-          poly.faceflags := LongInt(poly.faceflags or FF_IJIM_FogEnabled);
+        if BitTest(surfflags, SF_SkyHorizon or SF_SkyCeiling) = 0 then
+          BitSet(poly.faceflags, FF_IJIM_FogEnabled);
 
         // Mark poly as floor or has collision
         const sfFloor = SF_Floor or SF_Collision;
@@ -1561,16 +1561,16 @@ begin
           begin
             poly.faceflags := LongInt(poly.faceflags or FF_RD_Adjoin);
             if ((AdjoinFlags and not SAF_Move) = AdjoinFlags) or BitMaskTest(AdjoinFlags, SAF_NoPlayerMove) then
-              poly.faceflags := LongInt(poly.faceflags or FF_RD_SolidSurfaceWf);
+               BitSet(poly.faceflags, FF_RD_SolidSurfaceWf);
           end
-        else if BitMaskTest(SurfFlags, sfFloor) then
-          poly.faceflags := LongInt(poly.faceflags or FF_RD_FloorWf)
-        else if BitMaskTest(SurfFlags, SF_Collision) then
-          poly.faceflags := LongInt(poly.faceflags or FF_RD_SolidSurfaceWf);
+        else if BitMaskTest(surfflags, sfFloor) then
+          BitSet(poly.faceflags, FF_RD_FloorWf)
+        else if BitMaskTest(surfflags, SF_Collision) then
+          BitSet(poly.faceflags, FF_RD_SolidSurfaceWf);
 
         // Mark poly as special
         if IsSpecialSurface(sec.surfaces[i]) then
-          poly.faceflags := LongInt(poly.faceflags or FF_RD_SpecialSurfaceWf);
+          BitSet(poly.faceflags, FF_RD_SpecialSurfaceWf);
 
         D3DID := Result.polys.count - 1;
         Try
@@ -1591,18 +1591,20 @@ begin
 
         for var j := 0 to nvx - 1 do
           begin
-            if (sec.Flags and SECF_3DO) = 0 then nv := j
-            else nv := nvx - j - 1;
+            if (sec.Flags and SECF_3DO) = 0 then
+              nv := j
+            else
+              nv := nvx - j - 1;
 
-            With TXVertices[nv] do
+            With txvertices[nv] do
               begin
                 vd   := poly.AddVXD;
-                vd.x := Vertices[nv].x;
-                vd.y := Vertices[nv].y;
-                vd.z := Vertices[nv].z;
+                vd.x := vertices[nv].x;
+                vd.y := vertices[nv].y;
+                vd.z := vertices[nv].z;
                 vd.intensity := color;
                 if CurrentProject = IJIM then
-                  vd.intensity.a := ExtraLight.a;
+                  vd.intensity.a := extraLight.a;
 
                 if poly.tx <> nil then
                   begin
