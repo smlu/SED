@@ -479,35 +479,36 @@ begin
  begin
   if (rflags and lh_version)<>0 then lh.version:=version;
   if (rflags and lh_gravity)<>0 then lh.Gravity:=gravity;
-  if (rflags and lh_SkyZ)<>0 then lh.CeilingSkyZ:=CeilingSkyZ;
+  if (rflags and lh_SkyZ)<>0 then lh.CeilingSkyZ:=ceilingSky.height;
   if (rflags and lh_CSkyOffs)<>0 then
   begin
-   lh.CeilingSkyOffs[0]:=CeilingSkyOffs[1];
-   lh.CeilingSkyOffs[1]:=CeilingSkyOffs[2];
+   lh.CeilingSkyOffs[0]:=ceilingSky.offset.X;
+   lh.CeilingSkyOffs[1]:=ceilingSky.offset.Y;
   end;
-  if (rflags and lh_HorDist)<>0 then lh.HorDistance:=HorDistance;
-  if (rflags and lh_HorPPR)<>0 then lh.HorPixelsPerRev:=HorPixelsPerRev;
+  if (rflags and lh_HorDist)<>0 then lh.HorDistance:=horizonSky.distance;
+  if (rflags and lh_HorPPR)<>0 then lh.HorPixelsPerRev:=horizonSky.pixelsPerRev;
   if (rflags and lh_HSkyOffs)<>0 then
   begin
-   lh.HorSkyOffs[0]:=HorSkyOffs[1];
-   lh.HorSkyOffs[1]:=HorSkyOffs[2];
+   lh.HorSkyOffs[0]:=horizonSky.offset.X;
+   lh.HorSkyOffs[1]:=horizonSky.offset.Y;
   end;
   if (rflags and lh_MipMapDist)<>0 then
   begin
-   lh.MipMapDist[0]:=MipMapDist[1];
-   lh.MipMapDist[1]:=MipMapDist[2];
-   lh.MipMapDist[2]:=MipMapDist[3];
-   lh.MipMapDist[3]:=MipMapDist[4];
+   lh.MipMapDist[0]:=mipmapDistances[1];
+   lh.MipMapDist[1]:=mipmapDistances[2];
+   lh.MipMapDist[2]:=mipmapDistances[3];
+   lh.MipMapDist[3]:=mipmapDistances[4];
   end;
   if (rflags and lh_LODDist)<>0 then
   begin
-   lh.LODDist[0]:=LODDist[1];
-   lh.LODDist[1]:=LODDist[2];
-   lh.LODDist[2]:=LODDist[3];
-   lh.LODDist[3]:=LODDist[4];
+   lh.LODDist[0]:=lodDistances[1];
+   lh.LODDist[1]:=lodDistances[2];
+   lh.LODDist[2]:=lodDistances[3];
+   lh.LODDist[3]:=lodDistances[4];
   end;
-  if (rflags and lh_PerspDist)<>0 then lh.PerspDist:=PerspDist;
-  if (rflags and lh_GouraudDist)<>0 then lh.GouraudDist:=GouraudDist;
+
+  if (rflags and lh_PerspDist)<>0 then lh.PerspDist:=perspectiveDistance;
+  if (rflags and lh_GouraudDist)<>0 then lh.GouraudDist:=gouraudDistance;
   if (rflags and lh_ppu)<>0 then lh.PixelPerUnit:=Level.PPUnit;
   if (rflags and lh_MasterCMP)<>0 then lh.MasterCMP:=CacheAString(Level.MasterCMP);
  end;
@@ -518,35 +519,35 @@ begin
  begin
   if (rflags and lh_version)<>0 then version:=lh.version;
   if (rflags and lh_gravity)<>0 then Gravity:=lh.gravity;
-  if (rflags and lh_SkyZ)<>0 then CeilingSkyZ:=lh.CeilingSkyZ;
+  if (rflags and lh_SkyZ)<>0 then ceilingSky.height:=lh.CeilingSkyZ;
   if (rflags and lh_CSkyOffs)<>0 then
   begin
-   CeilingSkyOffs[1]:=lh.CeilingSkyOffs[0];
-   CeilingSkyOffs[2]:=lh.CeilingSkyOffs[1];
+   ceilingSky.offset.X:=lh.CeilingSkyOffs[0];
+   ceilingSky.offset.Y:=lh.CeilingSkyOffs[1];
   end;
-  if (rflags and lh_HorDist)<>0 then HorDistance:=lh.HorDistance;
-  if (rflags and lh_HorPPR)<>0 then HorPixelsPerRev:=lh.HorPixelsPerRev;
+  if (rflags and lh_HorDist)<>0 then horizonSky.distance:=lh.HorDistance;
+  if (rflags and lh_HorPPR)<>0 then horizonSky.pixelsPerRev:=lh.HorPixelsPerRev;
   if (rflags and lh_HSkyOffs)<>0 then
   begin
-   HorSkyOffs[1]:=lh.HorSkyOffs[0];
-   HorSkyOffs[2]:=lh.HorSkyOffs[1];
+   horizonSky.offset.X:=lh.HorSkyOffs[0];
+   horizonSky.offset.Y:=lh.HorSkyOffs[1];
   end;
   if (rflags and lh_MipMapDist)<>0 then
   begin
-   MipMapDist[1]:=lh.MipMapDist[0];
-   MipMapDist[2]:=lh.MipMapDist[1];
-   MipMapDist[3]:=lh.MipMapDist[2];
-   MipMapDist[4]:=lh.MipMapDist[3];
+   mipmapDistances[1]:=lh.MipMapDist[0];
+   mipmapDistances[2]:=lh.MipMapDist[1];
+   mipmapDistances[3]:=lh.MipMapDist[2];
+   mipmapDistances[4]:=lh.MipMapDist[3];
   end;
   if (rflags and lh_LODDist)<>0 then
   begin
-   LODDist[1]:=lh.LODDist[0];
-   LODDist[2]:=lh.LODDist[1];
-   LODDist[3]:=lh.LODDist[2];
-   LODDist[4]:=lh.LODDist[3];
+   lodDistances[1]:=lh.LODDist[0];
+   lodDistances[2]:=lh.LODDist[1];
+   lodDistances[3]:=lh.LODDist[2];
+   lodDistances[4]:=lh.LODDist[3];
   end;
-  if (rflags and lh_PerspDist)<>0 then PerspDist:=lh.PerspDist;
-  if (rflags and lh_GouraudDist)<>0 then GouraudDist:=lh.GouraudDist;
+  if (rflags and lh_PerspDist)<>0 then perspectiveDistance:=lh.PerspDist;
+  if (rflags and lh_GouraudDist)<>0 then gouraudDistance:=lh.GouraudDist;
   if (rflags and lh_ppu)<>0 then Level.ppunit:=lh.PixelPerUnit;
   if (rflags and lh_MasterCMP)<>0 then level.MasterCMP:=lh.MasterCMP;
  end;

@@ -17,7 +17,6 @@ type
     EBHorDist: TEdit;
     Label4: TLabel;
     EBHorPPRev: TEdit;
-    Label5: TLabel;
     EBMip1: TEdit;
     EBMip2: TEdit;
     EBMip3: TEdit;
@@ -49,12 +48,23 @@ type
     EBFogColor: TEdit;
     EBFogStart: TEdit;
     EBFogEnd: TEdit;
-    BNFogColor: TButton;
-    GBFog: TGroupBox;
+    gbFog: TGroupBox;
+    gbMMDistances: TGroupBox;
+    sFogColor: TShape;
+    gbCeilingSky: TGroupBox;
+    Label5: TLabel;
+    Label13: TLabel;
+    Label14: TLabel;
+    Label15: TLabel;
+    gbHorizonSky: TGroupBox;
+    Label16: TLabel;
     procedure FormCreate(Sender: TObject);
     procedure BNCmpClick(Sender: TObject);
     procedure CBFogClick(Sender: TObject);
     procedure BNFogColorClick(Sender: TObject);
+    procedure sFogColorMouseUp(Sender: TObject; Button: TMouseButton;
+      Shift: TShiftState; X, Y: Integer);
+    procedure EBFogColorClick(Sender: TObject);
   private
     { Private declarations }
     vGrav, vSkyZ, vSkyX, vSkyY, vHorDist, vPar, vHorX, vHorY, vMM1, vMM2, vMM3,
@@ -135,92 +145,118 @@ end;
 
 procedure TLHEdit.CBFogClick(Sender: TObject);
 begin
-     EnableFog(CBFog.Checked);
+  EnableFog(CBFog.Checked);
+end;
+
+procedure TLHEdit.EBFogColorClick(Sender: TObject);
+begin
+  var c := vFogColor.AsColor;
+  ColorDialog1.Color := EncodeBGR(c);
+  if ColorDialog1.Execute(self.Handle) then
+    begin
+      var f := ColorDialog1.Color;
+      if f = -1 then  f := 0;
+      c := DecodeBGR(f, c.a);
+      vFogColor.SetAsString(ColorToStr(c, true));
+      sFogColor.Brush.Color := f;
+    end;
 end;
 
 Function TLHEdit.EditHeader: boolean;
 begin
   Result := false;
-  With Level.Header do
+  with level.header do
   begin
-    InitProjectMode();
-    vGrav.SetAsFloat(Gravity);
-    vSkyZ.SetAsFloat(CeilingSkyZ);
-    vSkyX.SetAsFloat(CeilingSkyOffs[1]);
-    vSkyY.SetAsFloat(CeilingSkyOffs[2]);
-    vHorDist.SetAsFloat(HorDistance);
-    vPar.SetAsFloat(HorPixelsPerRev);
-    vHorX.SetAsFloat(HorSkyOffs[1]);
-    vHorY.SetAsFloat(HorSkyOffs[2]);
-    vMM1.SetAsFloat(MipMapDist[1]);
-    vMM2.SetAsFloat(MipMapDist[2]);
-    vMM3.SetAsFloat(MipMapDist[3]);
-    vMM4.SetAsFloat(MipMapDist[4]);
-    vLOD1.SetAsFloat(LODDist[1]);
-    vLOD2.SetAsFloat(LODDist[2]);
-    vLOD3.SetAsFloat(LODDist[3]);
-    vLOD4.SetAsFloat(LODDist[4]);
-    vGouraud.SetAsFloat(GouraudDist);
-    vPerp.SetAsFloat(PerspDist);
-    vPPu.SetAsFloat(Level.PPUnit);
-    vCMP.SetAsString(Level.MasterCMP);
-    EnableFog(Fog.Enabled);
-    vFogColor.SetAsString(ColorToStr(Fog.Color, true));
-    vFogStart.SetAsFloat(Fog.FogStart);
-    vFogEnd.SetAsFloat(Fog.FogEnd);
 
+    vGrav.SetAsFloat(gravity);
+
+    vSkyZ.SetAsFloat(ceilingSky.height);
+    vSkyX.SetAsFloat(ceilingSky.offset.X);
+    vSkyY.SetAsFloat(ceilingSky.offset.Y);
+
+    vHorDist.SetAsFloat(horizonSky.distance);
+    vPar.SetAsFloat(horizonSky.pixelsPerRev);
+    vHorX.SetAsFloat(horizonSky.offset.X);
+    vHorY.SetAsFloat(horizonSky.offset.Y);
+
+    vMM1.SetAsFloat(mipmapDistances[1]);
+    vMM2.SetAsFloat(mipmapDistances[2]);
+    vMM3.SetAsFloat(mipmapDistances[3]);
+    vMM4.SetAsFloat(mipmapDistances[4]);
+
+    vLOD1.SetAsFloat(lodDistances[1]);
+    vLOD2.SetAsFloat(lodDistances[2]);
+    vLOD3.SetAsFloat(lodDistances[3]);
+    vLOD4.SetAsFloat(lodDistances[4]);
+
+    vGouraud.SetAsFloat(gouraudDistance);
+    vPerp.SetAsFloat(perspectiveDistance);
+    vPPu.SetAsFloat(level.ppunit);
+    vCMP.SetAsString(level.masterCMP);
+
+    vFogColor.SetAsString(ColorToStr(fog.color, true));
+    vFogStart.SetAsFloat(fog.fogStart);
+    vFogEnd.SetAsFloat(fog.fogEnd);
+
+    // Init GUI components and  show window
+    InitProjectMode();
+    EnableFog(fog.enabled);
     if ShowModal <> MrOK then
       exit;
-    Gravity := vGrav.AsFloat;
-    CeilingSkyZ := vSkyZ.AsFloat;
-    CeilingSkyOffs[1] := vSkyX.AsFloat;
-    CeilingSkyOffs[2] := vSkyY.AsFloat;
-    HorDistance := vHorDist.AsFloat;
-    HorPixelsPerRev := vPar.AsFloat;
-    HorSkyOffs[1] := vHorX.AsFloat;
-    HorSkyOffs[2] := vHorY.AsFloat;
-    MipMapDist[1] := vMM1.AsFloat;
-    MipMapDist[2] := vMM2.AsFloat;
-    MipMapDist[3] := vMM3.AsFloat;
-    MipMapDist[4] := vMM4.AsFloat;
-    LODDist[1] := vLOD1.AsFloat;
-    LODDist[2] := vLOD2.AsFloat;
-    LODDist[3] := vLOD3.AsFloat;
-    LODDist[4] := vLOD4.AsFloat;
-    GouraudDist := vGouraud.AsFloat;
-    Level.PPUnit := vPPu.AsFloat;
-    PerspDist := vPerp.AsFloat;
-    Result := CompareText(Level.MasterCMP, vCMP.s) <> 0;
-    Level.MasterCMP := vCMP.s;
-    Fog.Enabled := CBFog.Checked;
-    if not ValColor(vFogColor.s, Fog.Color) and Fog.Enabled then
-       MsgBox('The fog color was not set because the color value is invalid', 'Warning', MB_OK);
-    Fog.FogStart := vFogStart.AsFloat;
-    Fog.FogEnd := vFogEnd.AsFloat;
 
-    Result:=True;
+    // Copy values from GUI components back to level header
+    gravity := vGrav.AsFloat;
+
+    ceilingSky.height   := vSkyZ.AsFloat;
+    ceilingSky.offset.X := vSkyX.AsFloat;
+    ceilingSky.offset.Y := vSkyY.AsFloat;
+
+    horizonSky.distance := vHorDist.AsFloat;
+    horizonSky.PixelsPerRev := vPar.AsFloat;
+    horizonSky.offset.x := vHorX.AsFloat;
+    horizonSky.offset.y := vHorY.AsFloat;
+
+    mipmapDistances[1] := vMM1.AsFloat;
+    mipmapDistances[2] := vMM2.AsFloat;
+    mipmapDistances[3] := vMM3.AsFloat;
+    mipmapDistances[4] := vMM4.AsFloat;
+
+    lodDistances[1] := vLOD1.AsFloat;
+    lodDistances[2] := vLOD2.AsFloat;
+    lodDistances[3] := vLOD3.AsFloat;
+    lodDistances[4] := vLOD4.AsFloat;
+
+    gouraudDistance := vGouraud.AsFloat;
+    perspectiveDistance := vPerp.AsFloat;
+    level.ppunit := vPPu.AsFloat;
+
+    Result := CompareText(level.masterCMP, vCMP.s) <> 0;
+    level.masterCMP := vCMP.s;
+
+    fog.enabled := CBFog.Checked;
+    if not ValColor(vFogColor.s, fog.color) and fog.enabled then
+       MsgBox('The fog color was not set because the color value is invalid', 'Warning', MB_OK);
+    fog.fogStart := vFogStart.AsFloat;
+    fog.fogEnd := vFogEnd.AsFloat;
+
+    Result := True;
   end;
 end;
 
 Procedure TLHEdit.EnableFog(enable: Boolean);
 begin
-  CBFog.Checked := enable;
+  CBFog.Checked      := enable;
   EBFogColor.Enabled := enable;
-  BNFogColor.Enabled := enable;
+  sFogColor.visible  := enable;
   EBFogStart.Enabled := enable;
-  EBFogEnd.Enabled := enable;
+  EBFogEnd.Enabled   := enable;
 end;
 
 Procedure TLHEdit.InitProjectMode;
 begin
   if CurrentProject = TProjectType.IJIM then
     begin
-      Label5.Visible := false;
-      EBMip1.Visible := false;
-      EBMip2.Visible := false;
-      EBMip3.Visible := false;
-      EBMip4.Visible := false;
-
+      gbMMDistances.Visible := False;
       Label8.Visible        := false;
       EBGouraud.Visible     := false;
       Label7.Visible        := false;
@@ -230,17 +266,12 @@ begin
       BNCmp.Visible         := false;
       Label12.Visible       := false;
       EBPPU.Visible         := false;
-
       GBFog.Visible         := true;
+      sFogColor.Brush.Color := EncodeBGR(vFogColor.AsColor);
     end
   else
     begin
-      Label5.Visible := true;
-      EBMip1.Visible := true;
-      EBMip2.Visible := true;
-      EBMip3.Visible := true;
-      EBMip4.Visible := true;
-
+      gbMMDistances.Visible := True;
       Label8.Visible        := true;
       EBGouraud.Visible     := true;
       Label7.Visible        := true;
@@ -250,9 +281,16 @@ begin
       BNCmp.Visible         := true;
       Label12.Visible       := true;
       EBPPU.Visible         := true;
-
-      GBFog.Visible         := false;
+      gbFog.Visible         := false;
     end;
+end;
+
+procedure TLHEdit.sFogColorMouseUp(Sender: TObject; Button: TMouseButton;
+  Shift: TShiftState; X, Y: Integer);
+begin
+  if Button <> mbLeft then
+    exit;
+  EBFogColorClick(nil);
 end;
 
 end.

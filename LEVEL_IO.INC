@@ -780,38 +780,38 @@ begin
  While not EndOfSection do
  begin
   GetNextLine(s);
-  p:=GetWord(s,1,w1);
-  p:=GetWord(s,p,w2);
+  p := GetWord(s,1,w1);
+  p := GetWord(s,p,w2);
 
-  if w1='VERSION' then
+  if w1 = 'VERSION' then
     begin
-      ValDword(w2,Version);
-      if (Version = 2) or (Version = 3) then
+      ValDword(w2, version);
+      if (version = 2) or (version = 3) then
         kind := TProjectType.IJIM
-      else if Version <> 1 then
+      else if version <> 1 then
         raise Exception.CreateFmt('Unknown level version: %d', [Version]);
     end
-  else if w1='LOD' then
-   SScanf(s,'LOD DISTANCES %f %f %f %f',[@LODDist[1],@LODDist[2],@LODDist[3],@LODDist[4]])
-  else if w1='FOG' then
-   SScanf(s,'FOG %b %l %l %l %l %f %f',[@Fog.enabled,@Fog.color.r,@Fog.color.g,@Fog.color.b,@Fog.color.a,@Fog.FogStart,@Fog.FogEnd])
-  else if w1='MIPMAP' then
-   SScanf(s,'MIPMAP DISTANCES %f %f %f %f',[@MipMapDist[1],@MipMapDist[2],@MipMapDist[3],@MipMapDist[4]])
-  else if w1='WORLD' then SScanf(s,'WORLD GRAVITY %f',[@Gravity])
-  else if w1='PERSPECTIVE' then SScanf(s,'PERSPECTIVE DISTANCE %f',[@PerspDist])
-  else if w1='GOURAUD' then SScanf(s,'GOURAUD DISTANCE %f',[@GouraudDist])
-  else if w1='CEILING' then
+  else if w1 = 'LOD' then
+   SScanf(s,'LOD DISTANCES %f %f %f %f', [@lodDistances[1], @lodDistances[2], @lodDistances[3] ,@lodDistances[4]])
+  else if w1 = 'FOG' then
+   SScanf(s,'FOG %b %l %l %l %l %f %f', [@fog.enabled, @fog.color.r, @fog.color.g, @fog.color.b, @fog.color.a, @fog.fogStart, @fog.fogEnd])
+  else if w1 = 'MIPMAP' then
+   SScanf(s,'MIPMAP DISTANCES %f %f %f %f', [@mipmapDistances[1], @mipmapDistances[2], @mipmapDistances[3], @mipmapDistances[4]])
+  else if w1 = 'WORLD' then SScanf(s,'WORLD GRAVITY %f', [@gravity])
+  else if w1 = 'PERSPECTIVE' then SScanf(s,'PERSPECTIVE DISTANCE %f', [@perspectiveDistance])
+  else if w1 = 'GOURAUD' then SScanf(s,'GOURAUD DISTANCE %f', [@gouraudDistance])
+  else if w1 = 'CEILING' then
    begin
     GetWord(s,p,w1);
-    if w1='OFFSET' then SScanf(s,'CEILING SKY OFFSET %f %f',[@CeilingSkyOffs[1],@CeilingSkyOffs[2]]);
-    if w1='Z' then SScanf(s,'CEILING SKY Z %f',[@CeilingSkyZ]);
+    if w1 = 'OFFSET' then SScanf(s,'CEILING SKY OFFSET %f %f', [@ceilingSky.offset.X, @ceilingSky.offset.Y]);
+    if w1 = 'Z' then SScanf(s,'CEILING SKY Z %f', [@ceilingSky.height]);
    end
-  else if w1='HORIZON' then
+  else if w1 = 'HORIZON' then
    begin
     GetWord(s,p,w1);
-    if w2='DISTANCE' then ValDouble(w1,HorDistance);
-    if w2='PIXELS' then SScanf(s,'HORIZON PIXELS PER REV %f',[@HorPixelsPerRev]);
-    if w2='SKY' then SScanf(s,'HORIZON SKY OFFSET %f %f',[@HorSkyOffs[1],@HorSkyOffs[2]]);
+    if w2 = 'DISTANCE' then ValDouble(w1, horizonSky.distance);
+    if w2 = 'PIXELS' then SScanf(s,'HORIZON PIXELS PER REV %f', [@horizonSky.pixelsPerRev]);
+    if w2 = 'SKY' then SScanf(s,'HORIZON SKY OFFSET %f %f', [@horizonSky.offset.X, @horizonSky.offset.Y]);
    end;
   end;
 end;
@@ -955,19 +955,19 @@ begin
  begin
   WriteS('SEC: HEADER');
 
-  st:=MasterCMP; if st='' then st:='-';
+  st := masterCMP; if st='' then st:='-';
 
   WriteFmt('HDR %d %.6f %.6f %.6f %.6f %s %.2f',
-   [version,Gravity, CeilingSkyZ,PerspDist, GouraudDist,st,ppunit]);
+   [version, gravity, ceilingSky.height, perspectiveDistance, gouraudDistance, st, ppunit]);
 
   WriteFmt('HOR %.6f %.6f %.6f %.6f',
-   [HorDistance,HorPixelsPerRev,HorSkyOffs[1],HorSkyOffs[2]]);
+   [horizonSky.distance, horizonSky.pixelsPerRev, horizonSky.offset.X, horizonSky.offset.Y]);
   WriteFmt('CEIL %.6f %.6f',
-   [CeilingSkyOffs[1],CeilingSkyOffs[2]]);
+   [ceilingSky.offset.X, ceilingSky.offset.Y]);
   WriteFmt('MIP %.6f %.6f %.6f %.6f',
-   [MipMapDist[1],MipMapDist[2],MipMapDist[3],MipMapDist[4]]);
+   [mipmapDistances[1],mipmapDistances[2],mipmapDistances[3],mipmapDistances[4]]);
   WriteFmt('LOD %.6f %.6f %.6f %.6f',
-   [LODDist[1],LODDist[2],LODDist[3],LODDist[4]]);
+   [lodDistances[1],lodDistances[2],lodDistances[3],lodDistances[4]]);
   WriteS('END');
   WriteS('');
  end;
@@ -1137,15 +1137,15 @@ begin
 With Header do
 begin
   ReadFmt('HDR %d %f %f %f %f %s %d',
-   [@version,@Gravity, @CeilingSkyZ,@PerspDist, @GouraudDist,@MasterCMP,@ppunit]);
+   [@version,@Gravity, @ceilingSky.height, @perspectiveDistance, @gouraudDistance, @masterCMP, @ppunit]);
   ReadFmt('HOR %f %f %f %f',
-   [@HorDistance,@HorPixelsPerRev,@HorSkyOffs[1],@HorSkyOffs[2]]);
+   [@horizonSky.distance, @horizonSky.pixelsPerRev, @horizonSky.offset.X, @horizonSky.offset.Y]);
   ReadFmt('CEIL %f %f',
-   [@CeilingSkyOffs[1],@CeilingSkyOffs[2]]);
+   [@ceilingSky.offset.X, @ceilingSky.offset.Y]);
   ReadFmt('MIP %f %f %f %f',
-   [@MipMapDist[1],@MipMapDist[2],@MipMapDist[3],@MipMapDist[4]]);
+   [@mipmapDistances[1], @mipmapDistances[2], @mipmapDistances[3], @mipmapDistances[4]]);
   ReadFmt('LOD %f %f %f %f',
-   [@LODDist[1],@LODDist[2],@LODDist[3],@LODDist[4]]);
+   [@lodDistances[1], @lodDistances[2], @lodDistances[3], @lodDistances[4]]);
 end;
 if MasterCMp='-' then MasterCMP:='';
 end;

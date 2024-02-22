@@ -134,23 +134,23 @@ begin
 With Header do
 begin
  WriteS('SECTION: HEADER');
- WriteFmt('Version %d',[version]);
- WriteFmt('World Gravity %.8f',[Gravity]);
- WriteFmt('Ceiling Sky Z %.8f',[CeilingSkyZ]);
- WriteFmt('Horizon Distance %.8f',[HorDistance]);
- WriteFmt('Horizon Pixels per Rev %.6f',[HorPixelsPerRev]);
- WriteFmt('Horizon Sky Offset %.8f %.8f',[HorSkyOffs[1],HorSkyOffs[2]]);
- WriteFmt('Ceiling Sky Offset %.8f %.8f',[CeilingSkyOffs[1],CeilingSkyOffs[2]]);
+ WriteFmt('Version %d', [version]);
+ WriteFmt('World Gravity %.8f', [gravity]);
+ WriteFmt('Ceiling Sky Z %.8f', [ceilingSky.height]);
+ WriteFmt('Horizon Distance %.8f', [horizonSky.distance]);
+ WriteFmt('Horizon Pixels per Rev %.6f', [horizonSky.pixelsPerRev]);
+ WriteFmt('Horizon Sky Offset %.8f %.8f', [horizonSky.offset.X, horizonSky.offset.Y]);
+ WriteFmt('Ceiling Sky Offset %.8f %.8f', [ceilingSky.offset.X, ceilingSky.offset.Y]);
  if kind <> TProjectType.IJIM then
-  WriteFmt('MipMap Distances %.6f %.6f %.6f %.6f',[MipMapDist[1],MipMapDist[2],MipMapDist[3],MipMapDist[4]]);
- WriteFmt('LOD Distances %.6f %.6f %.6f %.6f',[LODDist[1],LODDist[2],LODDist[3],LODDist[4]]);
+  WriteFmt('MipMap Distances %.6f %.6f %.6f %.6f', [mipmapDistances[1], mipmapDistances[2], mipmapDistances[3], mipmapDistances[4]]);
+ WriteFmt('LOD Distances %.6f %.6f %.6f %.6f', [lodDistances[1], lodDistances[2], lodDistances[3], lodDistances[4]]);
  if kind = TProjectType.IJIM then
   WriteFmt('Fog %d %.8f %.8f %.8f %.8f %.8f %.8f',
-    [byte(Fog.Enabled), Fog.color.r, Fog.color.g, Fog.color.b, Fog.color.a, Fog.FogStart, Fog.FogEnd])
+    [byte(fog.enabled), fog.color.r, fog.color.g, fog.color.b, fog.color.a, fog.fogStart, fog.fogEnd])
  else
   begin
-   WriteFmt('Perspective distance %.6f',[PerspDist]);
-   WriteFmt('Gouraud distance %.6f',[GouraudDist]);
+   WriteFmt('Perspective distance %.6f', [perspectiveDistance]);
+   WriteFmt('Gouraud distance %.6f', [gouraudDistance]);
   end;
  WriteS('');
 end;

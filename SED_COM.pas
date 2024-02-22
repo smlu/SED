@@ -510,9 +510,9 @@ begin
       if (what and s_ambient)    <> 0 then rec.ambient     := TSedColor(ambient);
       if (what and s_extra)      <> 0 then rec.extraLight  := TSedColor(extraLight);
       if (what and s_pointlight) <> 0 then rec.pointLight  := TSedPointLight(pointLight);
-      if (what and s_cmp)        <> 0 then rec.aColorMap    := PChar(colormap);
+      if (what and s_cmp)        <> 0 then rec.aColorMap   := PChar(colormap);
       if (what and s_tint)       <> 0 then rec.tint        := TSedColor(tint);
-      if (what and s_sound)      <> 0 then rec.aSound       := PChar(sound);
+      if (what and s_sound)      <> 0 then rec.aSound      := PChar(sound);
       if (what and s_sndvol)     <> 0 then rec.soundVolume := soundVolume;
       if (what and s_thrust)     <> 0 then rec.thrust      := TSedVector3(thrust);
       if (what and s_layer)      <> 0 then rec.layer       := layer;
@@ -524,11 +524,11 @@ begin
   with level.sectors[sec] do
     begin
       if (what and s_flags)      <> 0 then flags       := rec.flags;
-      if (what and s_ambient)    <> 0 then ambient     := TColorF(rec.Ambient);
-      if (what and s_extra)      <> 0 then extraLight  := TColorF(rec.ExtraLight);
+      if (what and s_ambient)    <> 0 then ambient     := TColorF(rec.ambient);
+      if (what and s_extra)      <> 0 then extraLight  := TColorF(rec.extraLight);
       if (what and s_pointlight) <> 0 then pointLight  := TPointLight(rec.pointLight);
       if (what and s_cmp)        <> 0 then colormap    := rec.aColorMap;
-      if (what and s_tint)       <> 0 then tint        := TColorF(rec.Tint);
+      if (what and s_tint)       <> 0 then tint        := TColorF(rec.tint);
       if (what and s_sound)      <> 0 then sound       := rec.aSound;
       if (what and s_sndvol)     <> 0 then soundVolume := rec.soundVolume;
       if (what and s_thrust)     <> 0 then thrust      := TVector(rec.thrust);
@@ -540,41 +540,44 @@ Procedure TSedCOMLevel.GetLevelHeader(var lh:TSedLevelHeader;rflags:integer);
 begin
  with level.header do
  begin
-  if (rflags and lh_version)<>0 then lh.version:=version;
-  if (rflags and lh_gravity)<>0 then lh.Gravity:=gravity;
-  if (rflags and lh_SkyZ)<>0 then lh.CeilingSkyZ:=CeilingSkyZ;
-  if (rflags and lh_CSkyOffs)<>0 then
-  begin
-   lh.CeilingSkyOffs[0]:=CeilingSkyOffs[1];
-   lh.CeilingSkyOffs[1]:=CeilingSkyOffs[2];
-  end;
-  if (rflags and lh_HorDist)<>0 then lh.HorDistance:=HorDistance;
-  if (rflags and lh_HorPPR)<>0 then lh.HorPixelsPerRev:=HorPixelsPerRev;
-  if (rflags and lh_HSkyOffs)<>0 then
-  begin
-   lh.HorSkyOffs[0]:=HorSkyOffs[1];
-   lh.HorSkyOffs[1]:=HorSkyOffs[2];
-  end;
-  if (rflags and lh_MipMapDist)<>0 then
-  begin
-   lh.MipMapDist[0]:=MipMapDist[1];
-   lh.MipMapDist[1]:=MipMapDist[2];
-   lh.MipMapDist[2]:=MipMapDist[3];
-   lh.MipMapDist[3]:=MipMapDist[4];
-  end;
-  if (rflags and lh_LODDist)<>0 then
-  begin
-   lh.LODDist[0] := LODDist[1];
-   lh.LODDist[1] := LODDist[2];
-   lh.LODDist[2] := LODDist[3];
-   lh.LODDist[3] := LODDist[4];
-  end;
-  if (rflags and lh_PerspDist)<>0 then lh.PerspDist:=PerspDist;
-  if (rflags and lh_GouraudDist)<>0 then lh.GouraudDist:=GouraudDist;
-  if (rflags and lh_ppu)<>0 then lh.PixelPerUnit:=Level.PPUnit;
-  if (rflags and lh_MasterCMP)<>0 then lh.aMasterCmp := PChar(Level.MasterCMP);
-  if (rflags and lh_Fog) <> 0 then lh.Fog := TSedFog(Fog);
+  if (rflags and lh_version)  <> 0 then lh.version := version;
+  if (rflags and lh_gravity)  <> 0 then lh.gravity := gravity;
+  if (rflags and lh_SkyZ)     <> 0 then lh.ceilingSkyHeight := ceilingSky.height;
+  if (rflags and lh_CSkyOffs) <> 0 then
+    begin
+     lh.ceilingSkyOffset.X := ceilingSky.offset.X;
+     lh.ceilingSkyOffset.Y := ceilingSky.offset.Y;
+    end;
 
+  if (rflags and lh_HorDist)  <> 0 then lh.horizonSkyDistance := horizonSky.distance;
+  if (rflags and lh_HorPPR)   <> 0 then lh.horizonSkyPixelsPerRev :=horizonSky.pixelsPerRev;
+  if (rflags and lh_HSkyOffs) <> 0 then
+    begin
+     lh.horizonSkyOffset.X := horizonSky.offset.X;
+     lh.horizonSkyOffset.Y := horizonSky.offset.Y;
+    end;
+
+  if (rflags and lh_MipMapDist) <> 0 then
+    begin
+     lh.mipMapDistances[0] := mipMapDistances[1];
+     lh.mipMapDistances[1] := mipMapDistances[2];
+     lh.mipMapDistances[2] := mipMapDistances[3];
+     lh.mipMapDistances[3] := mipMapDistances[4];
+    end;
+
+  if (rflags and lh_LODDist) <> 0 then
+    begin
+     lh.lodDistances[0] := lodDistances[1];
+     lh.lodDistances[1] := lodDistances[2];
+     lh.lodDistances[2] := lodDistances[3];
+     lh.lodDistances[3] := lodDistances[4];
+    end;
+
+  if (rflags and lh_PerspDist)   <> 0 then lh.perspectiveDistance := perspectiveDistance;
+  if (rflags and lh_GouraudDist) <> 0 then lh.gouraudDistance := gouraudDistance;
+  if (rflags and lh_ppu)         <> 0 then lh.ppunit := level.ppunit;
+  if (rflags and lh_MasterCMP)   <> 0 then lh.aMasterCmp := PChar(level.masterCMP);
+  if (rflags and lh_Fog)         <> 0 then lh.fog := TSedFog(Fog);
  end;
 end;
 
@@ -582,41 +585,44 @@ Procedure TSedCOMLevel.SetLevelHeader(const lh:TSedLevelHeader;rflags:integer);
 begin
  with level.header do
  begin
-  if (rflags and lh_version)<>0 then version:=lh.version;
-  if (rflags and lh_gravity)<>0 then Gravity:=lh.gravity;
-  if (rflags and lh_SkyZ)<>0 then CeilingSkyZ:=lh.CeilingSkyZ;
-  if (rflags and lh_CSkyOffs)<>0 then
-  begin
-   CeilingSkyOffs[1]:=lh.CeilingSkyOffs[0];
-   CeilingSkyOffs[2]:=lh.CeilingSkyOffs[1];
-  end;
-  if (rflags and lh_HorDist)<>0 then HorDistance:=lh.HorDistance;
-  if (rflags and lh_HorPPR)<>0 then HorPixelsPerRev:=lh.HorPixelsPerRev;
-  if (rflags and lh_HSkyOffs)<>0 then
-  begin
-   HorSkyOffs[1]:=lh.HorSkyOffs[0];
-   HorSkyOffs[2]:=lh.HorSkyOffs[1];
-  end;
-  if (rflags and lh_MipMapDist)<>0 then
-  begin
-   MipMapDist[1]:=lh.MipMapDist[0];
-   MipMapDist[2]:=lh.MipMapDist[1];
-   MipMapDist[3]:=lh.MipMapDist[2];
-   MipMapDist[4]:=lh.MipMapDist[3];
-  end;
-  if (rflags and lh_LODDist)<>0 then
-  begin
-   LODDist[1] := lh.LODDist[0];
-   LODDist[2] := lh.LODDist[1];
-   LODDist[3] := lh.LODDist[2];
-   LODDist[4] := lh.LODDist[3];
-  end;
-  if (rflags and lh_PerspDist)<>0 then PerspDist:=lh.PerspDist;
-  if (rflags and lh_GouraudDist)<>0 then GouraudDist:=lh.GouraudDist;
-  if (rflags and lh_ppu)<>0 then Level.ppunit:=lh.PixelPerUnit;
-  if (rflags and lh_MasterCMP)<>0 then level.MasterCMP:=lh.aMasterCmp;
-  if (rflags and lh_Fog) <> 0 then Fog := TFog(lh.Fog);
+  if (rflags and lh_version)  <> 0 then version := lh.version;
+  if (rflags and lh_gravity)  <> 0 then gravity := lh.gravity;
+  if (rflags and lh_SkyZ)     <> 0 then ceilingSky.height := lh.ceilingSkyHeight;
+  if (rflags and lh_CSkyOffs) <> 0 then
+    begin
+     ceilingSky.offset.X := lh.ceilingSkyOffset.X;
+     ceilingSky.offset.Y := lh.ceilingSkyOffset.Y;
+    end;
 
+  if (rflags and lh_HorDist)  <> 0 then horizonSky.distance := lh.horizonSkyDistance;
+  if (rflags and lh_HorPPR)   <> 0 then horizonSky.pixelsPerRev := lh.horizonSkyPixelsPerRev;
+  if (rflags and lh_HSkyOffs) <> 0 then
+    begin
+     horizonSky.offset.X := lh.horizonSkyOffset.X;
+     horizonSky.offset.Y := lh.horizonSkyOffset.Y;
+    end;
+
+  if (rflags and lh_MipMapDist) <> 0 then
+    begin
+     mipmapDistances[1] := lh.mipmapDistances[0];
+     mipmapDistances[2] := lh.mipmapDistances[1];
+     mipmapDistances[3] := lh.mipmapDistances[2];
+     mipmapDistances[4] := lh.mipmapDistances[3];
+    end;
+
+  if (rflags and lh_LODDist) <> 0 then
+    begin
+     lodDistances[1] := lh.lodDistances[0];
+     lodDistances[2] := lh.lodDistances[1];
+     lodDistances[3] := lh.lodDistances[2];
+     lodDistances[4] := lh.lodDistances[3];
+    end;
+
+  if (rflags and lh_PerspDist)   <> 0 then perspectiveDistance := lh.perspectiveDistance;
+  if (rflags and lh_GouraudDist) <> 0 then gouraudDistance := lh.gouraudDistance;
+  if (rflags and lh_ppu)         <> 0 then Level.ppunit := lh.ppunit;
+  if (rflags and lh_MasterCMP)   <> 0 then level.masterCMP := lh.aMasterCmp;
+  if (rflags and lh_Fog)         <> 0 then Fog := TFog(lh.fog);
  end;
 end;
 

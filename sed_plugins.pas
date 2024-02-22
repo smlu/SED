@@ -228,11 +228,15 @@ cr_Software = 2;
 
 type
 
+TSedVector2 = record
+  x, y: Double;
+end;
+
 TSedVector3 = record
   case integer of
-    0: (dx,dy,dz: double);
-    1: (x,y,z: double);
-    2: (pitch, yaw, roll: double);
+    0: (dx,dy,dz: Double);
+    1: (x,y,z: Double);
+    2: (pitch, yaw, roll: Double);
 end;
 
 TSedColor = record
@@ -247,29 +251,30 @@ end;
 TSedPointLight = record
   color: TSedColor;
   position: TSedVector3;
-  minRange: double;  // minimum light range at which light will still illuminate objects
-  maxRange: double;  // maximum light intensity range before it starts to falloff
+  minRange: Double;  // minimum light range at which light will still illuminate objects
+  maxRange: Double;  // maximum light intensity range before it starts to falloff
 end;
 
 TSedFog = record
   enabled: Boolean;
   color: TSedColor;
-  fogStart: double;
-  fogEnd: double;
+  fogStart: Double;
+  fogEnd: Double;
 end;
 
 TSedLevelHeader = record
   version: Longint;
-  gravity: double;
-  ceilingSkyZ: double;
-  ceilingSkyOffs: array[0..1] of double;
-  horDistance,
-  horPixelsPerRev: double;
-  horSkyOffs: array[0..1] of double;
-  mipMapDist: array[0..3] of double;
-  lodDist: array[0..3] of double;
-  perspDist, GouraudDist: double;
-  pixelPerUnit: double;
+  gravity: Double;
+  ceilingSkyHeight: Double;
+  ceilingSkyOffset: TSedVector2;
+  horizonSkyDistance,
+  horizonSkyPixelsPerRev: double;
+  horizonSkyOffset: TSedVector2;
+  mipMapDistances: array[0..3] of Double;
+  lodDistances: array[0..3] of Double;
+  perspectiveDistance,
+  gouraudDistance: double;
+  ppunit: double;  // pixels per unit
   aMasterCmp: PChar;
   fog: TSedFog;
 end;

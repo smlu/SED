@@ -244,25 +244,36 @@ type
 
 
   TFog = record
-    Enabled: Boolean;
-    Color: TColorF;
-    FogStart: double;
-    FogEnd: double;
+    enabled: Boolean;
+    color: TColorF;
+    fogStart: double;
+    fogEnd: double;
+  end;
+
+  TCeilingSky = record
+    height: Float;
+    offset: TPoint2;
+  end;
+
+  THorizonSky = record
+    distance : Float;
+    pixelsPerRev: Float;
+    offset: TPoint2;
   end;
 
   TJKLHeader = record
     version: longint;
-    Gravity, CeilingSkyZ, HorDistance, HorPixelsPerRev: float;
-    HorSkyOffs: array [1 .. 2] of float;
-    CeilingSkyOffs: array [1 .. 2] of float;
-    MipMapDist: array [1 .. 4] of float;
-    LODDist: array [1 .. 4] of float;
-    PerspDist, GouraudDist: float;
-    Fog: TFog;
+    gravity: float;
+    horizonSky: THorizonSky;
+    ceilingSky: TCeilingSky;
+    mipmapDistances: array [1 .. 4] of float;
+    lodDistances: array [1 .. 4] of float;
+    perspectiveDistance,
+    gouraudDistance: float;
+    fog: TFog;
   end;
 
   TJKLevel = class
-
     header: TJKLHeader;
     kind: TProjectType;
     sectors: TSectors;
@@ -983,16 +994,17 @@ end;
 
 Constructor TJKLevel.Create;
 begin
-  header.Fog.Enabled := false;
-  header.Fog.Color    := MakeColor(1.0, 1.0, 1.0, 1.0);
-  header.Fog.FogStart := 0.0;
-  header.Fog.FogEnd   := 250.0;
+  header.fog.enabled  := False;
+  header.fog.color    := colorWhite;
+  header.fog.fogStart := 0.0;
+  header.fog.fogEnd   := 250.0;
+
   sectors := TSectors.Create;
   self.templates := TTemplates.Create;
-  Things := TThings.Create;
-  Cogs := TCOGs.Create;
-  Lights := TSedLights.Create;
-  Layers := TStringList.Create;
+  things := TThings.Create;
+  cogs   := TCOGs.Create;
+  lights := TSedLights.Create;
+  layers := TStringList.Create;
   h3donodes := THNodes.Create;
 end;
 
@@ -1053,28 +1065,29 @@ begin
         Gravity := 2;
       end;
 
-    CeilingSkyZ := 15;
-    HorDistance := 100;
-    HorPixelsPerRev := 768;
-    HorSkyOffs[1] := 0;
-    HorSkyOffs[2] := 0;
-    CeilingSkyOffs[1] := 0;
-    CeilingSkyOffs[2] := 0;
-    MipMapDist[1] := 1;
-    MipMapDist[2] := 2;
-    MipMapDist[3] := 3;
-    MipMapDist[4] := 4;
-    LODDist[1] := 0.3;
-    LODDist[2] := 0.6;
-    LODDist[3] := 0.9;
-    LODDist[4] := 1.2;
-    PerspDist := 2;
-    GouraudDist := 2;
+    ceilingSky.height := 15;
+    horizonSky.distance := 100;
+    horizonSky.pixelsPerRev := 768;
+    horizonSky.offset := TPoint2.Create(0, 0);
+    ceilingSky.offset := TPoint2.Create(0, 0);
 
-    Fog.Enabled := false;
-    Fog.Color := MakeColor(1.0, 1.0, 1.0, 1.0);
-    Fog.FogStart := 0.0;
-    Fog.FogEnd := 250.0;
+    mipmapDistances[1] := 1;
+    mipmapDistances[2] := 2;
+    mipmapDistances[3] := 3;
+    mipmapDistances[4] := 4;
+
+    lodDistances[1] := 0.3;
+    lodDistances[2] := 0.6;
+    lodDistances[3] := 0.9;
+    lodDistances[4] := 1.2;
+
+    perspectiveDistance := 2;
+    gouraudDistance     := 2;
+
+    fog.enabled  := False;
+    fog.color    := MakeColor(1.0, 1.0, 1.0, 1.0);
+    fog.fogStart := 0.0;
+    fog.fogEnd   := 250.0;
   end;
 end;
 

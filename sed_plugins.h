@@ -227,6 +227,11 @@
 #define cr_OpenGL   1
 #define cr_Software 2
 
+typedef struct {
+    double x;
+    double y;
+} TSedVector2;
+
 typedef union {
     struct { double dx, dy, dz; };
     struct { double x, y, z; };
@@ -259,16 +264,16 @@ typedef struct {
 typedef struct {
     int32_t version;
     double gravity;
-    double ceilingSkyZ;
-    double ceilingSkyOffs[2];
-    double horDistance;
-    double horPixelsPerRev;
-    double horSkyOffs[2];
-    double mipMapDist[4];
-    double lodDist[4];
-    double perspDist;
-    double GouraudDist;
-    double pixelPerUnit;
+    double ceilingSkyHeight;
+    TSedVector2 ceilingSkyOffset;
+    double horizonSkyDistance;
+    double horizonSkyPixelsPerRev;
+    TSedVector2 horizonSkyOffset;
+    double mipMapDistances[4];
+    double lodDistances[4];
+    double perspectiveDistance;
+    double gouraudDistance;
+    double ppunit; // Pixels per unit
     const wchar_t* aMasterCmp;
     TSedFog fog;
 } TSedLevelHeader;
