@@ -32,6 +32,11 @@ type
   TGeoMode   = (NotDrawn = 0, Vertex = 1, Wireframe = 2, Solid = 3, Texture = 4);
   TLightMode = (None = 0, Lit = 1, Diffuse = 2, Gouraud = 3, Gouraud2 = 4, Gouraud3 = 5, VertexDiffuseOnly = -1); // VertexDiffuseOnly - is internal type, to not be used in the game
 
+  TPoint2 = record
+    x, y: Double;
+    class function Create(const px, py: Double): TPoint2; static; inline;
+  end;
+
   TVector2 = record
     x, y: double;
     function IsZero: Boolean;
@@ -478,6 +483,12 @@ begin
   if (n < 0) or (n >= count) then
     raise EListError.CreateFmt('Vertex Index is out of bounds: %d', [n]);
   List[n] := p;
+end;
+
+class function TPoint2.Create(const px, py: Double): TPoint2;
+begin
+  Result.x := px;
+  Result.y := py;
 end;
 
 function TVector2.IsZero: Boolean;
