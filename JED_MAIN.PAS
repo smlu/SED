@@ -2640,7 +2640,7 @@ begin
                             case sfsel.Count of
                                 1:
                                     begin
-                                        surf := Level.Sectors[Cur_SC].surfaces[Cur_SF];
+                                        surf := level.sectors[Cur_SC].surfaces[Cur_SF];
                                         if surf.adjoin = nil then
                                           exit;
 
@@ -2663,7 +2663,7 @@ begin
                                     while sfsel.Count > 1 do
                                       begin
                                           sfsel.GetSCSF(sfsel.Count - 1, nsc, nsf);
-                                          surf := Level.Sectors[nsc].surfaces[nsf];
+                                          surf := level.sectors[nsc].surfaces[nsf];
                                           for i := 0 to sfsel.Count - 2 do
                                             begin
                                               sfsel.GetSCSF(i, nsc, nsf);
@@ -2694,7 +2694,7 @@ begin
                         end;
                     MM_ED:
                         begin
-                            surf := Level.Sectors[Cur_SC].surfaces[Cur_SF];
+                            surf := level.sectors[Cur_SC].surfaces[Cur_SF];
                             StartUndoRec('Merge Surfaces');
                             if MergeSurfacesAt(surf, Cur_ED) then
                                 edsel.Clear;
@@ -4319,7 +4319,7 @@ var
                     for i := 0 to scsel.Count - 1 do
                     begin
                         sc := scsel.GetSC(i);
-                        sec := Level.Sectors[sc];
+                        sec := level.sectors[sc];
                         for SF := 0 to sec.surfaces.Count - 1 do
                             sfsel.AddSF(sc, SF);
                     end;
@@ -4366,7 +4366,7 @@ var
                     for i := 0 to sfsel.Count - 1 do
                     begin
                         sfsel.GetSCSF(i, sc, SF);
-                        With Level.Sectors[sc].surfaces[SF] do
+                        With level.sectors[sc].surfaces[SF] do
                             for ED := 0 to vertices.Count - 1 do
                                 edsel.addED(sc, SF, ED);
                     end;
@@ -4403,7 +4403,7 @@ var
                     for i := 0 to sfsel.Count - 1 do
                     begin
                         sfsel.GetSCSF(i, sc, SF);
-                        With Level.Sectors[sc].surfaces[SF] do
+                        With level.sectors[sc].surfaces[SF] do
                             for VX := 0 to vertices.Count - 1 do
                                 vxsel.AddVX(sc, vertices[VX].num);
                     end;

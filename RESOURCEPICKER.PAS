@@ -73,6 +73,7 @@ type
     Procedure DoneTplPreview;
     Procedure Inita3DOPreview;
     Procedure DoneA3DOPreview;
+
   public
     Procedure SetCMP(const cmp: string);
     Function PickThing(const curThing: String): String;
@@ -1380,11 +1381,11 @@ var
 begin
   ClearGroups;
 
-  for i := 0 to Level.Cogs.Count - 1 do
-    With Level.Cogs[i] do
+  for i := 0 to level.cogs.Count - 1 do
+    With level.cogs[i] do
     begin
       sl := TStringList.Create;
-      for j := 0 to Vals.Count - 1 do
+      for j := 0 to vals.Count - 1 do
         With Vals[j] do
           if cog_type = ctype then
             sl.Add(Name);
@@ -1408,7 +1409,7 @@ begin
   if TVGroups.Selected = nil then
     exit;
   icog := TVGroups.Selected.Index;
-  iVAL := Level.Cogs[icog].Vals.IndexOfName(EBResName.Text);
+  iVAL := level.cogs[icog].vals.IndexOfName(EBResName.Text);
   Result := (icog >= 0) and (iVAL >= 0);
 end;
 

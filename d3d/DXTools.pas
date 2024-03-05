@@ -5,13 +5,9 @@
  *  Download: http://www.sbox.tu-graz.ac.at/home/ungerik/DelphiGraphics/
  *
  ***************************************************************************)
-
 unit DXTools;
-
 interface
-
 {$INCLUDE COMSWITCH.INC}
-
 uses
 {$IFDEF D2COM}
   OLE2,
@@ -30,14 +26,12 @@ uses
   DInput,
   DSetup,
   DSound;
-
 const
   UnrecognizedError = 'Unrecognized error value';
   NoError = 'No error';
   Exceptions : boolean = True;
 // This string is displayed when an EDirectX exception occurs:
   DXStat : string = '';
-
 type
   PTrueColor = ^TTrueColor;
   TTrueColor = record
@@ -45,42 +39,33 @@ type
       1 : (Data : DWORD);
       2 : (R,G,B,A : byte);
   end;
-
   PColorTable = ^TColorTable;
   TColorTable = array [0..255] of TTrueColor;
-
   TSingleQuadruppel = array[0..4-1] of single;
-
   EDirectX = class (Exception)
   public
     constructor Create(Error: integer);
   end;
-
   EDirect3D = class (Exception)
   public
     constructor Create(Error: integer);
   end;
-
   EDirectDraw = class (Exception)
   public
     constructor Create(Error: integer);
   end;
-
   EDirectInput = class (Exception)
   public
     constructor Create(Error: integer);
   end;
-
   EDirectPlay = class (Exception)
   public
     constructor Create(Error: integer);
   end;
-
   EDirectSetup = class (Exception)
   public
     constructor Create(Error: integer);
   end;
-
   EDirectSound = class (Exception)
   public
     constructor Create(Error: integer);
@@ -93,13 +78,11 @@ const
     _31: 0; _32: 0; _33: 1; _34: 0;
     _41: 0; _42: 0; _43: 0; _44: 1 );
 
-
   ZeroMatrix : TD3DMatrix = (
     _11: 0; _12: 0; _13: 0; _14: 0;
     _21: 0; _22: 0; _23: 0; _24: 0;
     _31: 0; _32: 0; _33: 0; _34: 0;
     _41: 0; _42: 0; _43: 0; _44: 0 );
-
 type
   PMatrix1D = ^TMatrix1D;
   TMatrix1D = record
@@ -108,7 +91,6 @@ type
       1 : (D3DColorValue: TD3DColorValue);
       2 : (a: array [0..4-1] of TD3DValue);
   end;
-
   PMatrix4D = ^TMatrix4D;
   TMatrix4D = record
     case integer of
@@ -116,7 +98,6 @@ type
       1 : (_: TD3DMatrix_);
       2 : (a: array [0..4*4-1] of TD3DValue);
   end;
-
   TStack = class (TObject)
   private
     FItemSize : integer;
@@ -172,12 +153,12 @@ type
     procedure Reset;
     destructor Destroy; override;
   end;
-
 // Camera settings for Direct3D:
-function ProjectionMatrix(near_plane,     // distance to near clipping plane
-                          far_plane,      // distance to far clipping plane
-                          fov: TD3DValue) : TD3DMatrix; // field of view angle,
-                                                        // in radians
+function ProjectionMatrix(fov,            // field of view angle,
+                          aspect,         // in radians
+                          zNear,     // distance to near clipping plane
+                          zFar      // distance to far clipping plane
+                          : TD3DValue) : TD3DMatrix;
 // Camera positioning for Direct3D:
 function ViewMatrix(from,                  // camera location
                     at,                    // camera look-at target
@@ -185,7 +166,6 @@ function ViewMatrix(from,                  // camera location
                     roll: TD3DValue) : TD3DMatrix; // clockwise roll around
                                                  //    viewing direction,
                                                  //    in radians
-
 
 function TransformationYZ(y, z: TD3DVector) : TD3DMatrix;
 function TranslateMatrix(dx, dy, dz: TD3DValue) : TD3DMatrix;
@@ -219,9 +199,7 @@ procedure ClearSurface(Surface: IDirectDrawSurface; Color: integer);
 function GetBitsPerPixelFromBitmap(Bitmap: Graphics.TBitmap) : integer;
 procedure ReadOnlyProperty;
 procedure NotReady;
-
 // Error handling:
-
 // Creates an Errorstring for a Direct3D returnvalue:
 function D3DErrorstring(Value: HResult) : string;
 // Creates an Errorstring for a DirectDraw returnvalue:
@@ -236,7 +214,6 @@ function DSetupErrorstring(Value: HResult) : string;
 function DSoundErrorstring(Value: HResult) : string;
 // Creates an Errorstring for a DirectX returnvalue:
 function DXErrorstring(Value: HResult) : string;
-
 // Checks a Direct3D returnvalue for an error,
 // and raises an EDirect3D exception if necessary:
 procedure D3DCheck(Value: HResult);
@@ -258,15 +235,12 @@ procedure DSetupCheck(Value: HResult);
 // Checks a DirectX returnvalue for an error,
 // and raises an EDirectX exception if necessary:
 procedure DXCheck(Value: HResult);
-
 implementation
-
-
+uses System.Math;
 
 ////////////////////////////////////////////////////////////////////////////////
 // TStack
 ////////////////////////////////////////////////////////////////////////////////
-
 
 procedure TStack.SetCount(Value: integer);
 begin
@@ -277,13 +251,11 @@ begin
     integer(FTop) := FCount * FItemSize;
   end;
 end;
-
 procedure TStack.SetTop(Value: pointer);
 begin
   if (integer(Value) >= integer(FBase)) and
      (integer(Value) < integer(FStackEnd)) then FTop := Value;
 end;
-
 procedure TStack.SetIncAmount(Value: integer);
 begin
   if (Value > 0) and (Value >= FIncAmount) and (Value <= 1024) then
@@ -291,7 +263,6 @@ begin
   else
     FIncAmount := FItemSize * 4;
 end;
-
 procedure TStack.SetStackSize(Value: integer);
 begin
   if (integer(FBase) + Value) < integer(FStackEnd) then exit;
@@ -299,12 +270,10 @@ begin
   FStackSize := Value;
   ReallocMem(FBase,FStackSize);
 end;
-
 function TStack.GetStackSize : integer;
 begin
   Result := integer(FStackEnd) + FItemSize - integer(FBase);
 end;
-
 procedure TStack.Reset;
 begin
   FStackSize := FIncAmount;
@@ -313,7 +282,6 @@ begin
   FTop := FBase;
   FCount := 0;
 end;
-
 constructor TStack.Create(ItemSize: integer);
 begin
   inherited Create;
@@ -323,47 +291,38 @@ begin
   FStackEnd := nil;
   Reset;
 end;
-
 constructor TStack.CreateForByte;
 begin
   Create(SizeOf(Byte));
 end;
-
 constructor TStack.CreateForInteger;
 begin
   Create(SizeOf(Integer));
 end;
-
 constructor TStack.CreateForPointer;
 begin
   Create(SizeOf(Pointer));
 end;
-
 constructor TStack.CreateForSingle;
 begin
   Create(SizeOf(Single));
 end;
-
 constructor TStack.CreateForDouble;
 begin
   Create(SizeOf(Double));
 end;
-
 constructor TStack.CreateForMatrix1D;
 begin
   Create(SizeOf(TMatrix1D));
 end;
-
 constructor TStack.CreateForMatrix4D;
 begin
   Create(SizeOf(TMatrix4D));
 end;
-
 constructor TStack.CreateForString;
 begin
   Create(SizeOf(String));
 end;
-
 procedure TStack.Push(const Item);
 begin
   Move(Item,Top^,FItemSize);
@@ -371,14 +330,12 @@ begin
   Inc(integer(FTop),FItemSize);
   if integer(Top) > integer(FStackEnd) then IncStackSize;
 end;
-
 procedure TStack.IncStackSize;
 begin
   Inc(FStackSize,FIncAmount);
   Inc(integer(FStackEnd),FIncAmount);
   ReAllocMem(FBase,FStackSize);
 end;
-
 function TStack.Pop : pointer;
 begin
   if FCount > 0 then
@@ -388,39 +345,33 @@ begin
   end;
   Result := FTop;
 end;
-
 procedure TStack.Increase;
 begin
   Inc(FCount);
   Inc(integer(FTop),FItemSize);
   if integer(Top) > integer(FStackEnd) then IncStackSize;
 end;
-
 procedure TStack.Decrease;
 begin
   Pop;
 end;
-
 procedure TStack.IncreaseMulti(ItemCount: integer);
 begin
   Inc(FCount,ItemCount);
   Inc(integer(FTop),ItemCount*FItemSize);
   if integer(Top) > integer(FStackEnd) then IncStackSize;
 end;
-
 procedure TStack.DecreaseMulti(ItemCount: integer);
 begin
   Dec(FCount,ItemCount);
   Dec(integer(FTop),ItemCount*FItemSize);
   if (FCount < 0) or ((integer(FTop)-integer(FBase)) < 0) then Reset;
 end;
-
 destructor TStack.Destroy;
 begin
   ReAllocMem(FBase,0);
   inherited;
 end;
-
 procedure TStack.PushByte(Item: byte);
 begin
   byte(Top^) := Item;
@@ -428,7 +379,6 @@ begin
   Inc(integer(FTop),SizeOf(Item));
   if integer(Top) > integer(FStackEnd) then IncStackSize;
 end;
-
 function TStack.PopByte : byte;
 begin
   if FCount > 0 then
@@ -438,7 +388,6 @@ begin
   end;
   Result := byte(FTop^);
 end;
-
 procedure TStack.PushInteger(Item: integer);
 begin
   integer(Top^) := Item;
@@ -446,7 +395,6 @@ begin
   Inc(integer(FTop),SizeOf(Item));
   if integer(Top) > integer(FStackEnd) then IncStackSize;
 end;
-
 function TStack.PopInteger : integer;
 begin
   if FCount > 0 then
@@ -456,7 +404,6 @@ begin
   end;
   Result := integer(FTop^);
 end;
-
 procedure TStack.PushPointer(Item: pointer);
 begin
   pointer(Top^) := Item;
@@ -464,7 +411,6 @@ begin
   Inc(integer(FTop),SizeOf(Item));
   if integer(Top) > integer(FStackEnd) then IncStackSize;
 end;
-
 function TStack.PopPointer : pointer;
 begin
   if FCount > 0 then
@@ -474,7 +420,6 @@ begin
   end;
   Result := pointer(FTop^);
 end;
-
 procedure TStack.PushSingle(Item: single);
 begin
   single(Top^) := Item;
@@ -482,7 +427,6 @@ begin
   Inc(integer(FTop),SizeOf(Item));
   if integer(Top) > integer(FStackEnd) then IncStackSize;
 end;
-
 function TStack.PopSingle : single;
 begin
   if FCount > 0 then
@@ -492,7 +436,6 @@ begin
   end;
   Result := single(FTop^);
 end;
-
 procedure TStack.PushMatrix1D(Item: TMatrix1D);
 begin
   TMatrix1D(Top^) := Item;
@@ -500,7 +443,6 @@ begin
   Inc(integer(FTop),SizeOf(Item));
   if integer(Top) > integer(FStackEnd) then IncStackSize;
 end;
-
 function TStack.PopMatrix1D : TMatrix1D;
 begin
   if FCount > 0 then
@@ -510,7 +452,6 @@ begin
   end;
   Result := TMatrix1D(FTop^);
 end;
-
 procedure TStack.PushMatrix4D(Item: TMatrix4D);
 begin
   TMatrix4D(Top^) := Item;
@@ -518,7 +459,6 @@ begin
   Inc(integer(FTop),SizeOf(Item));
   if integer(Top) > integer(FStackEnd) then IncStackSize;
 end;
-
 function TStack.PopMatrix4D : TMatrix4D;
 begin
   if FCount > 0 then
@@ -528,7 +468,6 @@ begin
   end;
   Result := TMatrix4D(FTop^);
 end;
-
 procedure TStack.PushString(Item: string);
 begin
   string(Top^) := Item;
@@ -536,7 +475,6 @@ begin
   Inc(integer(FTop),SizeOf(Item));
   if integer(Top) > integer(FStackEnd) then IncStackSize;
 end;
-
 function TStack.PopString : string;
 begin
   if FCount > 0 then
@@ -546,11 +484,9 @@ begin
   end;
   Result := string(FTop^);
 end;
-
 ////////////////////////////////////////////////////////////////////////////////
 // DXTools
 ////////////////////////////////////////////////////////////////////////////////
-
 function ArcTan2(Y, X: Extended): Extended;
 asm
         FLD     Y
@@ -558,7 +494,6 @@ asm
         FPATAN
         FWAIT
 end;
-
 function TransformationYZ(y, z: TD3DVector) : TD3DMatrix;
 var
   ret : TD3DMatrix;
@@ -568,41 +503,61 @@ begin
       ret := RotateZMatrix( ArcTan2(Y,X) )
     else
       ret := IdentityMatrix;
-
   with z do
     if Z <> 0.0 then
       ret := MatrixMul(ret, RotateYMatrix( ArcTan2(X,Z) ));
-
   with y do
     if Z <> 0.0 then
       ret := MatrixMul(ret, RotateXMatrix( ArcTan2(Y,Z) ));
-
   Result := ret;
 end;
-
-function ProjectionMatrix(near_plane,     // distance to near clipping plane
-                          far_plane,      // distance to far clipping plane
-           fov: TD3DValue) : TD3DMatrix;    // field of view angle, in radians
+function ProjectionMatrix(fov,        // field of view angle, in radians
+                          aspect,
+                          zNear,     // distance to near clipping plane
+                          zFar      // distance to far clipping plane
+                          : TD3DValue) : TD3DMatrix;
 var
-  c, s, Q : TD3DValue;
+  c, s, Q, w, t : TD3DValue;
   ret : TD3DMatrix;
 begin
-    // From Jones engine
+    fov := fov * PI / 180; // convert to radians
+    //fov := 2 * arctan(1/aspect) / pi * 180;//60 * PI / 180 ;
+    var f := CoTan(fov * 0.5);
+    var d := zNear - zFar;
+    ret := ZeroMatrix;
+
+    ret._11 := f / aspect;
+    ret._22 := f;
+    ret._33 := -(zFar + zNear) / d;
+    ret._34 := -1.0;
+    ret._43 := (2 * zFar * zNear) / d;
+
+    // From directx
+//    w := 1/Tangent(fov * 0.5);
+//    t := 1/Tangent(fov * 0.5);
+//    Q := zFar / (zFar - zNear); //s/(1.0 - near_plane/zFar);
+//    ret := ZeroMatrix;
+//    ret._11 := w;
+//    ret._22 := t;
+//    ret._33 := Q;
+//    ret._43 := -Q * zNear;
+//    ret._34 := 1.0;
+
+//  // From Jones engine
     c := cos(fov*0.5);
     s := sin(fov*0.5);
-    Q := far_plane/(far_plane - near_plane); //s/(1.0 - near_plane/far_plane);
+    Q := zFar / (zFar - zNear); //s/(1.0 - zNear/zFar);
 
     ret := ZeroMatrix;
 
     ret._11 := c /s;
     ret._22 := c /s;
     ret._33 := Q;
-
-    ret._43 := (-Q*near_plane);
     ret._34 := 1.0;
+    ret._43 := (-Q*zNear);
+
     result := ret;
 end;
-
 function TranslateMatrix(dx, dy, dz: TD3DValue) : TD3DMatrix;
 var
   ret : TD3DMatrix;
@@ -613,7 +568,6 @@ begin
     ret._43 := dz;
     result := ret;
 end;
-
 function RotateXMatrix(rads: TD3DValue) : TD3DMatrix;
 var
   ret : TD3DMatrix;
@@ -628,7 +582,6 @@ begin
     ret._32 := sine;
     result := ret;
 end;
-
 function RotateYMatrix(rads: TD3DValue) : TD3DMatrix;
 var
   ret : TD3DMatrix;
@@ -643,7 +596,6 @@ begin
     ret._31 := -sine;
     result := ret;
 end;
-
 function RotateZMatrix(rads: TD3DValue) : TD3DMatrix;
 var
   ret : TD3DMatrix;
@@ -658,7 +610,6 @@ begin
     ret._21 := sine;
     result := ret;
 end;
-
 function ScaleMatrix(size: TD3DValue) : TD3DMatrix;
 var
   ret : TD3DMatrix;
@@ -669,7 +620,6 @@ begin
     ret._33 := size;
     result := ret;
 end;
-
 function ViewMatrix(from,                  // camera location
                     at,                    // camera look-at target
                     world_up: TD3DVector;  // world's up, usually 0, 1, 0
@@ -681,14 +631,11 @@ var
   up, right, view_dir : TD3DVector;
 begin
     view := IdentityMatrix;
-
     view_dir := VectorNormalize(VectorSub(at,from));
     right := VectorCrossProduct(world_up, view_dir);
     up := VectorCrossProduct(view_dir, right);
-
     right := VectorNormalize(right);
     up := VectorNormalize(up);
-
     view._11 := right.x;
     view._21 := right.y;
     view._31 := right.z;
@@ -698,19 +645,14 @@ begin
     view._13 := view_dir.x;
     view._23 := view_dir.y;
     view._33 := view_dir.z;
-
     view._41 := -VectorDotProduct(right, from);
-
     view._42 := -VectorDotProduct(up, from);
     view._43 := -VectorDotProduct(view_dir, from);
-
     if roll <> 0.0 then
         // MatrixMult function shown below
         view := MatrixMul(RotateZMatrix(-roll), TD3DMatrix(view));
-
     result := view;
 end;
-
 // Multiplies two matrices.
 function MatrixMul(a, b: TD3DMatrix) : TD3DMatrix;
 var
@@ -725,7 +667,6 @@ begin
   result := ret.D3DMatrix;
 end;
 
-
 function GetBitsPerPixelFromBitmap(Bitmap: Graphics.TBitmap) : integer;
 var
   bm : Windows.TBitmap;
@@ -733,13 +674,11 @@ begin
   if GetObject(Bitmap.Handle, sizeof(bm), @bm) = 0 then Result := 0
     else Result := bm.bmBitsPixel;
 end;
-
 procedure InitRecord(var DXRecord; Size: integer);
 begin
   ZeroMemory(@DXRecord,Size);
   DWORD(DXRecord) := Size;
 end;
-
 function GetDDFromDevice2(Device2: IDirect3DDevice2) : IDirectDraw;
 const
   DirectDraw : IDirectDraw = nil;
@@ -758,17 +697,14 @@ begin
     Result := DirectDraw;
   end
 end;
-
 procedure ReadOnlyProperty;
 begin
   if Exceptions then Exception.Create('Property is Read-Only !');
 end;
-
 procedure NotReady;
 begin
   if Exceptions then Exception.Create('Not implemented, yet !');
 end;
-
 procedure ClearSurface(Surface: IDirectDrawSurface; Color: integer);
 var
   bltfx : TDDBltFX;
@@ -777,7 +713,6 @@ begin
   bltfx.dwFillColor := Color;
   dxCheck( Surface.Blt(nil,nil,nil,DDBLT_COLORFILL + DDBLT_WAIT,bltfx) );
 end;
-
 function LoadPaletteFromJASCFile(Filename: string; var Palette: TColorTable) : boolean;
 var
   f : text;
@@ -785,7 +720,6 @@ var
   s : string;
   b : byte;
   Code : integer;
-
 procedure ReadWd;
 var
   c : AnsiChar;
@@ -796,7 +730,6 @@ begin
     if c <> ' ' then s := s + c;
   until c = ' ';
 end;
-
 label
   ende;
 begin
@@ -826,12 +759,10 @@ begin
 ende:
   close(f); {$I+}
 end;
-
 function GetBrightness(Red,Green,Blue: TD3DValue) : TD3DValue;
 begin
   Result := (Red * 0.3) + (Green * 0.59) + (Blue * 0.11);
 end;
-
 procedure SetBrightness(var Red,Green,Blue: TD3DValue; Brightness: TD3DValue);
 // var  factor : TD3DValue;
 begin
@@ -854,12 +785,10 @@ begin
     if Blue > 1.0 then Blue := 1.0;
   end;}
 end;
-
 procedure SM(Message: string);
 begin
   MessageBox(0,PChar(Message),'DirectX-Application:',MB_APPLMODAL);
 end;
-
 function AddCOM(const COM) : pointer;
 begin
 {$IFDEF D2COM}
@@ -869,7 +798,6 @@ begin
 {$ENDIF}
   Result := pointer(COM);
 end;
-
 function ReleaseObj(var Obj) : boolean;
 begin
   if assigned( TObject(Obj) ) then
@@ -881,7 +809,6 @@ begin
   else
     Result := False;
 end;
-
 function ReleaseCOM(var COM) : boolean;  // Interfaceobjekt freigeben
 begin
   if Assigned( IUnknown(COM) ) then // wenn Zeigerwert nicht nil dann:
@@ -897,7 +824,6 @@ begin
   else
     Result := false;
 end;
-
 procedure ReleaseCOMe(var COM);
 begin
   if Assigned( IUnknown(COM) ) then
@@ -912,7 +838,6 @@ begin
   else
     raise Exception.Create(DXStat+#13+'ReleaseCOM of NULL object');
 end;
-
 //function GetFrameBox(Frame: IDirect3DRMFrame; var FrameBox: TD3DRMBox) : boolean;
 //const
 //  Visuals : IDirect3DRMVisualArray = nil;
@@ -963,48 +888,39 @@ end;
 //  end;
 //  ReleaseCOM( Visuals );
 //end;
-
 function FormatError(ErrorString,At: string) : string;
 begin
   Result := #13+#13+ErrorString+#13+#13;
   if At <> '' then Result := Result +'At: '+At+ #13+#13;
 end;
-
 constructor EDirectX.Create(Error: integer);
 begin
   inherited Create( FormatError(DXErrorString(Error),DXStat) );
 end;
-
 constructor EDirect3D.Create(Error: integer);
 begin
   inherited Create( FormatError(D3DErrorString(Error),DXStat) );
 end;
-
 constructor EDirectDraw.Create(Error: integer);
 begin
   inherited Create( FormatError(DDrawErrorString(Error),DXStat) );
 end;
-
 constructor EDirectInput.Create(Error: integer);
 begin
   inherited Create( FormatError(DInputErrorString(Error),DXStat) );
 end;
-
 constructor EDirectPlay.Create(Error: integer);
 begin
   inherited Create( FormatError(DPlayErrorString(Error),DXStat) );
 end;
-
 constructor EDirectSetup.Create(Error: integer);
 begin
   inherited Create( FormatError(DSetupErrorString(Error),DXStat) );
 end;
-
 constructor EDirectSound.Create(Error: integer);
 begin
   inherited Create( FormatError(DSoundErrorString(Error),DXStat) );
 end;
-
 function DXErrorString(Value: HResult) : string;
 begin
  if Value = 0 then
@@ -1024,12 +940,10 @@ begin
      Result := DSoundErrorstring(Value);
    end;
 end;
-
 procedure DXCheck(Value: HResult); { Check the Result of a COM operation }
 begin
   if Value < 0 then raise EDirectX.Create(Value);
 end;
-
 procedure DXCheck_(Value: HResult); { Check the Result of a COM operation }
 var
   s : string;
@@ -1040,40 +954,32 @@ begin
     raise EDirectX.Create(Value);
   end;
 end;
-
 procedure DDCheck(Value: HResult);
 begin
   if Value < 0 then raise EDirectDraw.Create(Value);
 end;
-
 procedure D3DCheck(Value: HResult);
 begin
   if Value < 0 then raise EDirect3D.Create(Value);
 end;
-
 procedure DICheck(Value: HResult);
 begin
   if Value < 0 then raise EDirectInput.Create(Value);
 end;
-
 procedure DPCheck(Value: HResult);
 begin
   if Value < 0 then raise EDirectPlay.Create(Value);
 end;
-
 procedure DSCheck(Value: HResult);
 begin
   if Value < 0 then raise EDirectSound.Create(Value);
 end;
-
 procedure DSetupCheck(Value: HResult);
 begin
   if Value < 0 then raise EDirectSetup.Create(Value);
 end;
-
 function DPlayErrorString(Value: HResult) : string;
 begin
-
   case Value of
     CLASS_E_NOAGGREGATION: Result := 'A non-NULL value was passed for the pUnkOuter parameter in DirectPlayCreate, DirectPlayLobbyCreate, or IDirectPlayLobby2::Connect.';
     DPERR_ACCESSDENIED: Result := 'The session is full or an incorrect password was supplied.';
@@ -1130,7 +1036,6 @@ begin
     else Result := 'Unrecognized error value.';
   end;
 end;
-
 function DDrawErrorString(Value: HResult) : string;
 begin
   case Value of
@@ -1228,7 +1133,6 @@ begin
     else Result := UnrecognizedError;
   end;
 end;
-
 function D3DErrorString(Value: HResult) : string;
 begin
   case Value of
@@ -1244,17 +1148,14 @@ begin
  * QI'd off the render target.
  *)
     D3DERR_DEVICEAGGREGATED: Result := 'D3DERR_DEVICEAGGREGATED';
-
     D3DERR_EXECUTE_CREATE_FAILED: Result := 'D3DERR_EXECUTE_CREATE_FAILED';
     D3DERR_EXECUTE_DESTROY_FAILED: Result := 'D3DERR_EXECUTE_DESTROY_FAILED';
     D3DERR_EXECUTE_LOCK_FAILED: Result := 'D3DERR_EXECUTE_LOCK_FAILED';
     D3DERR_EXECUTE_UNLOCK_FAILED: Result := 'D3DERR_EXECUTE_UNLOCK_FAILED';
     D3DERR_EXECUTE_LOCKED: Result := 'D3DERR_EXECUTE_LOCKED';
     D3DERR_EXECUTE_NOT_LOCKED: Result := 'D3DERR_EXECUTE_NOT_LOCKED';
-
     D3DERR_EXECUTE_FAILED: Result := 'D3DERR_EXECUTE_FAILED';
     D3DERR_EXECUTE_CLIPPED_FAILED: Result := 'D3DERR_EXECUTE_CLIPPED_FAILED';
-
     D3DERR_TEXTURE_NO_SUPPORT: Result := 'D3DERR_TEXTURE_NO_SUPPORT';
     D3DERR_TEXTURE_CREATE_FAILED: Result := 'D3DERR_TEXTURE_CREATE_FAILED';
     D3DERR_TEXTURE_DESTROY_FAILED: Result := 'D3DERR_TEXTURE_DESTROY_FAILED';
@@ -1265,45 +1166,37 @@ begin
     D3DERR_TEXTURE_LOCKED: Result := 'D3DERR_TEXTURELOCKED';
     D3DERR_TEXTURE_NOT_LOCKED: Result := 'D3DERR_TEXTURE_NOT_LOCKED';
     D3DERR_TEXTURE_GETSURF_FAILED: Result := 'D3DERR_TEXTURE_GETSURF_FAILED';
-
     D3DERR_MATRIX_CREATE_FAILED: Result := 'D3DERR_MATRIX_CREATE_FAILED';
     D3DERR_MATRIX_DESTROY_FAILED: Result := 'D3DERR_MATRIX_DESTROY_FAILED';
     D3DERR_MATRIX_SETDATA_FAILED: Result := 'D3DERR_MATRIX_SETDATA_FAILED';
     D3DERR_MATRIX_GETDATA_FAILED: Result := 'D3DERR_MATRIX_GETDATA_FAILED';
     D3DERR_SETVIEWPORTDATA_FAILED: Result := 'D3DERR_SETVIEWPORTDATA_FAILED';
-
     D3DERR_INVALIDCURRENTVIEWPORT: Result := 'D3DERR_INVALIDCURRENTVIEWPORT';
     D3DERR_INVALIDPRIMITIVETYPE: Result := 'D3DERR_INVALIDPRIMITIVETYPE';
     D3DERR_INVALIDVERTEXTYPE: Result := 'D3DERR_INVALIDVERTEXTYPE';
     D3DERR_TEXTURE_BADSIZE: Result := 'D3DERR_TEXTURE_BADSIZE';
     D3DERR_INVALIDRAMPTEXTURE: Result := 'D3DERR_INVALIDRAMPTEXTURE';
-
     D3DERR_MATERIAL_CREATE_FAILED: Result := 'D3DERR_MATERIAL_CREATE_FAILED';
     D3DERR_MATERIAL_DESTROY_FAILED: Result := 'D3DERR_MATERIAL_DESTROY_FAILED';
     D3DERR_MATERIAL_SETDATA_FAILED: Result := 'D3DERR_MATERIAL_SETDATA_FAILED';
     D3DERR_MATERIAL_GETDATA_FAILED: Result := 'D3DERR_MATERIAL_GETDATA_FAILED';
     D3DERR_INVALIDPALETTE: Result := 'D3DERR_INVALIDPALETTE';
-
     D3DERR_ZBUFF_NEEDS_SYSTEMMEMORY: Result := 'D3DERR_ZBUFF_NEEDS_SYSTEMMEMORY';
     D3DERR_ZBUFF_NEEDS_VIDEOMEMORY: Result := 'D3DERR_ZBUFF_NEEDS_VIDEOMEMORY';
     D3DERR_SURFACENOTINVIDMEM: Result := 'D3DERR_SURFACENOTINVIDMEM';
-
     D3DERR_LIGHT_SET_FAILED: Result := 'D3DERR_LIGHT_SET_FAILED';
     D3DERR_LIGHTHASVIEWPORT: Result := 'D3DERR_LIGHTHASVIEWPORT';
     D3DERR_LIGHTNOTINTHISVIEWPORT: Result := 'D3DERR_LIGHTNOTINTHISVIEWPORT';
-
     D3DERR_SCENE_IN_SCENE: Result := 'D3DERR_SCENE_IN_SCENE';
     D3DERR_SCENE_NOT_IN_SCENE: Result := 'D3DERR_SCENE_NOT_IN_SCENE';
     D3DERR_SCENE_BEGIN_FAILED: Result := 'D3DERR_SCENE_BEGIN_FAILED';
     D3DERR_SCENE_END_FAILED: Result := 'D3DERR_SCENE_END_FAILED';
-
     D3DERR_INBEGIN: Result := 'D3DERR_INBEGIN';
     D3DERR_NOTINBEGIN: Result := 'D3DERR_NOTINBEGIN';
     D3DERR_NOVIEWPORTS: Result := 'D3DERR_NOVIEWPORTS';
     D3DERR_VIEWPORTDATANOTSET: Result := 'D3DERR_VIEWPORTDATANOTSET';
     D3DERR_VIEWPORTHASNODEVICE: Result := 'D3DERR_VIEWPORTHASNODEVICE';
     D3DERR_NOCURRENTVIEWPORT: Result := 'D3DERR_NOCURRENTVIEWPORT';
-
 
     //D3DRMERR_BADOBJECT: Result := 'D3DRMERR_BADOBJECT';
 //    D3DRMERR_BADTYPE: Result := 'D3DRMERR_BADTYPE';
@@ -1321,7 +1214,6 @@ begin
     else Result := UnrecognizedError;
   end;
 end;
-
 
 function DSetupErrorString(Value: HResult) : string;
 begin
@@ -1343,7 +1235,6 @@ begin
     else Result := UnrecognizedError;
   end;
 end;
-
 function DSoundErrorstring(Value: HResult) : string;
 begin
   case Value of
@@ -1367,7 +1258,6 @@ begin
     else Result := UnrecognizedError;
   end;
 end;
-
 function DInputErrorString(Value: HResult) : string;
 begin
   case Value of
@@ -1414,6 +1304,5 @@ begin
     else Result := UnrecognizedError;
   end;
 end;
-
 
 end.
