@@ -74,9 +74,11 @@ type
     class function up: TVector; inline; static;
     class function zero: TVector; inline; static;
 
+    constructor Create(x, y, z: double);
+
     function IsZero: Boolean;
     procedure GetCoords(var x, y, z: double);
-    procedure SetCoords(const dx, dy, dz: double);
+    procedure SetCoords(const dx, dy, dz: double); inline;
 
     function Add(const v: TVector): TVector; overload; inline;
     function Add(const x, y, z: double): TVector; overload; inline;
@@ -114,6 +116,8 @@ type
         (dx, dy, dz: double);
       1:
         (x, y, z: double);
+      2:
+        (pitch, yaw, roll: double);
   end;
 
   TBox2 = record
@@ -124,6 +128,41 @@ type
     x1, y1, z1, x2, y2, z2: double;
   end;
   PBox = ^TBox;
+
+  TMatrix43 = record
+    rvec, lvec, uvec, dvec: TVector;
+
+    class function identity: TMatrix43; inline; static;
+
+    class function Create(const pos: TVector; const pyr: TVector): TMatrix43; static; inline;
+    class function CreateFromLook(const lookDir: TVector): TMatrix43; static;
+    class function CreateFromVectorAngle(const axis: TVector; angle: Single): TMatrix43; static;
+    class function CreateRotate(const pyr: TVector): TMatrix43; static; inline;
+    class function CreateScale(const scale: TVector): TMatrix43; static; inline;
+    class function CreateTranslate(const vec: TVector): TMatrix43; static; inline;
+
+    class operator Multiply(const a, b: TMatrix43): TMatrix43; inline;
+
+    function ExtractPYR: TVector;
+    procedure LookAt(const eyePos, lookPos: TVector; angle: Double);
+    procedure Normalize; inline;
+    function TransformPoint(const point: TVector): TVector; inline;
+    function TransformVector(const vec: TVector): TVector; inline;
+    function TransformVectorOrtho(const vec: TVector): TVector; inline;
+    function InvertOrtho: TMatrix43;
+
+    // Helper functions:
+    // Pre: multiplies this with created matrix
+    // Pos: multiplies created matrix with this
+    function PreRotate(const pyr: TVector): TMatrix43;
+    function PostRotate(const vecPYR: TVector): TMatrix43;
+
+    function PreTranslate(const vec: TVector): TMatrix43;
+    function PostTranslate(const vec: TVector): TMatrix43;
+
+    function PreScale(const vec: TVector): TMatrix43;
+    function PostScale(const vec: TVector): TMatrix43;
+  end;
 
   TVertex = class
     x, y, z: Float;
@@ -639,6 +678,13 @@ begin
   Result.SetCoords(0.0, 0.0, 0.0);
 end;
 
+constructor TVector.Create(x, y, z: double);
+begin
+  self.x := x;
+  self.y := y;
+  self.z := z;
+end;
+
 function TVector.IsZero: Boolean;
 begin
    Result := System.Math.IsZero(x) and System.Math.IsZero(y) and System.Math.IsZero(z);
@@ -651,7 +697,7 @@ begin
   z := self.dz;
 end;
 
-Procedure TVector.SetCoords(const dx, dy, dz: double);
+procedure TVector.SetCoords(const dx, dy, dz: double);
 begin
   self.dx := dx;
   self.dy := dy;
@@ -806,6 +852,447 @@ end;
 class operator TVector.NotEqual(const a, b: TVector): Boolean;
 begin
   Result := not (a = b);
+end;
+
+class function TMatrix43.identity: TMatrix43;
+begin
+  Result.rvec.SetCoords(1.0, 0.0, 0.0);
+  Result.lvec.SetCoords(0.0, 1.0, 0.0);
+  Result.uvec.SetCoords(0.0, 0.0, 1.0);
+  Result.dvec.SetCoords(0.0, 0.0, 0.0);
+end;
+
+class operator TMatrix43.Multiply(const a, b: TMatrix43): TMatrix43;
+begin
+  Result.rvec := a.TransformVector(b.rvec);
+  Result.lvec := a.TransformVector(b.lvec);
+  Result.uvec := a.TransformVector(b.dvec);
+  Result.dvec := a.TransformPoint(b.uvec);
+//  Result.rvec.x := b.rvec.z * a.uvec.x + b.rvec.y * a.lvec.x + a.rvec.x * b.rvec.x;
+//  Result.rvec.y := a.rvec.y * b.rvec.x + a.lvec.y * b.rvec.y + a.uvec.y * b.rvec.z;
+//  Result.rvec.z := a.rvec.z * b.rvec.x + a.uvec.z * b.rvec.z + a.lvec.z * b.rvec.y;
+//
+//  Result.lvec.x := b.lvec.x * a.rvec.x + b.lvec.z * a.uvec.x + b.lvec.y * a.lvec.x;
+//  Result.lvec.y := b.lvec.z * a.uvec.y + b.lvec.y * a.lvec.y + b.lvec.x * a.rvec.y;
+//  Result.lvec.z := b.lvec.z * a.uvec.z + a.lvec.z * b.lvec.y + b.lvec.x * a.rvec.z;
+//
+//  Result.uvec.x := b.uvec.x * a.rvec.x + b.uvec.y * a.lvec.x + b.uvec.z * a.uvec.x;
+//  Result.uvec.y := b.uvec.y * a.lvec.y + b.uvec.x * a.rvec.y + b.uvec.z * a.uvec.y;
+//  Result.uvec.z := b.uvec.z * a.uvec.z + b.uvec.x * a.rvec.z + b.uvec.y * a.lvec.z;
+//
+//  Result.dvec.x := b.dvec.x * a.rvec.x + b.dvec.z * a.uvec.x + b.dvec.y * a.lvec.x + a.dvec.x;
+//  Result.dvec.y := b.dvec.x * a.rvec.y + b.dvec.y * a.lvec.y + b.dvec.z * a.uvec.y + a.dvec.y;
+//  Result.dvec.z := b.dvec.y * a.lvec.z + b.dvec.x * a.rvec.z + b.dvec.z * a.uvec.z + a.dvec.z;
+end;
+
+function TMatrix43.ExtractPYR: TVector;
+var
+  yaw, roll, sqrLvecX, dotLvecXY, lenLvecXY, costh: Double;
+begin
+  // Calculate angles
+  sqrLvecX  := lvec.x * lvec.x;
+  dotLvecXY := lvec.y * lvec.y + sqrLvecX;
+  lenLvecXY := Sqrt(dotLvecXY);
+
+  // Calc yaw
+  if lenLvecXY >= 0.001 then
+    begin
+      yaw := 90.0 - RadToDeg(ArcSin(lvec.y / lenLvecXY));
+      if lvec.x > 0.0 then
+        costh := -costh;
+      Result.yaw := yaw
+    end
+  else
+    begin
+      roll := 90.0 - RadToDeg(ArcSin(-rvec.x));
+      if (-rvec.y > 0.0) and (lvec.z > 0.0) or (-rvec.y < 0.0) and (lvec.z < 0.0) then
+        roll := -roll;
+
+      Result.roll := roll;
+      Result.yaw  := 0.0;
+    end;
+
+  // Calc pitch
+  if lenLvecXY >= 0.001 then
+    begin
+      costh := dotLvecXY / lenLvecXY;
+      if costh < 1.0 then
+        Result.pitch := 90.0 - RadToDeg(ArcSin(costh))
+      else
+        Result.pitch := 0.0;
+    end
+  else
+    Result.pitch := 90.0;
+
+  if lvec.z < 0.0 then
+    Result.pitch := -Result.pitch;
+
+  // Calc roll
+  lenLvecXY := Sqrt(-lvec.y * -lvec.y + sqrLvecX);
+  if lenLvecXY >= 0.001 then
+  begin
+    costh := (-rvec.y * lvec.x + -lvec.y * -rvec.x) / lenLvecXY;
+    if costh < 1.0 then
+    begin
+      if costh > -1.0 then
+        Result.roll := 90.0 - RadToDeg(ArcSin(costh))
+      else
+        Result.roll := 180.0;
+    end
+    else
+      Result.roll := 0.0;
+
+    if -rvec.z < 0.0 then
+      Result.roll := -Result.roll;
+  end
+end;
+
+// Test alternative
+//function TMatrix43.GetPYR: TVector;
+//var
+//  dotLvecXY, lenLvecXY: Double;
+//begin
+//  dotLvecXY := lvec.x * lvec.x + lvec.y * lvec.y;
+//  lenLvecXY := Sqrt(dotLvecXY);
+//
+//  // Calculate yaw
+//  if lenLvecXY >= 0.001 then
+//  begin
+//    Result.yaw := ArcTan2(-lvec.y, lvec.x) * RadToDeg;
+//    if Result.yaw < 0.0 then
+//      Result.yaw := 360.0 + Result.yaw;
+//  end
+//  else
+//  begin
+//    Result.yaw := ArcTan2(-rvec.y, -rvec.x) * RadToDeg;
+//    if (rvec.y > 0.0) and (lvec.z > 0.0) or (rvec.y < 0.0) and (lvec.z < 0.0) then
+//      Result.yaw := 360.0 - Result.yaw;
+//  end;
+//
+//  // Calculate pitch
+//  Result.pitch := ArcTan2(-lvec.z, lenLvecXY) * RadToDeg;
+//
+//  // Calculate roll
+//  Result.roll := ArcTan2(-rvec.z, lvec.z) * RadToDeg;
+//end;
+
+procedure TMatrix43.LookAt(const eyePos, lookPos: TVector; angle: Double);
+var
+  orient: TMatrix43;
+  dest: TVector;
+  dotProduct: Double;
+begin
+  // Calculate the direction vector from eyePos to lookPos
+  lvec := lookPos - eyePos;
+  lvec.Normalize;
+
+  // Build a rotation matrix based on the direction vector and angle
+  orient := TMatrix43.CreateFromVectorAngle(lvec, angle);
+
+  // Calculate the dot product of the current lvec and the z-axis vector
+  dotProduct := lvec.Dot(TVector.up);
+
+  // Transform the z-axis vector by the rotation matrix
+  if Abs(dotProduct) <= 0.999 then
+    dest := orient.TransformVector(TVector.up)
+  else
+    begin
+      if lvec.z <= 0.0 then
+        dest := orient.TransformVector(TVector.forward)
+      else
+        dest := orient.TransformVector(-TVector.forward);
+    end;
+
+  // Calculate the right vector of the matrix
+  rvec.x := lvec.y * dest.z - lvec.z * dest.y;
+  rvec.y := lvec.z * dest.x - lvec.x * dest.z;
+  rvec.z := lvec.x * dest.y - lvec.y * dest.x;
+  rvec.Normalize;
+
+  // Calculate the up vector of the matrix
+  uvec.x := rvec.y * lvec.z - rvec.z * lvec.y;
+  uvec.y := lvec.x * rvec.z - lvec.z * rvec.x;
+  uvec.z := rvec.x * lvec.y - lvec.x * rvec.y;
+  uvec.Normalize;
+
+  // Set the translation part of the matrix to the eyePos
+  dvec := eyePos;
+end;
+
+procedure TMatrix43.Normalize;
+//var
+//  z, v2, y, v4, v5, v6: Double;
+begin
+  uvec.x := rvec.y * lvec.z - rvec.z * lvec.y;
+  uvec.y := rvec.z * lvec.x - rvec.x * lvec.z;
+  uvec.z := rvec.x * lvec.y - rvec.y * lvec.x;
+
+  lvec.Normalize;
+  uvec.Normalize;
+
+  rvec.x := uvec.z * lvec.y - uvec.y * lvec.z;
+  rvec.y := lvec.z * uvec.x - uvec.z * lvec.x;
+  rvec.z := uvec.y * lvec.x - lvec.y * uvec.x;
+
+//  z := self.lvec.z;
+//  v2 := self.rvec.z;
+//  y := self.rvec.y;
+//
+//  self.uvec.x := y * z - v2 * self.lvec.y;
+//  v4 := self.lvec.y * self.rvec.x;
+//  self.uvec.y := v2 * self.lvec.x - z * self.rvec.x;
+//  self.uvec.z := v4 - y * self.lvec.x;
+//
+//  self.lvec.Normalize;
+//  self.uvec.Normalize;
+//
+//  v5 := self.uvec.z;
+//  v6 := self.lvec.z * self.uvec.x;
+//  self.rvec.x := v5 * self.lvec.y - self.uvec.y * self.lvec.z;
+//  self.rvec.y := v6 - v5 * self.lvec.x;
+//  self.rvec.z := self.uvec.y * self.lvec.x - self.lvec.y * self.uvec.x;
+end;
+
+function TMatrix43.TransformPoint(const point: TVector): TVector;
+begin
+  // Transforms point with matrix, same as Transform vector with exception that position dvec is added at the  end
+  Result.x := self.uvec.x * point.z + self.lvec.x * point.y + self.rvec.x * point.x + self.dvec.x;
+  Result.y := self.uvec.y * point.z + self.lvec.y * point.y + self.rvec.y * point.x + self.dvec.y;
+  Result.z := self.lvec.z * point.y + self.uvec.z * point.z + self.rvec.z * point.x + self.dvec.z;
+end;
+
+function TMatrix43.TransformVector(const vec: TVector): TVector;
+begin
+  Result.x := self.uvec.x * vec.z + self.lvec.x * vec.y + self.rvec.x * vec.x;
+  Result.y := self.uvec.y * vec.z + self.lvec.y * vec.y + self.rvec.y * vec.x;
+  Result.z := self.lvec.z * vec.y + self.uvec.z * vec.z + self.rvec.z * vec.x;
+end;
+
+function TMatrix43.TransformVectorOrtho(const vec: TVector): TVector;
+begin
+  Result.x := rvec.z * vec.z + rvec.y * vec.y + vec.x * rvec.x;
+  Result.y := lvec.y * vec.y + lvec.z * vec.z + lvec.x * vec.x;
+  Result.z := uvec.y * vec.y + uvec.z * vec.z + uvec.x * vec.x;
+end;
+
+function TMatrix43.InvertOrtho: TMatrix43;
+var
+  y, z, x: Double;
+begin
+  Result.rvec.y := lvec.x;
+  Result.rvec.z := uvec.x;
+  Result.lvec.z := uvec.y;
+
+  Result.lvec.x := rvec.y;
+  Result.uvec.x := rvec.z;
+  Result.uvec.y := lvec.z;
+
+  Result.rvec.x := rvec.x;
+  Result.lvec.y := lvec.y;
+  Result.uvec.z := uvec.z;
+
+  y := dvec.y;
+  z := dvec.z;
+  x := dvec.x;
+
+  Result.dvec.x := -(rvec.z * z + rvec.y * y + rvec.x * x);
+  Result.dvec.y := -(lvec.z * z + lvec.x * x + lvec.y * y);
+  Result.dvec.z := -(uvec.x * x + uvec.y * y + uvec.z * z);
+end;
+
+//class function TMatrix43.CreateRotate(const pyr: TVector): TMatrix43;
+//var
+//  sinX, cosX, sinY, cosY, sinZ, cosZ: Double;
+//  v3, v4, v5, v7, v9, v10, v11, v12, v13, v15, v16, v17, v18, v19, v20, v21, v22: Double;
+//begin
+//  SinCos(DegToRad(pyr.pitch, sinX, cosX);
+//  SinCos(DegToRad(pyr.yaw, sinY, cosY);
+//  SinCos(DegToRad(pyr.roll, sinZ, cosZ);
+//
+//  v3 := sinZ * sinY;
+//  v4 := sinZ * cosY;
+//  v5 := cosZ * cosY;
+//  v7 := cosZ * sinY;
+//  v9 := v4 * sinX;
+//  v10 := sinZ;
+//  v11 := sinY;
+//  v12 := v7 * sinX;
+//  v13 := cosY;
+//
+//  Result.rvec.x := -v3 * sinX + v5;
+//  v15 := v13 * cosX;
+//  v16 := -v11;
+//  v17 := -v10 * cosX;
+//  v18 := v16 * cosX;
+//  v19 := v9;
+//  v20 := sinX;
+//
+//  Result.rvec.y := v19 + v7;
+//  v21 := v12 + v4;
+//  Result.rvec.z := v17;
+//  Result.lvec.x := v18;
+//  Result.lvec.y := v15;
+//  Result.lvec.z := v20;
+//  Result.uvec.x := v21;
+//  v22 := cosZ * cosX;
+//  Result.uvec.y := -sinX * v5 + v3;
+//  Result.uvec.z := v22;
+//
+//  // Zero out the translation vector
+//  Result.dvec := TVector.zero;
+//end;
+
+class function TMatrix43.CreateRotate(const pyr: TVector): TMatrix43;
+var
+  sinX, cosX, sinY, cosY, sinZ, cosZ: Double;
+begin
+  SinCos(DegToRad(pyr.pitch), sinX, cosX);
+  SinCos(DegToRad(pyr.yaw)  , sinY, cosY);
+  SinCos(DegToRad(pyr.roll) , sinZ, cosZ);
+
+  Result.rvec.x :=  sinX * -(sinY * sinZ) + cosZ * cosY;
+  Result.rvec.y :=  sinX * sinZ * cosY + sinY * cosZ;
+  Result.rvec.z := -sinZ * cosX;
+
+  Result.lvec.x := -sinY * cosX;
+  Result.lvec.y :=  cosY * cosX;
+  Result.lvec.z :=  sinX;
+
+  Result.uvec.x :=  cosZ * sinY * sinX + sinZ * cosY;
+  Result.uvec.y := -sinX * cosZ * cosY + sinZ * sinY;;
+  Result.uvec.z :=  cosZ * cosX;
+
+  Result.dvec := TVector.zero; // Zero out the translation vector
+end;
+
+class function TMatrix43.Create(const pos: TVector; const pyr: TVector): TMatrix43;
+begin
+  Result := CreateRotate(pyr);
+  Result.dvec := pos;
+end;
+
+class function TMatrix43.CreateFromLook(const lookDir: TVector): TMatrix43;
+begin
+  // Copy the lookAt vector to the lvec of the output matrix
+  Result.lvec := lookDir;
+
+  // Calculate the right vector
+  Result.rvec := Result.lvec.Cross(TVector.up);
+
+  // Normalize the right vector, if it fails, recalculate the up vector
+  if Result.rvec.Normalize = 0.0 then
+    begin
+      Result.uvec := Result.lvec.Cross(TVector.right);
+      Result.uvec.Normalize;
+
+      // Recalculate the right vector based on the up vector and lookAt vector
+      Result.rvec := Result.uvec.Cross(Result.lvec);
+    end
+  else
+    begin
+      // Calculate the up vector based on the right vector and lookAt vector
+      Result.uvec := Result.lvec.Cross(Result.rvec);
+    end;
+end;
+
+class function TMatrix43.CreateFromVectorAngle(const axis: TVector; angle: Single): TMatrix43;
+var
+  angleSin, angleCos: Single;
+  axisSquaredX, axisSquaredY, remainingComponent: Single;
+begin
+  SinCos(DegToRad(angle), angleSin, angleCos);
+
+  // Handle special cases when the axis is aligned with the Z-axis or its negative
+  if (axis.z >= 1.0) then
+  begin
+    // Create rotation matrix for z-axis
+    Result.rvec := TVector.Create(angleCos, angleSin, 0.0);
+    Result.lvec := TVector.Create(-angleSin, angleCos, 0.0);
+    Result.uvec := TVector.Create(0.0, 0.0, 1.0);
+    Result.dvec := TVector.Zero;
+    Exit;
+  end;
+
+  if (axis.z >= 1.0) or (axis.z <= -1.0) then
+  begin
+    // Create rotation matrix for z-axis
+    Result.rvec := TVector.Create(angleCos, -angleSin, 0.0);
+    Result.lvec := TVector.Create(angleSin, angleCos, 0.0);
+    Result.uvec := TVector.Create(0.0, 0.0, 1.0);
+    Result.dvec := TVector.Zero;
+    Exit;
+  end;
+
+  // Calculate components for the rotation matrix
+  axisSquaredX := axis.x * axis.x;
+  axisSquaredY := axis.y * axis.y;
+  remainingComponent := 1.0 - axisSquaredX - axisSquaredY;
+
+  Result.rvec.x := (((angleCos * axisSquaredX) * remainingComponent + (angleCos * axisSquaredY)) / (1.0 - remainingComponent)) + (axis.z * axis.x * (1.0 - angleCos));
+  Result.rvec.y := (axis.z * angleSin) + ((axis.y * axis.x) * (1.0 - angleCos));
+  Result.rvec.z := ((axis.z * axis.x) * (1.0 - angleCos)) - ((axis.y) * angleSin);
+
+  Result.lvec.x := ((axis.y * axis.x) * (1.0 - angleCos)) - (axis.z * angleSin);
+  Result.lvec.y := (((angleCos * axisSquaredY) * remainingComponent + (angleCos * axisSquaredX)) / (1.0 - remainingComponent)) + axisSquaredY;
+  Result.lvec.z := ((axis.z * axis.y) * (1.0 - angleCos)) + (axis.x * angleSin);
+
+  Result.uvec.x := ((axis.z * axis.x) * (1.0 - angleCos)) + ((axis.y) * angleSin);
+  Result.uvec.y := ((axis.z * axis.y) * (1.0 - angleCos)) - (axis.x * angleSin);
+  Result.uvec.z := ((angleCos * axisSquaredX) + (angleCos * axisSquaredY)) + remainingComponent;
+
+  Result.dvec := TVector.Zero;
+end;
+
+class function TMatrix43.CreateScale(const scale: TVector): TMatrix43;
+begin
+  Result.rvec := TVector.Create(scale.x, 0.0, 0.0);
+  Result.lvec := TVector.Create(0.0, scale.y, 0.0);
+  Result.uvec := TVector.Create(0.0, 0.0, scale.z);
+  Result.dvec := TVector.zero;
+end;
+
+class function TMatrix43.CreateTranslate(const vec: TVector): TMatrix43;
+begin
+    Result := TMatrix43.identity;
+    Result.dvec := vec;
+end;
+
+function TMatrix43.PreRotate(const pyr: TVector): TMatrix43;
+begin
+  Result := TMatrix43.CreateRotate(pyr);
+  Result := self * Result;
+end;
+
+function TMatrix43.PostRotate(const vecPYR: TVector): TMatrix43;
+begin
+  Result := TMatrix43.CreateRotate(vecPYR);
+  Result := Result * self;
+end;
+
+function TMatrix43.PreTranslate(const vec: TVector): TMatrix43;
+begin
+  Result := TMatrix43.CreateTranslate(vec);
+  Result := self * Result;
+end;
+
+function TMatrix43.PostTranslate(const vec: TVector): TMatrix43;
+begin
+//  Result := mat;
+//  Result.dvec := mat.dvec + vec;
+  Result := TMatrix43.CreateTranslate(vec);
+  Result := Result * self;
+end;
+
+function TMatrix43.PreScale(const vec: TVector): TMatrix43;
+begin
+  Result := TMatrix43.CreateScale(vec);
+  Result := self * Result;
+end;
+
+function TMatrix43.PostScale(const vec: TVector): TMatrix43;
+begin
+  Result := TMatrix43.CreateScale(vec);
+  Result := Result * self;
 end;
 
 function FindVX(Vertices: TVertices; x, y, z: double): integer;
