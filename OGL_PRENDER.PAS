@@ -254,7 +254,6 @@ begin
   if Addr(glGenerateMipmap) = nil then
      minFilter := GL_LINEAR;  // Bilinear
 
-  if (faceflags and FF_TexNoFiltering) <> 0 then
   if BitMaskTest(faceflags, FF_TexNoFiltering) then
   begin
     magFilter := GL_NEAREST; // Bilinear
@@ -450,14 +449,25 @@ begin
   DisableFPUExceptions;
   wglMakeCurrent(hdc, hglc);
   glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
-  SetMatrix;
 
+  // Update Fog
+  if fog.enabled then
+  begin
+    glFogfv(GL_FOG_COLOR, @fog.color);
+    glFogi(GL_FOG_MODE, GL_LINEAR);
+
+    var ff := 0.03459; // TODO: this is hack for world space fog depth
+    glFogf(GL_FOG_START, GLFloat(fog.fogStart * ff));
+    var ffogEnd: GLFloat := (2.0 - fogDensity) * fog.FogEnd * ff;
+    glFogf(GL_FOG_END, ffogEnd);
+  end;
+
+  SetMatrix;
   //alphaPass := False;
   inherited Redraw;
   //alphaPass := True;
   //inherited Redraw;
 
-  glDepthMask(GL_TRUE);
   SwapBuffers(hdc);
   wglMakeCurrent(0, 0);
 end;
