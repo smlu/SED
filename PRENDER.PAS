@@ -313,6 +313,16 @@ Private
   rdSolidSurfacePolys: TList<T3DPoly>;
   rdSpecialSurfacePolys: TList<T3DPoly>;
 
+  // Sky variables
+  ceilingSkyZ: TVector;
+  ceilingSkyNormal: TVector;
+  horizonSkyPPR: double; // pixels per rev.
+  horizonSkyDistance: double;
+  horizonSkyScale: double;
+  horizonSkyRollSin: double;
+  horizonSkyRollCos: double;
+  horizonSkyYaw: double;
+  horizonSkyPitch: double;
 
   bDebug: Boolean;
   rdDebugPolys: TList<T3DPoly>;
@@ -328,6 +338,10 @@ Private
   Function BadThingMesh(th: TJKThing):T3DPMesh;
   Function A3DOToMesh(th: TJKThing; a3do: TPJ3DO):T3DPMesh;
   Procedure RenderCircle(polys: TList<T3DPoly>; cx, cy, cz, rad: double);
+
+  Procedure UpdateSky();
+  Procedure UpdateCeilingSkySurface(const surf: T3DPoly);
+  Function UpdateHorizonSkySurface(const surf: T3DPoly): T3DPoly;
 
   Procedure RenderWorldGeometry(const [Ref] frustrum: TClipFrustum);
   Procedure RenderThings(const [Ref] frustrum: TClipFrustum);
@@ -574,6 +588,8 @@ begin
 
   rdDebugPolys := TList<T3DPoly>.Create();
   rdDebugPolys.Capacity := rdPolysCacheCapacity;
+
+  ceilingSkyNormal := TVector.down;
 end;
 
 Destructor TNewPRenderer.Destroy;
@@ -884,6 +900,11 @@ begin
             end
           else if (poly.geo <> NotDrawn) or BitMaskTest(poly.faceflags, FF_RD_HorizonSky) then
             begin
+              if BitMaskTest(poly.faceflags, FF_RD_CeilingSky) then
+                UpdateCeilingSkySurface(poly);
+//              else if BitMaskTest(poly.faceflags, FF_RD_HorizonSky) then
+//                poly := UpdateHorizonSkySurface(poly);
+
               rdCache.AddPoly(poly);
               if highlightSolidFloor and BitMaskTest(poly.faceflags, FF_RD_FloorWf) then
                 rdFloorPolys.Add(poly)
@@ -1157,6 +1178,7 @@ begin
   DisableFPUExceptions;
 
   curCamera.Update;
+  UpdateSky();
 
   var frustum := GetCameraFrustum;
   RenderWorldGeometry(frustum);
@@ -1869,6 +1891,104 @@ begin
 
   polys.Add(poly);
 end;
+
+Procedure TNewPRenderer.UpdateSky();
+begin
+  ceilingSkyZ.SetCoords(0, 0, level.header.ceilingSky.height);
+
+  horizonSkyPPR := level.header.horizonSky.pixelsPerRev * 0.0027777778; // OpenJKDF2, 0.0027777778 = 1/ 360
+  if level.kind = IJIM then
+    horizonSkyPPR := 0.0083333338; // hardcoded; 0.0083333338 - 1 / 120
+
+  horizonSkyDistance := level.header.horizonSky.distance / 256;
+  horizonSkyScale    := horizonSkyDistance / curCamera.fovNearPlane ;
+
+  var rot := curCamera.orient.ExtractPYR; //curCamera.rotation; //curCamera.orient.ExtractPYR;
+  SinCos(DegToRad(rot.roll), horizonSkyRollSin, horizonSkyRollCos);
+  horizonSkyYaw   := (rot.yaw * horizonSkyPPR);
+  horizonSkyPitch := (rot.pitch * horizonSkyPPR);
+end;
+
+Procedure TNewPRenderer.UpdateCeilingSkySurface(const surf: T3DPoly);
+begin
+  if surf.tx = nil then
+    exit;
+
+  var invMatWidth  := 1 / surf.tx.width;
+  var invMatHeight := 1 / surf.tx.height;
+
+  var skyvrt: TVector;
+  for var j := 0 to surf.vxds.count - 1 do
+  begin
+    var vxd := surf.getVXD(j);
+     with vxd do
+      skyvrt.SetCoords(x, y, z);
+
+    skyvrt := skyvrt -  curCamera.position;
+    skyvrt.Normalize;
+
+    var skydist: Double := 1000.0;
+    CheckSphereFaceHit(curCamera.position, skyvrt, skydist, 0.0, ceilingSkyNormal, ceilingSkyZ, skydist, 0);
+
+    skyvrt := skyvrt * skydist;
+    skyvrt := skyvrt + curCamera.position;
+
+    // Note, the original engine adds sky offset at the end of multiplication which makes sky not to shift in any direction
+    vxd.u := invMatWidth  * ((skyvrt.x + level.header.ceilingSky.offset.X) * 16);
+    vxd.v := invMatHeight * ((skyvrt.y + level.header.ceilingSky.offset.Y) * 16);
+  end;
+end;
+
+Function TNewPRenderer.UpdateHorizonSkySurface(const surf: T3DPoly) : T3DPoly;
+begin
+  // Note this code projects the horizon sky verts to horizontal 2D sky plane
+  // The code still doesn't work correct as the texture gets trached when rotating around
+  // + there are sometimes holes in the sky or sky disappears all together.
+
+  Result := surf;
+  if surf.tx = nil then
+      exit;
+
+  var skypoly := T3DPoly.Create;
+  skypoly.geo    := Texture;
+  skypoly.light  := None;
+  skypoly.tx := surf.tx;
+  var skyvrt: TVector;
+  for var j := 0 to surf.vxds.count - 1 do
+  begin
+    var vxd := surf.getVXD(j);
+    with vxd do
+      skyvrt.SetCoords(x, y, z);
+
+    skyvrt := curCamera.view.TransformPoint(skyvrt);    // Transfrom to camera space
+
+    // perspective project to clip space 2d plane
+    var w := 1 / horizonSkyDistance;
+    skyvrt.x := (curCamera.fovNearPlane / skyvrt.y) * skyvrt.x;
+    skyvrt.z := skyvrt.z * (curCamera.fovNearPlane / skyvrt.y);
+    skyvrt.y := 256;// horizonSkyDistance;
+
+    skyvrt :=  skyvrt * w;
+    skyvrt := curCamera.view.TransformPoint(skyvrt); // transform back to world space
+
+    // Assign vert
+    var skyvx := skypoly.AddVXD;
+    skyvx.x := skyvrt.x;
+    skyvx.y := skyvrt.y;
+    skyvx.z := skyvrt.z;
+
+    var center_x := 1;// vwidth  * 0.5;
+    var center_y := 1; //vheight * 0.5;
+    var sx := (-skyvrt.x + center_x) * horizonSkyScale ;
+    var sy := (-skyvrt.z + center_y ) * horizonSkyScale ;
+    skyvx.u  := (sx * horizonSkyRollCos - sy * horizonSkyRollSin + horizonSkyYaw   + level.header.horizonSky.offset.x) ;
+    skyvx.v  := (sy * horizonSkyRollCos + sx * horizonSkyRollSin + horizonSkyPitch + level.header.horizonSky.offset.y) ;
+  end;
+
+  surf.geo := NotDrawn; // make it not to render
+  Result := skypoly;
+end;
+
 
 Procedure TNewPRenderer.FlushCaches;
 begin

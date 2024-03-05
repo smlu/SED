@@ -19,6 +19,8 @@ const
   FF_IJIM_3doWhipAim     = $200;     // (3DO model specific) Whip aim surface (Same as surface flag `SF_IJIM_WhipAim`)
 
   // Renderer flags
+  FF_RD_CeilingSky       = 1 shl 24; // Render flag for surfaces with special propeties
+  FF_RD_HorizonSky       = 1 shl 25; // Render flag for surfaces with special propeties
   FF_RD_SpecialSurfaceWf = 1 shl 26; // Render flag for surfaces with special propeties
   FF_RD_SolidSurfaceWf   = 1 shl 27;
   FF_RD_FloorWf          = 1 shl 28;
@@ -237,6 +239,9 @@ type
     Some of the vertices can be shared }
 
 Function FindVX(Vertices: TVertices; x, y, z: double): integer;
+
+Function CheckSphereFaceHit(const startPos, moveNorm: TVector;
+  moveDistance, radius: Double; normal, point: TVector; var sphereHitDist: Double; flags: Integer): Boolean;
 
 implementation
 
@@ -1319,6 +1324,51 @@ begin
   For i := 0 to Vertices.count - 1 do
     Vertices[i].Free;
   Inherited Destroy;
+end;
+
+Function CheckSphereFaceHit(const startPos, moveNorm: TVector;
+  moveDistance, radius: Double; normal, point: TVector; var sphereHitDist: Double; flags: Integer): Boolean;
+var
+  distToPlane, distToSphere, dot: Float;
+begin
+  Result := False;
+  distToPlane := (startPos - point).Dot(normal); // distance to plane
+  if abs(distToPlane) <= 0.00001 then
+    distToPlane := 0.0;
+
+  if distToPlane < 0.0 then
+    Exit;
+
+  // Calculate distance from start point to sphere surface along the movement direction
+  distToSphere := distToPlane - radius;
+  if distToSphere > moveDistance then
+    Exit;
+
+  // Calculate dot product of movement direction and normal
+  dot := -moveNorm.Dot(normal);
+  if distToSphere < 0.0 then
+    begin
+      // Oposide side
+      if (flags and $400) <> 0 then
+        sphereHitDist := sphereHitDist + radius
+      else
+        sphereHitDist := 0.0;
+      Result := True;
+      Exit;
+    end
+  else if dot > 0.0 then
+    begin
+      // On the same side as the plane and within collision range,
+      // calculate intersection point
+      if dot * moveDistance >= distToSphere then
+        begin
+          sphereHitDist := distToSphere / dot;
+          if sphereHitDist < 0.0 then
+            sphereHitDist := 0.0;
+          Result := True;
+          Exit;
+        end
+    end;
 end;
 
 end.
