@@ -355,30 +355,22 @@ begin
         else if Shift = [ssCtrl] then
           JedMain.RotateTexture(st_left)
         else if ssAlt in Shift then
-        begin
-          self.MoveCameraLeft;
-        end
+          begin
+            self.MoveCameraLeft;
+          end
         else
-        begin
-          yaw := yaw - 10;
-          if yaw < 0 then
-            yaw := yaw + 360;
-        end;
+          GetCamera().RotateYaw(-10);
       VK_RIGHT:
         if Shift = [ssShift] then
           JedMain.ShiftTexture(st_right)
         else if Shift = [ssCtrl] then
           JedMain.RotateTexture(st_right)
         else if ssAlt in Shift then
-        begin
-          self.MoveCameraRight;
-        end
+          begin
+            self.MoveCameraRight;
+          end
         else
-        begin
-          yaw := yaw + 10;
-          if yaw > 360 then
-            yaw := yaw - 360;
-        end;
+          GetCamera().RotateYaw(10);
       VK_UP:
         if Shift = [ssShift] then
           JedMain.ShiftTexture(st_up)
@@ -394,24 +386,16 @@ begin
         else if Shift = [ssCtrl] then
           JedMain.RaiseObject(ro_down)
         else
-        begin
           self.MoveCameraBackward;
-        end;
       VK_NEXT:
-        begin
-          pch := pch + 10;
-          if pch > 90 then
-            pch := 90;
-        end;
+          GetCamera().RotatePitch(10);
       VK_PRIOR:
         begin
-          pch := pch - 10;
-          if pch < -90 then
-            pch := -90;
+          GetCamera().RotatePitch(-10);
         end;
       VK_HOME:
         if Shift = [] then
-          pch := 0
+          GetCamera().rotation.pitch := 0
         else
           JedMain.StraightenTexture(ssCtrl in Shift, ssShift in Shift);
 
@@ -439,7 +423,8 @@ begin
         if Shift = [] then
           JedMain.AddThingAtSurf
         else if Shift = [ssShift] then
-          JedMain.AddThingAtXYZPYR(CamX, CamY, CamZ, -pch, 360 - yaw, 0.0)
+          with GetCamera() do
+            JedMain.AddThingAtXYZPYR(position.x, position.y, position.z, -rotation.pitch, 360 - rotation.yaw, 0.0)
         else
           JedMain.FormKeyDown(nil, Key, Shift);
 
@@ -515,8 +500,9 @@ begin
       Ord('F'):
         if Shift = [] Then
         begin
-          clipboard.AsText := Sprintf('(%1.5f/%1.5f/%1.5f:%1.5f/%1.5f/%1.5f)',
-            [CamX, CamY, CamZ, -pch, 360 - yaw, 0.0]);
+          with GetCamera() do
+            clipboard.AsText := Sprintf('(%1.5f/%1.5f/%1.5f:%1.5f/%1.5f/%1.5f)',
+              [position.x, position.y, position.z, -rotation.pitch, 360 - rotation.yaw, 0.0]);
         end;
 
     else
@@ -728,11 +714,15 @@ Procedure TPreview3D.SetCam(x, y, z, pch, yaw: double);
 begin
   if Render3D = nil then
     exit;
-  Render3D.CamX := x;
-  Render3D.CamY := y;
-  Render3D.CamZ := z;
-  Render3D.pch := -pch;
-  Render3D.yaw := -yaw;
+
+  with Render3D.GetCamera() do
+  begin
+    position.x := x;
+    position.y := y;
+    position.z := z;
+    rotation.pitch := -pch;
+    rotation.yaw   := -yaw;
+  end;
   Invalidate;
 end;
 
@@ -793,10 +783,13 @@ begin
       MM_TH:
         begin
           var curth := level.Things[JedMain.Cur_TH];
-          var dx := Render3D.CamX - curth.X;
-          var dy := Render3D.CamY - curth.Y;
-          var dz := Render3D.CamZ - curth.Z;
-          TranslateSelectedThings(dx, dy, dz, {localForward=}false);
+          with Render3D.GetCamera() do
+          begin
+            var dx := position.x - curth.X;
+            var dy := position.y - curth.Y;
+            var dz := position.z - curth.Z;
+            TranslateSelectedThings(dx, dy, dz, {localForward=}false);
+          end;
         end;
    end;
 end;
@@ -815,20 +808,26 @@ end;
 
 Procedure TPreview3D.SaveCamPos(var cpos: TCamPos);
 begin
-  cpos.x := Render3D.CamX;
-  cpos.y := Render3D.CamY;
-  cpos.z := Render3D.CamZ;
-  cpos.pch := Render3D.pch;
-  cpos.yaw := Render3D.yaw;
+  with Render3D.GetCamera() do
+  begin
+    cpos.x := position.x;
+    cpos.y := position.y;
+    cpos.z := position.z;
+    cpos.pch := rotation.pitch;
+    cpos.yaw := rotation.yaw;
+  end;
 end;
 
 Procedure TPreview3D.RestoreCamPos(const cpos: TCamPos);
 begin
-  Render3D.CamX := cpos.x;
-  Render3D.CamY := cpos.y;
-  Render3D.CamZ := cpos.z;
-  Render3D.pch := cpos.pch;
-  Render3D.yaw := cpos.yaw;
+  with Render3D.GetCamera() do
+  begin
+    position.x := cpos.x;
+    position.y := cpos.y;
+    position.z := cpos.z;
+    rotation.pitch := cpos.pch;
+    rotation.yaw := cpos.yaw;
+  end;
 end;
 
 procedure TPreview3D.Settings1Click(Sender: TObject);
@@ -853,21 +852,23 @@ begin
       begin
         if Render3D = nil then
           exit;
-        With Render3D do
+        With Render3D.GetCamera() do
           begin
             var dx := x - mousePos.x;
-            yaw := yaw + dx;
-            if yaw > 360 then
-              yaw := yaw - 360
-            else if yaw < 0 then
-                yaw := yaw + 360;
+            //yaw := yaw + dx;
+            RotateYaw(dx);
+//            if yaw > 360 then
+//              yaw := yaw - 360
+//            else if yaw < 0 then
+//                yaw := yaw + 360;
 
             var dy := y - mousePos.y;
-            pch := pch + dy;
-            if pch > 90 then
-               pch := 90
-            else if pch < -90 then
-               pch := -90;
+            RotatePitch(dy);
+//            pch := pch + dy;
+//            if pch > 90 then
+//               pch := 90
+//            else if pch < -90 then
+//               pch := -90;
 
             Invalidate;
           end;
@@ -1070,8 +1071,8 @@ end;
 
 procedure TPreview3D.SetViewcamera1Click(Sender: TObject);
 begin
-  With Render3D do
-    JedMain.SetCam(CamX, CamY, CamZ, 0, 0, 0);
+  With Render3D.GetCamera().position do
+    JedMain.SetCam(x, y, z, 0, 0, 0);
 end;
 
 Procedure TPreview3D.AddKBItem(mi: TMenuItem; const name: string; c: Char;
@@ -1115,7 +1116,7 @@ end;
 Procedure TPreview3D.MoveCameraForward;
 begin
   if Render3D <> nil then
-    Render3D.MoveCameraForward(P3DStep);
+    Render3D.Getcamera().MoveForward(P3DStep);
 end;
 
 procedure TPreview3D.MenuHighlightFloorClick(Sender: TObject);
@@ -1168,31 +1169,32 @@ end;
 Procedure TPreview3D.MoveCameraBackward;
 begin
   if Render3D <> nil then
-    Render3D.MoveCameraBackward(P3DStep);
+    Render3D.Getcamera().MoveBackward(P3DStep);
 end;
 
 Procedure TPreview3D.MoveCameraLeft;
 begin
   if Render3D <> nil then
-    Render3D.MoveCameraLeft(P3DStep);
+    Render3D.Getcamera().MoveLeft(P3DStep);
 end;
 
 Procedure TPreview3D.MoveCameraRight;
 begin
   if Render3D <> nil then
-    Render3D.MoveCameraRight(P3DStep);
+    Render3D.Getcamera().MoveRight(P3DStep);
 end;
 
 Procedure TPreview3D.MoveCameraUp;
 begin
   if Render3D <> nil then
-    Render3D.CamZ := Render3D.CamZ + P3DStep;
+    Render3D.Getcamera().MoveUp(P3DStep);
+    //Render3D.CamZ := Render3D.CamZ + P3DStep;
 end;
 
 Procedure TPreview3D.MoveCameraDown;
 begin
   if Render3D <> nil then
-    Render3D.CamZ := Render3D.CamZ - P3DStep;
+    Render3D.Getcamera().MoveDown(P3DStep);
 end;
 
 Procedure TPreview3D.TranslateSelectedThings(dx, dy, dz: double; localForward: boolean );
@@ -1269,11 +1271,15 @@ begin
   yaw := 0;
   if Render3D = nil then
     exit;
-  x := Render3D.CamX;
-  y := Render3D.CamY;
-  z := Render3D.CamZ;
-  pch := -Render3D.pch;
-  yaw := -Render3D.yaw;
+
+  with Render3D.GetCamera() do
+  begin
+    x := position.x;
+    y := position.y;
+    z := position.z;
+    pch := -rotation.pitch;
+    yaw := -rotation.yaw;
+  end;
 end;
 
 end.

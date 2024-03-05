@@ -20,7 +20,7 @@ TTexFormat = class
   constructor Create(ddpixfmt: TDDPixelFormat; ci: TColorInfo);
 end;
 
-TD3D5PRenderer=class(TNewPRenderer)
+TD3D5PRenderer = class(TNewPRenderer)
  hardware:boolean;
  ramp:boolean;
  idd2:IDirectDraw2;
@@ -43,18 +43,19 @@ TD3D5PRenderer=class(TNewPRenderer)
  Destructor Destroy;override;
  Procedure Initialize;override;
  Function IsFogSupported(): Boolean;override;
- Procedure SetFog(color: TColorF; fogStart, fogEnd: double; density: Double = 1.0);override;
- Function LoadTexture(const name:string;const ppal:PTCMPPal;const pcmp:PTCMPTable):T3DPTexture;override;
+ Procedure SetFog(color: TColorF; fogStart, fogEnd: double; density: Double = 1.0); override;
+ Function LoadTexture(const name: string; const ppal: PTCMPPal; const pcmp: PTCMPTable): T3DPTexture; override;
  Procedure EnableZTest(enable: Boolean); override;
  Procedure DrawPolys(const [Ref] polys: TArray<T3DPoly>; count: Integer = -1); override;
- //Procedure DrawMesh(m:T3DPMesh);override;
- Procedure GetWorldLine(X,Y:integer;var X1,Y1,Z1,X2,Y2,Z2:double);override;
+
+
+ Procedure GetWorldLine(X, Y: integer;var X1,Y1,Z1, X2,Y2,Z2:double);override;
  Procedure SetClearColor(color: TColorF); override;
  Procedure Redraw;override;
 
 Private
  d3dvxs: TArray<TD3DLVERTEX>;
- d3didxs:  TArray<WORD>;
+ d3didxs: TArray<WORD>;
  Function GetD3DPalette(const pal:TCMPPal):IDirectDrawPalette;
  Procedure SetRendererState(const faceflags: longint);
  Procedure DrawWiredPolys(const [Ref] polys: TArray<T3DPoly>; count: Integer);
@@ -64,12 +65,12 @@ end;
 PTD3D5PRenderer = ^TD3D5PRenderer;
 
 
-TD3DTexture=class(T3DPTexture)
- itx:IDirect3DTexture2;
- itxs:IDirectDrawSurface;
- dxr:TD3D5PRenderer;
- htx:TD3DTextureHandle;
- Constructor CreateFromMat(const Mat:string;const ppal:PTCMPPal;const pcmp:PTCMPTable;adxr:TD3D5PRenderer;gamma:double);
+TD3DTexture = class(T3DPTexture)
+ itx: IDirect3DTexture2;
+ itxs: IDirectDrawSurface;
+ dxr: TD3D5PRenderer;
+ htx: TD3DTextureHandle;
+ Constructor CreateFromMat(const Mat: string; const ppal: PTCMPPal; const pcmp: PTCMPTable; adxr: TD3D5PRenderer; gamma: double);
  Procedure SetCurrent;{override;}
  Destructor Destroy;override;
 end;
@@ -78,13 +79,13 @@ end;
 implementation
 uses D3D_PRender, math;
 
-var curdxr:TD3D5PRenderer;
+var curdxr: TD3D5PRenderer;
 
-Function D3DVECTOR(dx,dy,dz:single):TD3DVector;
+Function D3DVECTOR(dx,dy,dz:single): TD3DVector;
 begin
- Result.x:=dx;
- Result.y:=dy;
- Result.z:=dz;
+ Result.x := dx;
+ Result.y := dy;
+ Result.z := dz;
 end;
 
 Function IsRgbaFormat(const ddpixfmt: TDDPixelFormat; const ci: TColorInfo): Boolean; inline;
@@ -111,8 +112,7 @@ begin
 
   if BitMaskTest(ddsd.ddpfPixelFormat.dwFlags, DDPF_PALETTEINDEXED8) then
     pd3drd.PalettedTextures := true
-  else if ((ddsd.ddpfPixelFormat.dwFlags and DDPF_RGB) <> 0)
-    and (ddsd.ddpfPixelFormat.dwRGBBitCount >= 24) then
+  else if BitMaskTest(ddsd.ddpfPixelFormat.dwFlags, DDPF_RGB) and (ddsd.ddpfPixelFormat.dwRGBBitCount >= 24) then
     begin
       if ddsd.ddpfPixelFormat.dwRGBBitCount = 24 then
         begin
@@ -123,7 +123,7 @@ begin
         end
       else // 32
         begin
-          if (ddsd.ddpfPixelFormat.dwFlags and DDPF_ALPHAPIXELS) <> 0 then
+          if BitMaskTest(ddsd.ddpfPixelFormat.dwFlags, DDPF_ALPHAPIXELS) then
             begin
               if IsRgbaFormat(ddsd.ddpfPixelFormat, RGBA32) then
                 pd3drd.texFormats.Add(TTexFormat.Create(ddsd.ddpfPixelFormat, RGBA32))
@@ -151,12 +151,12 @@ begin
 
 end;
 
-Function GetZBufferBits(flags:integer):integer;
+Function GetZBufferBits(flags: integer):integer;
 begin
- if BitMaskTest(Flags, DDBD_16) then begin result:=16; exit; end;
- if BitMaskTest(Flags, DDBD_8)  then begin result:=8; exit; end;
- if BitMaskTest(Flags, DDBD_32) then begin result:=32; exit; end;
- if BitMaskTest(Flags, DDBD_24) then begin result:=24; exit; end;
+  if BitMaskTest(Flags, DDBD_16) then begin result := 16; exit; end;
+  if BitMaskTest(Flags, DDBD_8)  then begin result := 8; exit; end;
+  if BitMaskTest(Flags, DDBD_24) then begin result := 24; exit; end;
+  if BitMaskTest(Flags, DDBD_32) then begin result := 32; exit; end;
 end;
 
 Function EnumZBufferPFCallback(lpDDPixFmt: PDDPixelFormat; lpContext:PDDPixelFormat):HRESULT;
@@ -198,28 +198,28 @@ begin
   if not DirectX5 then Raise
     Exception.Create('DirectX 5.0 or higher required!');
 
-  ndevice:=GetDeviceNum(D3DDevice);
-  hardware:=_D3Ddrivers[ndevice].HWDeviceDesc.dcmColorModel <> D3DCOLOR_INVALID_0;
+  ndevice := GetDeviceNum(D3DDevice);
+  hardware := _D3Ddrivers[ndevice].HWDeviceDesc.dcmColorModel <> D3DCOLOR_INVALID_0;
 
   if hardware then pdd:=@_D3Ddrivers[ndevice].HWDeviceDesc
-  else pdd:=@_D3Ddrivers[ndevice].HELDeviceDesc;
+  else pdd := @_D3Ddrivers[ndevice].HELDeviceDesc;
 
-  ramp:=pdd^.dcmColorModel=D3DCOLOR_MONO;
+  ramp := pdd^.dcmColorModel=D3DCOLOR_MONO;
 
   if Ramp then
     Raise Exception.Create('Ramp device cannot be used with D3D IM renderer');
 
-  if (DirectDrawCreate(NIL, idd, NIL) <> DD_OK) then exit;
-  if (idd.QueryInterface(IID_IDirectDraw2, iDD2)<> S_OK) then exit;
+  if DirectDrawCreate(NIL, idd, NIL) <> DD_OK then exit;
+  if idd.QueryInterface(IID_IDirectDraw2, iDD2) <> S_OK then exit;
 
     // Set vertex buffer size
   SetLength(d3dvxs, pdd.dwMaxVertexCount);
-  SetLength(d3didxs, pdd.dwMaxVertexCount * 3);
+  SetLength(d3didxs, pdd.dwMaxVertexCount * 3); // 3 triangles
 
-  res:=iDD2.SetCooperativeLevel(WHandle, DDSCL_NORMAL);
+  res := iDD2.SetCooperativeLevel(WHandle, DDSCL_NORMAL);
   DDCheck(res,'in SetCooperativeLevel');
 
-  res:=idd2.QueryInterface(IID_IDirect3D2, id3d2);
+  res := idd2.QueryInterface(IID_IDirect3D2, id3d2);
   DXFailCheck(res,'Getting Direct3D2 inteface');
 
   {Create Windowed }
@@ -227,7 +227,7 @@ begin
 
   {Create front buffer}
   FillChar(ddsd,sizeof(ddsd),0);
-  ddsd.dwSize := sizeof(ddsd);
+  ddsd.dwSize  := sizeof(ddsd);
   ddsd.dwFlags := DDSD_CAPS;
 
   {if (hardware) then } ddsd.ddsCaps.dwCaps:=DDSCAPS_PRIMARYSURFACE or DDSCAPS_VIDEOMEMORY;
@@ -237,100 +237,105 @@ begin
   DDFailCheck(res,'Creating Primary Surface');
 
   {Create Clipper}
-  res:= iDD2.CreateClipper(0, iClp, NIL);
+  res := iDD2.CreateClipper(0, iClp, NIL);
   DDFailCheck(res,'Creating clipper');
 
-  res:=iclp.SetHWnd(0,whandle);
+  res := iclp.SetHWnd(0,whandle);
   DDFailCheck(res,'Setting clipper''s window');
 
-  res:=ids.SetClipper(iClp);
+  res := ids.SetClipper(iClp);
   DDFailCheck(res,'Setting clipper');
 
   iclp.Release;
 
   {Create back buffer}
   ddsd.dwSize := sizeof(ddsd);
-  res:=idd2.GetDisplayMode(ddsd);
+  res := idd2.GetDisplayMode(ddsd);
 
   ddsd.dwFlags := DDSD_CAPS or DDSD_HEIGHT or DDSD_WIDTH;
 
   if (hardware) then
     ddsd.ddsCaps.dwCaps := DDSCAPS_OFFSCREENPLAIN or DDSCAPS_3DDEVICE or DDSCAPS_VIDEOMEMORY
-  else ddsd.ddsCaps.dwCaps := DDSCAPS_OFFSCREENPLAIN or DDSCAPS_3DDEVICE or DDSCAPS_SYSTEMMEMORY;
+  else
+    ddsd.ddsCaps.dwCaps := DDSCAPS_OFFSCREENPLAIN or DDSCAPS_3DDEVICE or DDSCAPS_SYSTEMMEMORY;
 
-  ddsd.dwWidth := vwidth;
+  ddsd.dwWidth  := vwidth;
   ddsd.dwHeight := vheight;
 
-  res:=iDD2.CreateSurface(ddsd, idsback, NIL);
+  res := iDD2.CreateSurface(ddsd, idsback, NIL);
   DDFailCheck(res,'Creating back buffer');
 
   {res:=ids.AddAttachedSurface(idsback);}
 
   {Create Z buffer - skipped}
   FillChar(ddsd,sizeof(ddsd),0);
-  ddsd.dwSize := sizeof(ddsd);
+  ddsd.dwSize  := sizeof(ddsd);
   ddsd.dwFlags := DDSD_CAPS or DDSD_HEIGHT or DDSD_WIDTH or DDSD_ZBUFFERBITDEPTH;
 
-  if (hardware) then ddsd.ddsCaps.dwCaps := DDSCAPS_ZBUFFER or DDSCAPS_VIDEOMEMORY
-  else ddsd.ddsCaps.dwCaps := DDSCAPS_ZBUFFER or DDSCAPS_SYSTEMMEMORY;
+  if (hardware) then
+    ddsd.ddsCaps.dwCaps := DDSCAPS_ZBUFFER or DDSCAPS_VIDEOMEMORY
+  else
+    ddsd.ddsCaps.dwCaps := DDSCAPS_ZBUFFER or DDSCAPS_SYSTEMMEMORY;
 
    // TODO: directx6
   {Enumerate Z buffer formats - skipped}
   //id3d2.EnumDevices()(IID_IDirect3DTnLHalDevice , EnumZBufferPFCallback, @ddsd.PDDPixelFormat);
-  ddsd.dwZBufferBitDepth:=GetZBufferBits(pdd^.dwDeviceZBufferBitDepth);
-  ddsd.dwWidth := vwidth;
+  ddsd.dwZBufferBitDepth := GetZBufferBits(pdd^.dwDeviceZBufferBitDepth);
+  ddsd.dwWidth  := vwidth;
   ddsd.dwHeight := vheight;
 
-  res:=iDD2.CreateSurface(ddsd, idz, NIL);
+  res := iDD2.CreateSurface(ddsd, idz, NIL);
   DDFailCheck(res,'Creating Z buffer');
 
-  res:=idsback.AddAttachedSurface(idz);
+  res := idsback.AddAttachedSurface(idz);
   DDFailCheck(res,'Attaching Z buffer');
 
   {res:=ids.QueryInterface(_D3Ddrivers[0].id,iD3DDev);}
-  res:=iD3D2.CreateDevice(_D3Ddrivers[ndevice].id, idsback, id3dDev);
+  res := iD3D2.CreateDevice(_D3Ddrivers[ndevice].id, idsback, id3dDev);
   DXFailCheck(res,'Creating device');
 
   {Get supported texture formats }
   texFormats := TObjectList<TTexFormat>.Create((*AOwnsObjects=*)true);
-  res:=id3ddev.EnumTextureFormats(_EnumTXFormats, @self);
+  res := id3ddev.EnumTextureFormats(_EnumTXFormats, @self);
   DXCheck(res,'Checking texture formats');
 
   if ((CurrentProject = IJIM) or (not self.PalettedTextures)) and (texFormats.Count < 1) then
     raise Exception.Create('No supported RGB(A) texture format found');
 
   // Create viewport
-  res:=id3d2.CreateViewport(iview,NIL);
+  res := id3d2.CreateViewport(iview, nil);
   DXFailCheck(res,'Creating viewport');
-  res:=id3ddev.AddViewport(iview);
+
+  res := id3ddev.AddViewport(iview);
   DXFailCheck(res,'Adding viewport');
 
-  FillChar(dview,sizeof(dview),0);
-  With dview do
-  begin
-     dwSize := sizeof(TD3DVIEWPORT);
-     dwX := 0;
-     dwY := 0;
-     dwWidth := vWidth;
-     dwHeight := vHeight;
-     dvScaleX := dwWidth / 2.0;
-     dvScaleY := dwWidth / 2.0;
-     dvMaxX := D3DDivide(D3DVAL(dwWidth),D3DVAL(2 *dvScaleX));
-     dvMaxY := D3DDivide(D3DVAL(dwHeight),D3DVAL(2 *dvScaleY));
-  end;
+  FillChar(dview, sizeof(dview), 0);
+  with dview do
+    begin
+       dwSize   := sizeof(TD3DVIEWPORT);
+       dwX      := 0;
+       dwY      := 0;
+       dwWidth  := vWidth;
+       dwHeight := vHeight;
+       dvScaleX := dwWidth / 2.0;
+       dvScaleY := dwWidth / 2.0;
+       dvMaxX   := D3DDivide(D3DVAL(dwWidth), D3DVAL(2 * dvScaleX));
+       dvMaxY   := D3DDivide(D3DVAL(dwHeight), D3DVAL(2 * dvScaleY));
+    end;
+
   res := iview.SetViewport(dview);
   DXFailCheck(res,'Setting viewport');
-  res:=id3ddev.SetCurrentViewport(iview);
+  res := id3ddev.SetCurrentViewport(iview);
   DXFailCheck(res,'Setting current viewport');
 
   // Set viewport background material
-  res:=id3d2.creatematerial(backmat,nil);
+  res := id3d2.CreateMaterial(backmat, nil);
   DXCheck(res,'Creating material');
 
-  res:=backmat.gethandle(id3ddev,hmat);
+  res := backmat.GetHandle(id3ddev, hmat);
   DXCheck(res,'Getting material handle');
 
-  res:=IView.SetBackGround(hmat);
+  res := iview.SetBackground(hmat);
   DXCheck(res,'Setting background');
 
   // Init renderer state
@@ -341,7 +346,7 @@ begin
 
   // Texture filtering
   var texFilter := D3DFILTER_LINEAR;  // bilinear
-  if (pdd.dpcTriCaps.dwTextureFilterCaps and D3DPTFILTERCAPS_LINEAR) = 0 then
+  if not BitMaskTest(pdd.dpcTriCaps.dwTextureFilterCaps, D3DPTFILTERCAPS_LINEAR) then
     texFilter := D3DFILTER_NEAREST;
   DXCheck(Id3dDev.SetRenderState(D3DRENDERSTATE_TEXTUREMAG, Integer(texFilter)), 'Setting render state: Texture mag. filter');
   DXCheck(Id3dDev.SetRenderState(D3DRENDERSTATE_TEXTUREMIN, Integer(texFilter)), 'Setting render state: Texture mag. filter');
@@ -358,25 +363,23 @@ begin
     DXCheck(Id3dDev.SetRenderState(D3DRENDERSTATE_TEXTUREADDRESSU, Integer(D3DTADDRESS_WRAP)), 'Setting render state: Set texture address U to wrap');
     DXCheck(Id3dDev.SetRenderState(D3DRENDERSTATE_TEXTUREADDRESSV, Integer(D3DTADDRESS_WRAP)), 'Setting render state: Set texture address V to wrap');
 
-    if ((pdd.dpcTriCaps.dwTextureCaps and D3DPTEXTURECAPS_TRANSPARENCY) <> 0)
-    and ((pdd.dpcTriCaps.dwSrcBlendCaps and D3DPBLENDCAPS_SRCALPHA) <> 0)
-    and ((pdd.dpcTriCaps.dwDestBlendCaps and D3DPBLENDCAPS_INVSRCALPHA) <> 0)
+    if    BitMaskTest(pdd.dpcTriCaps.dwTextureCaps, D3DPTEXTURECAPS_TRANSPARENCY)
+      and BitMaskTest(pdd.dpcTriCaps.dwSrcBlendCaps, D3DPBLENDCAPS_SRCALPHA)
+      and BitMaskTest(pdd.dpcTriCaps.dwDestBlendCaps, D3DPBLENDCAPS_INVSRCALPHA)
     then
       begin
-
         DXCheck(Id3dDev.SetRenderState(D3DRENDERSTATE_BLENDENABLE, Integer(TRUE)), 'Setting render state: Enable blend');
         DXCheck(Id3dDev.SetRenderState(D3DRENDERSTATE_TEXTUREMAPBLEND, Integer(D3DTBLEND_MODULATEALPHA)), 'Setting render state: Set texture blend to D3DTBLEND_MODULATE');
 
         DXCheck(Id3dDev.SetRenderState(D3DRENDERSTATE_SRCBLEND, Integer(D3DBLEND_SRCALPHA)), 'Setting render state: Set src blend to SRCALPHA');
         DXCheck(Id3dDev.SetRenderState(D3DRENDERSTATE_DESTBLEND, Integer(D3DBLEND_INVSRCALPHA)), 'Setting render state: Set dest blend to INVSRCALPHA');
         DXCheck(Id3dDev.SetRenderState(D3DRENDERSTATE_ALPHATESTENABLE, Integer(TRUE)), 'Setting render state: Enable alpha test');
-        if (pdd.dpcTriCaps.dwAlphaCmpCaps and D3DPCMPCAPS_GREATER) <> 0 then
+        if BitMaskTest(pdd.dpcTriCaps.dwAlphaCmpCaps, D3DPCMPCAPS_GREATER) then
         begin
           DXCheck(Id3dDev.SetRenderState(D3DRENDERSTATE_ALPHAFUNC, integer(D3DCMP_GREATER)), 'Setting render state: Enable COLORKEYENABLE');
           DXCheck(Id3dDev.SetRenderState(D3DRENDERSTATE_ALPHAREF, $00), 'Setting render state: Set alpha ref. to 0x00');
         end;
       end;
-
 
     //DXCheck(Id3dDev.SetRenderState(D3DRENDERSTATE_COLORKEYENABLE, integer(TRUE)), 'Setting render state: Enable COLORKEYENABLE');
     //DXCheck(Id3dDev.SetRenderState(D3DRENDERSTATE_STIPPLEDALPHA, integer(TRUE)), 'Setting render state: Enable COLORKEYENABLE');
@@ -398,12 +401,12 @@ end;
 procedure FreeUnk(Iu:IUnknown);
 var n:integer;
 begin
- if iu<>nil then
+ if iu <> nil then
  begin
-  n:=iu.Release;
-  if n<>0 then
+  n := iu.Release;
+  if n <> 0 then
   begin
-   if (n=1) then;
+   if (n = 1) then;
   end;
  end;
 end;
@@ -439,7 +442,7 @@ Procedure TD3D5PRenderer.SetFog(color: TColorF; fogStart, fogEnd: double; densit
 begin
   Inherited SetFog(color, fogStart, fogEnd, density);
 
-  var res := Id3dDev.SetRenderState(D3DRENDERSTATE_FOGCOLOR, EncodeBGR(fog.Color));
+  var res := Id3dDev.SetRenderState(D3DRENDERSTATE_FOGCOLOR, EncodeRGB(fog.Color));
   DXCheck(res, 'Setting render state: Set fog color');
   if res <> DD_OK then
     exit;
@@ -453,7 +456,7 @@ begin
 
       DXCheck(Id3dDev.SetRenderState(D3DRENDERSTATE_FOGTABLEMODE, Integer(D3DFOG_LINEAR)), 'Setting render state: Set fog table mode to linear');
 
-      var ff := 0.0311; // TODO: This is hack for eye-relative fog
+      var ff := 0.0311; // TODO: Note, this is just a hack for eye-relative fog
       var ffogStart: Single := fog.FogStart * ff;
       res := Id3dDev.SetRenderState(D3DRENDERSTATE_FOGTABLESTART, LPDWORD(@ffogStart)^);
       DXCheck(res, 'Setting render state: Set fog table start');
@@ -491,36 +494,35 @@ end;
 Procedure TD3D5PRenderer.SetRendererState(const faceflags: longint);
 begin
   var cullMode := D3DCULL_CW;
-  if (faceflags and FF_DOUBLESIDED) <> 0 then cullMode := D3DCULL_NONE;
+  if BitMaskTest(faceflags, FF_DOUBLESIDED) then cullMode := D3DCULL_NONE;
   DXCheck(Id3dDev.SetRenderState(D3DRENDERSTATE_CULLMODE, Integer(cullMode)), 'Setting render state: Set cull mode');
 
   var alphaRef := $00;
-  if (faceflags and FF_RD_AlphaRef) <> 0 then
+  if BitMaskTest(faceflags, FF_RD_AlphaRef)then
     alphaRef := $A0;
   DXCheck(Id3dDev.SetRenderState(D3DRENDERSTATE_ALPHAREF, alphaRef), 'Setting render state: Set alpha ref.');
 
   var textAddrU := D3DTADDRESS_WRAP;
   var textAddrV := D3DTADDRESS_WRAP;
-  if (faceflags and FF_TexClampX) <> 0 then textAddrU := D3DTADDRESS_CLAMP;
-  if (faceflags and FF_TexClampY) <> 0 then textAddrV := D3DTADDRESS_CLAMP;
+  if BitMaskTest(faceflags, FF_TexClampX) then textAddrU := D3DTADDRESS_CLAMP;
+  if BitMaskTest(faceflags, FF_TexClampY) then textAddrV := D3DTADDRESS_CLAMP;
 
   DXCheck(Id3dDev.SetRenderState(D3DRENDERSTATE_TEXTUREADDRESSU, Integer(textAddrU)), 'Setting render state: Set texture address U');
   DXCheck(Id3dDev.SetRenderState(D3DRENDERSTATE_TEXTUREADDRESSV, Integer(textAddrV)), 'Setting render state: Set texture address V');
 
   var texFilter := D3DFILTER_LINEAR;  // bilinear
-  if ((pdd.dpcTriCaps.dwTextureFilterCaps and D3DPTFILTERCAPS_LINEAR) = 0)
-  or ((faceflags and FF_TexNoFiltering) <> 0) then
+  if BitMaskTest(faceflags, FF_TexNoFiltering) or not BitMaskTest(pdd.dpcTriCaps.dwTextureFilterCaps, D3DPTFILTERCAPS_LINEAR) then
     texFilter := D3DFILTER_NEAREST;
   DXCheck(Id3dDev.SetRenderState(D3DRENDERSTATE_TEXTUREMAG, Integer(texFilter)), 'Setting render state: Texture mag. filter');
   DXCheck(Id3dDev.SetRenderState(D3DRENDERSTATE_TEXTUREMIN, Integer(texFilter)), 'Setting render state: Texture mag. filter');
 
   var zwriteEnabled := true;
-  if ((faceflags and FF_ZWriteDisabled) <> 0) then zwriteEnabled := false;
+  if BitMaskTest(faceflags, FF_ZWriteDisabled) then zwriteEnabled := false;
   DXCheck(Id3dDev.SetRenderState(D3DRENDERSTATE_ZWRITEENABLE, Integer(zwriteEnabled)), 'Setting render state: Set Z write');
 
   if CurrentProject = IJIM then
     begin
-       if fog.Enabled and ((faceflags and FF_IJIM_FogEnabled) <> 0) then
+       if fog.Enabled and BitMaskTest(faceflags, FF_IJIM_FogEnabled) then
         DXCheck(Id3dDev.SetRenderState(D3DRENDERSTATE_FOGENABLE, Integer(TRUE)), 'Setting render state: Enable fog')
        else
         DXCheck(Id3dDev.SetRenderState(D3DRENDERSTATE_FOGENABLE, Integer(FALSE)), 'Setting render state: Disable fog');
@@ -551,11 +553,6 @@ begin
 end;
 
 Procedure TD3D5PRenderer.DrawPolys(const [Ref] polys: TArray<T3DPoly>; count: Integer);
-//var i,j:integer;
-    //poly:T3DPoly;
-    //vxd:TVXdets;
-    //var d3dvx:array[0..maxVerts -1] of TD3DLVERTEX;
-    //var res,n:integer;
 begin
   if polys = nil then exit;
 
@@ -565,116 +562,9 @@ begin
   if geoMode <= Wireframe then
     DrawWiredPolys(polys, count)
   else
-    DrawSolidPolys(polys, count);
-
-
-//  var maxDxVerts   := Length(d3dvxs);
-//  var numDxVerts   := 0;
-//  var numIdxs      := 0;
-//  var curFaceFlags := 0;
-//  var curGeo:TGeoMode;
-//  var curTex: T3DPTexture := nil;
-//  var i := 0;
-//  //for var i:= 0 to count-1 do
-//  while i < count do
-//    begin
-//      var poly := polys[i];
-//      if poly = nil then continue;
-//
-//      curFaceFlags := poly.faceflags;
-//      curGeo := poly.geo;
-//      curTex := poly.tx;
-//      if curGeo <> Texture then
-//        curTex := nil;
-//
-//      SetRendererState(curFaceFlags);
-//      TD3Dtexture(curTex).SetCurrent;
-//
-//      while i < Count do // Try to put on rd vertices cache as many polies before actually drawing
-//        begin
-//          var numVerts := poly.vxds.count;
-//          if numVerts > maxDxVerts then
-//            begin
-//              PanMessageFmt(mt_warning, 'TD3D5PRenderer.DrawPolys: Polygon has more vertices [%d] than D3Device max vertices [%d]!', [numVerts, maxDxVerts]);
-//              numVerts := maxDxVerts;
-//            end;
-//
-//          for var j := 0 to numVerts-1 do
-//          With d3dvxs[numDxVerts + j] do
-//            begin
-//              var vxd:=poly.getVXD(j);
-//              x:=vxd.x;
-//              y:=vxd.y;
-//              z:=vxd.z;
-//              dcSpecular:=0;
-//              tu:=vxd.u;
-//              tv:=vxd.v;
-//              var lcolor := vxd.intensity + poly.extraLight;
-//              lcolor.Normalize;
-//              if (poly.faceflags and FF_Transluent) <> 0 then
-//                color := D3DRGBA(lcolor.r, lcolor.g, lcolor.b, lcolor.a)
-//              else
-//                color := D3DRGB(lcolor.r, lcolor.g, lcolor.b);
-//            end;
-//
-//          // Triangulaton
-//          if numVerts <= 3 then
-//            begin
-//              d3didxs[numIdxs]     := numDxVerts;
-//              d3didxs[numIdxs + 1] := numDxVerts + 1;
-//              d3didxs[numIdxs + 2] := numDxVerts + 2;
-//              numIdxs := numIdxs + 3;
-//            end
-//          else
-//            begin
-//              const totalTris = numVerts - 2;
-//              var ofsTriVert0 := 0;
-//              var ofsTriVert1 := 1;
-//              var ofsTriVert2 := numVerts - 1;
-//              for var idx := 0 to totalTris do
-//                begin
-//                  d3didxs[numIdxs]     := numDxVerts + ofsTriVert0;
-//                  d3didxs[numIdxs + 1] := numDxVerts + ofsTriVert1;
-//                  d3didxs[numIdxs + 2] := numDxVerts + ofsTriVert2;
-//                  numIdxs := numIdxs + 3;
-//                  if (idx and 1) = 0 then //((not idx) and 1) <> 0 then  //if even
-//                    begin
-//                      ofsTriVert0 := ofsTriVert1;
-//                      ofsTriVert1 := ofsTriVert1 + 1;
-//                    end
-//                  else // if idx is odd
-//                    begin
-//                      ofsTriVert0 := ofsTriVert2;
-//                      ofsTriVert2 := ofsTriVert2 - 1;
-//                    end;
-//                end;
-//            end;
-//
-//          numDxVerts := numDxVerts + numVerts;
-//          if (i + 1) < Count then // Try to squeeze the nex poly on the rd vert cache
-//            begin
-//              poly := polys[i+1];
-//              if (poly.faceflags <> curFaceFlags)
-//              or ((poly.vxds.Count + numDxVerts) >= maxDxVerts)
-//              or (poly.geo <> curGeo)
-//              or (not IsEqualTex(poly.tx, curTex)) then
-//                break;
-//             end;
-//          i := i + 1;
-//        end;
-//
-//      // Jones engine DirectX6 calls DrawIndexedPrimitive for world geometry with
-//      //  dwVertexTypeDesc = D3DFVF_TEX0 | D3DFVF_DIFFUSE |D3DFVF_SPECULAR | D3DFVF_XYZRHW
-//      //  dwFlags = D3DDP_DONOTUPDATEEXTENTS | D3DDP_DONOTLIGHT - Hint that the lighting should not be applied on vertices.
-//      //var res := id3ddev.DrawPrimitive(D3DPT_TRIANGLEFAN, D3DVT_LVERTEX, @d3dvxs[0], numVerts, D3DDP_DONOTUPDATEEXTENTS);
-//
-//      var pIdices := d3didxs[0];
-//      var res := id3ddev.DrawIndexedPrimitive(D3DPT_TRIANGLELIST, D3DVT_LVERTEX, @d3dvxs[0], numDxVerts, d3didxs[0], numIdxs, D3DDP_DONOTUPDATEEXTENTS);
-//      DXCheck(res,'Drawing triangles');
-//      numDxVerts := 0;
-//      numIdxs    := 0;
-//      i := i + 1;
-//    end;
+    begin
+      DrawSolidPolys(polys, count);
+    end;
 end;
 
 Procedure TD3D5PRenderer.DrawWiredPolys(const [Ref] polys: TArray<T3DPoly>; count: Integer);
@@ -729,13 +619,17 @@ begin
   var numDxVerts   := 0;
   var numIdxs      := 0;
   var curFaceFlags := 0;
-  var curGeo:TGeoMode;
+  var curGeo: TGeoMode;
   var curTex: T3DPTexture := nil;
   var i := 0;
   while i < count do
     begin
       var poly := polys[i];
-      if poly = nil then continue;
+      if (poly = nil) or (poly.geo = NotDrawn) then
+        begin
+          i := i + 1;
+          continue;
+        end;
 
       curFaceFlags := poly.faceflags;
       curGeo := poly.geo;
@@ -746,9 +640,9 @@ begin
       SetRendererState(curFaceFlags);
       TD3Dtexture(curTex).SetCurrent;
 
-      while i < Count do // Try to put on rd vertices cache as many polys before actually drawing
+      while i < count do // Try to put on rd vertices cache as many polys before actually drawing
         begin
-          var numVerts := poly.vxds.count;
+          var numVerts := poly.vxds.Count;
           if numVerts > maxDxVerts then
             begin
               PanMessageFmt(mt_warning, 'TD3D5PRenderer.RenderSolidPolys: Polygon has more vertices [%d] than D3Device max vertices [%d]!', [numVerts, maxDxVerts]);
@@ -758,14 +652,14 @@ begin
           for var j := 0 to numVerts-1 do
           With d3dvxs[numDxVerts + j] do
             begin
-              var vxd:=poly.getVXD(j);
-              x:=vxd.x;
-              y:=vxd.y;
-              z:=vxd.z;
-              tu:=vxd.u;
-              tv:=vxd.v;
+              var vxd := poly.getVXD(j);
+              x := vxd.x;
+              y := vxd.y;
+              z := vxd.z;
+              tu := vxd.u;
+              tv := vxd.v;
 
-              dcSpecular:=0;
+              dcSpecular := 0;
 
               var lcolor := poly.GetLitColor(vxd.intensity);
               if BitMaskTest(poly.faceflags, FF_Transluent) then
@@ -808,9 +702,9 @@ begin
             end;
 
           numDxVerts := numDxVerts + numVerts;
-          if (i + 1) < Count then // Try to squeeze the next poly on the rd vert cache
+          if (i + 1) < count then // Try to squeeze the next poly on the rd vert cache
             begin
-              poly := polys[i+1];
+              poly := polys[i + 1];
               if (poly.faceflags <> curFaceFlags)
               or ((poly.vxds.Count + numDxVerts) >= maxDxVerts)
               or (poly.geo <> curGeo)
@@ -834,97 +728,115 @@ begin
     end;
 end;
 
-//Procedure TD3D5PRenderer.DrawMesh(m:T3DPMesh);
-//var i,j:integer;
-//    surf:T3DPoly;
-//    vxd:TVXdets;
-//    d3dvx:array[0..maxVerts -1] of TD3DLVERTEX;
-//    res,n:integer;
-//begin
-// if m=nil then exit;
-// for i:=0 to m.polys.count-1 do
-//   begin
-//    surf:=m.GetPoly(i);
-//    SetRendererState(surf.faceflags);
-//
-//    TD3Dtexture(surf.tx).SetCurrent;
-////    if surf.tx <> nil then
-////      begin
-////        if (TD3Dtexture(surf.tx).colorMode = RGBA) then
-////          begin
-////            DXCheck(Id3dDev.SetRenderState(D3DRENDERSTATE_BLENDENABLE, Integer(TRUE)), 'Setting render state: Enable blend');
-////            DXCheck(Id3dDev.SetRenderState(D3DRENDERSTATE_ALPHATESTENABLE, Integer(TRUE)), 'Setting render state: Enable alpha test');
-////            DXCheck(Id3dDev.SetRenderState(D3DRENDERSTATE_ALPHAREF, $00), 'Setting render state: Set alpha ref. to 0xA0');
-////          end
-////        else
-////         begin
-////          DXCheck(Id3dDev.SetRenderState(D3DRENDERSTATE_BLENDENABLE, Integer(FALSE)), 'Setting render state: Enable blend');
-////          DXCheck(Id3dDev.SetRenderState(D3DRENDERSTATE_ALPHATESTENABLE, Integer(FALSE)), 'Setting render state: Enable alpha test');
-////          DXCheck(Id3dDev.SetRenderState(D3DRENDERSTATE_ALPHAREF, $A0), 'Setting render state: Set alpha ref. to 0xA0');
-////         end;
-////      end;
-//
-//    n:=surf.vxds.count;
-//    if n>maxVerts then n:=maxVerts;
-//
-//    for j:=0 to n-1 do
-//    With d3dvx[j] do
-//      begin
-//        vxd:=surf.getVXD(j);
-//        x:=vxd.x;
-//        y:=vxd.y;
-//        z:=vxd.z;
-//        dcSpecular:=0;
-//        tu:=vxd.u;
-//        tv:=vxd.v;
-//        //color:=vxd.r shl 16+vxd.g shl 8+vxd.b;
-//        if (surf.faceflags and FF_Transluent) <> 0 then
-//          color := D3DRGBA(vxd.intensity.r, vxd.intensity.g, vxd.intensity.b, vxd.intensity.a)
-//        else
-//          color := D3DRGB(vxd.intensity.r, vxd.intensity.g, vxd.intensity.b);
-//      end;
-//
-//     // Jones engine DirectX6 calls DrawIndexedPrimitive for world geometry with
-//     //  dwVertexTypeDesc = D3DFVF_TEX0 | D3DFVF_DIFFUSE |D3DFVF_SPECULAR | D3DFVF_XYZRHW
-//     //  dwFlags = D3DDP_DONOTUPDATEEXTENTS | D3DDP_DONOTLIGHT - Hint that the lighting should not be applied on vertices.
-//    res:=id3ddev.DrawPrimitive(D3DPT_TRIANGLEFAN, D3DVT_LVERTEX ,@d3dvx,n, D3DDP_DONOTUPDATEEXTENTS);
-//    DXCheck(res,'Drawing triangles');
-//   end;
-//end;
+procedure RenderSolidPoly(const [Ref] poly: T3DPoly; var vertices: TArray<TD3DLVERTEX>; var startIndex: Integer; var indices: TArray<WORD>; var curIdx: Integer); overload;
+begin
+  var numVerts := poly.vxds.Count;
+  for var j := 0 to numVerts - 1 do
+  With vertices[startIndex + j] do
+    begin
+      var vxd := poly.getVXD(j);
+      x := vxd.x;
+      y := vxd.y;
+      z := vxd.z;
+      tu := vxd.u;
+      tv := vxd.v;
+
+      dcSpecular := 0;
+
+      var lcolor := poly.GetLitColor(vxd.intensity);
+      if BitMaskTest(poly.faceflags, FF_Transluent) then
+        color := D3DRGBA(lcolor.r, lcolor.g, lcolor.b, lcolor.a)
+      else
+        color := D3DRGB(lcolor.r, lcolor.g, lcolor.b);
+    end;
+
+  // Triangulaton
+  if numVerts <= 3 then
+    begin
+      indices[curIdx]     := startIndex;
+      indices[curIdx + 1] := startIndex + 1;
+      indices[curIdx + 2] := startIndex + 2;
+      curIdx := curIdx + 3;
+    end
+  else
+    begin
+      const totalTris = numVerts - 2;
+      var ofsTriVert0 := 0;
+      var ofsTriVert1 := 1;
+      var ofsTriVert2 := numVerts - 1;
+      for var idx := 0 to totalTris do
+        begin
+          indices[curIdx]     := startIndex + ofsTriVert0;
+          indices[curIdx + 1] := startIndex + ofsTriVert1;
+          indices[curIdx + 2] := startIndex + ofsTriVert2;
+          curIdx := curIdx + 3;
+          if (idx and 1) = 0 then //((not idx) and 1) <> 0 then  //if even
+            begin
+              ofsTriVert0 := ofsTriVert1;
+              ofsTriVert1 := ofsTriVert1 + 1;
+            end
+          else // if idx is odd
+            begin
+              ofsTriVert0 := ofsTriVert2;
+              ofsTriVert2 := ofsTriVert2 - 1;
+            end;
+        end;
+    end;
+    startIndex := startIndex + poly.vxds.Count;
+end;
+
 
 Procedure TD3D5PRenderer.GetWorldLine(X,Y: integer; var x1,y1,z1, x2,y2,z2: double);
 var xv,yv,zv:TVector;
     px,py:double;
     vec:TVector;
 begin
- // Set camera rotation
- yv := TVector.forward;
- //yv.SetCoords(0,1,0);
- RotateVector(yv, -PCH, 0, 0);
- RotateVector(yv, 0, -YAW, 0);
+  // Set camera rotation
+  yv := TVector.forward;
+  //yv.SetCoords(0,1,0);
 
- zv := TVector.up;
- //zv.SetCoords(0,0,1);
- RotateVector(zv, -PCH, 0, 0);
- RotateVector(zv, 0, -YAW, 0);
+  with curCamera.rotation do
+    begin
+//      yv := view.lvec;   // Note, can occlude too much
+//      zv := view.uvec;
+//      xv := view.rvec;
+//
+      RotateVector(yv, -pitch, 0, 0);
+      RotateVector(yv, 0, -yaw, 0);
 
- xv := TVector.right;
- //xv.SetCoords(1,0,0);
- RotateVector(xv, -PCH, 0, 0);
- RotateVector(xv, 0, -YAW, 0);
+      zv := TVector.up;
+      //zv.SetCoords(0,0,1);
+      RotateVector(zv, -pitch, 0, 0);
+      RotateVector(zv, 0, -yaw, 0);
 
- {The projection rectangle is 0.1x0.075 units and 0.05 units away
+      xv := TVector.right;
+      //xv.SetCoords(1,0,0);
+      RotateVector(xv, -pitch, 0, 0);
+      RotateVector(xv, 0, -yaw, 0);
+    end;
+
+
+  {The projection rectangle is 0.1x0.075 units and 0.05 units away
   from camera}
 
- px:=(X - vwidth/2)/ vwidth * 0.1;
- py:=(vheight/2 - Y)/ vheight * 0.075;
+  px := (X - vwidth/2) / vwidth * 0.1;
+  py := (vheight/2 - Y) / vheight * 0.075;
 
- x1:=CamX + px*xv.dx + py*zv.dx + 0.05*yv.dx;
- y1:=CamY + px*xv.dy + py*zv.dy + 0.05*yv.dy;
- z1:=CamZ + px*xv.dz + py*zv.dz + 0.05*yv.dz;
+  with curCamera.position do
+    begin
+      x1 := x + px*xv.dx + py*zv.dx + 0.05 * yv.dx;
+      y1 := y + px*xv.dy + py*zv.dy + 0.05 * yv.dy;
+      z1 := z + px*xv.dz + py*zv.dz + 0.05 * yv.dz;
 
-PlaneLineXnNew(yv, CamX + yv.dx*5000, CamX + yv.dy*5000, CamX + yv.dz*5000,
-               CamX, CamY, CamZ, x1, y1, z1, x2, y2, z2);
+//      var tp := curCamera.view.TransformPoint(TVector.Create(px, py, 0.05)); // TODO: fix it; Note, curCamera.view can't be use because of too narrow view
+//      x1 := tp.x;
+//      y1 := tp.y;
+//      z1 := tp.z;
+
+
+      PlaneLineXnNew(yv, x + yv.dx * 5000, x + yv.dy * 5000, x + yv.dz * 5000,
+                     x, y, z, x1, y1, z1, x2, y2, z2);
+    end;
 
 {
 
@@ -962,81 +874,89 @@ var bltfx: TDDBLTFX;
     vec, zvec: TVector;
     rec: TD3DRECT;
 begin
- curdxr:=self;
- DisableFPUExceptions;
+  curdxr:=self;
+  DisableFPUExceptions;
 
- FillChar(bltfx,sizeof(bltfx),0);
- bltfx.dwSize := sizeof(bltfx);
+  FillChar(bltfx,sizeof(bltfx),0);
+  bltfx.dwSize := sizeof(bltfx);
 
- {res:=idsback.Blt(NIL,NIL,NIL,DDBLT_WAIT or DDBLT_COLORFILL,bltfx);}
+  {res:=idsback.Blt(NIL,NIL,NIL,DDBLT_WAIT or DDBLT_COLORFILL,bltfx);}
 
- rec.x1 := 0;
- rec.y1 := 0;
- rec.x2 := vwidth;
- rec.y2 := vheight;
- res := iview.clear(1 ,rec, d3dclear_target or d3dclear_zbuffer);
- DXCheck(res, 'Clearing viewport');
+  rec.x1 := 0;
+  rec.y1 := 0;
+  rec.x2 := vwidth;
+  rec.y2 := vheight;
+  res := iview.Clear(1, rec, D3DCLEAR_TARGET or D3DCLEAR_ZBUFFER);
+  DXCheck(res, 'Clearing viewport');
 
- m_World := IdentityMatrix;
- m_World._11 := -1;
+  m_World := IdentityMatrix;
+  m_World._11 := -1;
 
- {MatrixMul(TranslateMatrix(CamX,CamY,CamZ),RotateXmatrix(-pi/2));}
+  {MatrixMul(TranslateMatrix(CamX,CamY,CamZ),RotateXmatrix(-pi/2));}
 
- vec := TVector.forward;
- //vec.SetCoords(0,1,0);
- RotateVector(vec, -PCH, 0, 0);
- RotateVector(vec, 0, -YAW, 0);
+  vec := TVector.forward;
+  //vec.SetCoords(0,1,0);
+  with curCamera.rotation do
+    begin
+      RotateVector(vec, -pitch, 0, 0);
+      RotateVector(vec, 0, -yaw, 0);
+    end;
 
-{ RotateVector(zvec,-PCH,0,0);
- RotateVector(zvec,0,-YAW,0);}
+  { RotateVector(zvec,-PCH,0,0);
+  RotateVector(zvec,0,-YAW,0);}
 
- zvec := TVector.up;
- //zvec.SetCoords(0, 0, 1);
- if Abs(vec.dz) > 0.99 then
- begin
-  zvec := TVector.right.Cross(vec);
-  //VectorCross3(1, 0, 0, vec.dx, vec.dy, vec.dz, zvec.dx, zvec.dy, zvec.dz); //Vmult
-  RotateVector(zvec, 0, YAW, 0);
- end;
+  zvec := TVector.up;
+  //zvec.SetCoords(0, 0, 1);
+  if Abs(vec.dz) > 0.99 then
+    begin
+      zvec := TVector.right.Cross(vec);
+      //VectorCross3(1, 0, 0, vec.dx, vec.dy, vec.dz, zvec.dx, zvec.dy, zvec.dz); //Vmult
+      RotateVector(zvec, 0, curCamera.rotation.yaw, 0);
+    end;
 
- m_View := ViewMatrix(
-   D3DVECTOR(-CamX, CamY, CamZ),
-   D3DVECTOR( -CamX - vec.dx, CamY + vec.dy, CamZ + vec.dz),
-   D3DVECTOR(zvec.dx, zvec.dy, zvec.dz),
-   0);
+  with curCamera.position do
+    m_View := ViewMatrix(
+     D3DVECTOR(-x, y, z),
+     D3DVECTOR( -x - vec.dx, y + vec.dy, z + vec.dz),
+     D3DVECTOR(zvec.dx, zvec.dy, zvec.dz),
+     0);
 
- m_Proj := ProjectionMatrix(FrontPlane, BackPlane, (90 * PI / 180));
+  with curCamera.frustum do
+    m_Proj := ProjectionMatrix(curCamera.fov, curCamera.aspect,
+      nearPlane.distance, farPlane.distance);
+      //nearPlane.distance, farPlane.distance, (curCamera.fov * PI / 180));
 
- Id3dDev.SetTransform(D3DTRANSFORMSTATE_WORLD, m_World);
- Id3dDev.SetTransform(D3DTRANSFORMSTATE_VIEW, m_View);
- Id3dDev.SetTransform(D3DTRANSFORMSTATE_PROJECTION, m_Proj);
+  Id3dDev.SetTransform(D3DTRANSFORMSTATE_WORLD, m_World);
+  Id3dDev.SetTransform(D3DTRANSFORMSTATE_VIEW, m_View);
+  Id3dDev.SetTransform(D3DTRANSFORMSTATE_PROJECTION, m_Proj);
 
- res:=id3ddev.BeginScene;
- DXCheck(res, 'Beginnning scene');
+  res := id3ddev.BeginScene;
+  DXCheck(res, 'Beginnning scene');
 
- inherited Redraw;
+  // parent renders the scene
+  inherited Redraw;
 
- res:=id3ddev.EndScene;
- DXCheck(res, 'Ending scene');
+  res := id3ddev.EndScene;
+  DXCheck(res, 'Ending scene');
 
- GetClientRect(whandle, sr);
-{ r:=sr;}
+  GetClientRect(whandle, sr);
+  { r:=sr;}
 
- ClientToScreen(whandle, sr.topleft);
- ClientToScreen(whandle, sr.bottomright);
+  ClientToScreen(whandle, sr.topleft);
+  ClientToScreen(whandle, sr.bottomright);
 
- {r.left:=0; r.top:=0;
- r.bottom:=vheight-1; r.right:=vwidth-1;}
- {res:=idsback.Blt(NIL,NIL,NIL,DDBLT_WAIT or DDBLT_COLORFILL,bltfx);}
+  {r.left:=0; r.top:=0;
+  r.bottom:=vheight-1; r.right:=vwidth-1;}
+  {res:=idsback.Blt(NIL,NIL,NIL,DDBLT_WAIT or DDBLT_COLORFILL,bltfx);}
 
- res := ids.Blt(@sr, idsback, nil, DDBLT_WAIT, bltfx);
+  res := ids.Blt(@sr, idsback, nil, DDBLT_WAIT, bltfx);
 
- if res = DDERR_SURFACELOST then
- begin
-  ids.Restore;
-  idsback.Restore;
- end;
- DDCheck(res, 'Blitting from back to front');
+  if res = DDERR_SURFACELOST then
+    begin
+      ids.Restore;
+      idsback.Restore;
+    end;
+  DDCheck(res, 'Blitting from back to front');
 
 { res:=ids.BltFast(sr.left,sr.top, idsback, Trect(nil^), DDBLTFAST_WAIT or DDBLTFAST_NOCOLORKEY);}
 end;
@@ -1119,35 +1039,6 @@ var
    else
      begin
       ddsd.ddpfPixelFormat := texFmt.ddpfPixelFormat;
-
-      //ddsd.ddpfPixelFormat.dwSize:=sizeof(ddsd.ddpfPixelFormat);
-      //ddsd.ddpfPixelFormat.dwFlags:=DDPF_RGB ;//or DDPF_ALPHAPIXELS;
-
-      //ddsd.ddpfPixelFormat := texFmt.ddpfPixelFormat;
-
-
-    {  ddsd.ddpfPixelFormat.dwZBufferBitDepth:=8;
-      ddsd.ddpfPixelFormat.dwAlphaBitDepth:=8;}
-//      if mf.Info.ci.mode = RGBA then
-//        begin
-//          ddsd.ddpfPixelFormat.dwRGBBitCount:=32;
-//          ddsd.ddpfPixelFormat.dwRBitMask := $ff0000;
-//          ddsd.ddpfPixelFormat.dwGBitMask := $ff00;
-//          ddsd.ddpfPixelFormat.dwBBitMask := $ff;
-//          ddsd.ddpfPixelFormat.dwRGBAlphaBitMask:= $ff000000;
-//        end;
-  //    else
-  //      begin
-  //        ddsd.ddpfPixelFormat.dwRGBBitCount:=24;
-  //        ddsd.ddpfPixelFormat.dwRBitMask := $000000ff;
-  //        ddsd.ddpfPixelFormat.dwRBitMask := $0000ff00;
-  //        ddsd.ddpfPixelFormat.dwRBitMask := $00ff0000;
-  //      end;
-
-//      ddsd.ddpfPixelFormat.dwRGBBitCount:=16;
-//      ddsd.ddpfPixelFormat.dwRBitMask:=$F800;
-//      ddsd.ddpfPixelFormat.dwGBitMask:=$7E0;
-//      ddsd.ddpfPixelFormat.dwBBitMask:=$1F;
     end;
 
    ddsd.dwWidth := width;

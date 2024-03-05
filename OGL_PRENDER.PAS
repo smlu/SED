@@ -142,9 +142,11 @@ begin
   pfd.dwLayerMask := 0;
   pfd.dwVisiblemask := 0;
   pfd.dwDamageMask := 0;
+
   pixelFormat := ChoosePixelFormat(hdc, @pfd);
   SetPixelFormat(hdc, pixelFormat, @pfd);
   DescribePixelFormat(hdc, pixelFormat, sizeof(pfd), pfd);
+
   hpal := CreateOGLPalette(pfd);
   hglc := wglCreateContext(hdc);
   wglMakeCurrent(hdc, hglc);
@@ -186,7 +188,7 @@ begin
     glFrontFace(GL_CCW);
     glClearColor(1,1,1,1); }
 
-    glClearColor(1,1,1,1);
+    glClearColor(1, 1, 1, 1);
 end;
 
 Function TOGLPRenderer.CreateOGLPalette
@@ -233,7 +235,7 @@ end;
 
 Procedure TOGLPRenderer.SetRendererState(const faceflags: longint);
 begin
-  if (faceflags and FF_DoubleSided) <> 0 then
+  if BitMaskTest(faceflags, FF_DoubleSided) then
     glDisable(GL_CULL_FACE)
   else
     glEnable(GL_CULL_FACE);
@@ -241,8 +243,8 @@ begin
   // Set tex wrap mode
   var texWrapX := GL_REPEAT;
   var texWrapY := GL_REPEAT;
-  if (faceflags and FF_TexClampX) <> 0 then texWrapX := GL_CLAMP_TO_EDGE;
-  if (faceflags and FF_TexClampY) <> 0 then texWrapY := GL_CLAMP_TO_EDGE;
+  if BitMaskTest(faceflags, FF_TexClampX) then texWrapX := GL_CLAMP_TO_EDGE;
+  if BitMaskTest(faceflags, FF_TexClampY) then texWrapY := GL_CLAMP_TO_EDGE;
   glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, texWrapX);
   glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, texWrapY);
 
@@ -253,6 +255,7 @@ begin
      minFilter := GL_LINEAR;  // Bilinear
 
   if (faceflags and FF_TexNoFiltering) <> 0 then
+  if BitMaskTest(faceflags, FF_TexNoFiltering) then
   begin
     magFilter := GL_NEAREST; // Bilinear
     minFilter := GL_NEAREST; // trilinear
@@ -262,7 +265,7 @@ begin
 
   // Set Z-write mode
   var zwriteEnabled := GL_TRUE;
-  if (faceflags and FF_ZWriteDisabled) <> 0 then zwriteEnabled := GL_FALSE;
+  if BitMaskTest(faceflags, FF_ZWriteDisabled) then zwriteEnabled := GL_FALSE;
   glDepthMask(zwriteEnabled);
 
   if (CurrentProject = IJIM) and fog.Enabled and ((faceflags and FF_IJIM_FogEnabled) <> 0) then
@@ -285,9 +288,10 @@ end;
 
 Procedure TOGLPRenderer.EnableZTest(enable: Boolean);
 begin
-  if enable then glEnable(GL_DEPTH_TEST)
-  else glDisable(GL_DEPTH_TEST);
-
+  if enable then
+    glEnable(GL_DEPTH_TEST)
+  else
+    glDisable(GL_DEPTH_TEST);
 end;
 
 
@@ -393,72 +397,6 @@ begin
   end;
 end;
 
-//Procedure TOGLPRenderer.DrawMesh(m: T3DPMesh);
-//var
-//  i, j: integer;
-//  surf: T3DPoly;
-//  vxd: TVXdets;
-//begin
-//  if m = nil then
-//    exit;
-//  for i := 0 to m.polys.count - 1 do
-//  begin
-//    surf := m.GetPoly(i);
-////    if surf.tx <> nil then
-////    begin
-////      case TOGLTexture(surf.tx).colorMode of
-////        RGB: if alphaPass then continue;
-////        RGBA: if not alphaPass then continue;
-////      end;
-////
-////      if (surf.faceflags and FF_Transluent <> 0) and (not alphaPass) then continue;
-////
-////    end;
-//
-//
-//    TOGLTexture(surf.tx).SetCurrent;
-//    SetRendererState(surf.faceflags);
-//
-//    //glDisable(GL_BLEND);
-//    //if alphaPass then
-//    //glEnable(GL_BLEND);
-//
-//    //glDepthMask(not alphaPass);
-//
-//
-////    if surf.tx <> nil then
-////    begin
-////      if TOGLTexture(surf.tx).colorMode = RGBA then
-////        begin
-////           glEnable(GL_BLEND);
-////           //glDepthMask(GL_FALSE);
-////        end
-////      else
-////        begin
-////          glDisable(GL_BLEND);
-////          //glDepthMask(GL_TRUE);
-////        end;
-////    end;
-//
-//
-//    glBegin(GL_POLYGON);
-//      for j := 0 to surf.vxds.count - 1 do
-//      begin
-//        vxd := surf.getVXD(j);
-//
-//        if (surf.faceflags and FF_Transluent) <> 0 then
-//          glColor4ub(L2B(vxd.intensity.r), L2B(vxd.intensity.g), L2B(vxd.intensity.b),L2B(vxd.intensity.a))
-//        else
-//          glColor3ub(L2B(vxd.intensity.r), L2B(vxd.intensity.g), L2B(vxd.intensity.b));
-//
-//        if surf.tx <> nil then
-//          glTexCoord2f(vxd.u, vxd.v);
-//        glVertex3f(vxd.X, vxd.Y, vxd.z);
-//      end;
-//    glEnd;
-//  end;
-//end;
-
 Procedure TOGLPRenderer.GetWorldLine(X, Y: integer;
   var X1, Y1, Z1, X2, Y2, Z2: double);
 var
@@ -469,8 +407,6 @@ var
   d: double;
 begin
   SetMatrix;
-
-  { SetRenderMatrix; }
   glGetIntegerv(GL_VIEWPORT, @vp);
   glGetDoublev(GL_MODELVIEW_MATRIX, @mmx);
   glGetDoublev(GL_PROJECTION_MATRIX, @pmx);
@@ -484,15 +420,21 @@ begin
   //wglMakeCurrent(hdc, hglc);
   glMatrixMode(GL_PROJECTION);
   glLoadIdentity;
-  var fov: double := 2 * arctan(vheight / vwidth) / pi * 180;
-  gluPerspective(fov, vwidth / vheight, FrontPlane, BackPlane);
 
-  glMatrixMode(GL_MODELVIEW);
-  glLoadIdentity ;
-  glRotated(-90, 1, 0, 0);
-  glRotated(pch, 1, 0, 0);
-  glRotated(yaw, 0, 0, 1);
-  glTranslated(-CamX, -CamY, -CamZ);
+  with curCamera do
+  begin
+    // TODO: Update fix code to use camera fov
+    var fova: double := 2 * arctan(vheight / vwidth) / pi * 180;
+    with frustum do
+      gluPerspective(fova, aspect, nearPlane.distance, farPlane.distance);
+
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity ;
+    glRotated(-90, 1, 0, 0);
+    glRotated(rotation.pitch, 1, 0, 0);
+    glRotated(rotation.yaw, 0, 0, 1);
+    glTranslated(-position.x, -position.y, -position.z);
+  end;
 end;
 
 Procedure TOGLPRenderer.SetClearColor(color: TColorF);

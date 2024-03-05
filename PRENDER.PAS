@@ -78,6 +78,7 @@
 {$WARN XML_NO_PARM ON}
 {$WARN XML_NO_MATCHING_PARM ON}
 {$WARN IMMUTABLE_STRINGS OFF}
+
 unit PRender;
 
 interface
@@ -85,17 +86,14 @@ interface
 uses u_pj3dos, Geometry, Classes, J_Level, Forms, Windows, Messages,
      Images, graph_files, Graphics, files, fileOperations, misc_utils,
      lev_utils, sysUtils, GlobalVars, ExtCtrls, Generics.Collections,
-     Generics.Defaults, Jed_Main, System.Math;
+     Generics.Defaults, Jed_Main, System.Math, RenderUtils;
 
-const
-  FrontPlane     = 0.008;  // jones3D engine 0.0156;
-  BackPlane      = 5000.0; // jones3D engine 64.0
 type
 
 T3DPTexture=class
   name: string;  // material name
-  cmpname:string;
-  width,height:integer;
+  cmpname: string;
+  width, height: integer;
   ci: TColorInfo;
   {Procedure SetCurrent;virtual;abstract;}
 end;
@@ -104,10 +102,10 @@ T3DPVertex=record
   x,y,z:single;
 end;
 
-TVXdets=class
+TVXdets = class
   {vx:^T3DPVertex;}
-  x,y,z:single;
-  u,v:single;
+  x, y, z: single;
+  u, v: single;
   intensity: TColorF;
 end;
 
@@ -157,25 +155,14 @@ TMeshes = class(TList)
   Property Items[n: integer]: T3DPMesh read GetItem write SetItem; default;
 end;
 
-TFrustumPlane = record
-  pos: TVector;
-  normal: TVector;
-end;
 
-TClipFrustum = record
-  nearPlane: TFrustumPlane;
-  farPlane: TFrustumPlane;
-  leftPlane: TFrustumPlane;
-  topPlane: TFrustumPlane;
-  rightPlane: TFrustumPlane;
-  bottomPlane: TFrustumPlane;
-end;
 
-TPickType=(pk_nothing,pk_surface,pk_thing);
 
-TPreviewRender=class
-  camX, camY, camZ: Double;
-  PCH,YAW:Double;
+TPickType = (pk_nothing, pk_surface, pk_thing);
+
+
+
+TPreviewRender = class
   whandle:HWND;
   vwidth,vheight:integer;
   gamma:double;
@@ -205,6 +192,8 @@ TPreviewRender=class
 
   Constructor Create(aForm: TForm; geoMode: TGeoMode = Texture; lightMode: TLightMode = Gouraud);
   Constructor CreateFromPanel(aPanel:TPanel; geoMode: TGeoMode = Texture; lightMode: TLightMode = Gouraud);
+  Destructor Destroy; override;
+
   Procedure Initialize;virtual;abstract;
   Procedure ClearSectors;virtual;abstract;
   Procedure ClearThings;virtual;abstract;
@@ -222,12 +211,8 @@ TPreviewRender=class
   procedure HandlePaint(hdc:HDC);virtual;abstract;
   Function PickAt(X,Y:integer):TPickType;virtual;abstract;
   Function SetGamma(gamma:double):integer;virtual;abstract;
-  Procedure MoveCamera(dx, dy, dz: double);
-  Procedure MoveCameraForward(step: double = 1.0);
-  Procedure MoveCameraBackward(step: double = 1.0);
-  Procedure MoveCameraLeft(step: double = 1.0);
-  Procedure MoveCameraRight(step: double = 1.0);
-  Procedure SetViewToThing(th:TJKThing; zoomOut: Double = 0.0; pitchOffset: double = 0; yawOffset: double = 0);virtual;abstract;
+
+  Procedure SetViewToThing(th:TJKThing; zoomOut: Double = 0.0; pitchOffset: double = 0; yawOffset: double = 0); virtual; abstract;
   {Arranges camera so that the camera looks at the thing with max possible size}
   Procedure SetThing3DO(th:TJKThing;a3do:TPJ3DO);virtual;abstract;
   Procedure SetClearColor(color: TColorF);virtual;abstract;
@@ -236,7 +221,12 @@ TPreviewRender=class
   Procedure EnableFog(enable: Boolean);virtual;
   Procedure SetFog(color: TColorF; fogStart, fogEnd: double; density: Double = 1.0);virtual;
 
-  private
+  Function GetCamera(): TCamera;
+  Property camera: TCamera read GetCamera;
+
+  protected
+    curCamera: TCamera;
+
     Procedure Init(handle: HWND; width, height:integer; geoMode: TGeoMode; lightMode: TLightMode);
     Function IsSpecialSurface(surf: TJKSurface): Boolean;
     Function IsSpecial3doPoly(face: TPolygon): Boolean;
@@ -275,25 +265,25 @@ TNewPRenderer = class(TPreviewRender)
 
   Constructor Create(aForm:TForm; geoMode: TGeoMode = Texture; lightMode: TLightMode = Gouraud);
   Constructor CreateFromPanel(aPanel:TPanel; geoMode: TGeoMode = Texture; lightMode: TLightMode = Gouraud);
+  Destructor Destroy; override;
 
   Procedure EnableDebug(enabled: Boolean);
 
-  Procedure ClearSectors;override;
-  Procedure ClearThings;override;
-  Procedure AddSector(s: TJKSector);override;
-  Procedure DeleteSector(s: TJKSector);override;
-  Procedure UpdateSector(s: TJKSector);override;
-  Procedure AddThing(th: TJKThing);override;
-  Procedure DeleteThing(th: TJKThing);override;
-  Procedure UpdateThing(th: TJKThing);override;
+  Procedure ClearSectors; override;
+  Procedure ClearThings; override;
+  Procedure AddSector(s: TJKSector); override;
+  Procedure DeleteSector(s: TJKSector); override;
+  Procedure UpdateSector(s: TJKSector); override;
+  Procedure AddThing(th: TJKThing); override;
+  Procedure DeleteThing(th: TJKThing); override;
+  Procedure UpdateThing(th: TJKThing); override;
 
-  Procedure SetViewToThing(th: TJKThing; zoomOut: Double = 0.0; pitchOffset: double = 0; yawOffset: double = 0);override;
+  Procedure SetViewToThing(th: TJKThing; zoomOut: Double = 0.0; pitchOffset: double = 0; yawOffset: double = 0); override;
 
-  Procedure Redraw;override;
-  Destructor Destroy;override;
-  Function PickAt(X,Y:integer):TPickType;override;
+  Procedure Redraw; override;
 
-  Function SetGamma(gamma:double):integer;override;
+  Function PickAt(X,Y:integer):TPickType; override;
+  Function SetGamma(gamma:double):integer; override;
 
   {Virtuals}
 
@@ -365,11 +355,18 @@ begin
   init(aPanel.Handle, aPanel.ClientWidth, aPanel.ClientHeight, geoMode, lightMode);
 end;
 
+Destructor TPreviewRender.Destroy;
+begin
+  curCamera.Free;
+end;
+
 Procedure TPreviewRender.Init(handle: HWND; width, height:integer; geoMode: TGeoMode; lightMode: TLightMode);
 begin
   whandle := handle;
   vwidth  := width;
   vheight := height;
+
+  curCamera := TCamera.CreatePerspective(width, height, 90, 0.01, 5000.0); // jones3D engine 0.0156 & 64.0
 
   gamma      := 1;
   fogDensity := 1.0;
@@ -427,55 +424,6 @@ begin
   Result := (face.FaceFlags and faceMask) <> 0;
 end;
 
-Procedure TPreviewRender.MoveCamera(dx, dy, dz: double);
-  var d: TVector;
-begin
-  d.dx := dx;
-  d.dy := dy;
-  d.dz := dz;
-  RotateVector(d, self.pch, self.yaw, 0);
-
-  CamX := CamX - d.dx;
-  CamY := CamY + d.dy;
-  CamZ := CamZ - d.dz;
-end;
-
-Procedure TPreviewRender.MoveCameraForward(step: double);
-begin
-//  const pchRadian = self.pch * (PI / 180); // X rotation
-//  const yawRadian = self.yaw * (PI / 180); // Y rotation
-//  CamX := CamX + sin(yawRadian) * cos(pchRadian) * step;
-//  CamY := CamY + cos(yawRadian) * cos(pchRadian) * step;
-//  CamZ := CamZ - sin(pchRadian) * step;
-
-  MoveCamera(0, step, 0);
-end;
-
-Procedure TPreviewRender.MoveCameraBackward(step: double);
-begin
-  MoveCamera(0, -step, 0);
-//  const pchRadian = self.pch * (PI / 180); // X rotation
-//  const yawRadian = self.yaw * (PI / 180); // Y rotation
-//  CamX := CamX - sin(yawRadian) * cos(pchRadian) * step;
-//  CamY := CamY - cos(yawRadian) * cos(pchRadian) * step;
-//  CamZ := CamZ + sin(pchRadian) * step;
-end;
-
-Procedure TPreviewRender.MoveCameraLeft(step: double);
-begin
-  MoveCamera(step, 0, 0);
-//  const yawRadian = self.yaw * (PI / 180); // Y rotation
-//  CamY := CamY + sin(yawRadian) * step;
-//  CamX := CamX - cos(yawRadian) * step;
-end;
-
-Procedure TPreviewRender.MoveCameraRight(step: double);
-begin
-  MoveCamera(-step, 0, 0);
-//  const yawRadian = self.yaw * (PI / 180); // Y rotation
-//  CamY := CamY - sin(yawRadian) * step;
-//  CamX := CamX + cos(yawRadian) * step;
-end;
 
 Procedure TPreviewRender.EnableFog(enable: Boolean);
 begin
@@ -491,6 +439,11 @@ begin
   fog.FogStart := FogStart;
   fog.FogEnd   := FogEnd;
   fogDensity   := density;
+end;
+
+Function TPreviewRender.GetCamera(): TCamera;
+begin
+  Result := curCamera;
 end;
 
 
@@ -533,7 +486,7 @@ Procedure TRDPolyCache.Flush;
 begin
   if numUsed > 0 then
   begin
-    if sort then TArray.Sort<T3DPoly>(polys, sfunc, 0, numUsed -1);
+    if sort then TArray.Sort<T3DPoly>(polys, sfunc, 0, numUsed - 1);
     renderer.DrawPolys(polys, numUsed);
     numUsed := 0;
   end;
@@ -806,18 +759,20 @@ begin
   var trad: double := sqrt(sqr(tcen_x - bbox.x1) + sqr(tcen_y - bbox.y1) +
     sqr(tcen_z - bbox.z1)) + zoomOut;
 
-  self.pch := -th.pch + pitchOffset;
-  self.yaw := -th.yaw + yawOffset;
+  with curCamera do
+  begin
+    rotation.SetCoords(-th.pch + pitchOffset, -th.yaw + yawOffset, 0);
+//    self.pch := -th.pch + pitchOffset;
+//    self.yaw := -th.yaw + yawOffset;
 
-  const pchRadian = self.pch * (PI / 180); // X rotation
-  const yawRadian = self.yaw * (PI / 180); // Y rotation
-  const newPosX = trad * sin(yawRadian) * cos(pchRadian);
-  const newPosY = trad * cos(yawRadian) * cos(pchRadian);
-  const newPosZ = trad * -sin(pchRadian);
+    const pchRadian = rotation.pitch * (PI / 180); // X rotation
+    const yawRadian = rotation.yaw * (PI / 180); // Y rotation
+    const newPosX = trad * sin(yawRadian) * cos(pchRadian);
+    const newPosY = trad * cos(yawRadian) * cos(pchRadian);
+    const newPosZ = trad * -sin(pchRadian);
 
-  CamX := th.x - newPosX;
-  CamY := th.y - newPosY;
-  CamZ := th.z - newPosZ;
+    position.SetCoords(th.x - newPosX, th.y - newPosY, th.z - newPosZ);
+  end;
 end;
 
 class Function TNewPRenderer.IsInFront(const p,n: TVector; const c: T3DPVertex; radius: single): Integer;
@@ -831,11 +786,11 @@ end;
 class Function TNewPRenderer.IsInFront(const [ref] f: TClipFrustum; m: T3DPMesh): Boolean;
 begin
   Result :=
-     (IsInFront(f.nearPlane.pos  , f.nearPlane.normal  , m.center, m.radius) <> 0) and
-     (IsInFront(f.leftPlane.pos  , f.leftPlane.normal  , m.center, m.radius) <> 0) and
-     (IsInFront(f.rightPlane.pos , f.rightPlane.normal , m.center, m.radius) <> 0) and
-     (IsInFront(f.topPlane.pos   , f.topPlane.normal   , m.center, m.radius) <> 0) and
-     (IsInFront(f.bottomPlane.pos, f.bottomPlane.normal, m.center, m.radius) <> 0);
+     (IsInFront(f.nearPlane.position  , f.nearPlane.normal  , m.center, m.radius) <> 0) and
+     (IsInFront(f.leftPlane.position  , f.leftPlane.normal  , m.center, m.radius) <> 0) and
+     (IsInFront(f.rightPlane.position , f.rightPlane.normal , m.center, m.radius) <> 0) and
+     (IsInFront(f.topPlane.position   , f.topPlane.normal   , m.center, m.radius) <> 0) and
+     (IsInFront(f.bottomPlane.position, f.bottomPlane.normal, m.center, m.radius) <> 0);
 end;
 
 
@@ -845,13 +800,15 @@ var fp,lp,rp,tp,bp:Tvector; {Plane points}
   ax1,ay1,az1,ax2,ay2,az2:double;
   bx1,by1,bz1,bx2,by2,bz2:double;
 begin
+  Result := curCamera.frustum;
   GetWorldLine(vwidth div 2, vheight div 2, ax1, ay1, az1, ax2, ay2, az2);
   fn.SetCoords(ax2-ax1, ay2-ay1, az2-az1);
 
   {Front plane}
   //Normalize(fn);
   fn.Normalize;
-  fp := fn.Scaled(FrontPlane).Add(CamX, CamY, CamZ);
+  with curCamera.position do
+    fp := fn.Scaled(Result.nearPlane.distance).Add(x, y, z);
   //fp.SetCoords(CamX+FrontPlane*fn.dx, CamY+FrontPlane*fn.dy, CamZ+FrontPlane*fn.dz);
 
   {Left plane}
@@ -890,19 +847,19 @@ begin
   //Normalize(bn);
   bp.SetCoords(ax1, ay1, az1);
 
-  Result.nearPlane.pos := fp;
+  Result.nearPlane.position := fp;
   Result.nearPlane.normal := fn;
 
-  Result.leftPlane.pos := lp;
+  Result.leftPlane.position := lp;
   Result.leftPlane.normal := ln;
 
-  Result.topPlane.pos := tp;
+  Result.topPlane.position := tp;
   Result.topPlane.normal := tn;
 
-  Result.rightPlane.pos := rp;
+  Result.rightPlane.position := rp;
   Result.rightPlane.normal := rn;
 
-  Result.bottomPlane.pos := bp;
+  Result.bottomPlane.position := bp;
   Result.bottomPlane.normal := bn;
 end;
 
@@ -925,7 +882,7 @@ begin
             begin
               rdAlphaAdjoinsPolys.Add(poly);
             end
-          else if poly.geo <> NotDrawn then
+          else if (poly.geo <> NotDrawn) or BitMaskTest(poly.faceflags, FF_RD_HorizonSky) then
             begin
               rdCache.AddPoly(poly);
               if highlightSolidFloor and BitMaskTest(poly.faceflags, FF_RD_FloorWf) then
@@ -1010,6 +967,7 @@ begin
   rdAlphaAdjoinsPolys.Capacity := rdPolysCacheCapacity;
   rdAlphaCache.Flush;
 end;
+
 
 Procedure TNewPRenderer.RenderWireframe(const polys: TList<T3DPoly>; wireColor: TColorF);
 begin
@@ -1197,8 +1155,10 @@ end;
 Procedure TNewPRenderer.Redraw;
 begin
   DisableFPUExceptions;
-  var frustum := GetCameraFrustum;
 
+  curCamera.Update;
+
+  var frustum := GetCameraFrustum;
   RenderWorldGeometry(frustum);
   RenderThings(frustum);
 
@@ -1515,6 +1475,8 @@ begin
  MasterPalSet:=true;
 end;
 
+
+
 Function TNewPRenderer.SecToMesh(sec: TJKSector): T3DPMesh;
 var poly:T3DPoly;
     vd:TVXDets;
@@ -1553,7 +1515,9 @@ begin
 
         // Mark poly to render fog (IJIM)
         if BitTest(surfflags, SF_SkyHorizon or SF_SkyCeiling) = 0 then
-          BitSet(poly.faceflags, FF_IJIM_FogEnabled);
+          BitSet(poly.faceflags, FF_IJIM_FogEnabled)
+        else
+           BitSet(poly.faceflags, IfThen(BitMaskTest(surfflags, SF_SkyHorizon), FF_RD_HorizonSky, FF_RD_CeilingSky ) );
 
         // Mark poly as floor or has collision
         const sfFloor = SF_Floor or SF_Collision;
@@ -1585,9 +1549,18 @@ begin
         if (poly.tx <> nil) and (poly.tx.ci.alphaBPP = 1) then
           poly.faceflags := LongInt(poly.faceflags or FF_RD_AlphaRef);
 
-        var nvx := Vertices.Count;
+        var nvx := vertices.Count;
         var nv: integer;
         //if nvx>24 then nvx:=24;
+
+        var invMatWidth := 1.0;
+        var invMatHeight := 1.0;
+
+        if (nvx > 0) and (poly.tx <> nil) then
+         begin
+           invMatWidth := 1 / poly.tx.width;
+           invMatHeight := 1 / poly.tx.height;
+         end;
 
         for var j := 0 to nvx - 1 do
           begin
@@ -1596,7 +1569,7 @@ begin
             else
               nv := nvx - j - 1;
 
-            With txvertices[nv] do
+            with txvertices[nv] do
               begin
                 vd   := poly.AddVXD;
                 vd.x := vertices[nv].x;
@@ -1608,8 +1581,8 @@ begin
 
                 if poly.tx <> nil then
                   begin
-                    vd.u := u / poly.tx.width;
-                    vd.v := v / poly.tx.height;
+                      vd.u := u * invMatWidth;
+                      vd.v := v * invMatHeight;
                   end;
               end;
           end;
@@ -1870,7 +1843,9 @@ Procedure TNewPRenderer.RenderCircle(polys: TList<T3DPoly>; cx, cy, cz, rad: dou
   const maxSides = 64;
   var mx: TMat3x3;
 begin
-  CreateRotMatrix(mx, -self.pch, -self.yaw, 0);
+  with curCamera.rotation do
+    CreateRotMatrix(mx, -pitch, -yaw, 0);
+
   const th = 6.2832 / maxSides;  // 6.2832 = 2*PI
   var poly   := T3DPoly.Create;
   poly.geo   := WireFrame;
