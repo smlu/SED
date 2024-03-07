@@ -48,12 +48,13 @@ type
       destructor Destroy; override;
 
       procedure Update; // Updates camera's view, orient matrices and frustum
+      procedure Reset;
 
       property aspect: Double read aspect_;
       property fov: Double read fov_;
       property fovNearPlane: Double read fovNearPlane_;
       property frustum: TClipFrustum read frustum_;
-      property sector:TJKSector read sector_ ; // current sector camera is in. Can be null
+      property sector: TJKSector read sector_ ; // current sector camera is in. Can be null
 
       procedure MoveBackward(step: double);
       procedure MoveForward(step: double);
@@ -61,9 +62,11 @@ type
       procedure MoveRight(step: double);
       procedure MoveUp(step: double);
       procedure MoveDown(step: double);
-      procedure MoveTo(dx, dy, dz: double);
+      procedure Translate(dx, dy, dz: double); // translates camera from current position in direction of current camera rotation for x,y,z steps
+      procedure MoveTo(pos, pyr: TVector); // moves camera to pos position and orient it to pyr
 
-      procedure Rotate(pitch, yaw, roll: Double);
+      procedure Rotate(pitch, yaw, roll: Double); overload;  // Rotates current camera orientation camera for pitch, yaw roll angles
+      procedure Rotate(pyr: TVector); overload;
       procedure RotatePitch(pitch: Double);
       procedure RotateYaw(yaw: Double);
       procedure RotateRoll(roll: Double);
@@ -130,20 +133,26 @@ begin
 
   // Update cur sector
   with position do
-  begin
-    if sector_ <> nil then
-      if IsInSector(sector_, x, y, z) then
-        exit;
+    begin
+      if sector_ <> nil then
+        if IsInSector(sector_, x, y, z) then
+          exit;
 
-    var sc := FindSectorForXYZ(level, x, y, z);
-    if sc <> -1 then
-       sector_ := level.sectors[sc]
-    else
       sector_ := nil;
+      var sc := FindSectorForXYZ(level, x, y, z);
+      if sc <> -1 then
+         sector_ := level.sectors[sc];
     end;
 end;
 
-procedure TCamera.MoveTo(dx, dy, dz: double);
+procedure TCamera.Reset;
+begin
+  sector_ := nil;
+  position := TVector.zero;
+  rotation := TVector.zero;
+end;
+
+procedure TCamera.Translate(dx, dy, dz: double);
   var d: TVector;
 begin
   d.dx := dx;
@@ -161,24 +170,30 @@ begin
     end;
 end;
 
+procedure TCamera.MoveTo(pos, pyr: TVector);
+begin
+  position := pos;
+  rotation := pyr;
+end;
+
 procedure TCamera.MoveForward(step: double);
 begin
-  MoveTo(0, step, 0);
+  Translate(0, step, 0);
 end;
 
 procedure TCamera.MoveBackward(step: double);
 begin
-  MoveTo(0, -step, 0);
+  Translate(0, -step, 0);
 end;
 
 procedure TCamera.MoveLeft(step: double);
 begin
-  MoveTo(step, 0, 0);
+  Translate(step, 0, 0);
 end;
 
 procedure TCamera.MoveRight(step: double);
 begin
-  MoveTo(-step, 0, 0);
+  Translate(-step, 0, 0);
 end;
 
 procedure TCamera.MoveUp(step: double);
@@ -195,9 +210,15 @@ end;
 
 procedure TCamera.Rotate(pitch, yaw, roll: Double);
 begin
-  RotatePitch( pitch);
+  RotatePitch(pitch);
   RotateYaw(yaw);
   RotateRoll(roll);
+end;
+
+procedure TCamera.Rotate(pyr: TVector);
+begin
+  with pyr do
+    Rotate(pitch, yaw, roll);
 end;
 
 procedure TCamera.RotatePitch(pitch: Double);
