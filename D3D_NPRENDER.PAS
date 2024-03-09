@@ -529,13 +529,13 @@ begin
     end;
 end;
 
-Function TD3D5PRenderer.LoadTexture(const name:string;const ppal:PTCMPPal;const pcmp:PTCMPTable):T3DPTexture;
-var i:integer;
-    Ttx:TD3DTexture;
+Function TD3D5PRenderer.LoadTexture(const name: string;const ppal: PTCMPPal; const pcmp: PTCMPTable): T3DPTexture;
+var i: integer;
+    Ttx: TD3DTexture;
 begin
- Result:=nil;
- ttx:=TD3DTexture.CreateFromMat(name,ppal,pcmp,self,gamma);
- Result:=ttx;
+ Result := nil;
+ ttx := TD3DTexture.CreateFromMat(name, ppal, pcmp, self, gamma);
+ Result := ttx;
 end;
 
 Function IsEqualTex(const tex1, tex2: T3DPTexture): Boolean;
@@ -968,7 +968,7 @@ begin
  if i1<i2 then result:=i1 else result:=i2;
 end;
 
-Constructor TD3DTexture.CreateFromMat(const Mat:string;const ppal:PTCMPPal; const pcmp:PTCMPTable;adxr:TD3D5PRenderer;gamma:double);
+Constructor TD3DTexture.CreateFromMat(const Mat: string;const ppal: PTCMPPal; const pcmp: PTCMPTable; adxr: TD3D5PRenderer; gamma: double);
 var
     i,j:integer;
     pb:PAnsiChar;

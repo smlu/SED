@@ -772,22 +772,23 @@ begin
     ResettingEditor;
     PMsg.Caption := '';
     if (ext = '.JKL') or (ext = '.NDY') then
-    begin
-        Level.LoadFromJKL(fname);
-        NewLevel := false;
-        LevelFile := fname;
-        AskSaveAs := IsInContainer(fname);
-        SetLevelName;
-    end
+      begin
+          level.LoadFromJKL(fname);
+          NewLevel := false;
+          LevelFile := fname;
+          AskSaveAs := IsInContainer(fname);
+          SetLevelName;
+      end
     else if ext = '.JED' then
-    begin
-        Level.LoadFromJED(fname);
-        NewLevel := false;
-        LevelFile := fname;
-        AskSaveAs := IsInContainer(fname);
-        SetLevelName;
-    end;
-    SetProjectType(Level.kind);
+      begin
+          level.LoadFromJED(fname);
+          NewLevel := false;
+          LevelFile := fname;
+          AskSaveAs := IsInContainer(fname);
+          SetLevelName;
+      end;
+
+    SetProjectType(level.kind);
     Level.JKLPostLoad;
     AddRecent(fname);
     ResetEditor(how <> op_revert);
@@ -1645,28 +1646,27 @@ begin
     AddKBItem(miMap, 'Right view', '6', []);
 
     AddKBItem(miMap, 'Move'#9'Shift+Middle Mouse Button', #0, []);
-    AddKBItem(miMap, 'Move left', char(VK_RIGHT), []);
-    AddKBItem(miMap, 'Move right', char(VK_LEFT), []);
-    AddKBItem(miMap, 'Move Down', char(VK_UP), []);
-    AddKBItem(miMap, 'Move Up', char(VK_Down), []);
-    AddKBItem(miMap, 'Move forward', char(VK_NEXT), []);
-    AddKBItem(miMap, 'Move back', char(VK_PRIOR), []);
+    AddKBItem(miMap, 'Move left', Char(VK_RIGHT), []);
+    AddKBItem(miMap, 'Move right', Char(VK_LEFT), []);
+    AddKBItem(miMap, 'Move Down', Char(VK_UP), []);
+    AddKBItem(miMap, 'Move Up', Char(VK_Down), []);
+    AddKBItem(miMap, 'Move forward', Char(VK_NEXT), []);
+    AddKBItem(miMap, 'Move back', Char(VK_PRIOR), []);
 
     AddKBItem(miMap, 'Rotate'#9'Middle Mouse Button', #0, []);
     AddKBItem(miMap, 'Rotate in X direction'#9'Ctrl+Middle Mouse Button', #0, []);
     AddKBItem(miMap, 'Rotate in Y direction'#9'Ctrl+Shift+Middle Mouse Button', #0, []);
-    AddKBItem(miMap, 'Rotate right', char(VK_RIGHT), [ssShift]);
-    AddKBItem(miMap, 'Rotate left', char(VK_LEFT), [ssShift]);
-    AddKBItem(miMap, 'Rotate Up', char(VK_UP), [ssShift]);
-    AddKBItem(miMap, 'Rotate Down', char(VK_DOWN), [ssShift]);
-    AddKBItem(miMap, 'Rotate ...', char(VK_NEXT), [ssShift]);
-    AddKBItem(miMap, 'Rotate ...', char(VK_PRIOR), [ssShift]);
+    AddKBItem(miMap, 'Rotate right', Char(VK_RIGHT), [ssShift]);
+    AddKBItem(miMap, 'Rotate left', Char(VK_LEFT), [ssShift]);
+    AddKBItem(miMap, 'Rotate Up', Char(VK_UP), [ssShift]);
+    AddKBItem(miMap, 'Rotate Down', Char(VK_DOWN), [ssShift]);
+    AddKBItem(miMap, 'Rotate ...', Char(VK_NEXT), [ssShift]);
+    AddKBItem(miMap, 'Rotate ...', Char(VK_PRIOR), [ssShift]);
     AddKBItem(miMap, 'Zoom at cursor'#9'Mouse Wheel', #0, []);
     AddKBItem(miMap, 'Zoom at cursor', 'C', [ssShift]);
-    AddKBItem(miMap, 'Zoom in', Chr(VK_ADD), []);
-    AddKBItem(miMap, 'Zoom out', Chr(VK_SUBTRACT), []);
-    AddKBItem(miMap, 'Center View', Chr(VK_HOME), []);
-    AddKBItem(miMap, 'View To Grid', Chr(VK_MULTIPLY), []);
+    AddKBItem(miMap, 'Zoom in', Char(VK_ADD), []);
+    AddKBItem(miMap, 'Zoom out', Char(VK_SUBTRACT), []);
+    AddKBItem(miMap, 'View To Grid', Char(VK_MULTIPLY), []);
 
     AddKBItem(miGrid, 'Top view&&grid', '1', [ssShift]);
     AddKBItem(miGrid, 'Front view&&grid', '2', [ssShift]);
@@ -1695,13 +1695,13 @@ begin
     AddKBItem(miTex, 'Scroll left', #188, []);
     AddKBItem(miTex, 'Scroll right', #190, []);
 
-    AddKBItem(miTex, 'Start stitch', char(VK_INSERT), [ssCtrl]);
+    AddKBItem(miTex, 'Start stitch', Char(VK_INSERT), [ssCtrl]);
     AddKBItem(miTex, 'Start stitch', #186, []);
 
-    AddKBItem(miTex, 'Stitch', char(VK_INSERT), [ssShift]);
+    AddKBItem(miTex, 'Stitch', Char(VK_INSERT), [ssShift]);
     AddKBItem(miTex, 'Stitch', #222, []);
 
-    AddKBItem(miTex, 'Straighten Texture', char(VK_HOME), [ssAlt]);
+    AddKBItem(miTex, 'Straighten Texture', Char(VK_HOME), [ssAlt]);
     AddKBItem(miTex, 'Straighten Texture', #191, []);
     AddKBItem(miTex, 'Scale texture down', #188, [ssAlt]);
     AddKBItem(miTex, 'Scale texture Up', #190, [ssAlt]);
@@ -1710,12 +1710,12 @@ begin
     AddKBItem(miTex, 'Straighten/zero/rotate90 texture', char(VK_HOME),
       [ssShift, ssCtrl]);
     AddKBItem(miTex, 'Straighten/zero texture', #191, [ssCtrl]);
-    AddKBItem(miTex, 'Straighten/zero texture', char(VK_HOME), [ssCtrl]);
+    AddKBItem(miTex, 'Straighten/zero texture', Char(VK_HOME), [ssCtrl]);
     AddKBItem(miTex, 'Rotate texture left', #188, [ssCtrl]);
     AddKBItem(miTex, 'Rotate texture right', #190, [ssCtrl]);
 
     AddKBItem(MIrecovery, 'Build surface/sector', 'B', [ssAlt]);
-    AddKBItem(MIrecovery, 'Delete surface', char(VK_DELETE), [ssAlt]);
+    AddKBItem(MIrecovery, 'Delete surface', Char(VK_DELETE), [ssAlt]);
     AddKBItem(MIrecovery, 'Invert surface', 'I', [ssAlt]);
     AddKBItem(MIrecovery, 'Planarize surface', 'P', [ssCtrl]);
     AddKBItem(MIrecovery, 'Fix solid surface(s)', OnFixSolidSurfaces);
@@ -1731,14 +1731,14 @@ begin
     AddKBItem(MiEdit, 'Rotate Thing Pitch'#9'Ctrl+Shift+Mouse Wheel', #0, []);
     AddKBItem(MiEdit, 'Rotate Thing Yaw'#9'Ctrl+Mouse Wheel', #0, []);
     AddKBItem(MiEdit, 'Rotate Thing Roll'#9'Ctrl+Alt+Mouse Wheel', #0, []);
-    AddKBItem(MiEdit, 'Raise item', char(VK_UP), [ssCtrl]);
-    AddKBItem(MiEdit, 'Lower item', char(VK_Down), [ssCtrl]);
+    AddKBItem(MiEdit, 'Raise item', Char(VK_UP), [ssCtrl]);
+    AddKBItem(MiEdit, 'Lower item', Char(VK_Down), [ssCtrl]);
     AddKBItem(MiEdit, 'Raise item', #219, []);
     AddKBItem(MiEdit, 'Lower item', #221, []);
-    AddKBItem(MiEdit, 'Item Editor', Chr(VK_return), []);
+    AddKBItem(MiEdit, 'Item Editor', Char(VK_RETURN), []);
     AddKBItem(MiEdit, 'Merge', 'M', []);
-    AddKBItem(MiEdit, 'Duplicate item', char(VK_INSERT), []);
-    AddKBItem(MiEdit, 'Delete item', char(VK_DELETE), []);
+    AddKBItem(MiEdit, 'Duplicate item', Char(VK_INSERT), []);
+    AddKBItem(MiEdit, 'Delete item', Char(VK_DELETE), []);
 
     AddKBItem(MiEdit, 'Create sector', 'K', []);
 
@@ -1748,7 +1748,7 @@ begin
     AddKBItem(MiEdit, 'Use item in COG', 'U', []);
     AddKBItem(MiEdit, 'Bring thing/light to surface', 'B', []);
 
-    AddKBItem(miOther, 'Cancel cleave/etc', Chr(VK_ESCAPE), []);
+    AddKBItem(miOther, 'Cancel cleave/etc', Char(VK_ESCAPE), []);
     AddKBItem(miOther, 'Sector mode', 'S', []);
     AddKBItem(miOther, 'Surface mode', 'F', []);
     AddKBItem(miOther, 'Edge mode', 'E', []);
@@ -2357,10 +2357,6 @@ begin
     end;
 
     case Key of
-        VK_HOME:
-          begin
-            ResetCamera;
-          end;
         VK_BACK:
             ClearMultiSelection;
         VK_ESCAPE:
@@ -4756,7 +4752,6 @@ Procedure TJedMain.ResetEditor;
 var
     i: Integer;
 begin
-
     ClearUndoBuffer;
     ClearExtraObjs;
     UrqForm.Reload;
@@ -4840,7 +4835,7 @@ var
 begin
     var title := Format('SED - %s*', [LevelFile]);
     if not changed then
-      SetLength(title, Length(title)-1); // remove '*'
+      SetLength(title, Length(title) - 1); // remove '*' fom title
     Caption := title;
 
     if AskSaveAs then
@@ -7965,8 +7960,7 @@ begin
 
 end;
 
-Procedure TJedMain.AddKBItem(mi: TMenuItem; const name: string; c: char;
-  sc: TShiftState);
+Procedure TJedMain.AddKBItem(mi: TMenuItem; const name: string; c: char; sc: TShiftState);
 var
     nmi: TMenuItem;
     ext: string;

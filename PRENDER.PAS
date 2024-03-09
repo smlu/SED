@@ -287,7 +287,7 @@ TNewPRenderer = class(TPreviewRender)
 
   {Virtuals}
 
-  Function LoadTexture(const name:string;const pal:PTCMPPal;const cmp:PTCMPTable):T3DPTexture;virtual;abstract;
+  Function LoadTexture(const name: string; const pal: PTCMPPal; const cmp :PTCMPTable): T3DPTexture; virtual; abstract;
   //Procedure DrawMesh(m:T3DPMesh);virtual;abstract;
   Procedure GetWorldLine(X,Y:integer;var X1,Y1,Z1,X2,Y2,Z2:double);virtual;abstract;
   {Must also override Initialize;}
@@ -331,7 +331,7 @@ Private
   const rdPolysCacheCapacity = 1024;
 
   Procedure Init;
-  Function GetTexture(const name,cmp:string):T3DPTexture;
+  Function GetTexture(const name,cmp: string):T3DPTexture;
   Procedure LoadMasterPal(l: TJKLevel);
   Function SecToMesh(sec: TJKSector):T3DPMesh;
   Function ThingToMesh(th: TJKThing):T3DPMesh;
@@ -679,7 +679,7 @@ begin
  MasterPalSet:=false;
  ClearTXList;
  sectors.Clear;
- for i:=0 to scList.Count-1 do scList[i].Free;
+ for i := 0 to scList.Count - 1 do scList[i].Free;
  scList.Clear;
 end;
 
@@ -687,7 +687,7 @@ Procedure TNewPRenderer.ClearThings;
 var i:integer;
 begin
  things.Clear;
- for i:=0 to thList.Count-1 do thList[i].Free;
+ for i := 0 to thList.Count - 1 do thList[i].Free;
  thList.Clear;
 end;
 
@@ -1419,7 +1419,7 @@ begin
 end;
 
 
-Function TNewPRenderer.GetTexture(const name,cmp:string):T3DPTexture;
+Function TNewPRenderer.GetTexture(const name,cmp: string):T3DPTexture;
 var i:integer;
     Ttx:T3DPTexture;
     pcmp:PTCMPTable;
@@ -1431,22 +1431,22 @@ begin
   ptpal:= nil;
   Result:=nil;
 
-  i:=TXlist.IndexOf(name+cmp);
+  i := TXlist.IndexOf(name + cmp);
   if i <> -1 then
-  begin
-    Result := T3DPTexture(TXList.Objects[i]);
-    exit;
-  end;
+    begin
+      Result := T3DPTexture(TXList.Objects[i]);
+      exit;
+    end;
 
   // Load palette
   if CurrentProject <> IJIM then
     begin
       i := CmpList.IndexOf(cmp);
-      if i <> -1 then pcmp:=Pointer(CmpList.Objects[i]) else
+      if i <> -1 then pcmp := Pointer(CmpList.Objects[i]) else
         begin
-          GetMem(pcmp,sizeof(pcmp^));
-          if not LoadCmpTable(cmp,pcmp^) then PanMessage(mt_warning,Format('Cannot load %s',[cmp]));
-          CmpList.AddObject(cmp,TObject(pcmp));
+          GetMem(pcmp, sizeof(pcmp^));
+          if not LoadCmpTable(cmp, pcmp^) then PanMessage(mt_warning, Format('Cannot load %s', [cmp]));
+          CmpList.AddObject(cmp, TObject(pcmp));
         end;
 
       LoadMasterPal(level);
@@ -1455,15 +1455,16 @@ begin
       ptpal := @tpal;
     end;
 
- ttx:=nil;
+ ttx := nil;
+
  try
-  ttx:=LoadTexture(name,ptpal,pcmp);
+  ttx := LoadTexture(name, ptpal, pcmp);
 {  TGlideTexture.CreateFromMat(name,tpal,GenTexture);}
   if (ttx <> nil) and (CurrentProject <> IJIM ) then
-    ttx.cmpname:=cmp;
+    ttx.cmpname := cmp;
  finally
-  TXList.AddObject(name+cmp,ttx);
-  Result:=ttx;
+  TXList.AddObject(name + cmp, ttx);
+  Result := ttx;
  end;
 end;
 

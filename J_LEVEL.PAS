@@ -2622,7 +2622,7 @@ Finalization
 
 begin
   level.Clear;
-  level.free;
+  level.Free;
 
   IJIMStaticCogScriptList.Free;
   IJIMStaticKeyList.Free;

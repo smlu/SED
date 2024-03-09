@@ -62,6 +62,7 @@ var t:TTextFile; cpos:word; s,w1,w2:String;
     mats:TStringList;
     cmps:TStringList;
     vr,vg,vb:single;
+
 Procedure GetNextLine(var s:String; upper: boolean = true);
 var cmt_pos:word; {Position of #}
 begin

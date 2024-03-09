@@ -44,7 +44,7 @@ begin
   end;
 
   try
-    render3D.initialize;
+    render3D.Initialize;
     render3D.highlightSelection := False;
     render3D.SetClearColor(MakeColor(0.5, 0.5, 0.5, 1.0));
   except
