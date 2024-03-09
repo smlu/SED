@@ -750,7 +750,7 @@ begin
   Result := Copy(s, p, sp - @s[p]);
 end;
 
-Function IsLastinPath(const path: string; p: Integer): boolean;
+Function IsLastInPath(const path: string; p: Integer): boolean;
 begin
   Result := StrScan(@path[p], '\') = nil;
 end;
@@ -783,6 +783,7 @@ var
   i: Integer;
 begin
   Result := false;
+  CurDir := '';  // This makes sure that in case folder doesn't exits previous dir files arn't shown in resource picker
   if (d <> '') and (Dirs.IndexOf(d) = -1) then
     exit;
   CurDir := d;
@@ -855,7 +856,7 @@ begin
     Fname := Files[i];
     if CompareText(Copy(Fname, 1, Length(dir)), dir) <> 0 then
       continue;
-    if not IsLastinPath(Fname, Length(dir) + 1) then
+    if not IsLastInPath(Fname, Length(dir) + 1) then
       continue;
     tmpflist.AddObject(GetDirAt(Fname, Length(dir) + 1), Files.objects[i]);
   end;
