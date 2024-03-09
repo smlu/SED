@@ -89,6 +89,7 @@ type
     ebZoomMin: TLabeledEdit;
     ebZoomMax: TLabeledEdit;
     cbLockZoom: TCheckBox;
+    cbPlaySecSnd: TCheckBox;
     procedure BNOKClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure SBHelpClick(Sender: TObject);
@@ -175,7 +176,7 @@ type
 const
   NoConfile: boolean = false;
 
-  regValues: array [0 .. 92] of TRegValue = (
+  regValues: array [0 .. 93] of TRegValue = (
     (d_type: dt_str; Section: 'JKDF2'; Name: 'Dir'; data: @JKDir; onExit: false),
     (d_type: dt_str; Section: 'MOTS'; Name: 'Dir'; data: @MOTSDir; onExit: false),
 
@@ -193,6 +194,7 @@ const
     (d_type: dt_int; Section: '3D Preview'; Name: 'WinSize'; data: @P3DWinSize; onExit: true),
     (d_type: dt_bool; Section: '3D Preview'; Name: 'OnTop'; data: @P3DOnTop; onExit: true),
     (d_type: dt_bool; Section: '3D Preview'; Name: 'Colored'; data: @P3DCOloredLights; onExit: true),
+    (d_type: dt_bool; Section: '3D Preview'; Name: 'PlaySecSound'; data: @P3DPlaySecSound; onExit: false),
     (d_type: dt_int; Section: '3D Preview'; Name: 'X'; data: @P3DX; onExit: true),
     (d_type: dt_int; Section: '3D Preview'; Name: 'Y'; data: @P3DY; onExit: true),
     (d_type: dt_double; Section: '3D Preview'; Name: 'Gamma'; data: @P3DGamma; onExit: true),
@@ -320,7 +322,7 @@ begin
   try
     try
       FormatSettings.DecimalSeparator:='.';
-      for var i := 0 to Sizeof(regValues) div Sizeof(TRegValue) - 1 do
+      for var i := 0 to SizeOf(regValues) div SizeOf(TRegValue) - 1 do
         With regValues[i] do
         begin
           Try
@@ -355,23 +357,24 @@ begin
 end;
 
 Procedure WriteConfigFile(bExit: boolean);
+  var confile: TMemIniFile;
 begin
-  const conf = TMemIniFile.Create(GetConfigFilePath(), TEncoding.UTF8, (*caseSensitive=*)false);
   try
+    confile := TMemIniFile.Create(GetConfigFilePath(), TEncoding.UTF8, (*caseSensitive=*)false);
     try
-      For var i := 0 to Sizeof(regValues) div Sizeof(TRegValue) - 1 do
+      For var i := 0 to SizeOf(regValues) div SizeOf(TRegValue) - 1 do
         With regValues[i] do
           if bExit = onExit then
           begin
             Case d_type of
               dt_int:
-                conf.WriteInteger(Section, name, integer(data^));
+                confile.WriteInteger(Section, name, integer(data^));
               dt_str:
-                conf.WriteString(Section, name, String(data^));
+                confile.WriteString(Section, name, String(data^));
               dt_bool:
-                conf.WriteBool(Section, name, boolean(data^));
+                confile.WriteBool(Section, name, boolean(data^));
               dt_double:
-                conf.WriteFloat(Section, name, Double(data^));
+                confile.WriteFloat(Section, name, Double(data^));
             end;
           end;
     except
@@ -379,8 +382,11 @@ begin
         PanMessageFmt(mt_error, 'An error has occored while trying to write config file: %s', [e.Message]);
     end;
   finally
-    conf.UpdateFile;
-    conf.Free;
+    if confile <> nil then
+      begin
+        confile.UpdateFile;
+        confile.Free;
+      end;
   end;
 end;
 
@@ -508,6 +514,7 @@ begin
   NewCtl(@P3DWinSize, dt_int, RGWSize);
   NewCtl(@P3DOnTop, dt_bool, CBP3DOnTop);
   NewCtl(@P3DCOloredLights, dt_bool, CBColored);
+  NewCtl(@P3DPlaySecSound, dt_bool, cbPlaySecSnd);
   NewCtl(@P3DFullLit, dt_bool, CBFullLight);
   NewCtl(@P3DGamma, dt_double, viGamma);
   NewCtl(@P3DVisLayers, dt_bool, CB3DLayers);

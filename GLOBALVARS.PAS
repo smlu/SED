@@ -149,6 +149,7 @@ Var
   P3DOnTop: Boolean;
   P3DFullLit: Boolean = false;
   P3DColoredLights: Boolean = true;
+  P3DPlaySecSound: Boolean = true;
   P3DX, P3DY: Integer;
   P3DWinSize: Integer = 0;
   P3DGamma: double = 1;

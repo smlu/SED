@@ -195,6 +195,7 @@ TPreviewRender = class
   Destructor Destroy; override;
 
   Procedure Initialize;virtual;abstract;
+  Procedure Reset; virtual;
   Procedure ClearSectors;virtual;abstract;
   Procedure ClearThings;virtual;abstract;
   Procedure AddSector(s:TJKSector);virtual;abstract;
@@ -372,6 +373,13 @@ end;
 Destructor TPreviewRender.Destroy;
 begin
   curCamera.Free;
+end;
+
+Procedure TPreviewRender.Reset;
+begin
+  curCamera.Reset;
+  ClearThings;
+  ClearSectors;
 end;
 
 Procedure TPreviewRender.Init(handle: HWND; width, height:integer; geoMode: TGeoMode; lightMode: TLightMode);

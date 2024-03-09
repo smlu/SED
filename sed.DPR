@@ -6,6 +6,7 @@ uses
   Jed_Main in 'Jed_Main.pas' {JedMain},
   tmp_load3do in 'tmp_load3do.pas',
   Render in 'RENDER.PAS',
+  RENDER in 'RENDER.PAS',
   J_level in 'J_level.pas',
   OGL_render in 'OGL_render.pas',
   Files in 'Files.pas',
@@ -86,7 +87,8 @@ uses
   JED_COM in 'JED_COM.PAS',
   JED_PLUGINS in 'JED_PLUGINS.PAS',
   math in 'math.pas',
-  RenderUtils in 'RenderUtils.pas';
+  RenderUtils in 'RenderUtils.pas',
+  IndyWV in 'IndyWV.pas';
 
 {$R *.RES}
 {$R SEDstatic.res}

@@ -23,7 +23,8 @@ type
     mat: TMAT;
     bm: TBitmap;
     ptext: PAnsiChar;
-    pWav: Pointer;
+    //pWav: Pointer;
+    bSndPlay: Boolean;
     cmppal: TCMPPal;
     Msg: String;
     bmcomment: string;
@@ -186,102 +187,96 @@ begin
   Repeat
     if not NewFile then
       goto loopend;
+
     NewFile := false;
     bmcomment := '';
     ext := UpperCase(ExtractExt(Fname));
-    Try
+    try
       if ext = '.3DO' then
-      begin
-        Set3DOCMP(cmp_name);
-        View3DO(Fname);
-        Continue;
-      end;
+        begin
+          Set3DOCMP(cmp_name);
+          View3DO(Fname);
+          Continue;
+        end;
+
       if (ext = '.MAT') then
-      begin
-        F := OpenGameFile(Fname);
-        if F = nil then
         begin
-          SynChronize(ShowNothing);
-          Raise Exception.Create(Fname + ' not found');
-        end;
+          F := OpenGameFile(Fname);
+          if F = nil then
+          begin
+            SynChronize(ShowNothing);
+            Raise Exception.Create(Fname + ' not found');
+          end;
 
-        mat := TMAT.Create(F, nMatCell);
-        mat.SetPal(cmppal);
-        bm := mat.LoadBitmap(-1, -1);
-        if mat.isAnimated then
-          bmcomment := ', Multiple';
-        nCells := mat.celCount;
-        mat.Free;
+          mat := TMAT.Create(F, nMatCell);
+          mat.SetPal(cmppal);
+          bm := mat.LoadBitmap(-1, -1);
+          if mat.isAnimated then
+            bmcomment := ', Multiple';
+          nCells := mat.celCount;
+          mat.Free;
 
-        SynChronize(ShowMAT);
-      end
+          SynChronize(ShowMAT);
+        end
       else if (ext = '.PCX') then
-      begin
-        F := OpenGameFile(Fname);
-        if F = nil then
         begin
-          SynChronize(ShowNothing);
-          Raise Exception.Create(Fname + ' not found');
-        end;
+          F := OpenGameFile(Fname);
+          if F = nil then
+          begin
+            SynChronize(ShowNothing);
+            Raise Exception.Create(Fname + ' not found');
+          end;
 
-        Pcx := TPCX.Create(F);
-        bm := Pcx.LoadBitmap(-1, -1);
-        Pcx.Free;
-        SynChronize(ShowBM);
-      end
+          Pcx := TPCX.Create(F);
+          bm := Pcx.LoadBitmap(-1, -1);
+          Pcx.Free;
+          SynChronize(ShowBM);
+        end
       else if (ext = '.COG') or (ext = '.PAR') or (ext = '.SPR') or
         (ext = '.AI') or (ext = '.AI0') or (ext = '.AI2') or (ext = '.SND') or
         (ext = '.PUP') then
-      begin
-        F := OpenGameFile(Fname);
-        if F = nil then
         begin
-          SynChronize(ShowNothing);
-          Raise Exception.Create(Fname + ' not found');
-        end;
-        size := F.Fsize;
-        if size > 4000 then
-          size := 4000;
-        ptext := AnsiStrAlloc(size + 1);
-        F.Fread(ptext^, size);
-        (ptext + size)^ := #0;
-        F.FClose;
-        SynChronize(ShowText);
-      end
+          F := OpenGameFile(Fname);
+          if F = nil then
+          begin
+            SynChronize(ShowNothing);
+            Raise Exception.Create(Fname + ' not found');
+          end;
+          size := F.Fsize;
+          if size > 4000 then
+            size := 4000;
+          ptext := AnsiStrAlloc(size + 1);
+          F.Fread(ptext^, size);
+          (ptext + size)^ := #0;
+          F.FClose;
+          SynChronize(ShowText);
+        end
       else if ext = '.WAV' then
-      begin
-        if pWav <> nil then
         begin
-          PlaySound(Nil, 0, SND_NODEFAULT);
-          FreeMem(pWav);
-          pWav := nil;
-        end;
-        F := OpenGameFile(Fname);
-        if F = nil then
-        begin
-          SynChronize(ShowNothing);
-          Raise Exception.Create(Fname + ' not found');
-        end;
-        GetMem(pWav, F.Fsize);
-        F.Fread(pWav^, F.Fsize);
-        F.FClose;
-        PlaySound(pWav, 0, SND_NODEFAULT or SND_MEMORY or SND_ASYNC);
-        SynChronize(ShowNothing);
-      end
+          try
+            appSoundPlayer.Play(Fname);
+            appSoundPlayer.volume := 1;
+            bSndPlay := True;
+
+          finally
+            SynChronize(ShowNothing);
+          end;
+        end
       else
         SynChronize(ShowNothing);
-    Except
+    except
       on E: Exception do
-      begin
-        Msg := 'Exception in thread: ' + E.Message;
-        SynChronize(ExceptionMsg);
-      end
+        begin
+          Msg := 'Exception in thread: ' + E.Message;
+          SynChronize(ExceptionMsg);
+        end
       else
-      begin
-        Msg := 'Exception in thread: ' + ExceptObject.ClassName;
-        SynChronize(ExceptionMsg);
-      end;
+        begin
+          Msg := 'Exception in thread: ' + ExceptObject.ClassName;
+          SynChronize(ExceptionMsg);
+        end;
     end;
+
   loopend:
     if not NewFile then
       Suspend;
@@ -291,11 +286,17 @@ end;
 Procedure TPreviewThread.TerminateProc;
 begin
   SBMat.OnChange := nil;
-  if pWav <> nil then
+  if bSndPlay then
   begin
-    PlaySound(Nil, 0, SND_NODEFAULT);
-    FreeMem(pWav);
+    bSndPlay := False;
+    appSoundPlayer.Stop;
   end;
+
+//  if pWav <> nil then
+//  begin
+//    PlaySound(Nil, 0, SND_NODEFAULT);
+//    FreeMem(pWav);
+//  end;
 end;
 
 procedure TPreviewThread.SBChange(Sender: TObject);

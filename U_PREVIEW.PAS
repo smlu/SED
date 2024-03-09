@@ -6,7 +6,7 @@ uses
   Windows, Messages, SysUtils, Classes, Graphics, Controls,
   Forms, Dialogs, D3D_Prender, J_Level, Geometry, StdCtrls,
   GlobalVars, Menus, OGL_Prender, Prender, Clipbrd,
-  d3d_NPrender, u_pj3dos,u_templates;
+  d3d_NPrender, u_pj3dos, u_templates;
 
 type
   TCamPos = record
@@ -65,9 +65,11 @@ type
     procedure MenuNoClipSelectionOutlineClick(Sender: TObject);
     procedure MenuSetThingToCameraClick(Sender: TObject);
     procedure Commands1Click(Sender: TObject);
+    procedure FormActivate(Sender: TObject);
+
   private
     { Private declarations }
-    Render3D: TPreviewRender;
+    render3D: TPreviewRender;
     cwPlayer: Integer;
     //renderFog: Boolean;
     viewMode: Boolean;
@@ -86,8 +88,7 @@ type
     Procedure AddSecChange(sec: TJKSector; Change: Char);
     Procedure AddThingChange(th: TJKThing; Change: Char);
     Procedure ApplyChanges;
-    Procedure AddKBItem(mi: TMenuItem; const name: string; c: Char;
-      sc: TShiftState);
+    Function AddKBItem(mi: TMenuItem; const name: string; c: Char; sc: TShiftState): TMenuItem;
     procedure KBCommandClick(Sender: TObject);
 
     Procedure MoveCameraForward;
@@ -104,6 +105,15 @@ type
     Procedure MoveThingRight;
     Procedure MoveThingUp;
     Procedure MoveThingDown;
+
+    Function PlaySectorSound(filename: string): Boolean;  // Note, not providing filename will continue playing existing one
+    Function RestartSectorSound: Boolean;
+    Procedure SetSectorSoundVolume(volume: float);
+    Procedure PauseSectorSound;
+    Procedure ResumeSectorSound;
+    Procedure StopSectorSound;
+
+    procedure WMActivateApp(var Msg: TWMActivateApp); message WM_ACTIVATEAPP;
 
   public
     { Public declarations }
@@ -132,25 +142,37 @@ var
 
 implementation
 
-uses Jed_Main, U_Options, Misc_utils, Item_edit, U_tbar, ProgressDialog, lev_utils, u_undo;
+uses Jed_Main, FileOperations, U_Options, Misc_utils, Item_edit, U_tbar,
+     ProgressDialog, lev_utils, u_undo;
 
 {$R *.DFM}
 
 Procedure TPreview3D.Reset;
 begin
   MenuRenderFog.Visible := (CurrentProject = TProjectType.IJIM);
-  if Render3D = nil then
+  if render3D = nil then
     exit;
+
   scs.clear;
   ths.clear;
-  Render3D.ClearThings;
-  Render3D.ClearSectors;
-  Render3D.SetGamma(P3DGamma);
-  Render3D.highlightSelection      := MenuHighlightSelection.Checked;
-  Render3D.noClipSelectionOutline  := MenuNoClipSelectionOutline.Checked;
-  Render3D.highlightSolidSurface   := MenuHighlightSolidSurface.Checked;
-  Render3D.highlightSolidFloor     := MenuHighlightFloor.Checked;
-  Render3D.highlightSpecialSurface := MenuHighlightSpecialSurfaces.Checked;
+
+  StopSectorSound();
+
+  var campos, camrot: TVector;
+  with render3D.GetCamera do
+    begin
+      campos := position;
+      camrot := rotation;
+    end;
+
+  render3D.Reset;
+  render3D.GetCamera.MoveTo(campos, camrot);
+  render3D.SetGamma(P3DGamma);
+  render3D.highlightSelection      := MenuHighlightSelection.Checked;
+  render3D.noClipSelectionOutline  := MenuNoClipSelectionOutline.Checked;
+  render3D.highlightSolidSurface   := MenuHighlightSolidSurface.Checked;
+  render3D.highlightSolidFloor     := MenuHighlightFloor.Checked;
+  render3D.highlightSpecialSurface := MenuHighlightSpecialSurfaces.Checked;
   UpdateFog;
 end;
 
@@ -165,7 +187,7 @@ var
   sec: TJKSector;
   th: TJKThing;
 begin
-  if Render3D = nil then
+  if render3D = nil then
     exit;
 
   Reset;
@@ -202,25 +224,25 @@ Procedure TPreview3D.EnableFogRendering(enable: boolean);
 begin
   MenuRenderFog.Checked := enable;
 
-  if Render3D = nil then
+  if render3D = nil then
     exit;
 
   UpdateFog();
-  Render3D.Redraw;
+  Invalidate;
 end;
 
 Procedure TPreview3D.UpdateFog;
 begin
-  if Render3D = nil then
+  if render3D = nil then
     exit;
-  if (CurrentProject = TProjectType.IJIM) and MenuRenderFog.Checked and Render3D.IsFogSupported() then
+  if (CurrentProject = TProjectType.IJIM) and MenuRenderFog.Checked and render3D.IsFogSupported() then
     begin
-      Render3D.EnableFog(Level.header.Fog.Enabled);
-      Render3D.SetFog(Level.header.Fog.Color, level.header.Fog.FogStart, level.header.fog.FogEnd, (*density=*)1.0)
+      render3D.EnableFog(Level.header.Fog.Enabled);
+      render3D.SetFog(Level.header.Fog.Color, level.header.Fog.FogStart, level.header.fog.FogEnd, (*density=*)1.0)
     end
   else
     begin
-      Render3D.EnableFog(false);
+      render3D.EnableFog(false);
     end;
 end;
 
@@ -316,6 +338,7 @@ begin
   if Render3D <> nil then
     Render3D.Free;
   Render3D := nil;
+  StopSectorSound();
   P3DX := left;
   P3DY := top;
 end;
@@ -634,7 +657,6 @@ begin
         Render3D.UpdateSector(sec);
     end;
   end;
-
   scs.clear;
 
   for i := 0 to ths.Count - 1 do
@@ -702,7 +724,20 @@ end;
 procedure TPreview3D.FormPaint(Sender: TObject);
 begin
   ApplyChanges;
-  Render3D.redraw;
+  Render3D.Redraw;
+
+  // Ppdate cur playing sector sound
+  with Render3D do
+    begin
+      var sec := GetCamera().sector;
+      if not P3DPlaySecSound or (sec = nil) or (Length(sec.sound) = 0) then
+        StopSectorSound
+      else
+        begin
+          PlaySectorSound(sec.sound);
+          SetSectorSoundVolume(sec.soundVolume);
+        end;
+    end;
 end;
 
 Function TPreview3D.IsActive: boolean;
@@ -983,6 +1018,11 @@ begin
   end;
 end;
 
+procedure TPreview3D.FormActivate(Sender: TObject);
+begin
+  ResumeSectorSound;
+end;
+
 procedure TPreview3D.FormCreate(Sender: TObject);
 begin
   scs := TStringList.Create;
@@ -1066,7 +1106,6 @@ begin
   AddKBItem(miEdit, 'Copy camera as frame', 'F', []);
   AddKBItem(miEdit, 'Insert thing at surface', 'I', []);
   AddKBItem(miEdit, 'Insert thing at camera', 'I', [ssShift]);
-
 end;
 
 procedure TPreview3D.SetViewcamera1Click(Sender: TObject);
@@ -1124,7 +1163,7 @@ begin
   if Render3D <> nil then
     begin
       Render3D.highlightSolidFloor := MenuHighlightFloor.Checked;
-      Render3D.Redraw;
+      Invalidate;
     end;
 end;
 
@@ -1134,7 +1173,7 @@ begin
  if Render3D <> nil then
     begin
       Render3D.highlightSelection := MenuHighlightSelection.Checked;
-      Render3D.Redraw;
+      Invalidate;
     end;
 end;
 
@@ -1143,7 +1182,7 @@ begin
   if Render3D <> nil then
     begin
       Render3D.noClipSelectionOutline := MenuNoClipSelectionOutline.Checked;
-      Render3D.Redraw;
+      Invalidate;
     end;
 end;
 
@@ -1152,7 +1191,7 @@ begin
   if Render3D <> nil then
     begin
       Render3D.highlightSolidSurface := MenuHighlightSolidSurface.Checked;
-      Render3D.Redraw;
+      Invalidate;
     end;
 end;
 
@@ -1162,7 +1201,7 @@ begin
   if Render3D <> nil then
     begin
       Render3D.highlightSpecialSurface := MenuHighlightSpecialSurfaces.Checked;
-      Render3D.Redraw;
+      Invalidate;
     end;
 end;
 
@@ -1245,10 +1284,54 @@ begin
   TranslateSelectedThings(0, 0, -PerpStep);
 end;
 
+Function TPreview3D.PlaySectorSound(filename: string): Boolean;
+begin
+  try
+    Result := appSoundPlayer.Play(filename, (*loop:*) True);
+  finally
+  end;
+end;
+
+ Function TPreview3D.RestartSectorSound: Boolean;
+ begin
+  Result := appSoundPlayer.Restart;
+ end;
+
+ Procedure TPreview3D.SetSectorSoundVolume(volume: Double);
+ begin
+  appSoundPlayer.volume := volume;
+ end;
+
+Procedure TPreview3D.PauseSectorSound;
+begin
+  appSoundPlayer.Pause;
+end;
+
+Procedure TPreview3D.ResumeSectorSound;
+begin
+  appSoundPlayer.Resume;
+end;
+
+Procedure TPreview3D.StopSectorSound;
+begin
+  appSoundPlayer.Stop;
+end;
+
+procedure TPreview3D.WMActivateApp(var Msg: TWMActivateApp);
+begin
+  if (not visible) or (render3D = nil) then
+    exit;
+
+  if Msg.Active then
+    ResumeSectorSound
+  else
+    PauseSectorSound;
+end;
+
 procedure TPreview3D.MenuRenderFogClick(Sender: TObject);
 begin
   UpdateFog();
-  Render3D.Redraw;
+  Invalidate
 end;
 
 procedure TPreview3D.MenuRenderFullyLitClick(Sender: TObject);

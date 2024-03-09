@@ -136,7 +136,7 @@ var
 implementation
 
 uses ResourcePicker, FlagEditor, Jed_Main, GlobalVars, U_Templates, U_tbar,
-  U_SCFEdit, U_CogForm, lev_utils;
+  U_SCFEdit, U_CogForm, lev_utils, U_Preview;
 
 {$R *.DFM}
 
@@ -205,7 +205,7 @@ begin
         fe.AddFieldColor('+Extra Light', ID_SEC_EXTRA_LIGHT, ExtraLight, (*withAlpha=*) false);
 
         fe.AddFieldLabel('Point Light');
-        fe.AddFieldColor('    +Color', ID_SEC_POINT_LIGHT_COLOR, PointLight.Color, (*withAlpha=*) false);
+        fe.AddFieldColor(' +Color', ID_SEC_POINT_LIGHT_COLOR, PointLight.Color, (*withAlpha=*) false);
         fe.AddFieldStr('    Position', ID_SEC_POINT_LIGHT_POS,
           Sprintf('%1.6f %1.6f %1.6f', [PointLight.Position.x, PointLight.Position.y, PointLight.Position.z]));
         fe.AddFieldStr('    Min Range', ID_SEC_POINT_LIGHT_MIN_RANGE,
@@ -221,8 +221,10 @@ begin
         fe.AddFieldColor('+Tint', ID_SEC_TINT, Tint, (*withAlpha=*) false);
       end;
 
-    fe.AddFieldStr('+Sound', ID_SEC_SOUND, Sound);
-    fe.AddFieldFloat('Volume', ID_SEC_SOUND_VOLUME, soundVolume);
+    fe.AddFieldLabel('Sound');
+    fe.AddFieldStr(' +Name', ID_SEC_SOUND, Sound);
+    fe.AddFieldFloat('    Volume', ID_SEC_SOUND_VOLUME, soundVolume);
+
     if CurrentProject = IJIM then
       fe.AddFieldStr('Thrust', ID_SEC_THRUST,
         Sprintf('%1.6f %1.6f %1.6f', [Thrust.x, Thrust.y, Thrust.z]));
@@ -340,7 +342,7 @@ begin
       end;
     ID_SEC_TINT:
       begin
-        Result   := ValColor(s, c);
+        Result := ValColor(s, c);
         if Result then
           sec.Tint := c;
       end;
@@ -348,14 +350,16 @@ begin
       begin
         Result := true;
         sec.Sound := s;
-        exit;
+        if not P3DPlaySecSound or not Preview3D.Visible then
+          exit;
       end;
     ID_SEC_SOUND_VOLUME:
       begin
         Result := ValDouble(s, d);
         if Result then
           sec.soundVolume := d;
-        exit;
+        if not P3DPlaySecSound or not Preview3D.Visible then
+          exit;
       end;
     ID_SEC_THRUST:
       begin
@@ -457,6 +461,8 @@ begin
         var s := ResPicker.PickSecSound(Fi.s);
         changed := s <> Fi.s;
         Fi.s := s;
+        if not changed and PReview3D.Visible then // make sure current sector sound continues to play in preview window
+          PReview3D.Invalidate;
       end;
     ID_SEC_TINT:
       begin
