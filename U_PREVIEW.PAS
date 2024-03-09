@@ -497,12 +497,23 @@ begin
           self.MoveThingDown;
 
       Ord('S'):
-        if viewMode then
-          self.MoveCameraBackward
-        else if Shift = [ssShift] then
-          self.MoveThingBackward
-        else if (Shift = [ssShift]) or (Shift = []) then
-          JedMain.FormKeyDown(nil, Key, Shift);
+        begin
+          if Shift = [ssAlt] then
+            begin
+              with render3D.GetCamera do
+                if sector <> nil then
+                begin
+                  JedMain.Cur_SC := sector.num;
+                  JedMain.SetMapMode(MM_SC);
+                end;
+            end
+          else if viewMode then
+            self.MoveCameraBackward
+          else if Shift = [ssShift] then
+            self.MoveThingBackward
+          else // pass on to main window
+            JedMain.FormKeyDown(nil, Key, Shift);
+        end;
 
       Ord('T'):
         if (Shift = []) then // allow only setting map mode to thing
@@ -517,8 +528,8 @@ begin
       VK_DELETE:
         if (Shift = [ssAlt]) or (Shift = []) then
           JedMain.FormKeyDown(nil, Key, Shift);
-      Ord('X'), 219, 221, VK_Return:
-        if Shift = [] then
+      Ord('X'), 219, 221, VK_RETURN:
+        if (Shift = []) or (key = Ord('X'))  then
           JedMain.FormKeyDown(nil, Key, Shift);
       Ord('F'):
         if Shift = [] Then
@@ -1049,7 +1060,8 @@ begin
   AddKBItem(miControl, 'Snap grid to item', 'W', [ssShift]);
   AddKBItem(miControl, 'Swap Grid axis', 'G', [ssShift]);
   AddKBItem(miControl, 'Sector mode', 'S', []);
-  AddKBItem(miControl, 'Item Editor', Chr(VK_Return), []);
+  AddKBItem(miControl, 'Select camera sector', 'S', [ssAlt]);
+  AddKBItem(miControl, 'Item Editor', Char(VK_Return), []);
 
   AddKBItem(miControl, 'Next player start', 'N', []);
   AddKBItem(miControl, 'Prev player start', 'P', []);
@@ -1103,6 +1115,8 @@ begin
 
   AddKBItem(miEdit, 'Delete item', Char(VK_DELETE), []);
   AddKBItem(miEdit, 'Extrude surface', 'X', []);
+  AddKBItem(miEdit, 'Extrude surface by', 'X', [ssShift]);
+  AddKBItem(miEdit, 'Extrude && Expand surface', 'X', [ssCtrl]);
   AddKBItem(miEdit, 'Copy camera as frame', 'F', []);
   AddKBItem(miEdit, 'Insert thing at surface', 'I', []);
   AddKBItem(miEdit, 'Insert thing at camera', 'I', [ssShift]);
@@ -1114,30 +1128,18 @@ begin
     JedMain.SetCam(x, y, z, 0, 0, 0);
 end;
 
-Procedure TPreview3D.AddKBItem(mi: TMenuItem; const name: string; c: Char;
-  sc: TShiftState);
+Function TPreview3D.AddKBItem(mi: TMenuItem; const name: string; c: Char; sc: TShiftState): TMenuItem;
 var
-  nmi: TMenuItem;
   ext: string;
 begin
-  nmi := TMenuItem.Create(mi);
-  nmi.OnClick := KBCommandClick;
-  case c of
-    #0:
-      ext := '';
-    Char(VK_ADD):
-      ext := #9'+';
-    Char(VK_SUBTRACT):
-      ext := #9'-';
-    Char(VK_MULTIPLY):
-      ext := #9'*';
-  else
-    ext := #9 + ShortCutToText(ShortCut(Ord(c), sc));
-  end;
+  Result := TMenuItem.Create(mi);
+  Result.OnClick := KBCommandClick;
 
-  nmi.Caption := name + ext;
-  nmi.Tag := ShortCut(Ord(c), sc);
-  mi.Add(nmi);
+  Result.Caption := name;
+  Result.Tag := ShortCut(Ord(c), sc);
+  if c <> #0 then
+    Result.ShortCut := ShortCut(Ord(c), sc);
+  mi.Add(Result);
 end;
 
 procedure TPreview3D.KBCommandClick(Sender: TObject);
