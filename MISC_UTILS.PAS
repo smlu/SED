@@ -2,7 +2,7 @@ unit misc_utils;
 
 interface
 
-uses Classes, SysUtils, GlobalVars, Forms, U_MsgForm, StdCtrls, Graphics,TypInfo;
+uses Classes, IndyWV, SysUtils, GlobalVars, Forms, U_MsgForm, StdCtrls, Graphics, TypInfo;
 
 { Miscellaneous help routines }
 
@@ -12,6 +12,7 @@ Const
 Type
 
   TMsgType = (mt_info, mt_warning, mt_error); { Message Types for PanMessage() }
+
   TColorF = record
     r, g, b, a: single;  // a - alpha or light intensity
 
@@ -34,6 +35,40 @@ Type
     Function RgbaIntensity: single;
   end;
   PColorF=^TColorF;
+
+  // TAppSoundPlayer represents global app sound player
+  // Played sound is tied to app process therefor  only one sound can be played at once.
+  TAppSoundPlayer = class
+    strict  protected
+      sndData: TMemoryStream;
+      sndFilename: string;
+      volume_: Double;
+      bPaused: Boolean;
+      bLoop: Boolean;
+
+      class var instance: TAppSoundPlayer;
+      constructor Create;
+      function Start: Boolean;
+
+    public
+      class function GetInstance: TAppSoundPlayer;
+      class procedure ReleaseInstance();
+      destructor Destroy; override;
+
+      function Play(filename: string; loop: Boolean = false): Boolean; // plays sound to app instance; existing played sound is stopped
+      function Restart: Boolean;
+      function Pause: Boolean;
+      function Resume: Boolean;
+      procedure Reset; // Stops current playe sound and releases cached sound data in memory
+      procedure Stop;  // Stops sound current played sound. Cached sound data is not released
+
+      property IsLooping: Boolean read bLoop;
+      property filename: string read sndFilename; // returns current loaded filename
+
+      procedure SetVolume(volume: Double); // Set global app play volume
+      Function GetVolume: Double;
+      property volume: Double read GetVolume write SetVolume;
+  end;
 
   TIntList = class(TList)
     Function GetInt(n: Integer): Integer;
@@ -197,9 +232,13 @@ const
   ColorWhite: TColorF       = (r:1;g:1;b:1;a:1);
   ColorYellow: TColorF      = (r:1;g:1;b:0;a:1);
 
+var
+  appSoundPlayer: TAppSoundPlayer;
+
 implementation
 
-uses Windows, Jed_main, System.Math, System.Character;
+uses Windows, Jed_main, System.Math, System.Character, MMSystem, FileOperations;
+
 
 class operator TColorF.Add(a, b: TColorF): TColorF;
 begin
@@ -1419,6 +1458,164 @@ begin
     end;
 end;
 
+class function TAppSoundPlayer.GetInstance: TAppSoundPlayer;
+begin
+  if not Assigned(Self.instance) then
+    instance := TAppSoundPlayer.Create;
+  Result := instance;
+end;
+
+class procedure TAppSoundPlayer.ReleaseInstance();
+begin
+  if Assigned(instance) then
+    instance.Free;
+  instance := nil;
+end;
+
+destructor TAppSoundPlayer.Destroy;
+begin
+  sndData.Free;
+end;
+
+constructor TAppSoundPlayer.Create;
+begin
+  sndData := TMemoryStream.Create;
+end;
+
+function TAppSoundPlayer.Play(filename: string; loop: Boolean): Boolean;
+begin
+  Result := False;
+  if ((Length(filename) = 0) or (filename = sndFilename)) and (sndData.Size <> 0) then
+    begin
+      // Play stoped or paused cached sound
+      Result := True;
+      if not bPaused and loop and bLoop then
+        Exit;
+
+      bLoop  := loop;
+      Result := Start;
+      exit;
+    end;
+
+  // Load in new sound
+  if Length(filename) = 0 then
+    begin
+      Stop;
+      exit;
+    end;
+
+  var sndFile := OpenGameFile(filename);
+  if sndFile = nil then
+    raise Exception.Create(sndFilename + ' not found');
+
+  if sndData.Size > 0 then
+    Reset;
+
+  try
+    sndData.Size := sndFile.Fsize;
+    try
+      sndFile.Fread(sndData.Memory^, sndData.Size);
+      if IsWVSound(sndData) then
+         ConvertWMSoundToWAV(sndData, sndData);
+    except
+      begin
+        sndData.Clear;
+        raise;
+      end;
+    end;
+  finally
+    sndFile.FClose;
+  end;
+
+  sndFilename := filename;
+  bLoop       := loop;
+  Result      := Start;
+end;
+
+function TAppSoundPlayer.Restart: Boolean;
+begin
+  Result := Start;
+end;
+
+function TAppSoundPlayer.Start: Boolean;
+begin
+  Result := False;
+  if sndData.Size = 0 then
+    exit;
+
+  var flags := SND_NODEFAULT or SND_MEMORY or SND_ASYNC;
+  if bLoop then
+    flags := flags or SND_LOOP;
+  Result  := PlaySound(sndData.Memory, 0, flags);
+  bPaused := False;
+end;
+
+function TAppSoundPlayer.Pause: Boolean;
+begin
+  if (not bPaused) and (sndData.Size > 0) then
+  begin
+    PlaySound(nil, 0, SND_NODEFAULT);
+    bPaused := True;
+  end;
+end;
+
+function TAppSoundPlayer.Resume: Boolean;
+begin
+  if bPaused then
+    Start;
+end;
+
+procedure TAppSoundPlayer.Reset;
+begin
+  Stop;
+  sndData.Clear;
+  sndFilename := '';
+end;
+
+procedure TAppSoundPlayer.Stop;
+begin
+  bPaused := False;
+  bLoop   := False;
+  if sndData.Size = 0 then
+    exit;
+  PlaySound(nil, 0, SND_NODEFAULT);
+end;
+
+procedure TAppSoundPlayer.SetVolume(volume: Double);
+begin
+  volume := ClampF_01(volume);
+  if volume = volume_ then
+    exit;
+
+  var normvol := round(volume * 100);
+  if normvol < 0 then
+    normvol := 0
+  else if normvol > 100 then
+    normvol := 100;
+
+  // Calculate volume in range 0 to 65535
+  normvol := MulDiv(normvol, 65535, 100);
+
+  // Set the volume
+  if normvol >= 0 then
+    begin
+      if WaveOutSetVolume(0, normvol or (normvol shl 16)) = MMSYSERR_NOERROR then
+        volume_ := volume;
+    end;
+end;
+
+function TAppSoundPlayer.GetVolume: Double;
+begin
+  Result := volume_;
+end;
+
 Initialization
+begin
+  appSoundPlayer := TAppSoundPlayer.GetInstance;
+  appSoundPlayer.volume := 1.0;
+end;
+
+finalization
+  appSoundPlayer.ReleaseInstance;
 
 end.
