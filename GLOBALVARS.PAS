@@ -266,7 +266,9 @@ implementation
 
 Function GetConfigFilePath: string;
 begin
-   Result := 'sed.ini';
+  Result := 'sed.ini';
+  if Length(BaseDir) > 0 then // In case base dir gets initialized later
+    Result := ChangeFilePath(Result, BaseDir); // This make sure config file is located in app dir
 end;
 
 Function DefaultPixelPerUnit: double;
