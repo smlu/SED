@@ -28,6 +28,7 @@ Const
   R_CULLFRONT = 1;
 
 type
+ RdLineDrawMode = (RdSolidLine, RdDashedLine);
 
   TRColor = record
     r, g, b: byte;
@@ -57,6 +58,7 @@ type
 
   Private
      lplane, rplane, uplane, bplane: TPlane;
+     _linemode: RdLineDrawMode;
 
   Public
      Function DpiFactor: double;
@@ -77,6 +79,10 @@ type
     Function GetPointSize: double; virtual; abstract;
     Procedure SetPointSize(size: double); virtual; abstract;
     Property pointSize: double read GetPointSize write SetPointSize;
+
+    Function GetLineDrawMode: RdLineDrawMode; virtual;
+    Procedure SetLineDrawMode(mode: RdLineDrawMode); virtual;
+    Property lineDrawMode: RdLineDrawMode read GetLineDrawMode write SetLineDrawMode;
 
     { Procedure SetRenderStyle(rstyle:TRenderStyle);virtual;abstract; }
     Procedure BeginScene; virtual; abstract;
@@ -191,6 +197,16 @@ begin
         bgnd_clr.b := b;
       end;
   end;
+end;
+
+Function TRenderer.GetLineDrawMode: RdLineDrawMode;
+begin
+  Result := _linemode;
+end;
+
+Procedure TRenderer.SetLineDrawMode(mode: RdLineDrawMode);
+begin
+  _linemode := mode;
 end;
 
 Destructor TRenderer.Destroy;

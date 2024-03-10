@@ -46,6 +46,7 @@ Type
     Procedure SetPointSize(size: double); override;
     Procedure SetColor(what, r, g, b: byte); override;
     Procedure SetCulling(how: Integer); override;
+    Procedure SetLineDrawMode(mode: RdLineDrawMode); override;
 
     Procedure DrawPolygon(p: TPolygon); override;
     Procedure DrawPolygons(ps: TPolygons); override;
@@ -463,17 +464,6 @@ begin
     exit;
 
   n := p.vertices.count;
-//  case n of
-//    3:
-//      glBegin(GL_triangles);
-//    4:
-//      glBegin(GL_Quads);
-//  else
-//    glBegin(GL_Polygon);
-//  end;
-  glPushAttrib(GL_ENABLE_BIT);
-  //glLineStipple(2, $00FF);
-  glEnable(GL_LINE_STIPPLE);
   glBegin(GL_LINE_LOOP);
     for i := 0 to p.vertices.count - 1 do
       with p.vertices[i] do
@@ -482,7 +472,6 @@ begin
         // glNormal3d(p.Normal.dx,p.normal.dz, p.normal.dy);
       end;
   glEnd;
-  //glPopAttrib();
 end;
 
 Procedure TOGLRenderer.DrawVertex(x, y, Z: double);
@@ -903,6 +892,20 @@ begin
         glCullFace(GL_FRONT);
       end;
   end;
+end;
+
+Procedure TOGLRenderer.SetLineDrawMode(mode: RdLineDrawMode);
+begin
+   Inherited SetLineDrawMode(mode);
+
+   case mode of
+     RdSolidLine: glDisable(GL_LINE_STIPPLE);
+     RdDashedLine:
+     begin
+        glEnable(GL_LINE_STIPPLE);
+        glLineStipple(2, $00FF);
+     end;
+   end;
 end;
 
 end.

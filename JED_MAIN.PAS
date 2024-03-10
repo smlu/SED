@@ -1025,7 +1025,7 @@ begin
                 begin
                   cpclr := highlight(cpclr);
                   for i := 0 to th.a3DO.Meshes.Count - 1 do
-                      With th.a3DO.meshes[i] do
+                      with th.a3DO.meshes[i] do
                           renderer.DrawPolygonsAt(faces, x, y, z, pch, yaw, rol);
                 end;
             end;
@@ -1147,12 +1147,21 @@ var
           if ToolBar.IsLayerVisible(sec.layer) then
             begin
               case mode of
-                RM_VERTEX: renderer.DrawVertices(sec.vertices);
+                RM_VERTEX:  renderer.DrawVertices(sec.vertices);
                 RM_POLYGON: renderer.DrawPolygons(sec.surfaces);
               end;
             end;
         end;
     end;
+
+    procedure SetLineDrawModeForLayer(const layer: Integer);
+    begin
+      if ToolBar.IsLayerVisible(layer) then
+        renderer.SetLineDrawMode(RdSolidLIne)
+      else
+        renderer.SetLineDrawMode(RdDashedLine);
+    end;
+
 begin
     if not visible then
         exit;
@@ -1230,7 +1239,7 @@ begin
                 thing := level.things[th];
                 if not ToolBar.IsLayerVisible(thing.layer) then
                     continue;
-                With thing do
+                with thing do
                     renderer.DrawVertex(X, Y, z);
                 for s := 0 to thing.vals.Count - 1 do
                     DrawFrame(thing.vals[s]);
@@ -1266,6 +1275,7 @@ begin
                 for s := 0 to scsel.Count - 1 do
                 begin
                     sec := level.sectors[scsel.GetSC(s)];
+                    SetLineDrawModeForLayer(sec.layer);
                     renderer.DrawPolygons(sec.surfaces);
                 end;
 
@@ -1273,6 +1283,7 @@ begin
                 for s := 0 to scsel.Count - 1 do
                 begin
                     sec := level.sectors[scsel.GetSC(s)];
+                    SetLineDrawModeForLayer(sec.layer);
                     renderer.DrawPolygons(sec.surfaces);
                 end;
             end;
@@ -1282,7 +1293,9 @@ begin
                 for s := 0 to sfsel.Count - 1 do
                 begin
                     sfsel.GetSCSF(s, sc, SF);
-                    surf := level.sectors[sc].surfaces[SF];
+                    sec := level.sectors[sc];
+                    surf := sec.surfaces[SF];
+                    SetLineDrawModeForLayer(sec.layer);
                     renderer.DrawPolygon(surf);
                 end;
 
@@ -1291,7 +1304,9 @@ begin
                 for s := 0 to sfsel.Count - 1 do
                 begin
                     sfsel.GetSCSF(s, sc, SF);
-                    surf := Level.Sectors[sc].surfaces[SF];
+                    sec := level.sectors[sc];
+                    surf := sec.surfaces[SF];
+                    SetLineDrawModeForLayer(sec.layer);
                     renderer.DrawPolygon(surf);
                 end;
             end;
@@ -1301,7 +1316,9 @@ begin
                 for s := 0 to edsel.Count - 1 do
                 begin
                     edsel.GetSCSFED(s, sc, SF, ED);
-                    surf := level.sectors[sc].surfaces[SF];
+                    sec := level.sectors[sc];
+                    surf := sec.surfaces[SF];
+                    SetLineDrawModeForLayer(sec.layer);
                     With surf do
                         renderer.DrawLine(vertices[ED], vertices[NextVX(ED)]);
                 end;
@@ -1310,7 +1327,9 @@ begin
                 for s := 0 to edsel.Count - 1 do
                 begin
                     edsel.GetSCSFED(s, sc, SF, ED);
-                    surf := level.sectors[sc].surfaces[SF];
+                    sec := level.sectors[sc];
+                    surf := sec.surfaces[SF];
+                    SetLineDrawModeForLayer(sec.layer);
                     With surf do
                         renderer.DrawLine(vertices[ED], vertices[NextVX(ED)]);
                 end;
@@ -1332,7 +1351,11 @@ begin
                 With clMSel do
                     renderer.SetColor(CL_FRONT, r, g, b);
                 for s := 0 to thsel.Count - 1 do
-                    DrawThing(level.things[thsel.GetTH(s)]);
+                  begin
+                    thing := level.things[thsel.GetTH(s)];
+                    SetLineDrawModeForLayer(thing.layer);
+                    DrawThing(thing);
+                  end;
             end;
         MM_FR:
             begin
@@ -1341,6 +1364,7 @@ begin
                 for s := 0 to frsel.Count - 1 do
                 begin
                     frsel.GetTHFR(s, th, fr);
+                    SetLineDrawModeForLayer(level.things[th].layer);
                     DrawSelFrame(th, fr);
                 end;
             end;
@@ -1369,6 +1393,7 @@ begin
                     else
                       SetCullingAndDrawColor(R_CULLFRONT, clSelMSelBack);
 
+                    SetLineDrawModeForLayer(sec.layer);
                     renderer.DrawPolygons(sec.surfaces);
 
                     if scsel.FindSC(Cur_SC) = -1 then
@@ -1384,12 +1409,14 @@ begin
                 end;
             MM_SF:
                 begin
-                    surf := level.sectors[Cur_SC].surfaces[Cur_SF];
+                    sec := level.sectors[Cur_SC];
+                    surf := sec.surfaces[Cur_SF];
                     if sfsel.FindSF(Cur_SC, Cur_SF) = -1 then
                       SetCullingAndDrawColor(R_CULLFRONT, clMapSelBack)
                     else
                       SetCullingAndDrawColor(R_CULLFRONT, clSelMSelBack);
 
+                    SetLineDrawModeForLayer(sec.layer);
                     renderer.DrawPolygon(surf);
 
                     if sfsel.FindSF(Cur_SC, Cur_SF) = -1 then
@@ -1409,7 +1436,7 @@ begin
 //                    Renderer.DrawLine(v0, surf.normal, 0.2);
                 end;
             MM_ED:
-                With level.sectors[Cur_SC].surfaces[Cur_SF] do
+                with level.sectors[Cur_SC].surfaces[Cur_SF] do
                 begin
 
                     if edsel.FindED(Cur_SC, Cur_SF, Cur_ED) = -1 then
@@ -1421,6 +1448,7 @@ begin
 
                     v1 := vertices[Cur_ED];
                     v2 := vertices[NextVX(Cur_ED)];
+                    SetLineDrawModeForLayer(level.sectors[Cur_SC].layer);
                     renderer.DrawLine(v1, v2);
 
                     SetRendererGeoVertexSize;
@@ -1450,13 +1478,15 @@ begin
             MM_TH:
                 begin
                     if thsel.FindTH(Cur_TH) = -1 then
-                        With clMapSel do
+                        with clMapSel do
                             renderer.SetColor(CL_FRONT, r, g, b)
                     else
-                        With clSelMSel do
+                        with clSelMSel do
                             renderer.SetColor(CL_FRONT, r, g, b);
 
-                    DrawSelThing(level.things[Cur_TH]);
+                    thing := level.things[Cur_TH];
+                    SetLineDrawModeForLayer(thing.layer);
+                    DrawSelThing(thing);
                 end;
             MM_FR:
                 if Cur_FR = -1 then
@@ -1465,11 +1495,13 @@ begin
                 else
                 begin
                     if frsel.FindFR(Cur_TH, Cur_FR) = -1 then
-                        With clMapSel do
+                        with clMapSel do
                             renderer.SetColor(CL_FRONT, r, g, b)
                     else
-                        With clSelMSel do
+                        with clSelMSel do
                             renderer.SetColor(CL_FRONT, r, g, b);
+
+                    SetLineDrawModeForLayer(level.things[Cur_TH].layer);
                     DrawSelFrame(Cur_TH, Cur_FR);
                 end;
             MM_VX:
@@ -1542,6 +1574,7 @@ begin
 //    end;
    // DEBUG END
 
+    renderer.SetLineDrawMode(RdSolidLine); // Make sure solid line is drawn beyond this point
     renderer.EndScene;
     ValidateRect(Handle, nil);
 end;
