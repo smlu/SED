@@ -501,7 +501,7 @@ Procedure TRDPolyCache.AddPoly(const poly: T3DPoly);
 begin
   if numUsed >= Capacity then Flush;
   polys[numUsed] := poly;
-  inc(numUsed);
+  Inc(numUsed);
 end;
 
 Procedure TRDPolyCache.Flush;
@@ -523,7 +523,6 @@ Function TRDPolyCache.GetCount: Cardinal;
 begin
   Result := numUsed;
 end;
-
 
 procedure DisableFPUExceptions ;
 var
@@ -930,10 +929,10 @@ end;
 
 Procedure TNewPRenderer.RenderThings(const [Ref] frustrum: TClipFrustum);
 begin
-  for var i:=0 to ThList.count - 1 do
+  for var i := 0 to ThList.count - 1 do
     begin
       var m := ThList[i];
-      if m=nil then continue;
+      if m = nil then continue;
       if not IsInFront(frustrum, m) then continue;
 
       var ambientLight := ColorWhite;
@@ -943,13 +942,13 @@ begin
           ambientLight   := m.extraLight + m.sec.Ambient + m.sec.ExtraLight;
           ambientLight.a := 0;
           ambientLight.Normalize;
-          tint := m.sec.Tint;
+          tint := m.sec.tint;
         end;
 
       if bDebug then // render object radius
         RenderCircle(rdDebugPolys, m.center.x, m.center.y, m.center.z, m.radius);
 
-      for var j:=0 to m.polys.count-1 do
+      for var j := 0 to m.polys.Count - 1 do
         begin
           var poly := m.GetPoly(j);
           if poly.geo = NotDrawn then continue;
@@ -977,8 +976,8 @@ begin
           else
             rdCache.AddPoly(poly);
         end;
-
     end;
+
   FlushCaches;
 end;
 
@@ -1758,6 +1757,7 @@ begin
                   vd.z := th.z + az;
 
                   vd.intensity := color;
+                  vd.intensity.a := 1.0; // Make sure model is opaque
                   if alpha < 1.0 then
                     vd.intensity.a := alpha;
 
@@ -1998,7 +1998,6 @@ begin
   Result := skypoly;
 end;
 
-
 Procedure TNewPRenderer.FlushCaches;
 begin
   rdCache.Flush;
@@ -2006,14 +2005,14 @@ begin
 end;
 
 Type
-    TVXData=record
-     x,y,z:single;
-     infront:boolean;
-    end;
+  TVXData = record
+    x,y,z:single;
+    infront: boolean;
+  end;
 
 Constructor T3DPoly.Create;
 begin
- vxds:=TList.create;
+ vxds := TList.create;
 end;
 
 Destructor T3DPoly.Destroy;

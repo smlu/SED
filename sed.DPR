@@ -5,7 +5,6 @@ uses
   Classes,
   Jed_Main in 'Jed_Main.pas' {JedMain},
   tmp_load3do in 'tmp_load3do.pas',
-  Render in 'RENDER.PAS',
   RENDER in 'RENDER.PAS',
   J_level in 'J_level.pas',
   OGL_render in 'OGL_render.pas',
