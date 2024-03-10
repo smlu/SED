@@ -1,8 +1,7 @@
 unit GlobalVars;
 
 interface
-
-uses SysUtils, Forms, graphics, Classes;
+uses SysUtils, Forms, Graphics, Classes;
 
 Type
   Float = Double;
@@ -260,11 +259,10 @@ Function GetStayOnTop(f: TForm): boolean;
 Procedure SetStayOnTop(f: TForm; ontop: boolean);
 
 Function DefaultPixelPerUnit: double;
-Function PixelPerUnit: double;
 
 implementation
 
-uses J_Level;
+
 
 Function GetConfigFilePath: string;
 begin
@@ -277,14 +275,6 @@ begin
 //      result := 320 // This is hack because IM UVs are based on texture size
 //    else
       result := 320;
-end;
-
-Function PixelPerUnit: double;
-begin
-  if Level = nil then
-    result := DefaultPixelPerUnit
-  else
-    result := Level.ppunit;
 end;
 
 Procedure SetP3DPos(f: TForm; X, Y, mode: integer);
@@ -401,7 +391,6 @@ end;
 Initialization
 begin
   BaseDir := ExtractFilePath(Paramstr(0));
-
   FormatSettings := TFormatSettings.Invariant;
   FormatSettings.DecimalSeparator := '.';
 end;

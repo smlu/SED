@@ -3,9 +3,9 @@ unit U_Options;
 interface
 
 uses
-  Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
+  GlobalVars, Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
   StdCtrls, FileCtrl, ComCtrls, misc_utils, ExtCtrls, Buttons, D3D_PRender,
-  FieldEdit, J_Level, tbar_tools, GlobalVars, iniFiles, Vcl.Mask;
+  FieldEdit, J_Level, tbar_tools, IniFiles, Vcl.Mask;
 
 type
   TTextEdit = TEdit;
@@ -127,6 +127,7 @@ type
 Procedure ReadConfigFile;
 Procedure WriteConfigFile(bExit: boolean);
 Function SetProjectType(kind: TProjectType): boolean;
+Function PixelPerUnit: double;
 
 Function GetSetting(const settingName: string): variant;
 
@@ -323,19 +324,19 @@ begin
     try
       FormatSettings.DecimalSeparator:='.';
       for var i := 0 to SizeOf(regValues) div SizeOf(TRegValue) - 1 do
-        With regValues[i] do
+        with regValues[i] do
         begin
           Try
             Case d_type of
               dt_int:
-                integer(data^) := conf.ReadInteger(section, name, integer(data^));
+                integer(data^) := conf.ReadInteger(section, name, Integer(data^));
               dt_str:
-                String(data^) := conf.ReadString(section, name, String(data^));
+                String(data^) := conf.ReadString(section, name, string(data^));
               dt_bool:
-                boolean(data^) := conf.ReadBool(section, name, boolean(data^));
+                boolean(data^) := conf.ReadBool(section, name, Boolean(data^));
               dt_double:
               begin
-                var d := conf.ReadFloat(section, Name, 0.0);
+                var d := conf.ReadFloat(section, name, 0.0);
                 Double(data^) := conf.ReadFloat(Section, Name, Double(data^));
               end;
             end;
@@ -362,17 +363,17 @@ begin
   try
     confile := TMemIniFile.Create(GetConfigFilePath(), TEncoding.UTF8, (*caseSensitive=*)false);
     try
-      For var i := 0 to SizeOf(regValues) div SizeOf(TRegValue) - 1 do
-        With regValues[i] do
+      for var i := 0 to SizeOf(regValues) div SizeOf(TRegValue) - 1 do
+        with regValues[i] do
           if bExit = onExit then
           begin
             Case d_type of
               dt_int:
-                confile.WriteInteger(Section, name, integer(data^));
+                confile.WriteInteger(Section, name, Integer(data^));
               dt_str:
-                confile.WriteString(Section, name, String(data^));
+                confile.WriteString(Section, name, string(data^));
               dt_bool:
-                confile.WriteBool(Section, name, boolean(data^));
+                confile.WriteBool(Section, name, Boolean(data^));
               dt_double:
                 confile.WriteFloat(Section, name, Double(data^));
             end;
@@ -989,6 +990,14 @@ begin
   end;
 end;
 
+Function PixelPerUnit: double;
+begin
+  if Level = nil then
+    result := DefaultPixelPerUnit
+  else
+    result := Level.ppunit;
+end;
+
 procedure TOptions.CBAutoSaveClick(Sender: TObject);
 begin
   EBSaveInt.Enabled := CBAutoSave.Checked;
@@ -1007,11 +1016,9 @@ begin
 end;
 
 Initialization
-
 ReadConfigFile;
 
 Finalization
-
 if SaveSettings then
   WriteConfigFile(true);
 end.

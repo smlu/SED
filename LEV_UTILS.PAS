@@ -2,7 +2,7 @@
 
 interface
 
-uses Geometry, J_Level, misc_utils, GlobalVars, ProgressDialog,
+uses Geometry, J_Level, misc_utils, ProgressDialog,
   graph_files, U_multisel, u_3dos, Images;
 
 Const
@@ -273,7 +273,8 @@ function CheckLightIndex(const lev: TJKLevel; lt: integer): boolean;
 
 implementation
 
-uses System.Math, SysUtils, Jed_main, math, u_tbar, values, u_COGForm, Types, u_undo;
+uses System.Math, SysUtils, GlobalVars, Jed_main, math, u_tbar, values,
+     u_COGForm, U_Options, Types, u_undo;
 
 Type
   TXData = record

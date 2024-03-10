@@ -110,7 +110,7 @@
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_2_Win32)'!=''">
         <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
-        <VerInfo_Keys>CompanyName=;FileDescription=SED - Jedi Knight, MOTS and Infernal Machine Editor;FileVersion=0.1.0.14;OriginalFilename=sed.exe;ProductName=SED;ProductVersion=0.1.0.0;Comments=https://github.com/smlu/sed;ProgramID=com.embarcadero.$(MSBuildProjectName);HomePage=https://github.com/smlu/sed</VerInfo_Keys>
+        <VerInfo_Keys>CompanyName=;FileDescription=SED - Jedi Knight, MOTS and Infernal Machine Editor;FileVersion=0.1.0.22;OriginalFilename=sed.exe;ProductName=SED;ProductVersion=0.1.0.0;Comments=https://github.com/smlu/sed;ProgramID=com.embarcadero.$(MSBuildProjectName);HomePage=https://github.com/smlu/sed</VerInfo_Keys>
         <VerInfo_MajorVer>0</VerInfo_MajorVer>
         <VerInfo_MinorVer>1</VerInfo_MinorVer>
         <DCC_DebugInfoInExe>true</DCC_DebugInfoInExe>
@@ -119,12 +119,16 @@
         <VerInfo_Debug>true</VerInfo_Debug>
         <DCC_PEOSVersion>10.0</DCC_PEOSVersion>
         <VerInfo_AutoIncVersion>true</VerInfo_AutoIncVersion>
-        <VerInfo_Build>14</VerInfo_Build>
+        <VerInfo_Build>22</VerInfo_Build>
     </PropertyGroup>
     <ItemGroup>
         <DelphiCompile Include="$(MainSource)">
             <MainSource>MainSource</MainSource>
         </DelphiCompile>
+        <DCCReference Include="GlobalVars.pas"/>
+        <DCCReference Include="U_OPTIONS.pas">
+            <Form>Options</Form>
+        </DCCReference>
         <DCCReference Include="Jed_Main.pas">
             <Form>JedMain</Form>
         </DCCReference>
@@ -134,8 +138,7 @@
         <DCCReference Include="OGL_render.pas"/>
         <DCCReference Include="Files.pas"/>
         <DCCReference Include="Tools.pas"/>
-        <DCCReference Include="GlobalVars.pas"/>
-        <DCCReference Include="Geometry.pas"/>
+        <DCCReference Include="GEOMETRY.PAS"/>
         <DCCReference Include="ProgressDialog.pas">
             <Form>Progress</Form>
         </DCCReference>
@@ -151,9 +154,6 @@
         <DCCReference Include="values.pas"/>
         <DCCReference Include="u_templates.pas"/>
         <DCCReference Include="ListRes.pas"/>
-        <DCCReference Include="U_Options.pas">
-            <Form>Options</Form>
-        </DCCReference>
         <DCCReference Include="U_CogForm.pas">
             <Form>CogForm</Form>
         </DCCReference>
@@ -198,7 +198,7 @@
         <DCCReference Include="U_SCFEdit.pas">
             <Form>SCFieldPicker</Form>
         </DCCReference>
-        <DCCReference Include="jdh_jdl.pas"/>
+        <DCCReference Include="JDH_JDL.PAS"/>
         <DCCReference Include="Q_Utils.pas"/>
         <DCCReference Include="Q_Sectors.pas">
             <Form>FindSectors</Form>
@@ -226,7 +226,7 @@
         <DCCReference Include="u_coggen.pas">
             <Form>CogGen</Form>
         </DCCReference>
-        <DCCReference Include="u_DFI.pas">
+        <DCCReference Include="U_DFI.PAS">
             <Form>DFImport</Form>
         </DCCReference>
         <DCCReference Include="OGL_PRender.pas"/>
