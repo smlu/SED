@@ -1,47 +1,47 @@
 Type
-TTempVertex=class
-  x,y,z:double;
+TTempVertex = class
+  x,y,z: Double;
 end;
 
-TTempTXVertex=class
-  u,v:single;
+TTempTXVertex = class
+  u,v: Single;
 end;
 
-TAdjoin=class
-   mirror,surf:integer;
-   dist:double;
-   flags:longint;
+TAdjoin = class
+   mirror,surf: Integer;
+   dist: Double;
+   flags: LongInt;
 end;
 
-TMatDims=class
- dim1,dim2:double;
+TMatDims = class
+ dim1,dim2: Double;
 end;
 
-TVXIntensity=class
+TVXIntensity = class
  r,g,b,
- a: single; // a - alpha or light intensity
+ a: Single; // a - alpha or light intensity
 end;
 
-TTempSurf=class
-  nmat:integer;
-  surfflags,faceflags:longint;
-  geo,light,nadj,tex:integer;
-  extralight:TColorF;
-  VXS:TIntList;
-  TVXs:TIntList;
-  intensities:TList;
-  Constructor Create;
-  Destructor Destroy;override;
+TTempSurf = class
+  nmat: Integer;
+  surfflags,faceflags: LongInt;
+  geo,light,nadj,tex: Integer;
+  extralight: TColorF;
+  VXS: TIntList;
+  TVXs: TIntList;
+  intensities: TList;
+  constructor Create;
+  destructor Destroy;override;
 end;
 
-Constructor TTempSurf.Create;
+constructor TTempSurf.Create;
 begin
- VXS:=TIntList.Create;
- TVXS:=TIntList.Create;
- intensities:=TList.Create;
+ VXS  := TIntList.Create;
+ TVXS := TIntList.Create;
+ intensities := TList.Create;
 end;
 
-Destructor TTempSurf.Destroy;
+destructor TTempSurf.Destroy;
 var i:integer;
 begin
  VXS.Free;
@@ -51,19 +51,19 @@ begin
  Intensities.Free;
 end;
 
-Procedure TJKLevel.LoadFromJKL(F:TFileName);
-var t:TTextFile; cpos:word; s,w1,w2:String;
-    cur_line:integer;
-    a,n,nx:Integer;
+Procedure TJKLevel.LoadFromJKL(filename: TFileName);
+var t: TTextFile; cpos:word; s,w1,w2: string;
+    cur_line: Integer;
+    a,n,nx: Integer;
     EndOfSection:boolean;
-    CurSection:String;
+    CurSection: string;
     GVXList,GSurfList,
-    GTXVXList,GAdjoins:TList;
-    mats:TStringList;
-    cmps:TStringList;
-    vr,vg,vb:single;
+    GTXVXList,GAdjoins: TList;
+    mats: TStringList;
+    cmps: TStringList;
+    vr,vg,vb: Single;
 
-Procedure GetNextLine(var s:String; upper: boolean = true);
+Procedure GetNextLine(var s: string; upper: boolean = true);
 var cmt_pos:word; {Position of #}
 begin
  s:='';
@@ -83,18 +83,18 @@ end; {GetNextLine}
 
 Procedure SkipToNextSection;
 begin
- While not EndOfSection do GetNextLine(s);
+  while not EndOfSection do GetNextLine(s);
 end;
 
 Procedure Error(s:String);
 begin
- PanMessage(mt_error,'File '+f+Format(' Error at line %d: %s',[cur_line,s]));
+  PanMessageFmt(mt_error, 'File %s Error at line %d: %s', [filename, cur_line, s]);
 end;
 
 Const
-   pi_steps=100;
+   pi_steps = 100;
 var
-   ppos,fsize:longint;
+   ppos,fsize: LongInt;
 
 Procedure DO_Progress;
 var pos:integer;
@@ -358,8 +358,7 @@ begin
  {To ensure that current project mode is correct when
   COGS start loading}
   SetProjectType(kind);
-
- end;
+ end; {LoadGeometry}
 
 Procedure LoadSectors;
   var i,j,numSecs: integer;
@@ -384,7 +383,7 @@ Procedure LoadSectors;
   end;
 begin
 
-Try
+try
  CurSection:='';
  GetNextLine(s);
  numSecs  := StrToInt(GetWordN(s, 3));
@@ -549,10 +548,10 @@ Try
    end; //  For i := 0 to numSecs - 1 do
 
  //scvxList.Free;
- Except
-  on e:Exception do;
+ except
+  on e: Exception do;
  end;
-end;
+end; {LoadSectors}
 
 Function GetSurfByN(n:integer): TJKSurface;
 var i,ns:integer;
@@ -591,10 +590,10 @@ begin
 end;
 
 Procedure LoadThings;
-var i,j,n,p,nsec:integer;
-    th:TThing;
-    pe:integer;
-    v:TTPLValue;
+var i,j,n,p,nsec: Integer;
+    th: TThing;
+    pe: Integer;
+    v: TTPLValue;
 begin
  Progress.Msg := 'Loading Things';
  CurSection := '';
@@ -730,8 +729,7 @@ begin
   // Layer visibility
   GetNextLine(LVisString);
   RemoveComment(LVisString);
-end;
-
+end; {LoadLayers}
 
 Procedure LoadCogs;
 var i,n,p,idx:integer;
@@ -740,35 +738,38 @@ var i,n,p,idx:integer;
     cf:TCogFile;
     nval:integer;
 begin
- cf:=TCogFile.Create;
+ cf := TCogFile.Create;
 
  CurSection:='';
  DO_Progress;
  Progress.Msg:='Loading Cogs';
  GetNextLine(s);
  SScanf(s,'WORLD COGS %d',[@n]);
- for i:=0 to n-1 do
+
+ for i:=0 to n - 1 do
  begin
   GetNextLine(s, false);
   if (SameText(s, 'end')) or EndOfSection then break;
-  p:=GetWord(s,1,w1);
-  p:=GetWord(s,p,w1);
-  cg:=TCog.Create;
+  p := GetWord(s,1,w1);
+  p := GetWord(s,p,w1);
+  cg := TCog.Create;
   Cogs.Add(cg);
   cg.Name:=w1;
   cf.LoadNoLocals(cg.Name);
-  nval:=0;
-  While p<=Length(s) do
-  begin
-   p:=getWord(s,p,w1);
-   if w1='' then continue;
-   cv:=TCOGValue.Create;
-   cg.Vals.Add(cv);
+  nval := 0;
+  While p <= Length(s) do
+    begin
+      p:=getWord(s,p,w1);
+      if w1 = '' then continue;
+      cv:=TCOGValue.Create;
+      cg.Vals.Add(cv);
 
-   if nval<cf.Count then cv.Assign(cf[nval]);
-   cv.Val(w1);
-    inc(nval);
-  end;
+      if nval<cf.Count then
+        cv.Assign(cf[nval]);
+
+      cv.Val(w1);
+      inc(nval);
+    end;
  end;
  cf.free;
 end;
@@ -821,99 +822,104 @@ var i,j:integer;
     cv:TCOGValue;
     tmpsurf:TJKSurface;
 begin {LoadFromJKL begin}
- kind := TProjectType.JKDF2; // set level project type
- ppos:=0;
- FormatSettings.DecimalSeparator:='.';
- mats:=TStringList.Create;
- cmps:=TStringList.Create;
- t:=TTextFile.CreateRead(OpenFileRead(f,0));
- fsize:=t.Fsize;
- Clear;
- cur_line:=0;
- EndOfSection:=false;
- CurSection:='';
- SetDefaultHeader;
- GVXList:=TVertices.Create;
- GSurfList:=TList.Create;
- GTXVXList:=TList.Create;
- GAdjoins:=TList.Create;
- Progress.Reset(pi_steps);
-Try
-Try
-Repeat
-While (CurSection='') and (not t.eof) do GetNextLine(s);
- if t.eof then break;
- EndOfSection:=false;
- if CurSection='GEORESOURCE' then LoadGeometry
- else if CurSection='HEADER' then LoadHeader
- else if CurSection='SECTORS' then LoadSectors
- else if CurSection='MATERIALS' then LoadMats
- else if CurSection='COGS' then LoadCogs
- else if CurSection='TEMPLATES' then LoadTemplates
- else if CurSection='THINGS' then LoadThings
- else if CurSection='LIGHTS' then LoadLights
- else if CurSection='LAYERS' then LoadLayers
+  kind := TProjectType.JKDF2; // set level project type
+  ppos:= 0;
+  FormatSettings.DecimalSeparator := '.';
+  mats := TStringList.Create;
+  cmps := TStringList.Create;
 
- else SkipToNextSection;
-until t.eof;
-Finally
-t.FClose;
-Progress.Hide;
-{Post process}
-for i:=0 to Sectors.Count-1 do
-With Sectors[i] do
-for j:=0 to Surfaces.Count-1 do
-With Surfaces[j] do
-begin
- if nadj<0 then begin Adjoin:=nil; continue; end;
- With TAdjoin(GAdjoins[nadj]) do
- begin
-  Adjoin:=GetSurfByN(TAdjoin(GAdjoins[Mirror]).Surf);
-  AdjoinFlags:=Flags;
- end;
-end;
-{Free all stuff}
-for i:=0 to GVXList.Count-1 do TTempVertex(GVXList[i]).Free;
-GVXList.Free;
-For i:=0 to GSurfList.Count-1 do TTempSurf(GSurfList[i]).Free;
-GSurfList.Free;
-For i:=0 to GTXVXList.Count-1 do TTempTXVertex(GTXVXList[i]).Free;
-GTXVXList.Free;
-For i:=0 to GAdjoins.Count-1 do TAdjoin(GAdjoins[i]).Free;
-GAdjoins.Free;
+  t := TTextFile.CreateRead(OpenFileRead(filename, 0));
+  fsize := t.Fsize;
 
- RenumSecs;
- RenumThings;
+  Clear;
 
- for i:=0 to sectors.Count-1 do
- With Sectors[i] do
- begin
-  Renumber;
-  for j:=0 to surfaces.Count-1 do
-  begin
-   tmpsurf:=Surfaces[j];
-   tmpsurf.Recalc; // TODO: parse normals
-   if IsTXFlipped(tmpsurf) then tmpsurf.FaceFlags:=longint(tmpsurf.FaceFlags or FF_SF_Flip)
-   else tmpsurf.FaceFlags:=tmpsurf.FaceFlags and (not FF_SF_Flip);
-   FindUVScales(tmpsurf);
+  cur_line:=0;
+  EndOfSection:=false;
+  CurSection:='';
+  SetDefaultHeader;
+  GVXList:=TVertices.Create;
+  GSurfList:=TList.Create;
+  GTXVXList:=TList.Create;
+  GAdjoins:=TList.Create;
+  Progress.Reset(pi_steps);
 
+  try
+    try
+      repeat
+      while (CurSection='') and (not t.eof) do GetNextLine(s);
+       if t.eof then break;
+       EndOfSection:=false;
+       if CurSection='GEORESOURCE' then LoadGeometry
+       else if CurSection='HEADER' then LoadHeader
+       else if CurSection='SECTORS' then LoadSectors
+       else if CurSection='MATERIALS' then LoadMats
+       else if CurSection='COGS' then LoadCogs
+       else if CurSection='TEMPLATES' then LoadTemplates
+       else if CurSection='THINGS' then LoadThings
+       else if CurSection='LIGHTS' then LoadLights
+       else if CurSection='LAYERS' then LoadLayers
+       else SkipToNextSection;
+      until t.eof;
+    Finally
+      t.FClose;
+
+    Progress.Hide;
+
+    {Post process}
+    for i:=0 to sectors.Count-1 do
+    With sectors[i] do
+      for j:= 0 to surfaces.Count-1 do
+      With Surfaces[j] do
+      begin
+       if nadj < 0 then begin adjoin:= nil; continue; end;
+       With TAdjoin(GAdjoins[nadj]) do
+       begin
+        Adjoin:=GetSurfByN(TAdjoin(GAdjoins[mirror]).surf);
+        AdjoinFlags:=Flags;
+       end;
+      end;
+
+    {Free all stuff}
+    for i:=0 to GVXList.Count-1 do TTempVertex(GVXList[i]).Free;
+    GVXList.Free;
+    For i:=0 to GSurfList.Count-1 do TTempSurf(GSurfList[i]).Free;
+    GSurfList.Free;
+    For i:=0 to GTXVXList.Count-1 do TTempTXVertex(GTXVXList[i]).Free;
+    GTXVXList.Free;
+    For i:=0 to GAdjoins.Count-1 do TAdjoin(GAdjoins[i]).Free;
+    GAdjoins.Free;
+
+     RenumSecs;
+     RenumThings;
+
+     for i:=0 to sectors.Count-1 do
+     With Sectors[i] do
+     begin
+      Renumber;
+      for j:=0 to surfaces.Count-1 do
+      begin
+       tmpsurf:=Surfaces[j];
+       tmpsurf.Recalc; // TODO: parse normals
+       if IsTXFlipped(tmpsurf) then tmpsurf.FaceFlags:=longint(tmpsurf.FaceFlags or FF_SF_Flip)
+       else tmpsurf.FaceFlags:=tmpsurf.FaceFlags and (not FF_SF_Flip);
+       FindUVScales(tmpsurf);
+
+      end;
+     end;
+
+     For i:=0 to Cogs.Count-1 do
+     With Cogs[i] do
+     for j:=0 to Vals.count-1 do
+       Vals[j].Resolve;
+
+     AddMissingLayers;
+     for i:=0 to Mats.Count-1 do Mats.Objects[i].Free;
+     Mats.Free;
+     Cmps.Free;
+    end;
+  except
+   On e:exception do PanMessage(mt_warning,e.message);
   end;
- end;
-
- For i:=0 to Cogs.Count-1 do
- With Cogs[i] do
- for j:=0 to Vals.count-1 do
-   Vals[j].Resolve;
-
- AddMissingLayers;
- for i:=0 to Mats.Count-1 do Mats.Objects[i].Free;
- Mats.Free;
- Cmps.Free;
-end;
-except
- On e:exception do PanMessage(mt_warning,e.message);
-end;
-
 end; {LoadFromJKL end}
 
 Procedure TJKLevel.JKLPostLoad;

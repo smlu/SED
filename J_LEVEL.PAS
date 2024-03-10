@@ -294,7 +294,7 @@ type
     Constructor Create;
     Destructor Destroy; override;
     Procedure Clear;
-    Procedure LoadFromJKL(F: TFileName);
+    Procedure LoadFromJKL(filename: TFileName);
     Procedure JKLPostLoad;
     Procedure LoadFromJed(F: TFileName);
     Procedure SaveToJKL(F: TFileName);

@@ -428,7 +428,7 @@ type
         Procedure SaveSelEdgeUndo(const rname: string; change: Integer);
 
         Procedure NewProject;
-        Procedure OpenProject(const fname: string; how: Integer);
+        Procedure OpenProject(const filename: string; how: Integer);
         Function SaveProject: boolean;
         Function SysSaveProject(askSave: boolean): boolean;
         Procedure SaveJKLto(const name: string);
@@ -761,36 +761,36 @@ begin
 
 end;
 
-Procedure TJedMain.OpenProject(const fname: string; how: Integer);
+Procedure TJedMain.OpenProject(const filename: string; how: Integer);
 var
     ext: string;
     i: Integer;
 begin
     for i := 0 to Level.Things.Count - 1 do
         Free3DO(Level.Things[i].a3DO);
-    ext := UpperCase(ExtractExt(fname));
+    ext := UpperCase(ExtractExt(filename));
     ResettingEditor;
     PMsg.Caption := '';
     if (ext = '.JKL') or (ext = '.NDY') then
       begin
-          level.LoadFromJKL(fname);
-          NewLevel := false;
-          LevelFile := fname;
-          AskSaveAs := IsInContainer(fname);
+          level.LoadFromJKL(filename);
+          NewLevel  := false;
+          LevelFile := filename;
+          AskSaveAs := IsInContainer(filename);
           SetLevelName;
       end
     else if ext = '.JED' then
       begin
-          level.LoadFromJED(fname);
-          NewLevel := false;
-          LevelFile := fname;
-          AskSaveAs := IsInContainer(fname);
+          level.LoadFromJED(filename);
+          NewLevel  := false;
+          LevelFile := filename;
+          AskSaveAs := IsInContainer(filename);
           SetLevelName;
       end;
 
     SetProjectType(level.kind);
     Level.JKLPostLoad;
-    AddRecent(fname);
+    AddRecent(filename);
     ResetEditor(how <> op_revert);
     Invalidate;
 end;
