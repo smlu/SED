@@ -1554,8 +1554,13 @@ function TAppSoundPlayer.Pause: Boolean;
 begin
   if (not bPaused) and (sndData.Size > 0) then
   begin
-    PlaySound(nil, 0, SND_NODEFAULT);
-    bPaused := True;
+    if bLoop then
+      begin
+        PlaySound(nil, 0, SND_NODEFAULT);
+        bPaused := True;
+      end
+    else
+      Stop; // just stop non-looping sound, this makes sure that sound won't be played in a loop when calling pause/resume
   end;
 end;
 
