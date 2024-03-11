@@ -73,7 +73,7 @@ type
   end;
 
 implementation
-uses lev_utils, System.Math;
+uses GlobalVars, lev_utils, System.Math, U_tbar;
 
 constructor TCamera.CreatePerspective(width, height: double;  fov: Double; nearPlane, farPlane: Double);
 begin
@@ -127,6 +127,11 @@ begin
 end;
 
 procedure TCamera.Update;
+  function IsSectorVisible(const sec: TJKSector): Boolean;
+  begin
+    Result := (not P3DVisLayers) or ToolBar.IsLayerVisible(sec.layer);
+  end;
+
 begin
   orient := TMatrix43.Create(position, rotation);
   view   := orient.InvertOrtho; // inverse orient to get view matrix
@@ -134,14 +139,18 @@ begin
   // Update cur sector
   with position do
     begin
-      if sector_ <> nil then
+      if (sector_ <> nil) and IsSectorVisible(sector_) then
         if IsInSector(sector_, x, y, z) then
           exit;
 
       sector_ := nil;
       var sc := FindSectorForXYZ(level, x, y, z);
       if sc <> -1 then
-         sector_ := level.sectors[sc];
+        begin
+          var sec := level.sectors[sc];
+          if IsSectorVisible(sec) then
+            sector_ := sec;
+        end;
     end;
 end;
 
