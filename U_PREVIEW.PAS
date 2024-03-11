@@ -81,8 +81,10 @@ type
     Procedure WMEraseBkg(var msg: TMessage); message WM_ERASEBKGND;
     procedure wmactivate(var message: TMessage); message wm_activate;
     procedure wmpaint(var message: TMessage); message wm_paint;
-    Procedure SysAddSector(s: TJKSector);
+    Procedure SysAddSector(sec: TJKSector);
+    Procedure SysUpdateSector(sec: TJKSector);
     Procedure SysAddThing(th: TJKThing);
+    Procedure SysUpdateThing(th: TJKThing);
     Procedure SaveCamPos(var cpos: TCamPos);
     Procedure RestoreCamPos(const cpos: TCamPos);
     Procedure AddSecChange(sec: TJKSector; Change: Char);
@@ -581,12 +583,23 @@ begin
   if not P3DThings then
     exit;
   try
-    LoadThing3DO(th, false);
-    Render3D.AddThing(th);
+    if not P3DVisLayers or ToolBar.IsLayerVisible(th.layer) then
+    begin
+      LoadThing3DO(th, false);
+      Render3D.AddThing(th);
+    end;
   except
     on E: Exception do
       PanMessage(mt_warning, E.message);
   end;
+end;
+
+Procedure TPreview3D.SysUpdateThing(th: TJKThing);
+begin
+   if not P3DVisLayers or ToolBar.IsLayerVisible(th.layer) then
+    Render3D.SyncThing(th)
+  else
+    Render3D.DeleteThing(th)
 end;
 
 Procedure TPreview3D.AddSecChange(sec: TJKSector; Change: Char);
@@ -662,10 +675,10 @@ begin
     case c of
       'A':
         SysAddSector(sec);
+      'C':
+        SysUpdateSector(sec);
       'D':
         Render3D.DeleteSector(sec);
-      'C':
-        Render3D.UpdateSector(sec);
     end;
   end;
   scs.clear;
@@ -677,10 +690,10 @@ begin
     case c of
       'A':
         SysAddThing(th);
+      'C':
+        SysUpdateThing(th);
       'D':
         Render3D.DeleteThing(th);
-      'C':
-        Render3D.UpdateThing(th);
     end;
   end;
   ths.clear;
@@ -692,14 +705,25 @@ begin
     Render3D.SetThing3DO(th, a3do);
 end;
 
-Procedure TPreview3D.SysAddSector(s: TJKSector);
+Procedure TPreview3D.SysAddSector(sec: TJKSector);
 begin
   try
-    Render3D.AddSector(s);
+    if not P3DVisLayers or ToolBar.IsLayerVisible(sec.layer) then
+      Render3D.AddSector(sec);
   except
     on E: Exception do
       PanMessage(mt_warning, E.message);
   end;
+end;
+
+Procedure TPreview3D.SysUpdateSector(sec: TJKSector);
+begin
+  if not P3DVisLayers or ToolBar.IsLayerVisible(sec.layer) then
+  begin
+    Render3D.SyncSector(sec)
+  end
+  else
+    Render3D.DeleteSector(sec)
 end;
 
 Procedure TPreview3D.UpdateSector(s: TJKSector);

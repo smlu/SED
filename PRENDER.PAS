@@ -199,11 +199,13 @@ TPreviewRender = class
   Procedure ClearSectors;virtual;abstract;
   Procedure ClearThings;virtual;abstract;
   Procedure AddSector(s:TJKSector);virtual;abstract;
-  Procedure DeleteSector(s:TJKSector);virtual;abstract;
-  Procedure UpdateSector(s:TJKSector);virtual;abstract;
+  Procedure DeleteSector(sec:TJKSector);virtual;abstract;
+  Procedure UpdateSector(sec:TJKSector);virtual;abstract;
+  Procedure SyncSector(sec:TJKSector);virtual;abstract; // updates or adds sector
   Procedure AddThing(th:TJKThing);virtual;abstract;
   Procedure DeleteThing(th:TJKThing);virtual;abstract;
   Procedure UpdateThing(th:TJKThing);virtual;abstract;
+  Procedure SyncThing(th:TJKThing);virtual;abstract; // updates or adds thing
   Procedure SetViewPort(x,y,w,h:integer);virtual;abstract;
   Procedure EnableZTest(enable: Boolean);virtual; abstract;
   Procedure DrawPolys(const [Ref] polys: TArray<T3DPoly>; count: Integer = -1); virtual;abstract;
@@ -273,11 +275,13 @@ TNewPRenderer = class(TPreviewRender)
   Procedure ClearSectors; override;
   Procedure ClearThings; override;
   Procedure AddSector(s: TJKSector); override;
-  Procedure DeleteSector(s: TJKSector); override;
-  Procedure UpdateSector(s: TJKSector); override;
+  Procedure DeleteSector(sec: TJKSector); override;
+  Procedure UpdateSector(sec: TJKSector); override;
+  Procedure SyncSector(sec:TJKSector); override; // updates or adds sector
   Procedure AddThing(th: TJKThing); override;
   Procedure DeleteThing(th: TJKThing); override;
   Procedure UpdateThing(th: TJKThing); override;
+  Procedure SyncThing(th: TJKThing); override; // updates or adds sector
 
   Procedure SetViewToThing(th: TJKThing; zoomOut: Double = 0.0; pitchOffset: double = 0; yawOffset: double = 0); override;
 
@@ -706,28 +710,36 @@ begin
  sectors.Add(s);
 end;
 
-Procedure TNewPRenderer.DeleteSector(s:TJKSector);
+Procedure TNewPRenderer.DeleteSector(sec: TJKSector);
 var i:integer;
 begin
- i := sectors.indexof(s);
+ i := sectors.indexof(sec);
  if i < 0 then exit;
  scList[i].Free;
  Sectors.Delete(i);
  scList.Delete(i);
 end;
 
-Procedure TNewPRenderer.UpdateSector(s:TJKSector);
+Procedure TNewPRenderer.UpdateSector(sec: TJKSector);
 var i,n:integer;
     m:T3DPMesh;
 begin
- i := sectors.indexof(s);
+ i := sectors.indexof(sec);
  if i < 0 then exit;
  scList[i].Free;
- m := SecToMesh(s);
+ m := SecToMesh(sec);
  scList[i] := m;
 end;
 
-Procedure TNewPRenderer.AddThing(th:TJKThing);
+Procedure TNewPRenderer.SyncSector(sec: TJKSector);
+begin
+  if sectors.indexof(sec) > -1 then
+    UpdateSector(sec)
+  else
+    AddSector(sec);
+end;
+
+Procedure TNewPRenderer.AddThing(th: TJKThing);
 var m:T3DPMesh;
 begin
  m := ThingToMesh(th);
@@ -736,7 +748,7 @@ begin
  Things.Add(th);
 end;
 
-Procedure TNewPRenderer.DeleteThing(th:TJKThing);
+Procedure TNewPRenderer.DeleteThing(th: TJKThing);
 var i:integer;
 begin
  i := things.indexof(th);
@@ -746,16 +758,26 @@ begin
  ThList.Delete(i);
 end;
 
-Procedure TNewPRenderer.UpdateThing(th:TJKThing);
+Procedure TNewPRenderer.UpdateThing(th: TJKThing);
 var i,n:integer;
     m:T3DPMesh;
 begin
  i := Things.indexof(th);
  if i < 0 then exit;
+
  thList[i].Free;
  m := ThingToMesh(th);
- if m = nil then m := BadThingMesh(th);
+ if m = nil then
+   m := BadThingMesh(th);
  ThList[i] := m;
+end;
+
+Procedure TNewPRenderer.SyncThing(th: TJKThing);
+begin
+  if Things.indexof(th) > -1 then
+    UpdateThing(th)
+  else
+    AddThing(th);
 end;
 
 Procedure TNewPRenderer.SetThing3DO(th:TJKThing;a3do:TPJ3DO);

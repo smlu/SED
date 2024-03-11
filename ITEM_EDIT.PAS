@@ -378,8 +378,10 @@ begin
     ID_LAYER:
       begin
         Result := true;
+        var prevlayer := sec.Layer;
         sec.Layer := Toolbar.AddLayer(s);
-        exit;
+        if prevlayer = sec.Layer then
+          exit;
       end;
   end;
   JedMain.SectorChanged(sec);
@@ -475,7 +477,7 @@ begin
     ID_LAYER:
       begin
         var s := ResPicker.PickLayer(Fi.s);
-        changed := s <> Fi.s;
+        changed := CompareText(s, Fi.s) <> 0;
         Fi.s := s;
       end;
   end;
@@ -1011,7 +1013,13 @@ begin
           rol := d;
         end;
       ID_LAYER:
-        Layer := Toolbar.AddLayer(s);
+        begin
+          Result := true; // should return True in order to affect other selected things
+          var prevlayer := layer;
+          layer := Toolbar.AddLayer(s);
+          if prevlayer = layer then
+            exit;
+        end;
       { ID_TH_LAST..ID_TH_LAST+100:
         begin
         i:=Id-ID_TH_LAST;
@@ -1019,11 +1027,9 @@ begin
         Vals[i].Val(s);
         Result:=true;
         end; }
-
     end;
 
   JedMain.ThingChanged(Cur_Thing);
-  JedMain.Invalidate;
   Result := true;
 end;
 
@@ -1125,7 +1131,11 @@ begin
 
         end;
       ID_LAYER:
-        Fi.s := ResPicker.PickLayer(Fi.s);
+        begin
+          var prevlayer := Fi.s;
+          Fi.s := ResPicker.PickLayer(Fi.s);
+          bChanged := CompareText(Fi.s, prevlayer) <> 0;
+        end;
     end;
   if bChanged then
     ThingChange(Fi);
@@ -1583,7 +1593,7 @@ begin
           Flags := f;
         end;
       ID_LAYER:
-        Layer := Toolbar.AddLayer(s);
+        layer := Toolbar.AddLayer(s);
       ID_LT_COLOR:
         begin
           if not ValColor(s, color) then
