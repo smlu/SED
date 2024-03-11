@@ -45,7 +45,7 @@ type
 
     Function GetField(n: Integer): TFieldInfo;
     Function GetCurField: TFieldInfo;
-    Procedure changed(row: Integer);
+    Procedure Changed(row: Integer);
     Procedure CallDoneEdit;
     procedure SetNameColWidth(width: Integer);
     Function GetNameColWidth: Integer;
@@ -274,7 +274,7 @@ begin
 
     Fi := Fields[oldRow];
     if Fi.s <> Fi.olds then
-      changed(oldRow);
+      Changed(oldRow);
     oldRow := row;
   end;
 end;
@@ -452,7 +452,7 @@ begin
   end;
 end;
 
-Procedure TFieldEdit.changed(row: Integer);
+Procedure TFieldEdit.Changed(row: Integer);
 var
   Fi: TFieldInfo;
 begin

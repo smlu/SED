@@ -1050,6 +1050,9 @@ begin
     d.dz := 0;
     RotateVector(d, th.pch, th.yaw, th.rol);
 
+    if not ToolBar.IsLayerVisible(th.layer) then
+      exit;
+
     v1 := TJKVertex.Create;
     v2 := TJKVertex.Create;
 
@@ -1087,6 +1090,9 @@ begin
     d.dy := 0.2;
     d.dz := 0;
     RotateVector(d, pch, yaw, rol);
+
+    if not ToolBar.IsLayerVisible(thing.layer) then
+      exit;
 
     v1 := TJKVertex.Create;
     v2 := TJKVertex.Create;
@@ -1379,7 +1385,7 @@ begin
             end;
     end;
 
-    // Draw current selection
+    // Draw current selected object
     With clMapSel do
         renderer.SetColor(CL_FRONT, r, g, b);
 
@@ -2543,7 +2549,7 @@ begin
                         if scsel.Count = 2 then
                         begin
                             StartUndoRec('Adjoin Sectors');
-                            if AdjoinSectors(Level.Sectors[scsel.GetSC(0)],
+                            if AdjoinSectors(level.sectors[scsel.GetSC(0)],
                               Level.Sectors[scsel.GetSC(1)]) then
                                 PanMessage(mt_info, 'Sectors adjoined');
                         end
@@ -2560,7 +2566,7 @@ begin
                         for i := 0 to sfsel.Count - 1 do
                         begin
                             sfsel.GetSCSF(i, nsc, nsf);
-                            if MakeAdjoin(Level.Sectors[nsc].surfaces[nsf]) then
+                            if MakeAdjoin(level.sectors[nsc].surfaces[nsf]) then
                                 Inc(nsel);
                         end;
                         PanMessageFmt(mt_info, '%d adjoins formed', [nsel]);
@@ -6308,6 +6314,9 @@ var
 
     Procedure ScaleSurf(surf: TJKSurface);
     begin
+        if not ToolBar.IsLayerVisible(surf.sector.layer) then  // prevent editing of locked surface
+          exit;
+
         SaveSecUndo(surf.sector, ch_changed, sc_geo);
         case how of
             st_up:
@@ -6331,6 +6340,7 @@ var
 begin
     if mapMode <> MM_SF then
         SetMapMode(MM_SF);
+
     if not Preview3D.IsActive then
         exit;
 
@@ -6339,11 +6349,9 @@ begin
     for i := 0 to sfsel.Count - 1 do
     begin
         sfsel.GetSCSF(i, sc, SF);
-        ScaleSurf(Level.Sectors[sc].surfaces[SF]);
+        ScaleSurf(level.sectors[sc].surfaces[SF]);
     end;
-
     sfsel.DeleteN(n);
-
 end;
 
 Procedure TJedMain.ShiftTexture(how: Integer);
@@ -6356,6 +6364,9 @@ var
     var
         i: Integer;
     begin
+        if not ToolBar.IsLayerVisible(surf.sector.layer) then // prevent editing of locked sector
+          exit;
+
         SaveSecUndo(surf.sector, ch_changed, sc_geo);
 
         for i := 0 to surf.TXVertices.Count - 1 do
@@ -6420,6 +6431,9 @@ var
         nu, nv, u, v: TVector;
 
     begin
+        if not ToolBar.IsLayerVisible(surf.sector.layer) then // Prevent editing of locked surface
+          exit;
+
         SaveSecUndo(surf.sector, ch_changed, sc_geo);
 
         fv := 0;
@@ -6868,7 +6882,7 @@ Procedure TJedMain.StartStitch;
 begin
     if mapMode <> MM_SF then
         exit;
-    stitchSec := level.sectors[Cur_SC];
+    stitchSec  := level.sectors[Cur_SC];
     stitchSurf := level.sectors[Cur_SC].surfaces[Cur_SF];
 end;
 
@@ -6893,6 +6907,8 @@ begin
 
     ssurf := stitchSurf;
     esurf := level.sectors[Cur_SC].surfaces[Cur_SF];
+    if not ToolBar.IsLayerVisible(esurf.sector.layer) then
+      exit;
 
     StartUndoRec('Stitch Surfaces');
     if ssurf.material <> '' then
@@ -6910,6 +6926,9 @@ var
 
     Procedure StrEd(surf: TJKSurface; ED: Integer);
     begin
+        if not ToolBar.IsLayerVisible(surf.sector.layer) then
+          exit;
+
         SaveSecUndo(surf.sector, ch_changed, sc_geo);
 
         if rot90 then
@@ -6935,6 +6954,9 @@ var
 
     Procedure StrSurf(surf: TJKSurface);
     begin
+        if not ToolBar.IsLayerVisible(surf.sector.layer) then
+          exit;
+
         SaveSecUndo(surf.sector, ch_changed, sc_geo);
 
         if rot90 then
@@ -6969,7 +6991,7 @@ begin
                 for i := 0 to sfsel.Count - 1 do
                 begin
                     sfsel.GetSCSF(i, sc, SF);
-                    StrSurf(Level.Sectors[sc].surfaces[SF]);
+                    StrSurf(level.sectors[sc].surfaces[SF]);
                 end;
                 sfsel.DeleteN(n);
             end;
@@ -6980,7 +7002,7 @@ begin
                 for i := 0 to edsel.Count - 1 do
                 begin
                     edsel.GetSCSFED(i, sc, SF, ED);
-                    StrEd(Level.Sectors[sc].surfaces[SF], ED);
+                    StrEd(level.sectors[sc].surfaces[SF], ED);
                 end;
                 edsel.DeleteN(n);
             end;

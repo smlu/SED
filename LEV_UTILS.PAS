@@ -3076,6 +3076,7 @@ begin
   result := nil;
   if sfsel.count < 4 then
     exit;
+
   sfsel.GetSCSF(0, sc, sf);
   for i := 1 to sfsel.count - 1 do
   begin
@@ -3089,20 +3090,20 @@ begin
 
   { Clear surface and vertex marks marks }
   for i := 0 to sec.surfaces.count - 1 do
-    sec.surfaces[i].Mark := 0;
-  for i := 0 to sec.Vertices.count - 1 do
-    sec.Vertices[i].Mark := 0;
+    sec.surfaces[i].mark := 0;
+  for i := 0 to sec.vertices.count - 1 do
+    sec.Vertices[i].mark := 0;
 
   { Copy surfaces and vertices to new sector }
   for i := 0 to sfsel.count - 1 do
   begin
     sfsel.GetSCSF(i, sc, sf);
     surf := sec.surfaces[sf];
-    surf.Mark := 1;
+    surf.mark   := 1;
     surf.sector := nsec;
-    for j := 0 to surf.Vertices.count - 1 do
-      With surf.Vertices[j] do
-        surf.Vertices[j] := nsec.AddVertex(x, y, z);
+    for j := 0 to surf.vertices.count - 1 do
+      With surf.vertices[j] do
+        surf.vertices[j] := nsec.AddVertex(x, y, z);
     nsec.surfaces.Add(surf);
   end;
 
@@ -3174,6 +3175,9 @@ begin
     exit;
 
   sec := lev.sectors[n];
+  if not ToolBar.IsLayerVisible(sec.layer) then
+    exit;
+
   SaveSecUndo(sec, ch_deleted, sc_both);
 
   if JedMain.Cur_SC = n then
@@ -3200,8 +3204,11 @@ begin
   if not CheckSectorSurfaceIndex(lev.sectors[sc], sf) then
     exit;
 
-  sec := lev.sectors[sc];
+  sec  := lev.sectors[sc];
   surf := sec.surfaces[sf];
+  if not ToolBar.IsLayerVisible(sec.layer) then
+    exit;
+
   RemoveSurfRefs(lev, surf);
   sec.surfaces.Delete(sf);
   surf.Free;
@@ -3216,16 +3223,19 @@ var
   p, i, j: integer;
   th: TJKThing;
 begin
-    if not CheckThingIndex(lev, n) then
+  if not CheckThingIndex(lev, n) then
     exit;
 
   th := lev.things[n];
+  if not ToolBar.IsLayerVisible(th.layer) then
+    exit;
+
   SaveThingUndo(th, ch_deleted);
 
-  For i := 0 to lev.cogs.count - 1 do
-    With lev.cogs[i] do
+  for i := 0 to lev.cogs.count - 1 do
+    with lev.cogs[i] do
       for j := 0 to Vals.count - 1 do
-        With Vals[j] do
+        with Vals[j] do
         begin
           if (Cog_Type = ct_thg) and (obj = th) then
             obj := nil;
@@ -3252,6 +3262,9 @@ var
   ed1, ed2: integer;
 begin
   if not CheckSectorVertexIndex(sec, vx) then
+    exit;
+
+  if not ToolBar.IsLayerVisible(sec.layer) then
     exit;
 
   sf1 := nil;
@@ -3325,6 +3338,9 @@ begin
     exit;
 
   var lt := lev.Lights[n];
+  if not ToolBar.IsLayerVisible(lt.layer) then
+    exit;
+
   SaveLightUndo(lt, ch_deleted);
 
   if JedMain.Cur_LT = n then
@@ -3919,14 +3935,17 @@ begin
   result := false;
   if surf.adjoin <> nil then
     exit;
-  lev := surf.sector.Level;
 
+  if not ToolBar.IsLayerVisible(surf.sector.layer) then // prevent editing of locked sector
+    exit;
+
+  lev := surf.sector.Level;
   for s := 0 to lev.sectors.count - 1 do
     With lev.sectors[s] do
       for sf := 0 to surfaces.count - 1 do
       begin
         surf1 := surfaces[sf];
-        if DO_Surf_Overlap(surf, surf1) then
+        if DO_Surf_Overlap(surf, surf1) and ToolBar.IsLayerVisible(surf1.sector.layer) then
         begin
           SaveSecUndo(surf.sector, ch_changed, sc_val);
           SaveSecUndo(surf1.sector, ch_changed, sc_val);
@@ -3973,29 +3992,35 @@ begin
   if surf.adjoin = nil then
     exit;
   sec1 := surf.adjoin.sector;
+
+  // Prevent editing of locked sectors
+  if not ToolBar.IsLayerVisible(surf.sector.layer) or
+     not ToolBar.IsLayerVisible(sec1.layer) then
+     exit;
+
   if surf.adjoin.adjoin <> surf then
-  begin
-    SaveSecUndo(surf.sector, ch_changed, sc_val);
-    PanMessageFmt(mt_warning, 'Incorrect reverse adjoin SC %d SF %d',
-      [surf.sector.Num, surf.Num]);
-    ClearAdjoinParams(surf);
-    surf.adjoin := nil;
-  end
+    begin
+      SaveSecUndo(surf.sector, ch_changed, sc_val);
+      PanMessageFmt(mt_warning, 'Incorrect reverse adjoin SC %d SF %d',
+        [surf.sector.Num, surf.Num]);
+      ClearAdjoinParams(surf);
+      surf.adjoin := nil;
+    end
   else
-  begin
-    SaveSecUndo(surf.sector, ch_changed, sc_val);
-    SaveSecUndo(surf.adjoin.sector, ch_changed, sc_val);
+    begin
+      SaveSecUndo(surf.sector, ch_changed, sc_val);
+      SaveSecUndo(surf.adjoin.sector, ch_changed, sc_val);
 
-    ClearAdjoinParams(surf);
-    ClearAdjoinParams(surf.adjoin);
+      ClearAdjoinParams(surf);
+      ClearAdjoinParams(surf.adjoin);
 
-    surf.CheckIfFloor;
-    surf.adjoin.CheckIfFloor;
+      surf.CheckIfFloor;
+      surf.adjoin.CheckIfFloor;
 
-    surf.adjoin.adjoin := nil;
-    surf.adjoin := nil;
-    JedMain.SectorChanged(sec1);
-  end;
+      surf.adjoin.adjoin := nil;
+      surf.adjoin := nil;
+      JedMain.SectorChanged(sec1);
+    end;
   JedMain.SectorChanged(surf.sector);
   result := true;
 end;
@@ -4006,6 +4031,12 @@ var
   surf: TJKSurface;
 begin
   result := false;
+
+  // Prevent editing of invisible sectors
+  if not ToolBar.IsLayerVisible(sec.layer) or
+     not ToolBar.IsLayerVisible(sec1.layer)  then
+          exit;
+
   for i := 0 to sec.surfaces.count - 1 do
   begin
     surf := sec.surfaces[i];
@@ -4044,6 +4075,12 @@ var
 
 begin
   Result := false;
+
+  // Prevent editing of invisible sectors
+  if not ToolBar.IsLayerVisible(sec.layer) or
+     not ToolBar.IsLayerVisible(sec1.layer)  then
+          exit;
+
   for i := 0 to sec.surfaces.count - 1 do
   begin
     surf := sec.surfaces[i];
