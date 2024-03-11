@@ -903,7 +903,7 @@ begin
      RdDashedLine:
      begin
         glEnable(GL_LINE_STIPPLE);
-        glLineStipple(2, $00FF);
+        glLineStipple(1, $0101);
      end;
    end;
 end;
