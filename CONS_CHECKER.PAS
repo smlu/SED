@@ -283,21 +283,27 @@ begin { Check }
       if surf.vertices.Count > MaxSurfaceVertices(level) then
         AddWarning(Format('More than %d vertices in a surface', [MaxSurfaceVertices(level)]), surf);
       if surf.vertices.Count < 3 then
-        AddError('Less than 3 vertices in a surface!', surf);
+        AddError('Less than 3 vertices in a surface', surf);
+      if not IsClose(surf.normal.Length, 1) then
+        AddWarning('Incorrect normal - surface must be invalid!', surf);
 
+      // IJIM specific checks
       if level.kind = IJIM then
         if BitMaskTest(surf.surfflags, SF_IJIM_Track) and
             (surf.vertices.Count > ijim_MaxTrackSurfVerts) then
             AddWarning(Format('More than %d vertices in a track surface', [ijim_MaxTrackSurfVerts]), surf);
 
-      if not IsClose(surf.normal.Length, 1) then
-        AddWarning('Incorrect normal - surface must be invalid!', surf);
+      // Adjoin checks
       if surf.adjoin <> nil then
       begin
         if surf.adjoin.adjoin <> surf then
           AddError('Invalid reverse adjoin', surf);
         if not Do_Surf_Overlap(surf, surf.adjoin) then
           AddWarning('Adjoined surfaces don''t overlap', surf);
+
+        if BitTest(surf.adjoinflags, SAF_Visible) = 0 then
+          if (surf.geo = 0) or (BitTest(surf.faceflags, FF_Transluent) <> 0) then
+            AddWarning('Transluent adjoint not visible', surf);
       end;
 
       for v := 0 to surf.vertices.Count - 1 do
