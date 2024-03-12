@@ -2300,7 +2300,7 @@ begin
                 end;
             VK_DELETE:
                 if mapMode = MM_SF then
-                    DeleteSurface(Level, Cur_SC, Cur_SF);
+                    DeleteSurface(level, Cur_SC, Cur_SF);
             188: { < }
                 begin
                     ScaleTexture(st_down);

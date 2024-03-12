@@ -713,10 +713,10 @@ end;
 Procedure TNewPRenderer.DeleteSector(sec: TJKSector);
 var i:integer;
 begin
- i := sectors.indexof(sec);
+ i := sectors.IndexOf(sec);
  if i < 0 then exit;
  scList[i].Free;
- Sectors.Delete(i);
+ sectors.Delete(i);
  scList.Delete(i);
 end;
 
@@ -724,7 +724,7 @@ Procedure TNewPRenderer.UpdateSector(sec: TJKSector);
 var i,n:integer;
     m:T3DPMesh;
 begin
- i := sectors.indexof(sec);
+ i := sectors.IndexOf(sec);
  if i < 0 then exit;
  scList[i].Free;
  m := SecToMesh(sec);
@@ -733,7 +733,7 @@ end;
 
 Procedure TNewPRenderer.SyncSector(sec: TJKSector);
 begin
-  if sectors.indexof(sec) > -1 then
+  if sectors.IndexOf(sec) > -1 then
     UpdateSector(sec)
   else
     AddSector(sec);
@@ -751,7 +751,7 @@ end;
 Procedure TNewPRenderer.DeleteThing(th: TJKThing);
 var i:integer;
 begin
- i := things.indexof(th);
+ i := things.IndexOf(th);
  if i < 0 then exit;
  thList[i].Free;
  Things.Delete(i);
@@ -762,7 +762,7 @@ Procedure TNewPRenderer.UpdateThing(th: TJKThing);
 var i,n:integer;
     m:T3DPMesh;
 begin
- i := Things.indexof(th);
+ i := Things.IndexOf(th);
  if i < 0 then exit;
 
  thList[i].Free;
@@ -774,7 +774,7 @@ end;
 
 Procedure TNewPRenderer.SyncThing(th: TJKThing);
 begin
-  if Things.indexof(th) > -1 then
+  if Things.IndexOf(th) > -1 then
     UpdateThing(th)
   else
     AddThing(th);
@@ -784,7 +784,7 @@ Procedure TNewPRenderer.SetThing3DO(th:TJKThing;a3do:TPJ3DO);
 var i,n:integer;
     m:T3DPMesh;
 begin
- i := Things.indexof(th);
+ i := Things.IndexOf(th);
  if i < 0 then exit;
  thList[i].Free;
  m := A3DOToMesh(th,a3do);
@@ -795,7 +795,7 @@ end;
  Procedure TNewPRenderer.SetViewToThing(th:TJKThing; zoomOut: Double; pitchOffset, yawOffset: double);
   var bbox: TThingBox;
 begin
-  if (th.a3do = nil) or (Things.indexof(th) < 0) then exit;
+  if (th.a3do = nil) or (Things.IndexOf(th) < 0) then exit;
 
   th.a3do.GetBBox(bbox);
   var tcen_x: double := bbox.x1 + (bbox.x2 - bbox.x1) /2;

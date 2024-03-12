@@ -663,8 +663,8 @@ var
 begin
   if Render3D = nil then
   begin
-    scs.clear;
-    ths.clear;
+    scs.Clear;
+    ths.Clear;
     exit;
   end;
 

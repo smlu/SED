@@ -1996,9 +1996,9 @@ var
   p, i, j: integer;
 begin
   if opt and rs_surfs <> 0 then
-    for i := 0 to lev.sectors.count - 1 do
-      With lev.sectors[i] do
-        for j := 0 to surfaces.count - 1 do
+    for i := 0 to lev.sectors.Count - 1 do
+      with lev.sectors[i] do
+        for j := 0 to surfaces.Count - 1 do
           With surfaces[j] do
           begin
             if adjoin = nil then
@@ -2012,10 +2012,10 @@ begin
             end;
           end;
 
-  For i := 0 to lev.cogs.count - 1 do
-    With lev.cogs[i] do
-      for j := 0 to Vals.count - 1 do
-        With Vals[j] do
+  for i := 0 to lev.cogs.Count - 1 do
+    with lev.cogs[i] do
+      for j := 0 to Vals.Count - 1 do
+        with Vals[j] do
         begin
           if (Cog_Type = ct_sec) and (obj = sec) then
             obj := nil;
@@ -2025,7 +2025,7 @@ begin
               obj := nil;
         end;
 
-  For i := 0 to lev.Things.count - 1 do
+  for i := 0 to lev.things.Count - 1 do
     if lev.Things[i].sec = sec then
     begin
       lev.Things[i].sec := nil;
@@ -2037,9 +2037,9 @@ var
   p, i, j: integer;
 begin
   for i := 0 to lev.sectors.count - 1 do
-    With lev.sectors[i] do
+    with lev.sectors[i] do
       for j := 0 to surfaces.count - 1 do
-        With surfaces[j] do
+        with surfaces[j] do
           begin
             if adjoin = nil then
               continue;
@@ -2053,10 +2053,10 @@ begin
               end;
           end;
 
-  For i := 0 to lev.cogs.count - 1 do
-    With lev.cogs[i] do
+  for i := 0 to lev.cogs.count - 1 do
+    with lev.cogs[i] do
       for j := 0 to Vals.count - 1 do
-        With Vals[j] do
+        with Vals[j] do
           begin
             if (Cog_Type = ct_srf) and (obj = surf) then
               obj := nil;
@@ -2909,38 +2909,37 @@ end;
 Function GetPreviousSector(const lev: TJKLevel; n: integer): integer;
 begin
   Result := -1;
-  if Level.Sectors.Count = 0 then
+  if level.sectors.Count = 0 then
     exit;
 
-  n := Clampi(n, 0,  Level.Sectors.Count - 1);
+  n := Clampi(n, 0, level.sectors.Count - 1);
   var cur := n;
   repeat
       if (cur < 1) then
-          cur := Level.Sectors.Count - 1
+          cur := level.sectors.Count - 1
       else
           dec(cur);
       if cur = n then
           exit;
-  until ToolBar.IsLayerVisible(Level.Sectors[cur].Layer);
+  until ToolBar.IsLayerVisible(level.sectors[cur].Layer);
   Result := cur;
 end;
 
 Function GetPreviousThing(const lev: TJKLevel; n: integer): integer;
 begin
   Result := -1;
-  if Level.Things.Count = 0 then
+  if level.things.Count = 0 then
     exit;
 
-  n := Clampi(n, 0,  Level.Things.Count - 1);
   var cur := n;
   repeat
       if (cur < 1) then
-          cur := Level.Things.Count - 1
+          cur := level.things.Count - 1
       else
           dec(cur);
       if cur = n then
           exit;
-  until ToolBar.IsLayerVisible(Level.Things[cur].Layer);
+  until ToolBar.IsLayerVisible(level.things[cur].Layer);
   Result := cur;
 end;
 
@@ -3232,9 +3231,9 @@ begin
 
   SaveThingUndo(th, ch_deleted);
 
-  for i := 0 to lev.cogs.count - 1 do
+  for i := 0 to lev.cogs.Count - 1 do
     with lev.cogs[i] do
-      for j := 0 to Vals.count - 1 do
+      for j := 0 to Vals.Count - 1 do
         with Vals[j] do
         begin
           if (Cog_Type = ct_thg) and (obj = th) then
@@ -3270,12 +3269,12 @@ begin
   sf1 := nil;
   sf2 := nil;
   result := false;
-  v1 := sec.Vertices[vx];
+  v1 := sec.vertices[vx];
   ns := 0;
-  for sf := 0 to sec.surfaces.count - 1 do
+  for sf := 0 to sec.surfaces.Count - 1 do
   begin
     asf := sec.surfaces[sf];
-    iv := asf.Vertices.IndexOf(v1);
+    iv := asf.vertices.IndexOf(v1);
     if iv = -1 then
       continue;
     Case ns of
@@ -3301,7 +3300,7 @@ begin
 
   if sf2 <> nil then
   begin
-    if (sf1.Vertices.count < 4) or (sf2.Vertices.count < 4) then
+    if (sf1.vertices.count < 4) or (sf2.vertices.count < 4) then
     begin
       if not silent then
         PanMessage(mt_error, 'One of the surfaces has less than 4 vertices!');
@@ -3314,8 +3313,8 @@ begin
       exit;
       end; }
 
-    if (sf1.Vertices[sf1.PrevVX(ed1)] <> sf2.Vertices[sf2.NextVX(ed2)]) or
-      (sf1.Vertices[sf1.NextVX(ed1)] <> sf2.Vertices[sf2.PrevVX(ed2)]) then
+    if (sf1.vertices[sf1.PrevVX(ed1)] <> sf2.vertices[sf2.NextVX(ed2)]) or
+      (sf1.vertices[sf1.NextVX(ed1)] <> sf2.vertices[sf2.PrevVX(ed2)]) then
       exit;
   end;
 
@@ -3326,7 +3325,7 @@ begin
   if sf2 <> nil then
     sf2.DeleteVertex(ed2);
 
-  sec.Vertices.Delete(vx);
+  sec.vertices.Delete(vx);
   sec.Renumber;
   JedMain.SectorChanged(sec);
   result := true;
@@ -3677,26 +3676,26 @@ begin
         sec1.surfaces.Delete(i);
       end;
 
-      RemoveSecRefs(sec1.Level, sec1, 0);
+      RemoveSecRefs(sec1.level, sec1, 0);
 
-      for i := 0 to sfs.count - 1 do
-        RemoveSurfRefs(sec1.Level, sfs[i]);
+      for i := 0 to sfs.Count - 1 do
+        RemoveSurfRefs(sec1.level, sfs[i]);
 
-      for i := 0 to sfs1.count - 1 do
+      for i := 0 to sfs1.Count - 1 do
         RemoveSurfRefs(sec1.Level, sfs1[i]);
 
-      for i := 0 to sfs.count - 1 do
+      for i := 0 to sfs.Count - 1 do
       begin
         j := sec.surfaces.IndexOf(sfs[i]);
         sec.surfaces.Delete(j);
-        sfs[i].free;
+        sfs[i].Free;
       end;
 
       sec.Renumber;
 
       JedMain.SectorChanged(sec);
 
-      i := sec1.Level.sectors.IndexOf(sec1);
+      i := sec1.level.sectors.IndexOf(sec1);
       sec1.Level.sectors.Delete(i);
       JedMain.SectorDeleted(sec1);
       sec1.free;
@@ -3709,8 +3708,8 @@ begin
         PanMessageFmt(mt_info, 'The sector %d is not convex', [sec.Num]);
     end;
 
-  sfs.free;
-  sfs1.free;
+  sfs.Free;
+  sfs1.Free;
 
 end;
 

@@ -174,7 +174,7 @@
         <DCCReference Include="Preview.pas"/>
         <DCCReference Include="graph_files.pas"/>
         <DCCReference Include="Images.pas"/>
-        <DCCReference Include="Cons_checker.pas">
+        <DCCReference Include="CONS_CHECKER.PAS">
             <Form>Consistency</Form>
         </DCCReference>
         <DCCReference Include="FlagEditor.pas">
