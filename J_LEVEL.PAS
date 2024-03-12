@@ -305,8 +305,6 @@ type
     Procedure RenumSecs;
     Procedure RenumThings;
 
-    Function getNewID: integer;
-
     Function NewSector: TJKSector;
     Function NewThing: TJKThing;
     Function NewLight: TSedLight;
@@ -329,6 +327,9 @@ type
     Function AddLayer(const name: string): integer;
     Procedure AddMissingLayers;
     Function GetMasterCMP: string;
+
+    private
+    Function GetNewID: Integer;
   end;
 
 Var
@@ -629,28 +630,28 @@ end;
 
 Function TThings.GetItem(n: integer): TThing;
 begin
-  if (n < 0) or (n >= count) then
+  if (n < 0) or (n >= Count) then
     raise EListError.CreateFmt('Thing Index is out of bounds: %d', [n]);
   Result := TThing(List[n]);
 end;
 
 Procedure TThings.SetItem(n: integer; v: TThing);
 begin
-  if (n < 0) or (n >= count) then
+  if (n < 0) or (n >= Count) then
     raise EListError.CreateFmt('Thing Index is out of bounds: %d', [n]);
   List[n] := v;
 end;
 
 Function TSurfaces.GetItem(n: integer): TJKSurface;
 begin
-  if (n < 0) or (n >= count) then
+  if (n < 0) or (n >= Count) then
     raise EListError.CreateFmt('Surface Index is out of bounds: %d', [n]);
   Result := TJKSurface(List[n]);
 end;
 
 Procedure TSurfaces.SetItem(n: integer; v: TJKSurface);
 begin
-  if (n < 0) or (n >= count) then
+  if (n < 0) or (n >= Count) then
     raise EListError.CreateFmt('Surface Index is out of bounds: %d', [n]);
   List[n] := v;
 end;
@@ -864,7 +865,7 @@ end;
 
 { TJKLevel Methods }
 
-Function TJKLevel.getNewID: integer;
+Function TJKLevel.GetNewID: Integer;
 begin
   if self = nil then
   begin
@@ -930,26 +931,26 @@ end;
 Function TJKLevel.NewSector: TJKSector;
 begin
   Result := TJKSector.Create(self);
-  Result.ID := getNewID;
+  Result.ID := GetNewID;
 end;
 
 Function TJKLevel.NewThing: TThing;
 begin
   Result := TThing.Create { (self) };
   Result.level := self;
-  Result.ID := getNewID;
+  Result.ID := GetNewID;
 end;
 
 Function TJKLevel.NewLight: TSedLight;
 begin
   Result := TSedLight.Create;
-  Result.ID := getNewID;
+  Result.ID := GetNewID;
 end;
 
 Function TJKLevel.New3DONode: THNode;
 begin
   Result := THNode.Create;
-  Result.ID := getNewID;
+  Result.ID := GetNewID;
 end;
 
 Procedure TJKLevel.RenumSecs;
