@@ -139,9 +139,12 @@ begin
   // Update cur sector
   with position do
     begin
-      if (sector_ <> nil) and IsSectorVisible(sector_) then
-        if IsInSector(sector_, x, y, z) then
-          exit;
+      try
+        if (sector_ <> nil) and IsSectorVisible(sector_) then
+          if IsInSector(sector_, x, y, z) then
+            exit;
+      except // skip exception in case  sector_ was deleted
+      end;
 
       sector_ := nil;
       var sc := FindSectorForXYZ(level, x, y, z);
