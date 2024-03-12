@@ -220,11 +220,11 @@ function FindCommonEdges(const surf, withsurf: TJKSurface;
 procedure CalcLighting(lev: TJKLevel; scs: TSCMultiSel);
 procedure CalcLightingNew(lev: TJKLevel; scs: TSCMultiSel);
 
-procedure DeleteSector(lev: TJKLevel; n: integer);
-procedure DeleteSurface(lev: TJKLevel; sc, sf: integer);
-procedure DeleteThing(lev: TJKLevel; n: integer);
+procedure DeleteSector(lev: TJKLevel; n: integer; force: Boolean = False); // force param skips check for sector edit lock
+procedure DeleteSurface(lev: TJKLevel; sc, sf: integer; force: Boolean = False);  // force param skips check for surface edit lock
+procedure DeleteThing(lev: TJKLevel; n: integer; force: Boolean = False); // force param skips check for thing edit lock
 function DeleteVertex(sec: TJKSector; vx: integer; silent: boolean): boolean;
-procedure DeleteLight(lev: TJKLevel; n: integer);
+procedure DeleteLight(lev: TJKLevel; n: integer; force: Boolean = False);
 procedure DeleteCog(lev: TJKLevel; n: integer);
 
 function DO_Surf_Overlap(surf, surf1: TJKSurface): boolean;
@@ -2931,6 +2931,7 @@ begin
   if level.things.Count = 0 then
     exit;
 
+  n := Clampi(n, 0, level.things.Count - 1);
   var cur := n;
   repeat
       if (cur < 1) then
@@ -3166,7 +3167,7 @@ begin
   result := surf;
 end;
 
-Procedure DeleteSector(lev: TJKLevel; n: integer);
+Procedure DeleteSector(lev: TJKLevel; n: integer; force: Boolean);
 var
   sec: TJKSector;
 begin
@@ -3174,7 +3175,7 @@ begin
     exit;
 
   sec := lev.sectors[n];
-  if not ToolBar.IsLayerVisible(sec.layer) then
+  if not force and not ToolBar.IsLayerVisible(sec.layer) then
     exit;
 
   SaveSecUndo(sec, ch_deleted, sc_both);
@@ -3183,17 +3184,16 @@ begin
     JedMain.SetCurSC(Max(0, GetPreviousSector(lev, n)));
 
   RemoveSecRefs(lev, sec, rs_surfs);
+  var cursec := lev.sectors[JedMain.Cur_SC];
+  lev.sectors.Delete(n);
   JedMain.SectorDeleted(sec);
   sec.Free;
 
-  sec := lev.sectors[JedMain.Cur_SC];
-  lev.sectors.Delete(n);
-
   lev.RenumSecs;
-  JedMain.SetCurSC(sec.num);
+  JedMain.SetCurSC(cursec.num);
 end;
 
-Procedure DeleteSurface(lev: TJKLevel; sc, sf: integer);
+Procedure DeleteSurface(lev: TJKLevel; sc, sf: integer; force: Boolean);
 var
   sec: TJKSector;
   surf: TJKSurface;
@@ -3205,7 +3205,7 @@ begin
 
   sec  := lev.sectors[sc];
   surf := sec.surfaces[sf];
-  if not ToolBar.IsLayerVisible(sec.layer) then
+  if not force and not ToolBar.IsLayerVisible(sec.layer) then
     exit;
 
   RemoveSurfRefs(lev, surf);
@@ -3216,7 +3216,7 @@ begin
   JedMain.SectorChanged(sec);
 end;
 
-Procedure DeleteThing(lev: TJKLevel; n: integer);
+Procedure DeleteThing(lev: TJKLevel; n: integer; force: Boolean);
 var
   sec: TJKSector;
   p, i, j: integer;
@@ -3226,7 +3226,7 @@ begin
     exit;
 
   th := lev.things[n];
-  if not ToolBar.IsLayerVisible(th.layer) then
+  if not force and not ToolBar.IsLayerVisible(th.layer) then
     exit;
 
   SaveThingUndo(th, ch_deleted);
@@ -3243,14 +3243,13 @@ begin
   if JedMain.Cur_TH = n then
     JedMain.SetCurTH(Max(0, GetPreviousThing(lev, n)));
 
-  JedMain.ThingDeleted(th);
-  th.free;
-
-  th := lev.things[JedMain.Cur_SC];
+  var curth := lev.things[JedMain.Cur_SC];
   lev.things.Delete(n);
+  JedMain.ThingDeleted(th);
+  th.Free;
 
   lev.RenumThings;
-  JedMain.SetCurTH(th.num);
+  JedMain.SetCurTH(curth.num);
 end;
 
 Function DeleteVertex(sec: TJKSector; vx: integer; silent: boolean): boolean;
@@ -3331,13 +3330,13 @@ begin
   result := true;
 end;
 
-Procedure DeleteLight(lev: TJKLevel; n: integer);
+Procedure DeleteLight(lev: TJKLevel; n: integer; force: Boolean);
 begin
   if not CheckLightIndex(lev, n) then
     exit;
 
   var lt := lev.Lights[n];
-  if not ToolBar.IsLayerVisible(lt.layer) then
+  if not force and not ToolBar.IsLayerVisible(lt.layer) then
     exit;
 
   SaveLightUndo(lt, ch_deleted);
@@ -3345,9 +3344,9 @@ begin
   if JedMain.Cur_LT = n then
     JedMain.SetCurLT(Max(0, GetPreviousLight(lev, n)));
 
-  JedMain.LightDeleted(lt);
-  lt.free;
   lev.Lights.Delete(n);
+  JedMain.LightDeleted(lt);
+  lt.Free;
 end;
 
 Procedure DeleteCog(lev: TJKLevel; n: integer);
@@ -3658,7 +3657,7 @@ begin
       SaveSecUndo(sec, ch_changed, sc_both);
       SaveSecUndo(sec1, ch_deleted, sc_both);
 
-      for i := sec1.surfaces.count - 1 downto 0 do
+      for i := sec1.surfaces.Count - 1 downto 0 do
       begin
         surf := sec1.surfaces[i];
         { If surface is to be deleted - skip it }
@@ -3666,8 +3665,8 @@ begin
           continue;
 
         { Add all vertices used in the surface to Sec }
-        for j := 0 to surf.Vertices.count - 1 do
-          with surf.Vertices[j] do
+        for j := 0 to surf.vertices.Count - 1 do
+          with surf.vertices[j] do
             surf.Vertices[j] := sec.AddVertex(x, y, z);
 
         { Add surface to Sec and delete from Sec1 }
@@ -3698,10 +3697,9 @@ begin
       i := sec1.level.sectors.IndexOf(sec1);
       sec1.Level.sectors.Delete(i);
       JedMain.SectorDeleted(sec1);
-      sec1.free;
+      sec1.Free;
 
-      sec.Level.RenumSecs;
-
+      sec.level.RenumSecs;
       result := sec;
 
       if not IsSectorConvex(sec) then
