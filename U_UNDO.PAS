@@ -675,7 +675,6 @@ begin
   change:=ch;
   case change of
     ch_added:;
-    ch_deleted,ch_changed:
     ch_deleted, ch_changed:
       begin
         GetMem(Data,GetLightRecSize);
@@ -690,7 +689,7 @@ var n: integer;
 begin
   n := level.GetLightByID(objid);
   case change of
-    ch_added: DeleteLight(Level, n);
+    ch_added: DeleteLight(Level, n, {force=}True);
     ch_deleted, ch_changed:
       begin
         if (change = ch_deleted) then
@@ -739,7 +738,7 @@ begin
           if not CheckThingIndex(level, n) then exit;
           tmpur := CurUndoRec;
           CurUndoRec := nil;
-          DeleteThing(Level,n);
+          DeleteThing(level, n, {force=}True);
           CurUndoRec := tmpur;
         end;
     ch_deleted:
@@ -835,7 +834,10 @@ var sec: TJKSector;
         //   should be set for both adjoins based on the lower geo mode value.
 
         if surf.geo < asurf.geo then
-          SetAdjoinParamBasedOnAdjoin(asurf, surf)
+          begin
+            SetAdjoinParamBasedOnAdjoin(asurf, surf);
+            JedMain.SectorChanged(asurf.sector);
+          end
         else
           SetAdjoinParamBasedOnAdjoin(surf, asurf);
         {if asurf.adjoin=nil then}
@@ -997,7 +999,7 @@ begin
           if not CheckSectorIndex(level, n) then exit;
           tmpur := CurUndoRec;
           CurUndoRec := nil;
-          DeleteSector(Level, n);
+          DeleteSector(level, n, {force=}True);
           CurUndoRec := tmpur;
         end;
     ch_deleted:
