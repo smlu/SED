@@ -3,7 +3,7 @@
 interface
 
 uses Geometry, J_Level, misc_utils, ProgressDialog,
-  graph_files, U_multisel, u_3dos, Images;
+  graph_files, U_multisel, u_3dos, Images, System.Types;
 
 Const
   rs_surfs = 1;
@@ -160,7 +160,7 @@ procedure FlipFramesOverPlane(lev: TJKLevel; frsel: TFRMultisel; const pnorm: TV
 procedure FlipSectorsOverPlane(lev: TJKLevel; scsel: TSCMultiSel;
   const pnorm: TVector; pX, pY, pZ: double);
 
-// Functions for retrieving nearest vertex  to the line defined by lx, ly, lt and lineNormal
+// Functions for retrieving nearest vertex to the line defined by lx, ly, lt and lineNormal
 function GetNearestVertexToLine(vertices: TVertices; lx, ly, lz: double; lineNormal: TVector; radius: double; var vx, vy, vz: double): boolean; overload;
 function GetNearestVertexToLine(vertices: TVertices; lx, ly, lz: double; lineNormal: TVector; radius: double; var vx, vy, vz, minDistanceSqr: double): boolean; overload;
 function GetNearestWorldVertexToLine(lev: TJKLevel; lx, ly, lz: double; lineNormal: TVector; radius: double; var vx, vy, vz: double): boolean; overload;
@@ -271,10 +271,16 @@ function CheckFrameIndex(const lev: TJKLevel; th, fr: integer): boolean;
 function CheckCogIndex(const lev: TJKLevel; co: integer): boolean;
 function CheckLightIndex(const lev: TJKLevel; lt: integer): boolean;
 
+// Function snaprs point x,y to XY axis based on origin point ox,oy based on which coord is closest to the origin point.
+// Returns either x,oy if y is closest to oy or ox,y if x is closest to the ox.
+procedure SnapPointToAxis(const x, y: Integer; ox, oy: Integer; var sx, sy: Integer); overload;
+procedure SnapPointToAxis(const point: TPoint; origin: TPoint; var spoint: TPoint); overload;
+procedure SnapPointToAxis(const x, y: Integer; origin: TPoint;  var sx, sy: Integer); overload;
+
 implementation
 
 uses System.Math, SysUtils, GlobalVars, Jed_main, math, u_tbar, values,
-     u_COGForm, U_Options, Types, u_undo;
+     u_COGForm, U_Options, u_undo;
 
 Type
   TXData = record
@@ -6795,6 +6801,26 @@ end;
 Function CheckLightIndex(const lev: TJKLevel; lt: integer): boolean;
 begin
   Result := (lt >= 0) and (lt < lev.lights.Count);
+end;
+
+procedure SnapPointToAxis(const x, y: Integer; ox, oy: Integer; var sx, sy: Integer);
+begin
+  var distX := Abs(y - oy); // Distance to x-axis
+  var distY := Abs(x - ox); // Distance to y-axis
+  if distX < distY then
+    sy := oy // Snap to the y-coordinate of the origin point
+  else // Snap to y-axis
+    sx := ox // Snap to the x-coordinate of the origin point
+end;
+
+procedure SnapPointToAxis(const point: TPoint; origin: TPoint; var spoint: TPoint);
+begin
+  SnapPointToAxis(point.X, point.Y, origin.X, origin.Y, spoint.X, spoint.Y);
+end;
+
+procedure SnapPointToAxis(const x, y: Integer; origin: TPoint;  var sx, sy: Integer);
+begin
+  SnapPointToAxis(x, y, origin.X, origin.Y, sx, sy);
 end;
 
 end.

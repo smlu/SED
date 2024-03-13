@@ -435,11 +435,19 @@ type
         Procedure SaveToFile(const filePath: string; ext: string; setSaved: Boolean = True);
         Procedure SnapGridToObject;
         Function GetGridPosAt(atX, atY: Integer; var X, Y, z: double): boolean; // projects 2D to 3D pos at grid pos or nearest grid pos  if SnapToGrid is true
-        Function GetPosAt(atX, atY: Integer; var x, y, z: double): boolean; overload; // projects 2D x,y pos to 3D pos at camera view pos or grid pos if SnapToGrid is true
-        Function GetPosAt(atX, atY: Integer; var pos: TVector): boolean; overload; // projects 2D x,y pos to 3D pos at camera view pos or grid pos if SnapToGrid is true
-        Function GetSnappedPosAt(atX, atY: Integer; snapToVertex: boolean; var x, y, z: double): boolean; overload; // projects 2D x,y pos to 3D pos at camera view pos snapped to grid or nearest word geo vertex
+        Function GetPosAt(atX, atY: Integer; snapToGrid: Boolean; var x, y, z: double): boolean; overload; // projects 2D x,y pos to 3D pos at camera view pos or grid pos if snapToGrid is true
+        Function GetPosAt(atX, atY: Integer; snapToGrid: Boolean; var pos: TVector): boolean; overload; // projects 2D x,y pos to 3D pos at camera view pos or grid pos if snapToGrid is true
+        Function GetPosAt(atX, atY: Integer; var x, y, z: double): boolean; overload; // projects 2D x,y pos to 3D pos at camera view pos or grid pos if bSnapToGrid is true
+        Function GetPosAt(atX, atY: Integer; var pos: TVector): boolean; overload; // projects 2D x,y pos to 3D pos at camera view pos or grid pos if bSnapToGrid is true
+
+        Function GetSnappedPosAt(atX, atY: Integer; snapToVertex: boolean; snapToGrid: boolean; var x, y, z: double): boolean; overload; // projects 2D x,y pos to 3D pos at camera view pos. The pos can be snapped to grid or nearest word geo vertex
+        Function GetSnappedPosAt(atPos: TPoint; snapToVertex: boolean; snapToGrid: boolean; var pos: TVector): boolean; overload;
+        Function GetSnappedPosAt(atX, atY: Integer; snapToVertex: boolean; snapToGrid: boolean; var pos: TVector): boolean; overload;
+
+        Function GetSnappedPosAt(atX, atY: Integer; snapToVertex: boolean; var x, y, z: double): boolean; overload; // projects 2D x,y pos to 3D pos at camera view pos. The pos can be snapped to grid (bSnapToGrid = True) or nearest word geo vertex
         Function GetSnappedPosAt(atPos: TPoint; snapToVertex: boolean; var pos: TVector): boolean; overload;
         Function GetSnappedPosAt(atX, atY: Integer; snapToVertex: boolean; var pos: TVector): boolean; overload;
+
         Function GetMousePos(var X, Y: Integer): boolean;
 
         Procedure GetCurObjRefXYZ(var rx, ry, rz: double);
@@ -3132,7 +3140,8 @@ begin
       if not GetMousePos(X, Y) then
         exit;
 
-    if not GetSnappedPosAt(cleaveOrg2, snapToVertex, cleaveOrg) then
+    var stg := bSnapToGrid or IsKeyPressed(VK_CONTROL); // sets snap to grid when control key is presse
+    if not GetSnappedPosAt(cleaveOrg2, snapToVertex, stg, cleaveOrg) then
       exit;
 
     With cleaveOrg do
@@ -3148,7 +3157,7 @@ var
     fx, fy, fz: double;
 begin
     if not bCleaveStarted then
-        exit;
+      exit;
 
     Canvas.Pen.mode := pmXor;
     Canvas.Pen.Color := clCleaveLine.col;//clRed;
@@ -3156,10 +3165,17 @@ begin
     Canvas.LineTo(cleaveCurPos2.x, cleaveCurPos2.y);
     Canvas.MoveTo(cleaveOrg2.X, cleaveOrg2.Y);
 
-    if not GetSnappedPosAt(X, Y, snapToVertex, fx, fy, fz) then
-      exit;
+    if IsKeyPressed(VK_MENU) then // alt key (snap to XY axis)
+      SnapPointToAxis(X,Y, cleaveOrg2, X, Y)
+    else
+      begin
+        // Get projected point
+        var stg := bSnapToGrid or IsKeyPressed(VK_CONTROL); // sets snap to grid when control key is pressed
+        if not GetSnappedPosAt(X, Y, snapToVertex, stg, fx, fy, fz) then
+          exit;
+        renderer.ProjectPoint(fx, fy, fz, X, Y)
+      end;
 
-    renderer.ProjectPoint(fx, fy, fz, X, Y);
     Canvas.LineTo(X, Y);
     cleaveCurPos2 := TPoint.Create(X, Y);
 end;
@@ -3172,20 +3188,26 @@ begin
         if not bCleaveStarted then
             exit;
 
-        if not GetSnappedPosAt(X, Y, snapToVertex, endPos) then
+        var snapToGrid := bSnapToGrid or IsKeyPressed(VK_CONTROL); // sets snap to grid when control key is pressed
+        if IsKeyPressed(VK_MENU) then // alt key (snap to XY axis)
+          begin
+            snapToGrid := False;
+            snapToVertex := False;
+            SnapPointToAxis(X,Y, cleaveOrg2, X, Y);
+          end;
+
+        if not GetSnappedPosAt(X, Y, snapToVertex, snapToGrid, endPos) then
             exit;
 
         if endPos = cleaveOrg then
           exit;
 
         var normal := renderer.gnormal;
-        if not bSnapToGrid then
+        if not snapToGrid then
           normal := renderer.GetCameraForward;
 
         var cnormal := normal.Cross(endPos - cleaveOrg).Normalized;
         CleaveBy(cnormal, cleaveOrg.x, cleaveOrg.y, cleaveOrg.z);
-
-//        /AddExtraLine(cleaveOrg, endPos, 'Cleave - debug line');
     finally
         SetMouseMode(MM_Select);
         Invalidate;
@@ -5405,29 +5427,54 @@ begin
         renderer.GetNearestGrid(X, Y, z, X, Y, z);
 end;
 
-Function TJedMain.GetPosAt(atX, atY: Integer; var x, y, z: double): boolean;
+Function TJedMain.GetPosAt(atX, atY: Integer; snapToGrid: Boolean; var x, y, z: double): boolean;
 begin
-  if bSnapToGrid then
+  if snapToGrid then
     Result := renderer.GetGridAt(atX, atY, x, y, z)
   else
     Result := renderer.GetCameraAt(atX, atY, x, y, z);
 end;
 
-Function TJedMain.GetPosAt(atX, atY: Integer; var pos: TVector): boolean;
+Function TJedMain.GetPosAt(atX, atY: Integer;  snapToGrid: Boolean; var pos: TVector): boolean;
 begin
-  Result := GetPosAt(atX, atY, pos.x, pos.y, pos.z);
+  Result := GetPosAt(atX, atY, snapToGrid, pos.x, pos.y, pos.z);
 end;
 
-Function TJedMain.GetSnappedPosAt(atX, atY: Integer; snapToVertex: boolean; var x, y, z: double): boolean;
+Function TJedMain.GetPosAt(atX, atY: Integer; var x, y, z: double): boolean;
 begin
-  Result := GetPosAt(atX, atY, x, y, z);
+  Result := GetPosAt(atX, atY, bSnapToGrid, x, y, z);
+end;
+
+Function TJedMain.GetPosAt(atX, atY: Integer; var pos: TVector): boolean;
+begin
+  Result := GetPosAt(atX, atY, bSnapToGrid, pos.x, pos.y, pos.z);
+end;
+
+Function TJedMain.GetSnappedPosAt(atX, atY: Integer; snapToVertex: boolean; snapToGrid: boolean; var x, y, z: double): boolean;
+begin
+  Result := GetPosAt(atX, atY, snapToGrid, x, y, z);
   if not Result then
     exit;
 
   if snapToVertex then
     GetNearestWorldVertexToLine(level, x, y, z, renderer.GetCameraForward, VertSnapMaxDist, x, y, z)
-  else if bSnapToGrid then
+  else if snapToGrid then
     renderer.GetNearestGrid(x, y, z, x, y, z);
+end;
+
+Function TJedMain.GetSnappedPosAt(atPos: TPoint; snapToVertex: boolean; snapToGrid: boolean; var pos: TVector): boolean;
+begin
+  Result := GetSnappedPosAt(atPos.X, atPos.Y, snapToVertex, snapToGrid, pos.x, pos.y, pos.z);
+end;
+
+Function TJedMain.GetSnappedPosAt(atX, atY: Integer; snapToVertex: boolean; snapToGrid: boolean; var pos: TVector): boolean;
+begin
+  Result := GetSnappedPosAt(atX, atY, snapToVertex, snapToGrid, pos.x, pos.y, pos.z);
+end;
+
+Function TJedMain.GetSnappedPosAt(atX, atY: Integer; snapToVertex: boolean; var x, y, z: double): boolean;
+begin
+  Result := GetSnappedPosAt(atX, atY, snapToVertex, bSnapToGrid, x, y, z);
 end;
 
 Function TJedMain.GetSnappedPosAt(atPos: TPoint; snapToVertex: boolean; var pos: TVector): boolean;

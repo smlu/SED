@@ -221,6 +221,9 @@ Function StringListFind(const list: TStringList; const str: string; var index: I
 // Removes all entries in list that matches filter list
 Procedure StringListFilter(list: TStringList; const filter: TStringList);
 
+// Returns current virtual key pressed state
+Function IsKeyPressed(nVirtKey: Integer): Boolean;
+
 const
   ColorBlack: TColorF       = (r:0;g:0;b:0;a:1);
   ColorBlue: TColorF        = (r:0;g:0;b:1;a:1);
@@ -1456,6 +1459,11 @@ begin
       if StringListFind(list, filter[i], lidx) then
         list.Delete(lidx);
     end;
+end;
+
+function IsKeyPressed(nVirtKey: Integer): Boolean;
+begin
+  Result := BitTest(GetKeyState(nVirtKey), $8000) <> 0
 end;
 
 class function TAppSoundPlayer.GetInstance: TAppSoundPlayer;
