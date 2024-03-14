@@ -311,15 +311,53 @@ begin
 end;
 
 Function TFlagEdit.EditSurfaceFlags(flags: Longint): Longint;
+  procedure SetSurfaceTypeClickHandler(n: Byte);
+  begin
+     SetFlagClickHandler(n,
+      procedure (Sender: TObject)
+      begin
+        var cb := (Sender as TCheckBox);
+        if not cb.Checked then exit;
+
+        // Clear all set surface types
+        var curhandler := cb.OnClick;
+        cb.OnClick := nil;
+
+        Bit9.Checked := False;
+        Bit10.Checked := False;
+        Bit16.Checked := False;
+        Bit18.Checked := False;
+        Bit19.Checked := False;
+
+        if CurrentProject = IJIM then
+        begin
+          Bit7.Checked := False;
+          Bit17.Checked := False;
+          Bit20.Checked := False;
+          Bit21.Checked := False;
+          Bit22.Checked := False;
+          Bit23.Checked := False;
+          Bit29.Checked := False;
+          Bit30.Checked := False;
+          Bit31.Checked := False;
+        end;
+
+        // Check surf type cb
+        cb.Checked := True;
+        cb.OnClick := curhandler;
+      end
+    );
+  end;
+
 begin
-  SetNameDesc(0, '0x01 - Floor', 'Surface is ground floor a Thing object can move on.');
-  SetNameDesc(1, '0x02 - COG Linked', 'Surface is linked to COG(s).');
-  SetNameDesc(2, '0x04 - Collision', 'Solid surface with face collision.');
-  SetNameDesc(3, '0x08 - No AI move', 'AI actor can''t move onto the surface.');
-  SetNameDesc(4, '0x10 - 2x scrolling size', 'Double scrolling surface size. Affects the speed of SlideWall COG function.');
-  SetNameDesc(5, '0x20 - 1/2 scrolling size', 'Half scrolling surface size. Affects the speed of SlideWall COG function.');
-  SetNameDesc(6, '0x40 - 1/8 scrolling size', 'Eight scrolling surface size. Affects the speed of SlideWall COG function.');
-  SetNameDesc(9, '0x200 - Horizon sky', 'Surface is part of skybox.');
+  SetNameDesc(0,  '0x01 - Floor', 'Surface is ground floor a Thing object can move on.');
+  SetNameDesc(1,  '0x02 - COG Linked', 'Surface is linked to COG(s).');
+  SetNameDesc(2,  '0x04 - Collision', 'Solid surface with face collision.');
+  SetNameDesc(3,  '0x08 - No AI move', 'AI actor can''t move onto the surface.');
+  SetNameDesc(4,  '0x10 - 2x scrolling size', 'Double scrolling surface size. Affects the speed of SlideWall COG function.');
+  SetNameDesc(5,  '0x20 - 1/2 scrolling size', 'Half scrolling surface size. Affects the speed of SlideWall COG function.');
+  SetNameDesc(6,  '0x40 - 1/8 scrolling size', 'Eight scrolling surface size. Affects the speed of SlideWall COG function.');
+  SetNameDesc(9,  '0x200 - Horizon sky', 'Surface is part of skybox.');
   SetNameDesc(10, '0x400 - Ceiling sky', 'Surface is part of ceiling sky.');
   SetNameDesc(11, '0x800 - Scrolling', 'Surface is scrolling/sliding. Set by SlideWall COG function.');
   SetNameDesc(16, '0x10000 - Metal', 'Metal surface. Makes metal sound fx when surface is hit or walked on');
@@ -328,7 +366,7 @@ begin
 
   if CurrentProject = IJIM then
     begin
-      SetNameDesc(7, '0x80 - Aetherium', 'Aetherium surface. Makes "aetherium" sound fx when surface is hit or walked on.');
+      SetNameDesc(7,  '0x80 - Aetherium', 'Aetherium surface. Makes "aetherium" sound fx when surface is hit or walked on.');
       SetNameDesc(12, '0x1000 - Kill floor', 'Actor, player or weapon object is instantly destroyed if surface is touched.');
       SetNameDesc(13, '0x2000 - Climbable', 'Player can climb on the surface. e.g.: ladder.');
       SetNameDesc(14, '0x4000 - Track', 'Surface is a railroad track, e.g.: mine cart track.');
@@ -347,7 +385,7 @@ begin
       SetNameDesc(30, '0x40000000 - Wood echo', 'Wood surface. Makes wood indoor/hollow sound fx when surface is hit or walked on.');
       SetNameDesc(31, '0x80000000 - Dirt echo', 'Dirt surface. Makes dirt indoor/hollow sound fx when surface is hit or walked on.');
 
-      Bits[15].Enabled := false; // disable setting flag 0x8000 - Changed
+      Bits[15].Enabled := False; // disable setting flag 0x8000 - Changed
     end
   else
     begin
@@ -408,7 +446,7 @@ begin
     end
   );
 
-  SetFlagClickHandler(13, // 0x2000 - Climable
+  SetFlagClickHandler(13, // 0x2000 - Climbable
     procedure (Sender: TObject)
     begin
       var cb := (Sender as TCheckBox);
@@ -458,17 +496,25 @@ begin
     end
   );
 
-//  procedure TPreview3D.KBCommandClick(Sender: TObject);
-//var
-//  Key: Word;
-//  sc: TShiftState;
-//begin
-//  with (Sender as TMenuItem) do
-//  begin
-//    ShortCutToKey(Tag, Key, sc);
-//    FormKeyDown(self, Key, sc);
-//  end;
-//end;
+  // surface type flags
+  SetSurfaceTypeClickHandler(9); // 0x200 - Horizon sky
+  SetSurfaceTypeClickHandler(10); // 0x400 - Ceiling sky
+  SetSurfaceTypeClickHandler(16); // 0x10000 - Metal
+  SetSurfaceTypeClickHandler(18); // 0x40000 - Shallow wate
+  SetSurfaceTypeClickHandler(19); // 0x80000 - Dirt
+
+  if CurrentProject = IJIM then
+    begin
+      SetSurfaceTypeClickHandler(7);  // 0x80 - Aetherium
+      SetSurfaceTypeClickHandler(17); // 0x20000 - Water
+      SetSurfaceTypeClickHandler(20); // 0x100000 - Web
+      SetSurfaceTypeClickHandler(21); // 0x200000 - Lava
+      SetSurfaceTypeClickHandler(22); // 0x400000 - Snow
+      SetSurfaceTypeClickHandler(23); // 0x800000 - Wood
+      SetSurfaceTypeClickHandler(29); // 0x20000000 - Echo
+      SetSurfaceTypeClickHandler(30); // 0x40000000 - Wood echo
+      SetSurfaceTypeClickHandler(31); // 0x80000000 - Dirt echo
+  end;
 
   SetFlags(flags);
   if ShowModal <> mrOK then
