@@ -16,15 +16,18 @@ type
     ProgressBar: TProgressBar;
     Pmsg: TLabel;
     procedure FormHide(Sender: TObject);
+
   private
     sec, msec: word;
     shown: boolean;
     Lpos: Longint;
     lMax: Longint;
-    LargeMax: boolean;
+    LargeMax, bAppActive: boolean;
     { Private declarations }
     procedure SetMsg(const s: String);
     Function ItIsTime: boolean;
+    procedure WMActivateApp(var Msg: TWMActivateApp); message WM_ACTIVATEAPP;
+
   public
     Procedure Reset(steps: Integer);
     Procedure Step;
@@ -47,7 +50,7 @@ begin
     Update; }
 end;
 
-Function TProgress.ItIsTime: boolean;
+function TProgress.ItIsTime: boolean;
 var
   nhr, nmin, nsec, nmsec: word;
   minpassed, secpassed, msecpassed: Integer;
@@ -62,7 +65,12 @@ begin
   Result := secpassed * 1000 + msecpassed > PD_TooLong;
 end;
 
-Procedure TProgress.Reset(steps: Integer);
+procedure TProgress.WMActivateApp(var Msg: TWMActivateApp);
+begin
+  bAppActive :=  Msg.Active;
+end;
+
+procedure TProgress.Reset(steps: Integer);
 var
   hr, min: word;
 begin
@@ -91,7 +99,14 @@ begin
   if not shown then
     if ItIsTime then
     begin
-      Show;
+      if bAppActive then
+        Show
+      else
+        begin
+          ShowWindow(Handle, SW_SHOWNOACTIVATE);
+          Visible := True;
+        end;
+
       shown := true;
     end;
   ProgressBar.StepIt;
@@ -104,7 +119,13 @@ begin
   if not shown then
     if ItIsTime then
     begin
-      Show;
+      if bAppActive then
+        Show
+      else
+        begin
+          ShowWindow(Handle, SW_SHOWNOACTIVATE);
+          Visible := True;
+        end;
       shown := true;
     end;
   if LargeMax then
