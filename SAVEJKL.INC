@@ -295,25 +295,25 @@ begin  {CompileLists}
  Progress.Step;
 
  for i:=0 to Sectors.Count-1 do
- With Sectors[i] do
- For j:=0 to Surfaces.count-1 do
- With Surfaces[j] do sl_add(UsedMats, Material);
+   with Sectors[i] do
+    for j:=0 to Surfaces.count-1 do
+      with Surfaces[j] do sl_add(UsedMats, Material);
 
 // UsedCMPs:=TStringList.Create;
  if MasterCMP<>'' then UsedCmps.Add(MasterCMP);
 
  for i:=0 to Sectors.Count-1 do
- With Sectors[i] do
- begin
-  sl_add(UsedWavs,Sound);
-  if UsedCMPs.IndexOf(ColorMap)=-1 then
-     UsedCmps.Add(ColorMap);
- end;
+   with Sectors[i] do
+   begin
+    sl_add(UsedWavs,Sound);
+    if UsedCMPs.IndexOf(ColorMap)=-1 then
+       UsedCmps.Add(ColorMap);
+   end;
 
  Progress.Step;
 
- For i:=0 to Cogs.count-1 do sl_add(TCogs,Cogs[i].Name);
- For i:=0 to things.count-1 do sl_add(TTpls,Things[i].Name);
+ for i:=0 to cogs.Count - 1 do sl_add(TCogs,Cogs[i].Name);
+ for i:=0 to things.Count - 1 do sl_add(TTpls,Things[i].Name);
  AddFromPlacedCogs;
 
  Progress.Step;
@@ -1120,7 +1120,8 @@ begin {SaveToJKL}
  finally
   RenumSecs;
   RenumThings;
-  for i:=0 to Sectors.count-1 do Sectors[i].Renumber;
+  for i := 0 to sectors.Count - 1 do sectors[i].Renumber;
+
   Progress.Hide;
   CloseFile(t);
   UsedWavs.Free;

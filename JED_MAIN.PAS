@@ -598,6 +598,8 @@ type
 
         procedure ForSelectedSectorsDo(callback: TSectorCallback);
         procedure ForSelectedSurfacesDo(callback: TSurfaceCallback);
+
+        procedure ResetAutoSaveTimer;
     end;
 
 var
@@ -818,13 +820,11 @@ begin
     BackUpFile(filePath);
     ForceDirectories(ExtractFilePath(filePath));
 
-    Level.LVisString := ToolBar.GetLVisString;
+    level.LVisString := ToolBar.GetLVisString;
     if CompareText(ext, '.jed') = 0 then
-      begin
-        Level.SaveToJed(filePath);
-      end
+      level.SaveToJed(filePath)
     else if (CompareText(ext, '.jkl') = 0) or (CompareText(ext,'.ndy') = 0) then
-      Level.SaveToJKL(filePath)
+      level.SaveToJKL(filePath)
     else
       begin
         PanMessageFmt(mt_error, 'SaveTo: Unkown file format with extension ''%s''', [ext]);
@@ -834,8 +834,8 @@ begin
     if setSaved then
     begin
       AskSaveAs := false;
-      NewLevel := false;
-      Changed := false;
+      NewLevel  := false;
+      Changed   := false;
       LevelFile := filePath;
       AddRecent(filePath);
       SetLevelName;
@@ -4813,81 +4813,80 @@ Procedure TJedMain.ResetEditor;
 var
     i: Integer;
 begin
-    ClearUndoBuffer;
-    ClearExtraObjs;
-    UrqForm.Reload;
+  ClearUndoBuffer;
+  ClearExtraObjs;
+  UrqForm.Reload;
 
-    if DefaultParams then
+  if DefaultParams then
+  begin
+    with renderer do
     begin
-        With renderer do
-        begin
-            SetZ(0, 0, 1);
-            SetX(1, 0, 0);
+      SetZ(0, 0, 1);
+      SetX(1, 0, 0);
 
-            GridX := 0;
-            GridY := 0;
-            GridZ := 0;
-            SetGridNormal(0, 0, 1);
-            SetGridXNormal(1, 0, 0);
+      GridX := 0;
+      GridY := 0;
+      GridZ := 0;
+      SetGridNormal(0, 0, 1);
+      SetGridXNormal(1, 0, 0);
 
-            perspective := false;
-            ResetCamera;
-        end;
-
-        Cur_SC := IfThen(Level.sectors.Count = 0, -1, 0);
-        Cur_SF := IfThen(Level.sectors.Count = 0, -1, 0);
-        Cur_TH := IfThen(Level.things.Count  = 0, -1, 0);
-        Cur_VX := IfThen(Level.sectors.Count = 0, -1, 0);
-        Cur_LT := IfThen(Level.lights.Count  = 0, -1, 0);
-
-        ToolBar.CBGridStep.Text := DoubleToStr(DefGridStep);
-        ToolBar.CBGridLine.Text := DoubleToStr(DefGridLine);
-        ToolBar.CBGridDot.Text  := DoubleToStr(DefGridDot);
-        ToolBar.EnableSnapToGrid(DefSnapToGrid);
-        ToolBar.CBGridSize.Text := DoubleToStr(DefGridSize);
+      perspective := false;
+      ResetCamera;
     end;
 
-    Preview3D.Reset; // call before SetMapMode
-    LoadTemplates; // load before calling SetThingView to load correct templates for current ptoject
+    Cur_SC := IfThen(Level.sectors.Count = 0, -1, 0);
+    Cur_SF := IfThen(Level.sectors.Count = 0, -1, 0);
+    Cur_TH := IfThen(Level.things.Count  = 0, -1, 0);
+    Cur_VX := IfThen(Level.sectors.Count = 0, -1, 0);
+    Cur_LT := IfThen(Level.lights.Count  = 0, -1, 0);
 
-    if DefaultParams then
-      begin
-          SetMapMode(MM_SC);
-          ToolBar.SetLVis(Level.LVisString);
-          SetThingView(defThingView);
-          SetMSelMode(DefMSelMode);
-          scsel.Clear;
-          sfsel.Clear;
-          edsel.Clear;
-          vxsel.Clear;
-          thsel.Clear;
-          ltsel.Clear;
-      end
-    else
-      begin
-          ToolBar.RefreshLayers(false);
-          SetMapMode(mapMode);
-          VerifyMultiSelection;
-      end;
+    ToolBar.CBGridStep.Text := DoubleToStr(DefGridStep);
+    ToolBar.CBGridLine.Text := DoubleToStr(DefGridLine);
+    ToolBar.CBGridDot.Text  := DoubleToStr(DefGridDot);
+    ToolBar.EnableSnapToGrid(DefSnapToGrid);
+    ToolBar.CBGridSize.Text := DoubleToStr(DefGridSize);
+  end;
 
-    Changed := false;
-    SetLevelName;
-    CogForm.RefreshList;
+  Preview3D.Reset; // call before SetMapMode
+  LoadTemplates; // load before calling SetThingView to load correct templates for current ptoject
 
-    LoadPlugins;
+  if DefaultParams then
+    begin
+      SetMapMode(MM_SC);
+      ToolBar.SetLVis(Level.LVisString);
+      SetThingView(defThingView);
+      SetMSelMode(DefMSelMode);
+      scsel.Clear;
+      sfsel.Clear;
+      edsel.Clear;
+      vxsel.Clear;
+      thsel.Clear;
+      ltsel.Clear;
+    end
+  else
+    begin
+      ToolBar.RefreshLayers(false);
+      SetMapMode(mapMode);
+      VerifyMultiSelection;
+    end;
 
-    Preview3D.ReloadLevel;
-    SyncRecents;
+  Changed := false;
+  SetLevelName;
+  CogForm.RefreshList;
 
-    SetProjectTypeIndicator;
+  LoadPlugins;
 
-    For i := 0 to Level.Things.Count - 1 do
-        UpdateThingData(Level.Things[i]);
+  Preview3D.ReloadLevel;
+  SyncRecents;
 
-    SaveTimer.Enabled := AutoSave;
-    SaveTimer.Interval := SaveInterval * 60 * 1000;
-    SetHideLights(false);
-    SetHideThings(false);
+  SetProjectTypeIndicator;
+
+  for i := 0 to level.things.Count - 1 do
+    UpdateThingData(level.things[i]);
+
+  ResetAutoSaveTimer;
+  SetHideLights(false);
+  SetHideThings(false);
 end;
 
 Procedure TJedMain.SetLevelName;
@@ -8989,16 +8988,15 @@ begin
         exit;
 
     var ext := ExtractFileExt(LevelFile);
-    If ((CompareText(ext, '.jed') <> 0)
-    and (CompareText(ext, '.jkl') <> 0)
-    and (CompareText(ext, '.ndy') <> 0)) or IsInContainer(LevelFile) then
+    if ((CompareText(ext, '.jed') <> 0) and
+       (CompareText(ext, '.jkl') <> 0)  and
+       (CompareText(ext, '.ndy') <> 0)) or IsInContainer(LevelFile) then
         exit;
 
     ForceDirectories(ProjectDir + 'autosave');
     fname := ProjectDir + 'autosave\' + ExtractFileName(LevelFile);
-    //Level.SaveToJed(fname);
-    SaveToFile(fname, ext, (*setSaved:=*)False);
 
+    SaveToFile(fname, ext, (*setSaved:=*)False);
     PanMessage(mt_info, 'Project autosaved to ' + fname);
 end;
 
@@ -9655,6 +9653,13 @@ end;
 procedure TJedMain.SetRendererObjVertexSize;
 begin
   renderer.pointSize := WF_ObjVertSize;
+end;
+
+procedure TJedMain.ResetAutoSaveTimer;
+begin
+  SaveTimer.Enabled  := False;
+  SaveTimer.Interval := SaveInterval * 60 * 1000;
+  SaveTimer.Enabled  := AutoSave;
 end;
 
 end.
