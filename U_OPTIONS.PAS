@@ -776,10 +776,7 @@ begin
       CurrentProject := IJIM;
 
   SetProjectType(CurrentProject);
-  Jedmain.SaveTimer.Enabled := AutoSave;
-  Jedmain.SaveTimer.Interval := SaveInterval * 60 * 1000;
-
-  { LoadToolBar(JedMain.PtoolBar,'op'); }
+  Jedmain.ResetAutoSaveTimer;
 end;
 
 procedure TOptions.FormCreate(Sender: TObject);
