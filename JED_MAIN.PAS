@@ -1212,10 +1212,9 @@ begin
         SetCullingAndDrawColor(R_CULLBACK, clMapGeo);
         RenderWorldGeometry(RM_POLYGON);
 
+        // Render objects
         renderer.SetCulling(R_CULLNONE);
         SetRendererObjVertexSize;
-
-        // Render objects
 
         if (not bThingsHidden) or (mapMode = MM_TH) then
         begin
@@ -1333,7 +1332,7 @@ begin
                     sec := level.sectors[sc];
                     surf := sec.surfaces[SF];
                     SetLineDrawModeForLayer(sec.layer);
-                    With surf do
+                    with surf do
                         renderer.DrawLine(vertices[ED], vertices[NextVX(ED)]);
                 end;
 
@@ -1350,7 +1349,7 @@ begin
             end;
         MM_VX:
             begin
-                With clMSel do
+                with clMSel do
                     renderer.SetColor(CL_FRONT, r, g, b);
                 SetRendererGeoVertexSize;
                 for s := 0 to vxsel.Count - 1 do
@@ -1362,8 +1361,9 @@ begin
             end;
         MM_TH:
             begin
-                With clMSel do
+                with clMSel do
                     renderer.SetColor(CL_FRONT, r, g, b);
+                SetRendererObjVertexSize;
                 for s := 0 to thsel.Count - 1 do
                   begin
                     thing := level.things[thsel.GetTH(s)];
@@ -1373,8 +1373,9 @@ begin
             end;
         MM_FR:
             begin
-                With clMSel do
+                with clMSel do
                     renderer.SetColor(CL_FRONT, r, g, b);
+                SetRendererObjVertexSize;
                 for s := 0 to frsel.Count - 1 do
                 begin
                     frsel.GetTHFR(s, th, fr);
@@ -1384,9 +1385,9 @@ begin
             end;
         MM_LT:
             begin
-                With clMSel do
+                with clMSel do
                   renderer.SetColor(CL_FRONT, r, g, b);
-
+                SetRendererObjVertexSize;
                 for s := 0 to ltsel.Count - 1 do
                   With level.lights[ltsel.GetLT(s)] do
                       renderer.DrawVertex(position.x, position.y, position.z);
@@ -1418,7 +1419,7 @@ begin
                     renderer.DrawPolygons(sec.surfaces);
 
                     if sec.vertices.Count > 0 then
-                        With sec.vertices[0] do
+                        with sec.vertices[0] do
                             renderer.DrawVertex(X, Y, z);
                 end;
             MM_SF:
@@ -1441,7 +1442,7 @@ begin
                     renderer.DrawPolygon(surf);
 
                     // draw surf first vert
-                    With surf.vertices[0] do
+                    with surf.vertices[0] do
                         renderer.DrawVertex(x, y, z);
 
                     // draw surf normal
@@ -1454,10 +1455,10 @@ begin
                 begin
 
                     if edsel.FindED(Cur_SC, Cur_SF, Cur_ED) = -1 then
-                        With clMapSel do
+                        with clMapSel do
                             renderer.SetColor(CL_FRONT, r, g, b)
                     else
-                        With clSelMSel do
+                        with clSelMSel do
                             renderer.SetColor(CL_FRONT, r, g, b);
 
                     v1 := vertices[Cur_ED];
@@ -1521,26 +1522,26 @@ begin
             MM_VX:
                 begin
                     if vxsel.FindVX(Cur_SC, Cur_VX) = -1 then
-                        With clMapSel do
+                        with clMapSel do
                             renderer.SetColor(CL_FRONT, r, g, b)
                     else
-                        With clSelMSel do
+                        with clSelMSel do
                             renderer.SetColor(CL_FRONT, r, g, b);
 
-                    With level.sectors[Cur_SC].vertices[Cur_VX] do
+                    with level.sectors[Cur_SC].vertices[Cur_VX] do
                         renderer.DrawVertex(X, Y, z);
                 end;
             MM_LT:
                 begin
                     if ltsel.FindLT(Cur_LT) = -1 then
-                        With clMapSel do
+                        with clMapSel do
                             renderer.SetColor(CL_FRONT, r, g, b)
                     else
-                        With clSelMSel do
+                        with clSelMSel do
                             renderer.SetColor(CL_FRONT, r, g, b);
 
                     if CheckLightIndex(level, Cur_LT) then
-                        With level.lights[Cur_LT] do
+                        with level.lights[Cur_LT] do
                         begin
                             renderer.DrawVertex(position.x, position.y, position.z);
                             renderer.DrawCircle(position.x, position.y, position.z, range);
@@ -1549,14 +1550,15 @@ begin
 
             MM_Extra:
                 begin
-                    With clMSel do
+                    with clMSel do
                         renderer.SetColor(CL_FRONT, r, g, b);
+                    SetRendererGeoVertexSize;
                     obj := ExtraObjs[Cur_EX];
                     if obj is TVertex then
-                        With TJKVertex(obj) do
+                        with TJKVertex(obj) do
                             renderer.DrawVertex(X, Y, z)
                     else if obj is TExtraLine then
-                        With TExtraLine(obj) do
+                        with TExtraLine(obj) do
                             renderer.DrawLine(v1, v2)
                     else if obj is TPolygon then
                         renderer.DrawPolygon(TPolygon(obj));
