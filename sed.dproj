@@ -177,7 +177,7 @@
         <DCCReference Include="CONS_CHECKER.PAS">
             <Form>Consistency</Form>
         </DCCReference>
-        <DCCReference Include="FlagEditor.pas">
+        <DCCReference Include="FLAGEDITOR.PAS">
             <Form>FlagEdit</Form>
         </DCCReference>
         <DCCReference Include="U_Tools.pas">

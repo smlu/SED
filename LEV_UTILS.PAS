@@ -5612,13 +5612,12 @@ begin
   surf1.uscale := surf.uscale;
   surf1.vscale := surf.vscale;
 
-  if (surf.FaceFlags and FF_SF_FLIP <> 0) then
-    surf1.FaceFlags := surf1.FaceFlags or FF_SF_FLIP
+  if BitMaskTest(surf.FaceFlags, FF_SF_FLIP) then
+    BitSet(surf1.FaceFlags, FF_SF_FLIP)
   else
-    surf1.FaceFlags := surf1.FaceFlags and (not FF_SF_FLIP);
+    BitClear(surf1.FaceFlags, FF_SF_FLIP);
 
   ArrangeTexture(surf1, nv2, un, vn);
-
 end;
 (* Function StitchSurfaces(surf,surf1:TJKSurface):boolean;
   var v11,v12,v21,v22:integer;

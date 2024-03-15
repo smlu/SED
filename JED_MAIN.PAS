@@ -545,7 +545,7 @@ type
         Procedure TranslateObject(dx, dy, dz: double);
         Procedure MakeDoor;
         Procedure StartStitch;
-        Procedure DoStitch;
+        Procedure DoStitch(copyProps: Boolean);
         Procedure StraightenTexture(zero, rot90: boolean);
         Procedure SetCam(X, Y, z, pch, yaw, rol: double);
         Procedure GetCam(var X, Y, z, pch, yaw, rol: double);
@@ -1749,6 +1749,8 @@ begin
 
     AddKBItem(miTex, 'Stitch', Char(VK_INSERT), [ssShift]);
     AddKBItem(miTex, 'Stitch', #222, []);
+    AddKBItem(miTex, 'Stitch && Copy Surface Properties', Char(VK_INSERT), [ssShift, ssCtrl]);
+    AddKBItem(miTex, 'Stitch && Copy Surface Properties', #222, [ssCtrl]);
 
     AddKBItem(miTex, 'Straighten Texture', Char(VK_HOME), [ssAlt]);
     AddKBItem(miTex, 'Straighten Texture', #191, []);
@@ -2182,7 +2184,7 @@ begin
                         exit;
                     end;
             VK_INSERT:
-                DoStitch;
+                DoStitch(ssCtrl in shift);
             188:
                 begin
                     ShiftTexture(st_up);
@@ -2335,6 +2337,8 @@ begin
         case Key of
             191, VK_HOME:
                 StraightenTexture(true, true);
+            VK_INSERT:
+                DoStitch(True);
         end;
         exit;
     end;
@@ -2352,16 +2356,21 @@ begin
                     StraightenTexture(true, false);
                     exit;
                 end;
-            188:
+            188: { < }
                 begin
                     RotateTexture(st_left);
                     exit;
-                end; { < }
-            190:
+                end;
+            190: { > }
                 begin
                     RotateTexture(st_right);
                     exit;
-                end; { > }
+                end;
+            222: { ' }
+            begin
+                DoStitch(True);
+                exit;
+            end;
             VK_UP:
                 RaiseObject(ro_up);
             VK_Down:
@@ -2868,7 +2877,7 @@ begin
             end;
         { ' } 222:
             begin
-                DoStitch;
+                DoStitch(ssCtrl in shift);
                 exit;
             end;
         { / } 191:
@@ -6934,7 +6943,7 @@ begin
     stitchSurf := level.sectors[Cur_SC].surfaces[Cur_SF];
 end;
 
-Procedure TJedMain.DoStitch;
+Procedure TJedMain.DoStitch(copyProps: Boolean);
 var
     ssurf, esurf: TJKSurface;
 begin
@@ -6959,10 +6968,23 @@ begin
       exit;
 
     StartUndoRec('Stitch Surfaces');
-    if ssurf.material <> '' then
-        esurf.material := ssurf.material;
-    StitchSurfaces(ssurf, esurf);
+    SaveSecUndo(esurf.sector, ch_changed, sc_val);
 
+    if (ssurf.material <> '')  then
+      esurf.material := ssurf.material;
+
+    if copyProps or IsKeyPressed(VK_CONTROL) then
+    begin
+      esurf.surfflags   := ssurf.surfflags;
+      esurf.faceflags   := ssurf.faceflags;
+      esurf.geo         := ssurf.geo;
+      esurf.light       := ssurf.light;
+      esurf.tex         := ssurf.tex;
+      esurf.extraLight  := ssurf.extraLight;
+      esurf.adjoinflags := ssurf.adjoinflags;
+    end;
+
+    StitchSurfaces(ssurf, esurf);
     SectorChanged(esurf.sector);
     StartStitch;
 end;

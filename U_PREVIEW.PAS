@@ -486,9 +486,9 @@ begin
         if Shift = [ssCtrl] then
           JedMain.StartStitch
         else
-          JedMain.DoStitch;
+          JedMain.DoStitch(ssCtrl in shift);
       { ' } 222:
-        JedMain.DoStitch;
+        JedMain.DoStitch(ssCtrl in shift);
       { / } 191:
         JedMain.StraightenTexture(ssCtrl in Shift, ssShift in Shift);
 
@@ -1101,6 +1101,8 @@ begin
 
   AddKBItem(miTex, 'Stitch', Char(VK_INSERT), [ssShift]);
   AddKBItem(miTex, 'Stitch', #222, []);
+  AddKBItem(miTex, 'Stitch && Copy Surface Properties', Char(VK_INSERT), [ssShift, ssCtrl]);
+  AddKBItem(miTex, 'Stitch && Copy Surface Properties', #222, [ssCtrl]);
 
   AddKBItem(miTex, 'Straighten Texture', Char(VK_HOME), [ssAlt]);
   AddKBItem(miTex, 'Straighten Texture', #191, []);
