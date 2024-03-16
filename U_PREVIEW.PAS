@@ -66,6 +66,10 @@ type
     procedure MenuSetThingToCameraClick(Sender: TObject);
     procedure Commands1Click(Sender: TObject);
     procedure FormActivate(Sender: TObject);
+    procedure FormBeforeMonitorDpiChanged(Sender: TObject; OldDPI,
+      NewDPI: Integer);
+    procedure FormAfterMonitorDpiChanged(Sender: TObject; OldDPI,
+      NewDPI: Integer);
 
   private
     { Private declarations }
@@ -218,7 +222,6 @@ begin
   end;
 
   Progress.Hide;
-
   Invalidate;
 end;
 
@@ -293,7 +296,7 @@ begin
     begin
       SetP3DPos(self, P3DX, P3DY, P3DWinSize);
       SetStayOnTop(self, P3DOnTop);
-      show;
+      Show;
       if Render3D = nil then
         begin
           Hide;
@@ -1056,6 +1059,19 @@ end;
 procedure TPreview3D.FormActivate(Sender: TObject);
 begin
   ResumeSectorSound;
+end;
+
+procedure TPreview3D.FormAfterMonitorDpiChanged(Sender: TObject; OldDPI,
+  NewDPI: Integer);
+begin
+   SetP3DRes(self, P3DWinSize);
+   Invalidate;
+end;
+
+procedure TPreview3D.FormBeforeMonitorDpiChanged(Sender: TObject; OldDPI,
+  NewDPI: Integer);
+begin
+  ScaleBy(OldDPI, NewDPI);
 end;
 
 procedure TPreview3D.FormCreate(Sender: TObject);
