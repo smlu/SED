@@ -254,6 +254,7 @@ Procedure SetWinPosOnly(f: TForm; var p: TWinPos);
 
 Procedure SetP3DPos(f: TForm; X, Y, mode: integer);
 Procedure GetP3DPos(f: TForm; var X, Y, mode: integer);
+Procedure SetP3DRes(f: TForm; mode: integer);
 
 Function GetStayOnTop(f: TForm): boolean;
 Procedure SetStayOnTop(f: TForm; ontop: boolean);
@@ -261,8 +262,7 @@ Procedure SetStayOnTop(f: TForm; ontop: boolean);
 Function DefaultPixelPerUnit: double;
 
 implementation
-
-
+uses System.Types;
 
 Function GetConfigFilePath: string;
 begin
@@ -279,13 +279,55 @@ begin
       result := 320;
 end;
 
+Function GetTotalScreenSize: TSize;
+begin
+  Result := TSize.Create(0, 0);
+  for var i := 0 to Screen.MonitorCount - 1 do
+  begin
+    Result.Width  := Result.Width + Screen.Monitors[i].Width;
+    Result.Height := Result.Height + Screen.Monitors[i].Height;
+  end;
+end;
+
+Procedure SetFormWinPos(f: TForm; x, y: integer);
+begin
+  var size := GetTotalScreenSize;
+  if (x > 0) and (x < size.Width - 20) then
+    f.left := X;
+  if (y > 0) and (y < size.height - 20) then
+    f.top := Y;
+end;
+
 Procedure SetP3DPos(f: TForm; X, Y, mode: integer);
 begin
-  if (X > 0) and (X < Screen.Width - 20) then
-    f.left := X;
-  if (Y > 0) and (Y < Screen.height - 20) then
-    f.top := Y;
+  SetFormWinPos(f, X, Y);
+  SetP3DRes(f, mode);
+end;
 
+Procedure GetP3DPos(f: TForm; var X, Y, mode: integer);
+var
+  w: integer;
+begin
+  X := f.left;
+  Y := f.top;
+  w := f.clientwidth;
+
+  if w < 1024 then
+    mode := m_800x600
+  else if w < 1280 then
+    mode := m_1024x768
+  else if w < 1440 then
+    mode := m_1280x960
+  else if w < 1600 then
+    mode := m_1440x900
+  else if w < 1920 then
+    mode := m_1600x1024
+  else
+    mode := m_1920x1200
+end;
+
+Procedure SetP3DRes(f: TForm; mode: integer);
+begin
   case mode of
     m_800x600:
       begin
@@ -320,28 +362,6 @@ begin
   end;
 end;
 
-Procedure GetP3DPos(f: TForm; var X, Y, mode: integer);
-var
-  w: integer;
-begin
-  X := f.left;
-  Y := f.top;
-  w := f.clientwidth;
-
-  if w < 1024 then
-    mode := m_800x600
-  else if w < 1280 then
-    mode := m_1024x768
-  else if w < 1440 then
-    mode := m_1280x960
-  else if w < 1600 then
-    mode := m_1440x900
-  else if w < 1920 then
-    mode := m_1600x1024
-  else
-    mode := m_1920x1200
-end;
-
 Function GetStayOnTop(f: TForm): boolean;
 begin
   result := f.FormStyle = fsStayOnTop;
@@ -369,10 +389,8 @@ Procedure SetWinPos(f: TForm; var p: TWinPos);
 begin
   if (p.X = 0) or (p.Y = 0) then
     exit;
-  if (p.X > 0) and (p.X < Screen.Width - 20) then
-    f.left := p.X;
-  if (p.Y > 0) and (p.Y < Screen.height - 20) then
-    f.top := p.Y;
+
+  SetFormWinPos(f, p.X, p.Y);
   if (p.w < 32) or (p.h < 32) then
     exit;
   f.Width := p.w;
@@ -383,11 +401,7 @@ Procedure SetWinPosOnly(f: TForm; var p: TWinPos);
 begin
   if (p.X = 0) or (p.Y = 0) then
     exit;
-  if (p.X > 0) and (p.X < Screen.Width - 20) then
-    f.left := p.X;
-  if (p.Y > 0) and (p.Y < Screen.height - 20) then
-    f.top := p.Y;
-
+  SetFormWinPos(f, p.X, p.Y);
 end;
 
 Initialization
