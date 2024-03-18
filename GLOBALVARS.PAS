@@ -215,8 +215,8 @@ Var
   MoveFrames: boolean = true;
   GOBSmart: boolean = false;
   CheckOverlaps: boolean = false;
-  NewLightCalc: boolean = true;
-  ConfirmRevert: boolean = false;
+  NewLightCalc: boolean = True;
+  ConfirmRevert: boolean = True;
   SaveEditorLights: boolean = true;
   SaveEditorLayers: boolean = true;
 
