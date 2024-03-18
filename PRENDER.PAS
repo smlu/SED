@@ -198,7 +198,7 @@ TPreviewRender = class
   Procedure Reset; virtual;
   Procedure ClearSectors;virtual;abstract;
   Procedure ClearThings;virtual;abstract;
-  Procedure AddSector(s:TJKSector);virtual;abstract;
+  Procedure AddSector(sec: TJKSector);virtual;abstract;
   Procedure DeleteSector(sec:TJKSector);virtual;abstract;
   Procedure UpdateSector(sec:TJKSector);virtual;abstract;
   Procedure SyncSector(sec:TJKSector);virtual;abstract; // updates or adds sector
@@ -274,7 +274,7 @@ TNewPRenderer = class(TPreviewRender)
 
   Procedure ClearSectors; override;
   Procedure ClearThings; override;
-  Procedure AddSector(s: TJKSector); override;
+  Procedure AddSector(sec: TJKSector); override;
   Procedure DeleteSector(sec: TJKSector); override;
   Procedure UpdateSector(sec: TJKSector); override;
   Procedure SyncSector(sec:TJKSector); override; // updates or adds sector
@@ -702,12 +702,15 @@ begin
  thList.Clear;
 end;
 
-Procedure TNewPRenderer.AddSector(s:TJKSector);
+Procedure TNewPRenderer.AddSector(sec: TJKSector);
 var m:T3DPMesh;
 begin
- m := SecToMesh(s);
+ var i := sectors.IndexOf(sec);
+ if i <> -1 then exit;
+
+ m := SecToMesh(sec);
  scList.Add(m);
- sectors.Add(s);
+ sectors.Add(sec);
 end;
 
 Procedure TNewPRenderer.DeleteSector(sec: TJKSector);
