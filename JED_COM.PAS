@@ -1246,66 +1246,63 @@ begin
  lev_utils.CalcDefaultUVNormals(Level.Sectors[sc].Surfaces[sf],
                                      orgvx,Tvector(un),Tvector(vn));
 end;
-Procedure TJEDCOM.CalcUVNormals(sc,sf:integer; var un,vn:TJEDVector);
+Procedure TJEDCOM.CalcUVNormals(sc,sf: Integer; var un,vn: TJEDVector);
 begin
- lev_utils.CalcUVNormals(Level.Sectors[sc].Surfaces[sf],
-                                     Tvector(un),Tvector(vn));
+ lev_utils.CalcUVNormals(level.sectors[sc].surfaces[sf], Tvector(un),Tvector(vn));
 end;
-Procedure TJEDCOM.ArrangeTexture(sc,sf:integer; orgvx:integer; const un,vn:TJEDvector);
+Procedure TJEDCOM.ArrangeTexture(sc,sf:integer; orgvx:integer; const un,vn: TJEDvector);
 begin
- lev_utils.ArrangeTexture(Level.Sectors[sc].Surfaces[sf],
-                                     orgvx,Tvector(un),Tvector(vn));
+ lev_utils.ArrangeTexture(level.sectors[sc].surfaces[sf], orgvx,Tvector(un), Tvector(vn));
 end;
-Procedure TJEDCOM.ArrangeTextureBy(sc,sf:integer;const un,vn:TJEDvector;refx,refy,refz,refu,refv:double);
+Procedure TJEDCOM.ArrangeTextureBy(sc,sf: Integer; const un,vn: TJEDvector; refx,refy,refz,refu,refv: Double);
 begin
- lev_utils.ArrangeTextureBy(Level.Sectors[sc].Surfaces[sf],
-                                     Tvector(un),Tvector(vn),refx,refy,refz,refu,refv);
+ lev_utils.ArrangeTextureBy(level.sectors[sc].Surfaces[sf],
+                            Tvector(un), Tvector(vn), refx, refy, refz, refu, refv);
 end;
-Function TJEDCOM.IsTextureFlipped(sc,sf:integer):boolean;
+Function TJEDCOM.IsTextureFlipped(sc,sf: Integer): Boolean;
 begin
- result:=lev_utils.IsTXFlipped(Level.Sectors[sc].surfaces[sf]);
+ result := lev_utils.IsTXFlipped(level.sectors[sc].surfaces[sf]);
 end;
-Procedure TJEDCOM.RemoveSurfaceReferences(sc,sf:integer);
+Procedure TJEDCOM.RemoveSurfaceReferences(sc,sf: Integer);
 begin
- lev_utils.RemoveSurfRefs(level,Level.Sectors[sc].surfaces[sf]);
+ lev_utils.RemoveSurfRefs(level, level.sectors[sc].surfaces[sf]);
 end;
-Procedure TJEDCOM.RemoveSectorReferences(sec:integer;surfs:boolean);
+Procedure TJEDCOM.RemoveSectorReferences(sec: integer; surfs: Boolean);
 begin
- if surfs then lev_utils.RemoveSecRefs(level,Level.Sectors[sec],rs_surfs)
- else lev_utils.RemoveSecRefs(level,Level.Sectors[sec],0);
+ if surfs then lev_utils.RemoveSecRefs(level, level.sectors[sec],rs_surfs)
+ else lev_utils.RemoveSecRefs(level, level.sectors[sec],0);
 end;
 Function TJEDCOM.StitchSurfaces(sc1,sf1,sc2,sf2:integer):boolean;
 begin
- Result:=lev_utils.StitchSurfaces(Level.Sectors[sc1].surfaces[sf1],
-                                 Level.Sectors[sc2].surfaces[sf2]);
+ Result := lev_utils.StitchSurfaces(level.sectors[sc1].surfaces[sf1],
+                                 level.sectors[sc2].surfaces[sf2]);
 end;
 Function TJEDCOM.FindCommonEdges(sc1,sf1,sc2,sf2:integer; var v11,v12,v21,v22:integer):boolean;
 begin
- Result:=lev_utils.FindCommonEdges(Level.Sectors[sc1].surfaces[sf1],
-                                 Level.Sectors[sc2].surfaces[sf2],v11,v12,v21,v22);
+ Result := lev_utils.FindCommonEdges(level.sectors[sc1].surfaces[sf1],
+                                 level.sectors[sc2].surfaces[sf2],v11,v12,v21,v22);
 end;
 Function TJEDCOM.DoSurfacesOverlap(sc1,sf1,sc2,sf2:integer):boolean;
 begin
- Result:=lev_utils.Do_Surf_Overlap(Level.Sectors[sc1].surfaces[sf1],
-                                 Level.Sectors[sc2].surfaces[sf2]);
+ Result := lev_utils.Do_Surf_Overlap(level.sectors[sc1].surfaces[sf1],
+                                 level.sectors[sc2].surfaces[sf2]);
 end;
 Function TJEDCOM.MakeAdjoin(sc,sf:integer):boolean;
 begin
- Result:=lev_utils.MakeAdjoin(Level.Sectors[sc].surfaces[sf]);
+ Result := lev_utils.MakeAdjoin(level.sectors[sc].surfaces[sf]);
 end;
 Function TJEDCOM.MakeAdjoinFromSectorUp(sc,sf:integer;firstsc:integer):boolean;
 begin
- Result:=lev_utils.MakeAdjoinSCUp(Level.Sectors[sc].surfaces[sf],
-                                      firstsc);
+ Result := lev_utils.MakeAdjoinSCUp(level.sectors[sc].surfaces[sf], firstsc);
 end;
 Function TJEDCOM.UnAdjoin(sc,sf:integer):Boolean;
 begin
- Result:=lev_utils.UnAdjoin(Level.Sectors[sc].surfaces[sf]);
+ Result := lev_utils.UnAdjoin(level.sectors[sc].surfaces[sf]);
 end;
-Function TJEDCOM.CreateCubicSector(x,y,z:double;const pnormal,edge:TJEDVector):integer;
+Function TJEDCOM.CreateCubicSector(x,y,z: Double; const pnormal,edge:TJEDVector):integer;
 begin
- lev_utils.CreateCube(level,x,y,z,Tvector(pnormal),TVector(edge));
- result:=Level.sectors.count-1;
+ lev_utils.CreateCube(level, x,y,z, Tvector(pnormal), TVector(edge));
+ result := level.sectors.Count - 1;
 end;
 Procedure TJEDCOM.StartUndo(name:PAnsiChar);
 begin

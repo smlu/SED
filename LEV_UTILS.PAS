@@ -1156,7 +1156,7 @@ begin
   for i := 0 to sfsel.count - 1 do
   begin
     sfsel.GetSCSF(i, sc, sf);
-    MoveSurf(Level.sectors[sc].surfaces[sf]);
+    MoveSurf(level.sectors[sc].surfaces[sf]);
   end;
 end;
 
@@ -1413,13 +1413,13 @@ begin
   lev := surf.sector.Level;
   nsec := lev.NewSector;
   nsec.Assign(surf.sector);
-  nsec.Num := lev.sectors.count;
+  nsec.Num := lev.sectors.Count;
 
   SaveSecUndo(nsec, ch_added, sc_both);
   SaveSecUndo(surf.sector, ch_changed, sc_both);
 
   { Construct adjoin }
-  asurf := nsec.newsurface;
+  asurf := nsec.NewSurface;
   asurf.Assign(surf);
 
   v1 := nsec.NewVertex;
@@ -1440,7 +1440,7 @@ begin
   { SysAdjoinSurfaces(surf,asurf); }
 
   { Construct opposite surface }
-  osurf := nsec.newsurface;
+  osurf := nsec.NewSurface;
   osurf.Assign(surf);
 
   nvx := nsec.NewVertex;
@@ -1706,10 +1706,10 @@ begin
 
   result := nil;
 
-  D := cnormal.dx * cx + cnormal.dy * cy + cnormal.dz * cz;
+  D := cnormal.Dot(cx, cy, cz);//cnormal.dx * cx + cnormal.dy * cy + cnormal.dz * cz;
 
-  lev := surf.sector.Level;
-  vc := surf.Vertices.count;
+  lev := surf.sector.level;
+  vc := surf.vertices.Count;
   GetMem(cd, sizeof(TCleaveData) * vc);
   try
     FillChar(cd^, sizeof(TCleaveData) * vc, 0);
@@ -1718,8 +1718,8 @@ begin
       begin
         cd1 := @cd^[sf];
         cd2 := @cd^[NextIdx(sf, vc)];
-        v1 := surf.Vertices[sf];
-        v2 := surf.Vertices[NextIdx(sf, vc)];
+        v1 := surf.vertices[sf];
+        v2 := surf.vertices[NextIdx(sf, vc)];
 
         if (v1.Mark = 0) or (v1.Mark <> -v2.Mark) then
           continue;
@@ -1747,7 +1747,7 @@ begin
 
     { vxs:=TJKVertices.Create; }
 
-    for sf := 0 to surf.vertices.count - 1 do
+    for sf := 0 to surf.vertices.Count - 1 do
       With cd^[sf] do
         begin
           v1 := surf.vertices[sf];
@@ -1763,14 +1763,14 @@ begin
     vxs := surf.vertices;
     surf.vertices := TJKVertices.Create;
 
-    for sf := 0 to vxs.count - 1 do
+    for sf := 0 to vxs.Count - 1 do
       With cd^[sf] do
         begin
           v1 := vxs[sf];
           if (v1.mark = -1) or (v1.mark = 0) then
             surf.vertices.Add(v1);
           if vx <> nil then
-            surf.InsertVertex(surf.vertices.count, vx);
+            surf.InsertVertex(surf.vertices.Count, vx);
         end;
 
     { surf.sector.surfaces.Add(nsf);
@@ -1785,7 +1785,7 @@ begin
 //      VMult(normal.dx, normal.dy, normal.dz, cnormal.dx, cnormal.dy, cnormal.dz,
 //        rvec.dx, rvec.dy, rvec.dz);
 
-    For i := surf.vertices.count - 1 downto 0 do
+    For i := surf.vertices.Count - 1 downto 0 do
       begin
         v0 := surf.vertices[surf.PrevVX(i)];
         v1 := surf.vertices[i];
@@ -1798,7 +1798,7 @@ begin
           surf.vertices.Delete(i);
       end;
 
-    For i := nsf.vertices.count - 1 downto 0 do
+    For i := nsf.vertices.Count - 1 downto 0 do
       begin
         v0 := nsf.vertices[nsf.PrevVX(i)];
         v1 := nsf.vertices[i];
@@ -1816,7 +1816,7 @@ begin
       begin
         if vx = nil then
           continue;
-        for i := 0 to surf.sector.surfaces.count - 1 do
+        for i := 0 to surf.sector.surfaces.Count - 1 do
         begin
           asurf := surf.sector.surfaces[i];
           if (asurf = surf) then
@@ -1824,24 +1824,24 @@ begin
 
           SaveTXData(asurf, 0, txd1);
           sfchange := false;
-          for j := asurf.Vertices.count - 1 downto 0 do
+          for j := asurf.vertices.Count - 1 downto 0 do
             begin
-              v1 := asurf.Vertices[j];
-              v2 := asurf.Vertices[NextIdx(j, asurf.Vertices.count)];
-              if (v1 = vxs[sf]) and (v2 = vxs[NextIdx(sf, vxs.count)]) then
+              v1 := asurf.vertices[j];
+              v2 := asurf.vertices[NextIdx(j, asurf.vertices.Count)];
+              if (v1 = vxs[sf]) and (v2 = vxs[NextIdx(sf, vxs.Count)]) then
                 begin
                   sfchange := true;
                   asurf.InsertVertex(asurf.NextVX(j), vx);
                   InsertVXTintoSurf(asurf.adjoin, vxs[sf],
-                    vxs[NextIdx(sf, vxs.count)], vx);
+                    vxs[NextIdx(sf, vxs.Count)], vx);
                 end;
 
-              if (v2 = vxs[sf]) and (v1 = vxs[NextIdx(sf, vxs.count)]) then
+              if (v2 = vxs[sf]) and (v1 = vxs[NextIdx(sf, vxs.Count)]) then
                 begin
                   sfchange := true;
-                  asurf.InsertVertex(NextIdx(j, asurf.Vertices.count), vx);
+                  asurf.InsertVertex(NextIdx(j, asurf.vertices.Count), vx);
                   InsertVXTintoSurf(asurf.adjoin, vxs[sf],
-                    vxs[NextIdx(sf, vxs.count)], vx);
+                    vxs[NextIdx(sf, vxs.Count)], vx);
                 end;
 
               if sfchange then
@@ -1853,7 +1853,7 @@ begin
     { Surf.vertices.free;
       Surf.Vertices:=vxs; }
 
-    vxs.free;
+    vxs.Free;
 
     { for i:=0 to nsf.sector.surfaces.count-1 do
       nsf.sector.surfaces[i].RecalcAll; }
@@ -1982,10 +1982,10 @@ var
   th: TJKThing;
   lev: TJKLevel;
 begin
-  lev := sc.Level;
-  for i := 0 to lev.Things.count - 1 do
+  lev := sc.level;
+  for i := 0 to lev.things.Count - 1 do
   begin
-    th := lev.Things[i];
+    th := lev.things[i];
     if th.sec <> sc then
       continue;
 
@@ -2042,9 +2042,9 @@ Procedure RemoveSurfRefs(lev: TJKLevel; surf: TJKSurface);
 var
   p, i, j: integer;
 begin
-  for i := 0 to lev.sectors.count - 1 do
+  for i := 0 to lev.sectors.Count - 1 do
     with lev.sectors[i] do
-      for j := 0 to surfaces.count - 1 do
+      for j := 0 to surfaces.Count - 1 do
         with surfaces[j] do
           begin
             if adjoin = nil then
@@ -2059,9 +2059,9 @@ begin
               end;
           end;
 
-  for i := 0 to lev.cogs.count - 1 do
+  for i := 0 to lev.cogs.Count - 1 do
     with lev.cogs[i] do
-      for j := 0 to Vals.count - 1 do
+      for j := 0 to Vals.Count - 1 do
         with Vals[j] do
           begin
             if (Cog_Type = ct_srf) and (obj = surf) then
@@ -2085,7 +2085,7 @@ var
     i: integer;
     cv1, cv2: TJKVertex;
   begin
-    for i := 0 to vxs.count div 2 - 1 do
+    for i := 0 to vxs.Count div 2 - 1 do
     begin
       cv1 := vxs[i * 2];
       cv2 := vxs[i * 2 + 1];
@@ -2106,12 +2106,12 @@ begin
   nleft  := 0;
   nright := 0;
   for i := 0 to sec.vertices.Count - 1 do
-    With sec.vertices[i] do
+    with sec.vertices[i] do
     begin
       if Mark = -1 then
-        inc(nleft);
+        Inc(nleft);
       if Mark = 1 then
-        inc(nright);
+        Inc(nright);
     end;
 
   if (nleft = 0) or (nright = 0) then
@@ -2122,17 +2122,17 @@ begin
   for sf := 0 to sec.surfaces.Count - 1 do
   begin
     CleaveAdjoin(sec.surfaces[sf], cnormal, cx, cy, cz,
-    SysCleaveSurface(sec.surfaces[sf], cnormal, cx, cy, cz));
+      SysCleaveSurface(sec.surfaces[sf], cnormal, cx, cy, cz));
   end;
 
   vxs := TJKVertices.Create;
   try
-    for sf := 0 to sec.surfaces.count - 1 do
+    for sf := 0 to sec.surfaces.Count - 1 do
       with sec.surfaces[sf] do
       begin
         nleft := 0;
-        for i := 0 to Vertices.count - 1 do
-          if Vertices[i].Mark <> 0 then
+        for i := 0 to vertices.Count - 1 do
+          if vertices[i].Mark <> 0 then
           begin
             nleft := 1;
             break;
@@ -2142,18 +2142,18 @@ begin
         if nleft = 0 then
           continue;
 
-        for i := 0 to vertices.count - 1 do
+        for i := 0 to vertices.Count - 1 do
         begin
           v1 := vertices[i];
-          v2 := vertices[NextIdx(i, Vertices.count)];
+          v2 := vertices[NextIdx(i, Vertices.Count)];
           if (v1.Mark = 0) and (v2.Mark = 0) then
             AddVXs(vxs, v1, v2);
         end;
       end;
 
-    if vxs.count = 0 then
+    if vxs.Count = 0 then
     begin
-      vxs.free;
+      vxs.Free;
       exit;
     end;
 
@@ -2165,9 +2165,9 @@ begin
     vxs.Delete(0);
     vxs.Delete(0);
 
-    Repeat
+    repeat
       nv := vxs.count;
-      For sf := vxs.Count div 2 - 1 downto 0 do
+      for sf := vxs.Count div 2 - 1 downto 0 do
       begin
         if vxs[sf * 2] = v1 then
         begin
@@ -2204,7 +2204,7 @@ begin
     SaveSecUndo(sec1, ch_added, sc_both);
 
     { Create a copy of these vertices - for another sector }
-    For i := 0 to nsf.Count - 1 do
+    for i := 0 to nsf.Count - 1 do
     begin
       v1 := sec1.NewVertex;
       v1.Assign(nsf[i]);
@@ -2213,11 +2213,11 @@ begin
 
     { Split surfaces between sectors }
 
-    For sf := sec.surfaces.Count - 1 downto 0 do
+    for sf := sec.surfaces.Count - 1 downto 0 do
     begin
       sfside := 0;
       surf := sec.surfaces[sf];
-      for i := 0 to surf.vertices.count - 1 do
+      for i := 0 to surf.vertices.Count - 1 do
       begin
         sfside := surf.vertices[i].Mark;
         if sfside <> 0 then
@@ -2244,7 +2244,7 @@ begin
     end;
 
     { Split vertices between two sectors }
-    For sf := sec.vertices.Count - 1 downto 0 do
+    for sf := sec.vertices.Count - 1 downto 0 do
     begin
       v1 := sec.vertices[sf];
       case v1.Mark of
@@ -2259,12 +2259,12 @@ begin
 
     { Now build the adjoining surfaces }
 
-    surf := sec.newsurface;
-    For i := 0 to nsf.Count - 1 do
+    surf := sec.NewSurface;
+    for i := 0 to nsf.Count - 1 do
       surf.AddVertex(nsf[i]);
 
-    surf1 := sec.newsurface;
-    For i := nsf.Count - 1 downto 0 do
+    surf1 := sec.NewSurface;
+    for i := nsf.Count - 1 downto 0 do
       surf1.AddVertex(nsf[i]);
 
     if sec.surfaces.Count > 0 then
@@ -2278,7 +2278,7 @@ begin
     surf.NewRecalcAll;
     surf1.NewRecalcAll;
 
-    With surf do
+    with surf do
       if cnormal.Dot(normal) > 0 then
       //if SMult(cnormal.dx, cnormal.dy, cnormal.dz, normal.dx, normal.dy, normal.dz) > 0 then
       begin
@@ -2294,13 +2294,13 @@ begin
       end;
 
     Result := True;
+  finally
     { Make copies of vertices that may belong to another sector }
-  Finally
-    For sf := 0 to sec1.surfaces.Count - 1 do
-      With sec1.surfaces[sf] do
-        for i := 0 to Vertices.Count - 1 do
+    for sf := 0 to sec1.surfaces.Count - 1 do
+      with sec1.surfaces[sf] do
+        for i := 0 to vertices.Count - 1 do
         begin
-          v1 := Vertices[i];
+          v1 := vertices[i];
           if v1.Mark <> 0 then
             continue;
           vertices[i] := sec1.AddVertex(v1.x, v1.y, v1.z);
@@ -2408,7 +2408,6 @@ Function ConnectSectors(sec1, sec2: TJKSector): boolean;
     surf: TJKSurface;
     v: TJKVertex;
   begin
-
     for i := 0 to bysec.surfaces.Count - 1 do
     begin
       surf := bysec.surfaces[i];
@@ -2420,14 +2419,14 @@ Function ConnectSectors(sec1, sec2: TJKSector): boolean;
     end;
   end;
 
-
 begin { ConnectSectors }
-  Result := false;
+  Result := False;
   if not DoSectorsOverlap(sec1, sec2) then
   begin
-    PanMessage(mt_warning, 'Sectors can''t be joined as they do not overlap.');
+    PanMessage(mt_warning, 'Sectors can''t be joined because they don''t overlap!');
     exit;
   end;
+
   var lecNum := sec1.level.sectors.Count;
   CleaveSecBySec(sec2, sec1);
   CleaveSecBySec(sec1, sec2);
@@ -3110,7 +3109,7 @@ begin
     surf.mark   := 1;
     surf.sector := nsec;
     for j := 0 to surf.vertices.count - 1 do
-      With surf.vertices[j] do
+      with surf.vertices[j] do
         surf.vertices[j] := nsec.AddVertex(x, y, z);
     nsec.surfaces.Add(surf);
   end;
@@ -3970,14 +3969,14 @@ var
   lev: TJKLevel;
   surf1: TJKSurface;
 begin
-  result := false;
+  Result := False;
   if surf.adjoin <> nil then
     exit;
-  lev := surf.sector.Level;
+  lev := surf.sector.level;
 
-  for s := sc to lev.sectors.count - 1 do
-    With lev.sectors[s] do
-      for sf := 0 to surfaces.count - 1 do
+  for s := sc to lev.sectors.Count - 1 do
+    with lev.sectors[s] do
+      for sf := 0 to surfaces.Count - 1 do
       begin
         surf1 := surfaces[sf];
         if DO_Surf_Overlap(surf, surf1) then

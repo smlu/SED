@@ -139,22 +139,22 @@
         <DCCReference Include="Files.pas"/>
         <DCCReference Include="Tools.pas"/>
         <DCCReference Include="GEOMETRY.PAS"/>
-        <DCCReference Include="ProgressDialog.pas">
+        <DCCReference Include="PROGRESSDIALOG.PAS">
             <Form>Progress</Form>
         </DCCReference>
         <DCCReference Include="lev_utils.pas"/>
         <DCCReference Include="Containers.pas"/>
         <DCCReference Include="FileOperations.pas"/>
-        <DCCReference Include="FileDialogs.pas">
+        <DCCReference Include="FILEDIALOGS.PAS">
             <Form>GetFileOpen</Form>
         </DCCReference>
         <DCCReference Include="UNIT1.PAS">
             <Form>Form1</Form>
         </DCCReference>
         <DCCReference Include="values.pas"/>
-        <DCCReference Include="u_templates.pas"/>
+        <DCCReference Include="U_TEMPLATES.PAS"/>
         <DCCReference Include="ListRes.pas"/>
-        <DCCReference Include="U_CogForm.pas">
+        <DCCReference Include="U_COGFORM.PAS">
             <Form>CogForm</Form>
         </DCCReference>
         <DCCReference Include="D3D_PRender.pas"/>
@@ -180,22 +180,22 @@
         <DCCReference Include="FLAGEDITOR.PAS">
             <Form>FlagEdit</Form>
         </DCCReference>
-        <DCCReference Include="U_Tools.pas">
+        <DCCReference Include="U_TOOLS.PAS">
             <Form>ToolForm</Form>
         </DCCReference>
-        <DCCReference Include="Jed_about1.pas">
+        <DCCReference Include="JED_ABOUT1.PAS">
             <Form>Jed_about</Form>
         </DCCReference>
-        <DCCReference Include="U_tbar.pas">
+        <DCCReference Include="U_TBAR.PAS">
             <Form>Toolbar</Form>
         </DCCReference>
         <DCCReference Include="U_Preview.pas">
             <Form>Preview3D</Form>
         </DCCReference>
-        <DCCReference Include="U_msgForm.pas">
+        <DCCReference Include="U_MSGFORM.PAS">
             <Form>MsgForm</Form>
         </DCCReference>
-        <DCCReference Include="U_SCFEdit.pas">
+        <DCCReference Include="U_SCFEDIT.PAS">
             <Form>SCFieldPicker</Form>
         </DCCReference>
         <DCCReference Include="JDH_JDL.PAS"/>
@@ -203,27 +203,27 @@
         <DCCReference Include="Q_Sectors.pas">
             <Form>FindSectors</Form>
         </DCCReference>
-        <DCCReference Include="Q_surfs.pas">
+        <DCCReference Include="Q_SURFS.PAS">
             <Form>FindSurfs</Form>
         </DCCReference>
-        <DCCReference Include="Q_things.pas">
+        <DCCReference Include="Q_THINGS.PAS">
             <Form>FindThings</Form>
         </DCCReference>
         <DCCReference Include="Prefab.pas"/>
-        <DCCReference Include="U_Medit.pas">
+        <DCCReference Include="U_MEDIT.PAS">
             <Form>EpisodeEdit</Form>
         </DCCReference>
         <DCCReference Include="u_3dos.pas"/>
-        <DCCReference Include="U_lheader.pas">
+        <DCCReference Include="U_LHEADER.PAS">
             <Form>LHEdit</Form>
         </DCCReference>
         <DCCReference Include="U_3doprev.pas">
             <Form>Preview3DO</Form>
         </DCCReference>
-        <DCCReference Include="u_StrEdit.pas">
+        <DCCReference Include="U_STREDIT.PAS">
             <Form>StrEdit</Form>
         </DCCReference>
-        <DCCReference Include="u_coggen.pas">
+        <DCCReference Include="U_COGGEN.PAS">
             <Form>CogGen</Form>
         </DCCReference>
         <DCCReference Include="U_DFI.PAS">
@@ -231,7 +231,7 @@
         </DCCReference>
         <DCCReference Include="OGL_PRender.pas"/>
         <DCCReference Include="sft_render.pas"/>
-        <DCCReference Include="u_tpledit.pas">
+        <DCCReference Include="U_TPLEDIT.PAS">
             <Form>TplEdit</Form>
         </DCCReference>
         <DCCReference Include="sft_persp_render.pas"/>
@@ -240,10 +240,10 @@
         <DCCReference Include="GLunit.pas"/>
         <DCCReference Include="JED_OLE.pas"/>
         <DCCReference Include="u_copypaste.pas"/>
-        <DCCReference Include="u_errorform.pas">
+        <DCCReference Include="U_ERRORFORM.pas">
             <Form>ErrForm</Form>
         </DCCReference>
-        <DCCReference Include="U_tplcreate.pas">
+        <DCCReference Include="U_TPLCREATE.PAS">
             <Form>TPLCreator</Form>
         </DCCReference>
         <DCCReference Include="PRender.pas"/>
@@ -256,13 +256,13 @@
         <DCCReference Include="SED_COM.pas"/>
         <DCCReference Include="sed_plugins.pas"/>
         <DCCReference Include="tbar_tools.pas"/>
-        <DCCReference Include="u_cscene.pas">
+        <DCCReference Include="U_CSCENE.PAS">
             <Form>KeyForm</Form>
         </DCCReference>
-        <DCCReference Include="u_pjkey.pas"/>
+        <DCCReference Include="U_PJKEY.PAS"/>
         <DCCReference Include="u_pj3dos.pas"/>
         <DCCReference Include="pjgeometry.pas"/>
-        <DCCReference Include="u_3doform.pas">
+        <DCCReference Include="U_3DOFORM.PAS">
             <Form>UrqForm</Form>
         </DCCReference>
         <DCCReference Include="JED_COM.PAS"/>

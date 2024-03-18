@@ -1096,7 +1096,7 @@ begin
     if objId = -1 then
       begin
         lch := TSecGeoUndo.Create;
-        lch.SaveUndo(sec,change);
+        lch.SaveUndo(sec, change);
         CurUndoRec.scgchanges.AddObject(lch, sec.id);
       end
     else if change = ch_deleted then

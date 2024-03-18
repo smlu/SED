@@ -82,9 +82,6 @@ Coordinates=218,319,40,33
 [N5]
 Coordinates=169,319,40,33
 
-[MIrecovery]
-Coordinates=590,53,68,33
-
 [MUPrevObject]
 Coordinates=590,105,84,33
 
@@ -147,9 +144,6 @@ Coordinates=201,71,43,33
 
 [SaveJKLGob1]
 Coordinates=745,313,84,33
-
-[MiEdit]
-Coordinates=359,390,45,33
 
 [Find1]
 Coordinates=310,390,41,33
@@ -314,4 +308,10 @@ Coordinates=506,559,46,33
 
 []
 Coordinates=414,209,63,33
+
+[miEdit]
+Coordinates=359,390,45,33
+
+[miRecovery]
+Coordinates=590,53,68,33
 

@@ -170,7 +170,7 @@ type
         miSel: TMenuItem;
         miTex: TMenuItem;
         miOther: TMenuItem;
-        MIrecovery: TMenuItem;
+        miRecovery: TMenuItem;
         BNFR: TSpeedButton;
         SaveJKLGOBandTest1: TMenuItem;
         Plugins: TMenuItem;
@@ -194,7 +194,7 @@ type
         SnapViewToObject: TMenuItem;
         JumptoObject1: TMenuItem;
         miGrid: TMenuItem;
-        MiEdit: TMenuItem;
+        miEdit: TMenuItem;
         ImageList1: TImageList;
         HideThings: TMenuItem;
         HideLights: TMenuItem;
@@ -1765,39 +1765,39 @@ begin
     AddKBItem(miTex, 'Rotate texture left', #188, [ssCtrl]);
     AddKBItem(miTex, 'Rotate texture right', #190, [ssCtrl]);
 
-    AddKBItem(MIrecovery, 'Build surface/sector', 'B', [ssAlt]);
-    AddKBItem(MIrecovery, 'Delete surface', Char(VK_DELETE), [ssAlt]);
-    AddKBItem(MIrecovery, 'Invert surface', 'I', [ssAlt]);
-    AddKBItem(MIrecovery, 'Planarize surface', 'P', [ssCtrl]);
-    AddKBItem(MIrecovery, 'Fix solid surface(s)', OnFixSolidSurfaces);
-    AddKBItem(MIrecovery, 'Fix passable adjoin(s)', OnFixPassableAdjoins);
+    AddKBItem(miRecovery, 'Build surface/sector', 'B', [ssAlt]);
+    AddKBItem(miRecovery, 'Delete surface', Char(VK_DELETE), [ssAlt]);
+    AddKBItem(miRecovery, 'Invert surface', 'I', [ssAlt]);
+    AddKBItem(miRecovery, 'Planarize surface', 'P', [ssCtrl]);
+    AddKBItem(miRecovery, 'Fix solid surface(s)', OnFixSolidSurfaces);
+    AddKBItem(miRecovery, 'Fix passable adjoin(s)', OnFixPassableAdjoins);
 
-    AddKBItem(MiEdit, 'Move item'#9'Ctrl+Left Mouse Button', #0, []);
-    AddKBItem(MiEdit, 'Start cleave', 'C', []);
-    AddKBItem(MiEdit, 'Cleave by grid', 'C', [ssAlt]);
-    AddKBItem(MiEdit, 'Assign Thing to Sector', 'A', [ssShift]);
-    AddKBItem(MiEdit, 'Unadjoin', 'A', [ssAlt]);
-    AddKBItem(MiEdit, 'Adjoin', 'A', []);
-    AddKBItem(MiEdit, 'Join sectors/surfaces', 'J', []);
-    AddKBItem(MiEdit, 'Rotate Thing Pitch'#9'Ctrl+Shift+Mouse Wheel', #0, []);
-    AddKBItem(MiEdit, 'Rotate Thing Yaw'#9'Ctrl+Mouse Wheel', #0, []);
-    AddKBItem(MiEdit, 'Rotate Thing Roll'#9'Ctrl+Alt+Mouse Wheel', #0, []);
-    AddKBItem(MiEdit, 'Raise item', Char(VK_UP), [ssCtrl]);
-    AddKBItem(MiEdit, 'Lower item', Char(VK_Down), [ssCtrl]);
-    AddKBItem(MiEdit, 'Raise item', #219, []);
-    AddKBItem(MiEdit, 'Lower item', #221, []);
-    AddKBItem(MiEdit, 'Item Editor', Char(VK_RETURN), []);
-    AddKBItem(MiEdit, 'Merge', 'M', []);
-    AddKBItem(MiEdit, 'Duplicate item', Char(VK_INSERT), []);
-    AddKBItem(MiEdit, 'Delete item', Char(VK_DELETE), []);
+    AddKBItem(miEdit, 'Move item'#9'Ctrl+Left Mouse Button', #0, []);
+    AddKBItem(miEdit, 'Start cleave', 'C', []);
+    AddKBItem(miEdit, 'Cleave by grid', 'C', [ssAlt]);
+    AddKBItem(miEdit, 'Assign Thing to Sector', 'A', [ssShift]);
+    AddKBItem(miEdit, 'Unadjoin', 'A', [ssAlt]);
+    AddKBItem(miEdit, 'Adjoin', 'A', []);
+    AddKBItem(miEdit, 'Join sectors/surfaces', 'J', []);
+    AddKBItem(miEdit, 'Rotate Thing Pitch'#9'Ctrl+Shift+Mouse Wheel', #0, []);
+    AddKBItem(miEdit, 'Rotate Thing Yaw'#9'Ctrl+Mouse Wheel', #0, []);
+    AddKBItem(miEdit, 'Rotate Thing Roll'#9'Ctrl+Alt+Mouse Wheel', #0, []);
+    AddKBItem(miEdit, 'Raise item', Char(VK_UP), [ssCtrl]);
+    AddKBItem(miEdit, 'Lower item', Char(VK_Down), [ssCtrl]);
+    AddKBItem(miEdit, 'Raise item', #219, []);
+    AddKBItem(miEdit, 'Lower item', #221, []);
+    AddKBItem(miEdit, 'Item Editor', Char(VK_RETURN), []);
+    AddKBItem(miEdit, 'Merge', 'M', []);
+    AddKBItem(miEdit, 'Duplicate item', Char(VK_INSERT), []);
+    AddKBItem(miEdit, 'Delete item', Char(VK_DELETE), []);
 
-    AddKBItem(MiEdit, 'Create sector', 'K', []);
+    AddKBItem(miEdit, 'Create sector', 'K', []);
 
-    AddKBItem(MiEdit, 'Extrude surface', 'X', []);
-    AddKBItem(MiEdit, 'Extrude surface by', 'X', [ssShift]);
-    AddKBItem(MiEdit, 'Extrude && Expand surface by', 'X', [ssCtrl]);
-    AddKBItem(MiEdit, 'Use item in COG', 'U', []);
-    AddKBItem(MiEdit, 'Bring thing/light to surface', 'B', []);
+    AddKBItem(miEdit, 'Extrude surface', 'X', []);
+    AddKBItem(miEdit, 'Extrude surface by', 'X', [ssShift]);
+    AddKBItem(miEdit, 'Extrude && Expand surface by', 'X', [ssCtrl]);
+    AddKBItem(miEdit, 'Use item in COG', 'U', []);
+    AddKBItem(miEdit, 'Bring thing/light to surface', 'B', []);
 
     AddKBItem(miOther, 'Cancel cleave/etc', Char(VK_ESCAPE), []);
     AddKBItem(miOther, 'Sector mode', 'S', []);
@@ -2383,7 +2383,7 @@ begin
                 if mapMode = MM_SF then
                   begin
                       StartUndoRec('Flatten Surface');
-                      if FlattenSurface(Level.Sectors[Cur_SC].surfaces[Cur_SF])
+                      if FlattenSurface(level.sectors[Cur_SC].surfaces[Cur_SF])
                         then
                             PanMessage(mt_info, 'Surface planarized')
                         else
@@ -2393,7 +2393,7 @@ begin
             Ord('X'):
                 if mapMode = MM_SF then
                 begin
-                    surf := Level.Sectors[Cur_SC].surfaces[Cur_SF];
+                    surf := level.sectors[Cur_SC].surfaces[Cur_SF];
                     if surf.adjoin <> nil then
                         exit;
                     s := DoubleToStr(surf.ExtrudeSize);
@@ -2406,7 +2406,6 @@ begin
                     end;
 
                     StartUndoRec('Extrude && Expand Surface');
-
                     ExtrudeAndExpandSurface(surf, dx);
                     SetCurSF(Cur_SC, Cur_SF);
                 end;
@@ -2609,7 +2608,7 @@ begin
         Ord('X'):
             if mapMode = MM_SF then
             begin
-                surf := Level.Sectors[Cur_SC].surfaces[Cur_SF];
+                surf := level.sectors[Cur_SC].surfaces[Cur_SF];
                 StartUndoRec('Extrude Surface');
                 ExtrudeSurface(surf, surf.ExtrudeSize);
                 SetCurSF(Cur_SC, Cur_SF);
@@ -4434,7 +4433,7 @@ var
                     for i := 0 to sfsel.Count - 1 do
                     begin
                         sfsel.GetSCSF(i, sc, SF);
-                        With level.sectors[sc].surfaces[SF] do
+                        with level.sectors[sc].surfaces[SF] do
                             for ED := 0 to vertices.Count - 1 do
                                 edsel.addED(sc, SF, ED);
                     end;
@@ -4471,7 +4470,7 @@ var
                     for i := 0 to sfsel.Count - 1 do
                     begin
                         sfsel.GetSCSF(i, sc, SF);
-                        With level.sectors[sc].surfaces[SF] do
+                        with level.sectors[sc].surfaces[SF] do
                             for VX := 0 to vertices.Count - 1 do
                                 vxsel.AddVX(sc, vertices[VX].num);
                     end;
@@ -4482,7 +4481,7 @@ var
                     for i := 0 to edsel.Count - 1 do
                     begin
                         edsel.GetSCSFED(i, sc, SF, ED);
-                        surf := Level.Sectors[sc].surfaces[SF];
+                        surf := level.sectors[sc].surfaces[SF];
                         vxsel.AddVX(sc, surf.vertices[ED].num);
                         vxsel.AddVX(sc, surf.vertices[surf.NextVX(ED)].num);
                     end;
@@ -5106,7 +5105,7 @@ var
 begin
     If not GetGridPosAt(X, Y, dx, dy, dz) then
         exit;
-    sec := Level.Sectors[Cur_SC];
+    sec := level.sectors[Cur_SC];
 
     WIth sec.vertices[0] do
     begin
@@ -5127,13 +5126,13 @@ begin
     begin
         sec := Level.Sectors[scsel.GetSC(i)];
         newsc := Level.NewSector;
-        With renderer, sec.vertices[0] do
+        with renderer, sec.vertices[0] do
             DuplicateSector(sec, newsc, X, Y, z, nx, ny, nz, dx, dy, dz);
-        Level.Sectors.Add(newsc);
+        level.sectors.Add(newsc);
         SaveSecUndo(newsc, ch_added, sc_both);
     end;
 
-    Level.RenumSecs;
+    level.RenumSecs;
     scsel.Clear;
 
     for i := fnew to level.sectors.Count - 1 do
@@ -9155,7 +9154,7 @@ begin
     for i := 0 to sfsel.Count - 1 do
     begin
         sfsel.GetSCSF(i, sc, SF);
-        SaveSecUndo(Level.Sectors[sc], change, how);
+        SaveSecUndo(level.sectors[sc], change, how);
     end;
     sfsel.DeleteN(n);
 end;
@@ -9170,7 +9169,7 @@ begin
     for i := 0 to edsel.Count - 1 do
     begin
         edsel.GetSCSFED(i, sc, SF, SF);
-        SaveSecUndo(Level.Sectors[sc], change, sc_geo);
+        SaveSecUndo(level.sectors[sc], change, sc_geo);
     end;
     edsel.DeleteN(n);
 end;
@@ -9221,8 +9220,8 @@ begin
         StartUndoRec('Connect Surfaces');
         sfsel.GetSCSF(0, sc1, sf1);
         sfsel.GetSCSF(1, sc2, sf2);
-        if ConnectSurfaces(Level.Sectors[sc1].surfaces[sf1],
-          Level.Sectors[sc2].surfaces[sf2]) then
+        if ConnectSurfaces(level.sectors[sc1].surfaces[sf1],
+          level.sectors[sc2].surfaces[sf2]) then
             PanMessage(mt_info, 'The surfaces successfully connected');
         UpdateItemEditor;
     end;
@@ -9239,8 +9238,8 @@ begin
     if scsel.Count = 2 then
     begin
         StartUndoRec('Connect Sectors');
-        if ConnectSectors(Level.Sectors[scsel.GetSC(0)],
-          Level.Sectors[scsel.GetSC(1)]) then
+        if ConnectSectors(level.sectors[scsel.GetSC(0)],
+          level.sectors[scsel.GetSC(1)]) then
             PanMessage(mt_info, 'The sectors successfully connected');
         UpdateItemEditor;
     end;
