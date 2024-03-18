@@ -1908,8 +1908,8 @@ begin
     SysAdjoinSurfaces(nsf, nsf1);
   end;
 
+  JedMain.SectorChanged(surf.sector);
   JedMain.SectorChanged(sf1.sector);
-
 end;
 
 Function CleaveSurface(surf: TJKSurface; const cnormal: TVector;
@@ -2429,11 +2429,11 @@ begin { ConnectSectors }
   var lecNum := sec1.level.sectors.Count;
   CleaveSecBySec(sec2, sec1);
   CleaveSecBySec(sec1, sec2);
-  DeleteSector(sec2.Level, sec2.Num);
 
   for var i := 0 to sec1.surfaces.Count - 1 do
     MakeAdjoinSCUP(sec1.surfaces[i], lecNum);
 
+  DeleteSector(sec2.level, sec2.num);
   Result := true;
 end;
 
@@ -3981,7 +3981,9 @@ begin
         if DO_Surf_Overlap(surf, surf1) then
         begin
           SysAdjoinSurfaces(surf, surf1);
-          result := true;
+          JedMain.SectorChanged(surf.sector);
+          JedMain.SectorChanged(surf1.sector);
+          Result := True;
           exit;
         end;
       end;
