@@ -2099,6 +2099,7 @@ var
 var
   nleft, nright: integer;
 begin
+  Result := False;
   lev := sec.level;
   SplitVertices(sec.vertices, cnormal, cx, cy, cz);
 
@@ -2292,6 +2293,7 @@ begin
         sec1.surfaces.Add(surf);
       end;
 
+    Result := True;
     { Make copies of vertices that may belong to another sector }
   Finally
     For sf := 0 to sec1.surfaces.Count - 1 do
