@@ -94,7 +94,8 @@ type
     Procedure AddSecChange(sec: TJKSector; Change: Char);
     Procedure AddThingChange(th: TJKThing; Change: Char);
     Procedure ApplyChanges;
-    Function AddKBItem(mi: TMenuItem; const name: string; c: Char; sc: TShiftState): TMenuItem;
+    Function AddKBItem(mi: TMenuItem; const name: string; c: Char; sc: TShiftState): TMenuItem; overload;
+    Function AddKBItem(mi: TMenuItem; const name: string; c: Char; sc: TShiftState; onClick: TNotifyEvent): TMenuItem; overload;
     procedure KBCommandClick(Sender: TObject);
 
     Procedure MoveCameraForward;
@@ -436,7 +437,9 @@ begin
           JedMain.FormKeyDown(nil, Key, Shift)
         else
           self.MoveCameraUp;
-
+      Ord('B'):
+        if Shift = [] then  // Bring Thing to surface
+          JedMain.FormKeyDown(nil, Key, Shift);
       Ord('D'):
         if viewMode then
           self.MoveCameraRight
@@ -455,7 +458,12 @@ begin
             JedMain.AddThingAtXYZPYR(position.x, position.y, position.z, -rotation.pitch, 360 - rotation.yaw, 0.0)
         else
           JedMain.FormKeyDown(nil, Key, Shift);
-
+      Ord('J'):
+        if Shift = [] then  // Join surface/sector
+          JedMain.FormKeyDown(nil, Key, Shift);
+      Ord('M'):
+        if Shift = [] then  // Merge
+          JedMain.FormKeyDown(nil, Key, Shift);
       Ord('Z'):
         self.MoveCameraDown;
       Ord('N'):
@@ -623,7 +631,7 @@ begin
       begin
         i := scs.IndexOfObject(sec);
         if i <> -1 then
-          scs.delete(i);
+          scs.Delete(i);
         scs.AddObject(Change, sec);
       end;
   end;
@@ -684,7 +692,7 @@ begin
         Render3D.DeleteSector(sec);
     end;
   end;
-  scs.clear;
+  scs.Clear;
 
   for i := 0 to ths.Count - 1 do
   begin
@@ -699,7 +707,7 @@ begin
         Render3D.DeleteThing(th);
     end;
   end;
-  ths.clear;
+  ths.Clear;
 end;
 
 Procedure TPreview3D.SetThing3DO(th: TJKThing; a3do: TPJ3DO);
@@ -1135,15 +1143,17 @@ begin
   AddKBItem(miEdit, 'Delete surface', Char(VK_DELETE), [ssAlt]);
   AddKBItem(miEdit, 'Invert surface', 'I', [ssAlt]);
   AddKBItem(miEdit, 'Planarize surface', 'P', [ssCtrl]);
-
+  AddKBItem(miEdit, 'Fix solid surface(s)', 'R', [ssCtrl], JedMain.OnFixSolidSurfaces);
 
   AddKBItem(miEdit, 'Unadjoin', 'A', [ssAlt]);
   AddKBItem(miEdit, 'Adjoin', 'A', [ssCtrl]);
+  AddKBItem(miEdit, 'Join sectors/surfaces', 'J', []);
+  AddKBItem(miEdit, 'Merge', 'M', []);
 
   AddKBItem(miEdit, 'Move Thing left', 'A', [ssShift]);
   AddKBItem(miEdit, 'Move Thing right', 'D', [ssShift]);
   AddKBItem(miEdit, 'Move Thing forward', 'W', [ssShift]);
-  AddKBItem(miEdit, 'Move Thing backward', 'B', [ssShift]);
+  AddKBItem(miEdit, 'Move Thing backward', 'S', [ssShift]);
   AddKBItem(miEdit, 'Move Thing up', 'E', [ssShift]);
   AddKBItem(miEdit, 'Move Thing down', 'Q', [ssShift]);
   AddKBItem(miEdit, 'Rotate Thing Pitch'#9'Ctrl+Shift+Mouse Wheel', #0, []);
@@ -1159,6 +1169,7 @@ begin
   AddKBItem(miEdit, 'Extrude surface', 'X', []);
   AddKBItem(miEdit, 'Extrude surface by', 'X', [ssShift]);
   AddKBItem(miEdit, 'Extrude && Expand surface', 'X', [ssCtrl]);
+  AddKBItem(miEdit, 'Bring thing/light to surface', 'B', []);
   AddKBItem(miEdit, 'Copy camera as frame', 'F', []);
   AddKBItem(miEdit, 'Insert thing at surface', 'I', []);
   AddKBItem(miEdit, 'Insert thing at camera', 'I', [ssShift]);
@@ -1176,6 +1187,18 @@ var
 begin
   Result := TMenuItem.Create(mi);
   Result.OnClick := KBCommandClick;
+
+  Result.Caption := name;
+  Result.Tag := ShortCut(Ord(c), sc);
+  if c <> #0 then
+    Result.ShortCut := ShortCut(Ord(c), sc);
+  mi.Add(Result);
+end;
+
+Function TPreview3D.AddKBItem(mi: TMenuItem; const name: string; c: Char; sc: TShiftState; onClick: TNotifyEvent): TMenuItem;
+begin
+  Result := TMenuItem.Create(mi);
+  Result.OnClick := onClick;
 
   Result.Caption := name;
   Result.Tag := ShortCut(Ord(c), sc);
