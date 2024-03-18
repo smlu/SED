@@ -5453,10 +5453,10 @@ begin
   for i := 0 to sfsel.Count - 1 do
   begin
     sfsel.GetSCSF(i, sc, sf);
+    surf := level.sectors[sc].surfaces[sf];
     if not ToolBar.IsLayerVisible(surf.sector.layer) then
       continue;
 
-    surf := level.sectors[sc].surfaces[sf];
     FlipSurface(surf);
     JedMain.SectorChanged(surf.sector);
   end;
