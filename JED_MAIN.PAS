@@ -5055,8 +5055,8 @@ begin
             end;
         th.num := level.things.Count;
         level.things.Add(th);
+        ThingAdded(th); // must be called before LayerThing
         LayerThing(th.num);
-        ThingAdded(th);
         SaveThingUndo(th, ch_added);
     end;
 
@@ -8418,6 +8418,7 @@ begin
 
     vl.Free;
     th.vals.Delete(Cur_FR);
+    ThingChanged(th);
 
     if Cur_FR >= th.vals.Count then
         av := th.vals[th.vals.Count - 1]
@@ -8433,6 +8434,7 @@ begin
         begin
             th.vals[i].Free;
             th.vals.Delete(i);
+            ThingChanged(th);
         end;
         exit;
     end;
@@ -8485,6 +8487,7 @@ begin
     else
         th.vals[i].Val(IntToStr(nv));
 
+    ThingChanged(th);
     Cur_FR := th.vals.IndexOf(vl);
     SetCurFR(Cur_TH, Cur_FR);
 end;

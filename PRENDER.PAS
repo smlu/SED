@@ -755,10 +755,18 @@ end;
 Procedure TNewPRenderer.AddThing(th: TJKThing);
 var m:T3DPMesh;
 begin
- m := ThingToMesh(th);
- if m = nil then m := BadThingMesh(th);
- ThList.Add(m);
- Things.Add(th);
+  var i := things.IndexOf(th);
+  if i <> -1 then
+  begin
+    UpdateThing(th);
+    exit;
+  end;
+
+  m := ThingToMesh(th);
+  if m = nil then
+    m := BadThingMesh(th);
+  thList.Add(m);
+  things.Add(th);
 end;
 
 Procedure TNewPRenderer.DeleteThing(th: TJKThing);
