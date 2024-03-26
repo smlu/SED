@@ -3250,7 +3250,7 @@ begin
   if JedMain.Cur_TH = n then
     JedMain.SetCurTH(Max(0, GetPreviousThing(lev, n)));
 
-  var curth := lev.things[JedMain.Cur_SC];
+  var curth := lev.things[JedMain.Cur_TH];
   lev.things.Delete(n);
   JedMain.ThingDeleted(th);
   th.Free;
