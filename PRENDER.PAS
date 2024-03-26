@@ -257,14 +257,13 @@ private
 end;
 
 TNewPRenderer = class(TPreviewRender)
-  TXList,CmpList:TStringList;
+  txList, cmpList: TStringList;
   sectors: TSectors;
   things: TThings;
   masterPalSet: boolean;
   MasterPal: TCMPPal;
 
-  ThList, SCList: TMeshes;
-  //tn,bn,ln,rn:TVector; {Normals of clipping planes}
+  thList, scList: TMeshes;
 
   Constructor Create(aForm:TForm; geoMode: TGeoMode = Texture; lightMode: TLightMode = Gouraud);
   Constructor CreateFromPanel(aPanel:TPanel; geoMode: TGeoMode = Texture; lightMode: TLightMode = Gouraud);
@@ -617,23 +616,27 @@ begin
   ClearTXList;
   ClearThings;
   ClearSectors;
-  THList.Free;
-  SCList.Free;
 
-  TxList.Free;
-  CmpList.Free;
+  thList.Free;
+  scList.Free;
+
+  txList.Free;
+  cmpList.Free;
   sectors.Free;
   things.Free;
   inherited Destroy;
 end;
 
 Procedure TNewPRenderer.ClearTXList;
-var i:integer;
+var i: Integer;
 begin
- for i:=0 to TXList.Count-1 do TXList.Objects[i].Free;
- TXList.Clear;
- for i:=0 to CMPList.Count-1 do FreeMem(Pointer(CMPList.Objects[i]));
- CMPList.Clear;
+  for i := 0 to txList.Count - 1 do
+    txList.Objects[i].Free;
+  txList.Clear;
+
+  for i := 0 to cmpList.Count - 1 do
+    FreeMem(Pointer(cmpList.Objects[i]));
+  cmpList.Clear;
 end;
 
 Function Min(i1,i2:integer):integer;
@@ -687,26 +690,32 @@ end;
 Procedure TNewPRenderer.ClearSectors;
 var i:integer;
 begin
- MasterPalSet:=false;
- ClearTXList;
- sectors.Clear;
- for i := 0 to scList.Count - 1 do scList[i].Free;
- scList.Clear;
+  MasterPalSet := False;
+  ClearTXList;
+  sectors.Clear;
+  for i := 0 to scList.Count - 1 do
+    scList[i].Free;
+  scList.Clear;
 end;
 
 Procedure TNewPRenderer.ClearThings;
 var i:integer;
 begin
- things.Clear;
- for i := 0 to thList.Count - 1 do thList[i].Free;
- thList.Clear;
+  things.Clear;
+  for i := 0 to thList.Count - 1 do
+    thList[i].Free;
+  thList.Clear;
 end;
 
 Procedure TNewPRenderer.AddSector(sec: TJKSector);
 var m:T3DPMesh;
 begin
  var i := sectors.IndexOf(sec);
- if i <> -1 then exit;
+ if i <> -1 then
+  begin
+    UpdateSector(sec);
+    exit;
+  end;
 
  m := SecToMesh(sec);
  scList.Add(m);
@@ -716,22 +725,23 @@ end;
 Procedure TNewPRenderer.DeleteSector(sec: TJKSector);
 var i:integer;
 begin
- i := sectors.IndexOf(sec);
- if i < 0 then exit;
- scList[i].Free;
- sectors.Delete(i);
- scList.Delete(i);
+  i := sectors.IndexOf(sec);
+  if i < 0 then exit;
+  scList[i].Free;
+  sectors.Delete(i);
+  scList.Delete(i);
 end;
 
 Procedure TNewPRenderer.UpdateSector(sec: TJKSector);
 var i,n:integer;
     m:T3DPMesh;
 begin
- i := sectors.IndexOf(sec);
- if i < 0 then exit;
- scList[i].Free;
- m := SecToMesh(sec);
- scList[i] := m;
+  i := sectors.IndexOf(sec);
+  if i < 0 then exit;
+
+  scList[i].Free;
+  m := SecToMesh(sec);
+  scList[i] := m;
 end;
 
 Procedure TNewPRenderer.SyncSector(sec: TJKSector);
@@ -754,51 +764,53 @@ end;
 Procedure TNewPRenderer.DeleteThing(th: TJKThing);
 var i:integer;
 begin
- i := things.IndexOf(th);
- if i < 0 then exit;
- thList[i].Free;
- Things.Delete(i);
- ThList.Delete(i);
+  i := things.IndexOf(th);
+  if i < 0 then exit;
+  thList[i].Free;
+  things.Delete(i);
+  thList.Delete(i);
 end;
 
 Procedure TNewPRenderer.UpdateThing(th: TJKThing);
-var i,n:integer;
-    m:T3DPMesh;
+var i,n: Integer;
+    m: T3DPMesh;
 begin
- i := Things.IndexOf(th);
- if i < 0 then exit;
+  i := things.IndexOf(th);
+  if i < 0 then exit;
 
- thList[i].Free;
- m := ThingToMesh(th);
- if m = nil then
-   m := BadThingMesh(th);
- ThList[i] := m;
+  thList[i].Free;
+  m := ThingToMesh(th);
+  if m = nil then
+    m := BadThingMesh(th);
+  thList[i] := m;
 end;
 
 Procedure TNewPRenderer.SyncThing(th: TJKThing);
 begin
-  if Things.IndexOf(th) > -1 then
+  if things.IndexOf(th) > -1 then
     UpdateThing(th)
   else
     AddThing(th);
 end;
 
-Procedure TNewPRenderer.SetThing3DO(th:TJKThing;a3do:TPJ3DO);
-var i,n:integer;
-    m:T3DPMesh;
+Procedure TNewPRenderer.SetThing3DO(th: TJKThing; a3do:TPJ3DO);
+var i,n: Integer;
+    m: T3DPMesh;
 begin
- i := Things.IndexOf(th);
- if i < 0 then exit;
- thList[i].Free;
- m := A3DOToMesh(th,a3do);
- if m = nil then m := BadThingMesh(th);
- ThList[i] := m;
+  i := things.IndexOf(th);
+  if i < 0 then exit;
+  thList[i].Free;
+
+  m := A3DOToMesh(th,a3do);
+  if m = nil then
+    m := BadThingMesh(th);
+  ThList[i] := m;
 end;
 
  Procedure TNewPRenderer.SetViewToThing(th:TJKThing; zoomOut: Double; pitchOffset, yawOffset: double);
   var bbox: TThingBox;
 begin
-  if (th.a3do = nil) or (Things.IndexOf(th) < 0) then exit;
+  if (th.a3do = nil) or (things.IndexOf(th) < 0) then exit;
 
   th.a3do.GetBBox(bbox);
   var tcen_x: double := bbox.x1 + (bbox.x2 - bbox.x1) /2;

@@ -3,17 +3,17 @@ unit U_copypaste;
 interface
 uses J_Level, U_Multisel, Lev_Utils, values;
 
-Procedure CopySectors(Lev:TJKLevel; scsel: TSCMultiSel; Cur_SC: Integer);
-Procedure CopyThings(Lev:TJKLevel; thsel: TTHMultiSel; Cur_TH: Integer);
-Procedure CopyLights(Lev:TJKLevel; ltsel: TLTMultiSel; Cur_LT: Integer);
+Procedure CopySectors(lev:TJKLevel; scsel: TSCMultiSel; Cur_SC: Integer);
+Procedure CopyThings(lev:TJKLevel; thsel: TTHMultiSel; Cur_TH: Integer);
+Procedure CopyLights(lev:TJKLevel; ltsel: TLTMultiSel; Cur_LT: Integer);
 
 Function CanPasteSectors: Boolean;
 Function CanPasteThings: Boolean;
 Function CanPasteLights: Boolean;
 
-Function PasteSectors(Lev: TJKLevel; atX,atY,atZ: Double): Integer; {Returns first pasted Sector}
-Function PasteThings(Lev: TJKLevel; atX,atY,atZ: Double): Integer; {Returns first pasted Object}
-Function PasteLights(Lev: TJKLevel; atX,atY,atZ: Double): Integer; {Returns first pasted Object}
+Function PasteSectors(lev: TJKLevel; atX,atY,atZ: Double): Integer; {Returns first pasted Sector}
+Function PasteThings(lev: TJKLevel; atX,atY,atZ: Double): Integer; {Returns first pasted Object}
+Function PasteLights(lev: TJKLevel; atX,atY,atZ: Double): Integer; {Returns first pasted Object}
 
 implementation
 uses U_undo, Clipbrd, WIndows;
@@ -121,7 +121,7 @@ begin
   scsel.DeleteN(n);
 end;
 
-Function PasteSectors(Lev:TJKLevel;atX,atY,atZ:Double):Integer; {Returns first pasted Sector}
+Function PasteSectors(lev: TJKLevel; atX, atY, atZ: Double): Integer; {Returns first pasted Sector}
 var hg:integer;
     pg:Pointer;
     i,j,sf,n:integer;
@@ -195,7 +195,7 @@ begin
   end;
 end;
 
-Procedure CopyLights(Lev: TJKLevel; ltsel: TLTMultiSel; Cur_LT: Integer);
+Procedure CopyLights(lev: TJKLevel; ltsel: TLTMultiSel; Cur_LT: Integer);
 var hg: Integer;
     i,n: Integer;
     rx,ry,rz: double;
@@ -206,7 +206,7 @@ var hg: Integer;
 begin
   n := ltsel.AddLT(Cur_LT);
 
-  With Lev.Lights[Cur_LT] do
+  with lev.Lights[Cur_LT] do
     begin
       rx := position.x;
       ry := position.y;
@@ -216,11 +216,11 @@ begin
   hg := GlobalAlloc(GMEM_MOVEABLE or GMEM_SHARE,sizeof(integer)+ltsel.Count*GetLightRecSize);
   pg := GlobalLock(hg);
   Integer(pg^) := ltsel.count;
-  inc(PAnsiChar(pg),sizeof(Integer));
+  Inc(PAnsiChar(pg), sizeof(Integer));
 
-  for i := 0 to ltsel.count - 1 do
+  for i := 0 to ltsel.Count - 1 do
     begin
-      light:=Lev.Lights[ltsel.getLT(i)];
+      light:=lev.lights[ltsel.getLT(i)];
       pl := pg;
       GetLight(light,Pl^);
       pl^.position.x :=pl^.position.x - rx;
@@ -230,15 +230,15 @@ begin
     end;
 
   GlobalUnlock(hg);
-  Clp:=Clipboard;
-  Clp.Clear;
-  Clp.SetAsHandle(CF_JKLights,hg);
-  Clp.Close;
+  clp := Clipboard;
+  clp.Clear;
+  clp.SetAsHandle(CF_JKLights,hg);
+  clp.Close;
 
   ltsel.DeleteN(n);
 end;
 
-Function PasteLights(Lev: TJKLevel; atX,atY,atZ: Double): Integer; {Returns first pasted Object}
+Function PasteLights(lev: TJKLevel; atX,atY,atZ: Double): Integer; {Returns first pasted Object}
 var hg: Integer;
     pg: Pointer;
     i,n: Integer;
@@ -249,15 +249,14 @@ begin
   Clp := Clipboard;
   Clp.Open;
   try
-   hg := Clp.GetAsHandle(CF_JKLights);
+   hg := clp.GetAsHandle(CF_JKLights);
    if hg = 0 then exit;
 
    pg := GlobalLock(hg);
    n  := Integer(pg^);
-   inc(PAnsiChar(pg), sizeof(integer));
+   Inc(PAnsiChar(pg), SizeOf(integer));
 
-   Result := Lev.Lights.count;
-
+   Result := lev.lights.Count;
    for i := 0 to n - 1 do
      begin
       light := lev.NewLight;
@@ -267,7 +266,7 @@ begin
       light.position.x := light.position.x + atX;
       light.position.y := light.position.y + atY;
       light.position.z := light.position.z + atZ;
-      Lev.Lights.Add(light);
+      lev.lights.Add(light);
      end;
   finally
     GlobalUnlock(hg);
@@ -275,142 +274,140 @@ begin
   end;
 end;
 
-Procedure CopyThings(Lev:TJKLevel;thsel:TTHMultiSel;Cur_TH:integer);
-var hg:integer;
-    i,j,n:integer;
-    rx,ry,rz:double;
-    pg:pointer;
-    thing:TJKThing;
-    clp:TClipboard;
-    PT:PThingRec;
-    x,y,z,pch,yaw,rol:double;
-    size:integer;
-    po:PAnsiChar;
+Procedure CopyThings(lev: TJKLevel;thsel:TTHMultiSel;Cur_TH:integer);
+var hg: Integer;
+    i,j,n: Integer;
+    rx,ry,rz: Double;
+    pg: Pointer;
+    thing: TJKThing;
+    clp: TClipboard;
+    PT: PThingRec;
+    x,y,z,pch,yaw,rol: Double;
+    size: Integer;
+    po: PAnsiChar;
 begin
-  n:=thsel.AddTH(Cur_TH);
-
-  With Lev.Things[Cur_TH] do begin rx:=x; ry:=y; rz:=z; end;
+  n := thsel.AddTH(Cur_TH);
+  With lev.things[Cur_TH] do
+    begin
+      rx := x;
+      ry := y;
+      rz := z;
+    end;
 
   {Offset things by R#}
-  for i:=0 to thsel.count-1 do
+  for i := 0 to thsel.Count-1 do
     begin
-      thing:=Lev.Things[thsel.getTH(i)];
-      thing.x:=thing.x-rx;
-      thing.y:=thing.y-ry;
-      thing.z:=thing.z-rz;
-      for j:=0 to thing.Vals.count-1 do
-      With thing.Vals[j] do
+      thing   := lev.things[thsel.getTH(i)];
+      thing.x := thing.x-rx;
+      thing.y := thing.y-ry;
+      thing.z := thing.z-rz;
+      for j := 0 to thing.Vals.count-1 do
+      with thing.vals[j] do
         begin
-         GetFrame(x,y,z,pch,yaw,rol);
-         SetFrame(x-rx,y-ry,z-rz,pch,yaw,rol);
+         GetFrame(x,y,z, pch,yaw,rol);
+         SetFrame(x - rx, y - ry, z - rz, pch,yaw,rol);
         end;
     end;
 
   try
+    size := SizeOf(integer);
 
-   size:=sizeof(integer);
-
-   for i:=0 to thsel.count-1 do
-   begin
-    thing:=Lev.Things[thsel.getTH(i)];
-    inc(size,GetThingRecSize(thing));
-   end;
-
-
-   hg:=GlobalAlloc(GMEM_MOVEABLE or GMEM_SHARE,size);
-   pg:=GlobalLock(hg);
-   po:=pg;
-   Integer(pg^):=thsel.count; inc(PAnsiChar(pg),sizeof(Integer));
-
-   for i:=0 to thsel.count-1 do
-   begin
-    thing:=Lev.Things[thsel.getTH(i)];
-    pt:=pg;
+    for i:=0 to thsel.Count-1 do
+      begin
+        thing := lev.things[thsel.getTH(i)];
+        Inc(size, GetThingRecSize(thing));
+      end;
 
 
-    size := GetThing(thing, Pt);
-    inc(PAnsiChar(pg), size);
+    hg := GlobalAlloc(GMEM_MOVEABLE or GMEM_SHARE,size);
+    pg := GlobalLock(hg);
+    po := pg;
+    Integer(pg^) := thsel.Count; Inc(PAnsiChar(pg), SizeOf(Integer));
 
-   { pt^.x:=pt^.x-rx;
-    pt^.y:=pt^.y-ry;
-    pt^.z:=pt^.z-rz;}
-   end;
+    for i := 0 to thsel.Count - 1 do
+    begin
+      thing := lev.things[thsel.getTH(i)];
+      pt := pg;
+
+      size := GetThing(thing, Pt);
+      Inc(PAnsiChar(pg), size);
+      { pt^.x:=pt^.x-rx;
+      pt^.y:=pt^.y-ry;
+      pt^.z:=pt^.z-rz;}
+    end;
 
   finally
 
     {Offset things back by R#}
-   for i:=0 to thsel.count-1 do
-   begin
-    thing:=Lev.Things[thsel.getTH(i)];
-    thing.x:=thing.x+rx;
-    thing.y:=thing.y+ry;
-    thing.z:=thing.z+rz;
-    for j:=0 to thing.Vals.count-1 do
-    With thing.Vals[j] do
+  for i:=0 to thsel.count-1 do
     begin
-     GetFrame(x,y,z,pch,yaw,rol);
-     SetFrame(x+rx,y+ry,z+rz,pch,yaw,rol);
+      thing   := lev.things[thsel.getTH(i)];
+      thing.x := thing.x + rx;
+      thing.y := thing.y + ry;
+      thing.z := thing.z + rz;
+      for j := 0 to thing.vals.Count - 1 do
+        with thing.vals[j] do
+          begin
+           GetFrame(x,y,z, pch,yaw,rol);
+           SetFrame(x + rx, y + ry, z + rz, pch,yaw,rol);
+          end;
     end;
-   end;
-
   end;
 
  GlobalUnlock(hg);
- Clp:=Clipboard;
- Clp.Clear;
- Clp.SetAsHandle(CF_JKThings,hg);
- Clp.Close;
+ clp := Clipboard;
+ clp.Clear;
+ clp.SetAsHandle(CF_JKThings,hg);
+ clp.Close;
 
  thsel.DeleteN(n);
- if po=nil then;
+ if po = nil then;
 end;
 
-Function PasteThings(Lev:TJKLevel;atX,atY,atZ:Double):Integer; {Returns first pasted Object}
-var hg:integer;
-    pg:Pointer;
-    i,j,n:integer;
-    thing:TJKThing;
-    clp:TClipboard;
-    x,y,z,pch,yaw,rol:double;
-    size:integer;
+Function PasteThings(lev: TJKLevel; atX, atY, atZ: Double): Integer; {Returns first pasted Object}
+var hg: Integer;
+    pg: Pointer;
+    i,j,n: Integer;
+    thing: TJKThing;
+    clp: TClipboard;
+    x,y,z,pch,yaw,rol: Double;
+    size: Integer;
 begin
-  Result:=-1;
-  Clp := Clipboard;
-  Clp.Open;
+  Result := -1;
+  clp := Clipboard;
+  clp.Open;
   try
-   hg := Clp.GetAsHandle(CF_JKThings);
-   if hg=0 then exit;
+    hg := clp.GetAsHandle(CF_JKThings);
+    if hg = 0 then exit;
 
-   pg := GlobalLock(hg);
-   n := Integer(pg^);
-   inc(PAnsiChar(pg), sizeof(integer));
+    pg := GlobalLock(hg);
+    n := Integer(pg^);
+    inc(PAnsiChar(pg), sizeof(integer));
 
-   Result:=Lev.Things.count;
+    Result := lev.things.Count;
+    for i := 0 to n - 1 do
+      begin
+        thing := lev.NewThing;
+        inc(PAnsiChar(pg), SetThing(thing, PThingRec(pg)));
 
-   for i:=0 to n-1 do
-   begin
-    thing:=lev.NewThing;
-    inc(PAnsiChar(pg), SetThing(thing, PThingRec(pg)));
+        thing.x := thing.x + atX;
+        thing.y := thing.y + atY;
+        thing.z := thing.z + atZ;
 
-    thing.x:=thing.x+atX;
-    thing.y:=thing.y+atY;
-    thing.z:=thing.z+atZ;
+        for j:=0 to thing.vals.Count - 1 do
+        With thing.vals[j] do
+        if atype = at_frame then
+          begin
+            GetFrame(x, y, z, pch, yaw, rol);
+            SetFrame(x + atX, y + atY, z + atZ, pch, yaw, rol);
+          end;
 
-    for j:=0 to thing.Vals.count-1 do
-    With thing.Vals[j] do
-    if atype=at_frame then
-    begin
-     GetFrame(x, y, z, pch, yaw, rol);
-     SetFrame(x + atX, y + atY, z + atZ, pch, yaw, rol);
-    end;
-
-    Lev.Things.Add(thing);
-
-   end;
+        lev.things.Add(thing);
+      end;
   finally
-   lev.RenumThings;
-   GlobalUnlock(hg);
-   Clp.Close;
+    lev.RenumThings;
+    GlobalUnlock(hg);
+    clp.Close;
   end;
 end;
 

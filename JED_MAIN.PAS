@@ -4938,7 +4938,7 @@ end;
 Procedure TJedMain.AddLightsAt(X, Y: Integer);
 var
     lx, ly, lz: double;
-    LT, nlt: TSedLight;
+    lt, nlt: TSedLight;
     nlts, i: Integer;
 begin
     If not GetGridPosAt(X, Y, lx, ly, lz) then
@@ -4948,13 +4948,13 @@ begin
 
     if level.lights.Count = 0 then
     begin
-        LT := level.NewLight;
-        LT.position.x := lx;
-        LT.position.y := ly;
-        LT.position.z := lz;
-        level.lights.Add(LT);
-        SaveLightUndo(LT, ch_added);
+        lt := level.NewLight;
+        lt.position.x := lx;
+        lt.position.y := ly;
+        lt.position.z := lz;
+        level.lights.Add(lt);
         LightAdded(lt);
+        SaveLightUndo(lt, ch_added);
         exit;
     end;
 
@@ -4971,15 +4971,15 @@ begin
 
     for i := 0 to ltsel.Count - 1 do
     begin
-        LT := level.Lights[ltsel.getLT(i)];
+        lt := level.Lights[ltsel.getLT(i)];
         nlt := level.NewLight;
-        nlt.Assign(LT);
-        nlt.position.x := LT.position.x + lx;
-        nlt.position.y := LT.position.y + ly;
-        nlt.position.z := LT.position.z + lz;
+        nlt.Assign(lt);
+        nlt.position.x := lt.position.x + lx;
+        nlt.position.y := lt.position.y + ly;
+        nlt.position.z := lt.position.z + lz;
         level.lights.Add(nlt);
-        SaveLightUndo(nlt, ch_added);
         LightAdded(lt);
+        SaveLightUndo(nlt, ch_added);
     end;
 
     ltsel.Clear;
@@ -5006,10 +5006,10 @@ begin
     StartUndoRec('Add Thing(s)');
 
     { Copy data from currently selcted thing }
-    if Level.Things.Count = 0 then
+    if level.things.Count = 0 then
     begin
-        th := Level.NewThing;
-        Level.Things.Add(th);
+        th := level.NewThing;
+        level.things.Add(th);
         SaveThingUndo(th, ch_added);
         ThingAdded(th);
         LayerThing(0);
@@ -5018,7 +5018,7 @@ begin
         exit;
     end;
 
-    With Level.Things[Cur_TH] do
+    with level.things[Cur_TH] do
     begin
         tx := tx - X;
         ty := ty - Y;
@@ -5027,34 +5027,34 @@ begin
     thsel.AddTH(Cur_TH);
 
     if NewOnFloor and (thsel.Count = 1) then
-        With Level.Things[Cur_TH] do
+        with level.things[Cur_TH] do
         begin
             tx := tx - bbox.x1;
             ty := ty - bbox.y1;
             tz := tz - bbox.z1;
         end;
 
-    nths := Level.Things.Count;
+    nths := level.things.Count;
 
     for i := 0 to thsel.Count - 1 do
     begin
-        oldth := Level.Things[thsel.GetTH(i)];
-        th := Level.NewThing;
+        oldth := level.things[thsel.GetTH(i)];
+        th := level.NewThing;
         th.Assign(oldth);
-        th.X := tx + oldth.X;
-        th.Y := ty + oldth.Y;
+        th.x := tx + oldth.x;
+        th.y := ty + oldth.y;
         th.z := tz + oldth.z;
 
-        for j := 0 to th.Vals.Count - 1 do
-            With th.Vals[j] do
+        for j := 0 to th.vals.Count - 1 do
+            with th.vals[j] do
             begin
                 if atype <> at_frame then
                     continue;
                 GetFrame(thx, thy, thz, pch, yaw, rol);
                 SetFrame(thx + tx, thy + ty, thz + tz, pch, yaw, rol);
             end;
-        th.num := Level.Things.Count;
-        Level.Things.Add(th);
+        th.num := level.things.Count;
+        level.things.Add(th);
         LayerThing(th.num);
         ThingAdded(th);
         SaveThingUndo(th, ch_added);
@@ -5062,8 +5062,9 @@ begin
 
     thsel.Clear;
 
-    for i := nths to Level.Things.Count - 1 do
+    for i := nths to level.things.Count - 1 do
         thsel.AddTH(i);
+
     SetCurTH(nths);
     if thsel.Count = 1 then
         thsel.Clear;
@@ -5086,8 +5087,8 @@ begin
     en.dz := en.dz * 2;
 
     CreateCube(level, tx, ty, tz, renderer.gnormal, en);
-    SetCurSC(level.sectors.Count - 1);
     SectorAdded(level.sectors.Last);
+    SetCurSC(level.sectors.Count - 1);
 
     StartUndoRec('Add Sector');
     SaveSecUndo(level.sectors.Last, ch_added, sc_both);
@@ -5124,8 +5125,8 @@ begin
     nz.SetCoords(0, 0, 1);
     for i := 0 to scsel.Count - 1 do
     begin
-        sec := Level.Sectors[scsel.GetSC(i)];
-        newsc := Level.NewSector;
+        sec := level.sectors[scsel.GetSC(i)];
+        newsc := level.NewSector;
         with renderer, sec.vertices[0] do
             DuplicateSector(sec, newsc, X, Y, z, nx, ny, nz, dx, dy, dz);
         level.sectors.Add(newsc);
@@ -5855,7 +5856,7 @@ var
     thing: TJKThing;
 begin
     Result := false;
-    thing := Level.Things[n];
+    thing := level.things[n];
     nsec := FindSectorForThing(thing);
 
     if nsec = -1 then
@@ -8404,32 +8405,34 @@ var
 begin
     if Cur_FR = -1 then
         exit;
-    th := Level.Things[Cur_TH];
-    if Cur_FR >= th.Vals.Count then
+
+    th := level.things[Cur_TH];
+    if Cur_FR >= th.vals.Count then
         exit;
-    vl := th.Vals[Cur_FR];
+
+    vl := th.vals[Cur_FR];
     if CompareText(vl.name, 'frame') <> 0 then
         exit;
 
     SaveThingUndo(th, ch_changed);
 
-    vl.free;
-    th.Vals.Delete(Cur_FR);
+    vl.Free;
+    th.vals.Delete(Cur_FR);
 
-    if Cur_FR >= th.Vals.Count then
-        av := th.Vals[th.Vals.Count - 1]
+    if Cur_FR >= th.vals.Count then
+        av := th.vals[th.vals.Count - 1]
     else
-        av := th.Vals[Cur_FR];
+        av := th.vals[Cur_FR];
 
     nv := th.NFrames;
-    i := th.Vals.IndexOfName('numframes');
+    i := th.vals.IndexOfName('numframes');
 
     if nv = 0 then
     begin
         if i <> -1 then
         begin
-            th.Vals[i].free;
-            th.Vals.Delete(i);
+            th.vals[i].Free;
+            th.vals.Delete(i);
         end;
         exit;
     end;
@@ -8437,22 +8440,19 @@ begin
     if i = -1 then
         th.InsertValue(0, 'numframes', IntToStr(nv))
     else
-        th.Vals[i].Val(IntToStr(nv));
+        th.vals[i].Val(IntToStr(nv));
 
-    nv := th.Vals.IndexOf(av);
-
+    nv := th.vals.IndexOf(av);
     Cur_FR := -1;
 
     i := th.NextFrame(-1);
-
-    While i <> -1 do
+    while i <> -1 do
     begin
         Cur_FR := i + 1;
         i := th.NextFrame(i);
     end;
 
     SetCurFR(Cur_TH, Cur_FR);
-
 end;
 
 Procedure TJedMain.AddFramesAt(X, Y: Integer);
@@ -8465,7 +8465,7 @@ begin
     If not GetGridPosAt(X, Y, fx, fy, fz) then
         exit;
 
-    th := Level.Things[Cur_TH];
+    th := level.things[Cur_TH];
 
     StartUndoRec('Add Frame');
     SaveThingUndo(th, ch_changed);
@@ -8479,16 +8479,14 @@ begin
           th.yaw, th.rol]));
 
     nv := th.NFrames;
-    i := th.Vals.IndexOfName('numframes');
+    i := th.vals.IndexOfName('numframes');
     if i = -1 then
         th.InsertValue(0, 'numframes', IntToStr(nv))
     else
-        th.Vals[i].Val(IntToStr(nv));
+        th.vals[i].Val(IntToStr(nv));
 
-    Cur_FR := th.Vals.IndexOf(vl);
-
+    Cur_FR := th.vals.IndexOf(vl);
     SetCurFR(Cur_TH, Cur_FR);
-
 end;
 
 procedure TJedMain.Edit1Click(sender: TObject);
