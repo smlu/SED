@@ -3081,46 +3081,52 @@ var
   tv: TTXVertex;
 begin
   result := nil;
-  if sfsel.count < 4 then
+  if sfsel.Count < 4 then
+  begin
+    PanMessage(mt_info, 'Cannot create sector: Less than 4 surfaces selected!');
     exit;
+  end;
 
   sfsel.GetSCSF(0, sc, sf);
-  for i := 1 to sfsel.count - 1 do
+  for i := 1 to sfsel.Count - 1 do
   begin
     sfsel.GetSCSF(i, asc, asf);
     if asc <> sc then
+    begin
+      PanMessageFmt(mt_warning, 'Cannot create sector %d: The selected surface %d is part of sector %d!', [sc, asf, asc]);
       exit;
+    end;
   end;
 
   sec := Level.sectors[sc];
   nsec := Level.NewSector;
 
   { Clear surface and vertex marks marks }
-  for i := 0 to sec.surfaces.count - 1 do
+  for i := 0 to sec.surfaces.Count - 1 do
     sec.surfaces[i].mark := 0;
-  for i := 0 to sec.vertices.count - 1 do
-    sec.Vertices[i].mark := 0;
+  for i := 0 to sec.vertices.Count - 1 do
+    sec.vertices[i].mark := 0;
 
   { Copy surfaces and vertices to new sector }
-  for i := 0 to sfsel.count - 1 do
+  for i := 0 to sfsel.Count - 1 do
   begin
     sfsel.GetSCSF(i, sc, sf);
     surf := sec.surfaces[sf];
     surf.mark   := 1;
     surf.sector := nsec;
-    for j := 0 to surf.vertices.count - 1 do
+    for j := 0 to surf.vertices.Count - 1 do
       with surf.vertices[j] do
         surf.vertices[j] := nsec.AddVertex(x, y, z);
     nsec.surfaces.Add(surf);
   end;
 
   { Mark used vertices and remove surfaces }
-  for i := sec.surfaces.count - 1 downto 0 do
+  for i := sec.surfaces.Count - 1 downto 0 do
   begin
     surf := sec.surfaces[i];
-    for j := 0 to surf.Vertices.count - 1 do
-      inc(surf.Vertices[j].Mark);
-    if surf.Mark = 1 then
+    for j := 0 to surf.Vertices.Count - 1 do
+      inc(surf.vertices[j].mark);
+    if surf.mark = 1 then
       sec.surfaces.Delete(i);
   end;
 
@@ -3128,11 +3134,11 @@ begin
   nsec.Renumber;
 
   { Delete unused vertices }
-  for i := sec.Vertices.count - 1 downto 0 do
-    if sec.Vertices[i].Mark = 0 then
+  for i := sec.vertices.Count - 1 downto 0 do
+    if sec.vertices[i].mark = 0 then
       sec.Vertices.Delete(i);
 
-  if (sec.Vertices.count = 0) or (sec.surfaces.count = 0) then
+  if (sec.vertices.Count = 0) or (sec.surfaces.Count = 0) then
     DeleteSector(lev, sc);
 
   lev.RenumSecs;
@@ -3147,22 +3153,29 @@ var
   surf: TJKSurface;
 begin
   result := nil;
-  if vxsel.count < 3 then
+  if vxsel.Count < 3 then
+  begin
+    PanMessage(mt_info, 'Cannot create surface for sector: Less than 3 vertices selected!');
     exit;
+  end;
+
   vxsel.GetSCVX(0, sc, vx);
 
-  for i := 1 to vxsel.count - 1 do
+  for i := 1 to vxsel.Count - 1 do
   begin
     vxsel.GetSCVX(i, asc, avx);
     if asc <> sc then
+    begin
+      PanMessageFmt(mt_warning, 'Cannot create surface for sector %d: The selected vertex %d is part of sector %d!', [sc, avx, asc]);
       exit;
+    end;
   end;
 
   sec := lev.sectors[sc];
   surf := sec.newsurface;
   sec.surfaces.Add(surf);
 
-  for i := 0 to vxsel.count - 1 do
+  for i := 0 to vxsel.Count - 1 do
   begin
     vxsel.GetSCVX(i, asc, avx);
     surf.AddVertex(sec.Vertices[avx]);
@@ -3477,7 +3490,7 @@ begin
 
   if nv > MaxSurfaceVertices(level) then
   begin
-    PanMessageFmt(mt_error, 'Can''t merge surfaces - resulting surface is >%d vertices',
+    PanMessageFmt(mt_error, 'Can''t merge surfaces - resulting surface exceeds max number of vertices (%d)!',
         [MaxSurfaceVertices(level)]);
     exit;
   end;
@@ -3639,7 +3652,7 @@ begin
   if not ToolBar.IsLayerVisible(sec.Layer) or
      not ToolBar.IsLayerVisible(sec1.Layer) then
   begin
-    PanMessageFmt(mt_info, 'Can''t merge sectors %d and %d - locked layer(s)', [sec.num, sec1.num]);
+    PanMessageFmt(mt_info, 'Cannot merge sectors %d and %d - locked layer(s)', [sec.num, sec1.num]);
     exit;
   end;
 
@@ -3657,7 +3670,7 @@ begin
   end;
 
   if sfs.count = 0
-    then PanMessageFmt(mt_warning,'The sectors %d and %d are not adjoined or adjoins don''t overlap',[sec.num,sec1.num])
+    then PanMessageFmt(mt_warning, 'Sectors %d and %d are not adjoined or adjoins don''t overlap', [sec.num,sec1.num])
   else
     begin
 
