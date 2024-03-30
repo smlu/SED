@@ -2716,16 +2716,22 @@ begin
                                     while sfsel.Count > 1 do
                                       begin
                                           sfsel.GetSCSF(sfsel.Count - 1, nsc, nsf);
-                                          surf := level.sectors[nsc].surfaces[nsf];
-                                          for i := 0 to sfsel.Count - 2 do
+                                          if CheckSurfaceIndex(level, nsc, nsf) then
                                             begin
-                                              sfsel.GetSCSF(i, nsc, nsf);
-                                              var msurf := level.sectors[nsc].surfaces[nsf];
-                                              if MergeSurfaces(msurf, surf) <> nil then
-                                              begin
-                                                Inc(nsel);
-                                                break;
-                                              end;
+                                              surf := level.sectors[nsc].surfaces[nsf];
+                                              for i := 0 to sfsel.Count - 2 do
+                                                begin
+                                                  sfsel.GetSCSF(i, nsc, nsf);
+                                                  if not CheckSurfaceIndex(level, nsc, nsf) then
+                                                    continue;
+
+                                                  var msurf := level.sectors[nsc].surfaces[nsf];
+                                                  if MergeSurfaces(msurf, surf) <> nil then
+                                                  begin
+                                                    Inc(nsel);
+                                                    break;
+                                                  end;
+                                                end;
                                             end;
                                           sfsel.DeleteN(sfsel.Count - 1);
                                       end;
