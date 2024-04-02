@@ -112,7 +112,6 @@ type
         Import1: TMenuItem;
         SaveAs: TSaveDialog;
         Tools1: TMenuItem;
-        CalculateLights1: TMenuItem;
         ConsistencyCheck1: TMenuItem;
         Tbar: TPanel;
         BNSC: TSpeedButton;
@@ -1610,8 +1609,8 @@ begin
     // ShortCut:=ShortCut(Ord('S'),[ssShift]);
     SnapViewToObject.ShortCut := ShortCut(Ord('S'), [ssAlt]);
 
-    CalcLightOnLayers.ShortCut := ShortCut(Ord('L'), [ssCtrl, ssShift]);
-    CalcLightInSel.ShortCut := ShortCut(Ord('L'), [ssCtrl, ssAlt]);
+    CalcLightOnLayers.ShortCut := ShortCut(Ord('L'), [ssCtrl]);
+    CalcLightInSel.ShortCut    := ShortCut(Ord('L'), [ssCtrl, ssAlt]);
 
     miCopy.Caption := '&Copy'#9'Ctrl+C';
     miPaste.Caption := '&Paste'#9'Ctrl+V';
@@ -5168,68 +5167,85 @@ var
     scs: TSCMultisel;
     i: Integer;
     sc, SF, a: Integer;
+
+    procedure AddSector(sec: TJKSector);
+    begin
+      if ToolBar.IsLayerVisible(sec.layer) then
+      begin
+        SaveSecUndo(sec, ch_changed, sc_geo);
+        scs.AddSC(sec.num);
+      end;
+    end;
+
+    procedure AddSectorIndex(sc: Integer);
+    begin
+      AddSector(level.sectors[sc]);
+    end;
 begin
     scs := TSCMultisel.Create;
-    try
-        if sender = CalcLightOnLayers then
-        begin
-            for i := 0 to level.sectors.Count - 1 do
-                if ToolBar.IsLayerVisible(level.sectors[i].Layer) then
-                    scs.AddSC(i);
-        end
-        else if sender = CalcLightInSel then
-        begin
-            case mapMode of
-                MM_SC:
-                    begin
-                        for i := 0 to scsel.Count - 1 do
-                            scs.AddSC(scsel.GetSC(i));
-                    end;
-                MM_SF:
-                    begin
-                        for i := 0 to sfsel.Count - 1 do
-                        begin
-                            sfsel.GetSCSF(i, sc, SF);
-                            scs.AddSC(sc);
-                        end;
-                    end;
-                MM_ED:
-                    begin
-                        for i := 0 to edsel.Count - 1 do
-                        begin
-                            edsel.GetSCSFED(i, sc, SF, a);
-                            scs.AddSC(sc);
-                        end;
-                    end;
-                MM_VX:
-                    begin
-                        for i := 0 to vxsel.Count - 1 do
-                        begin
-                            vxsel.GetSCVX(i, sc, a);
-                            scs.AddSC(sc);
-                        end;
-                    end;
-            else
-                begin
-                    ShowMessage
-                      ('You must be in sector, surface, edge or vertex mode to use this option');
-                    exit;
-                end;
-            end;
-        end
-        else
-        begin
-            for i := 0 to level.sectors.Count - 1 do
-                scs.AddSC(i);
-        end;
+    StartUndoRec('Calculate lighting');
 
-        ClearUndoBuffer;
+    try
+       if sender = CalcLightInSel then
+          begin
+            case mapMode of
+              MM_SC:
+                begin
+                  var sci := scsel.AddSC(Cur_SC);
+                  for i := 0 to scsel.Count - 1 do
+                    AddSectorIndex(scsel.GetSC(i));
+                  scsel.DeleteN(sci);
+                end;
+              MM_SF:
+                begin
+                  var sfi := sfsel.AddSF(Cur_SC, Cur_SF);
+                  for i := 0 to sfsel.Count - 1 do
+                  begin
+                    sfsel.GetSCSF(i, sc, SF);
+                    AddSectorIndex(sc);
+                  end;
+                  sfsel.DeleteN(sfi);
+                end;
+              MM_ED:
+                begin
+                  var edi := edsel.AddED(Cur_SC, Cur_SF, Cur_ED);
+                  for i := 0 to edsel.Count - 1 do
+                  begin
+                    edsel.GetSCSFED(i, sc, SF, a);
+                    AddSectorIndex(sc);
+                  end;
+                  edsel.DeleteN(edi);
+                end;
+              MM_VX:
+                begin
+                  var vxi := vxsel.AddVX(Cur_SC, Cur_VX);
+                  for i := 0 to vxsel.Count - 1 do
+                  begin
+                    vxsel.GetSCVX(i, sc, a);
+                    AddSectorIndex(sc);
+                  end;
+                  vxsel.DeleteN(vxi);
+                end;
+            else
+              begin
+                ShowMessage('You must be in sector, surface, edge or vertex mode to use this option');
+                exit;
+              end;
+            end;
+          end
+        else  // select sectors which are on visible layer
+          begin
+            for i := 0 to level.sectors.Count - 1 do
+              AddSectorIndex(i);
+          end;
+
+        //ClearUndoBuffer;
         sms := GetMSecs;
 
         if NewLightCalc then
-            CalcLightingNew(Level, scs)
+          CalcLightingNew(Level, scs)
         else
-            CalcLighting(Level, scs);
+          CalcLighting(Level, scs);
 
         ems := GetMSecs;
         sms := SubMSecs(sms, ems);
@@ -5237,10 +5253,10 @@ begin
           [Level.Lights.Count, StrMSecs(sms)]));
 
         if level.sectors.Count = scs.Count then
-            Preview3D.ReloadLevel
+          Preview3D.ReloadLevel
         else
-            for i := 0 to scs.Count - 1 do
-                SectorChanged(level.sectors[scs.GetSC(i)]);
+          for i := 0 to scs.Count - 1 do
+            SectorChanged(level.sectors[scs.GetSC(i)]);
 
         LevelChanged;
     finally

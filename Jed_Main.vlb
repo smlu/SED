@@ -213,9 +213,6 @@ Coordinates=221,10,44,51
 [Viewtogrid1]
 Coordinates=888,417,72,33
 
-[CalculateLights1]
-Coordinates=888,469,96,33
-
 [miGrid]
 Coordinates=461,461,47,33
 
@@ -307,7 +304,7 @@ Coordinates=1038,365,75,33
 Coordinates=506,559,46,33
 
 []
-Coordinates=414,209,63,33
+Coordinates=888,469,96,33
 
 [miEdit]
 Coordinates=359,390,45,33
