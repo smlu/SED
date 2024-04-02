@@ -754,20 +754,20 @@ var
   cdist, dist: double;
   cn: integer;
 begin
-  result := false;
-  if surf.Vertices.count < 3 then
+  result := False;
+  if surf.vertices.Count < 3 then
     exit;
-  v0 := surf.Vertices[nv1];
-  nvxs := surf.Vertices.count - 1;
 
-  n := surf.NextVX(nv1);
+  v0 := surf.vertices[nv1];
+  nvxs := surf.vertices.Count - 1;
 
+  n     := surf.NextVX(nv1);
   cdist := -1;
-  cn := -1;
+  cn    := -1;
 
   for i := 0 to nvxs - 1 do
   begin
-    v1 := surf.Vertices[n];
+    v1 := surf.vertices[n];
 
     dist := sqr(v1.x - v0.x) + sqr(v1.y - v0.y) + sqr(v1.z - v0.z);
     if dist > cdist then
@@ -778,7 +778,7 @@ begin
 
     if (dist) > 1E-4 then
     begin
-      result := true;
+      result := True;
       nv2 := n;
       break;
     end;
@@ -792,18 +792,18 @@ begin
     else
       nv2 := cn;
 
-  v1 := surf.Vertices[nv2];
-  result := false;
+  v1 := surf.vertices[nv2];
+  result := False;
   n := surf.NextVX(nv2);
 
   { Calculate normalized vector perpendicular to the
     selected edge }
 
-  With surf do
+  with surf do
     VectorCross3(v1.x - v0.x, v1.y - v0.y, v1.z - v0.z, normal.dx, normal.dy,
       normal.dz, a.dx, a.dy, a.dz); //VMult
 
-  If a.Normalize = 0 then
+  if a.Normalize = 0 then
     exit;
 
   cdist := -1;
@@ -811,7 +811,7 @@ begin
 
   for i := 0 to nvxs - 1 do
   begin
-    v2 := surf.Vertices[n];
+    v2 := surf.vertices[n];
 
     dist := Abs(a.Dot(v2.x - v1.x, v2.y - v1.y, v2.z - v1.z)); //Abs(SMult(a.dx, a.dy, a.dz, v2.x - v1.x, v2.y - v1.y, v2.z - v1.z));
     if dist > cdist then
@@ -822,7 +822,7 @@ begin
 
     if dist > 1E-4 then
     begin
-      result := true;
+      result := True;
       nv3 := n;
       break;
     end;
@@ -833,9 +833,8 @@ begin
     if cn <> -1 then
     begin
       nv3 := cn;
-      result := true;
+      result := True;
     end;
-
 end;
 
 Function IsTXFlipped(const surf: TJKSurface): boolean;
@@ -2767,7 +2766,7 @@ Procedure ArrangeTextureBy(const surf: TJKSurface; const un, vn: TVector;
   refx, refy, refz, refu, refv: double);
 begin
   for var i := 0 to surf.Vertices.Count - 1 do
-    With surf.txvertices[i], surf.vertices[i] do
+    with surf.txvertices[i], surf.vertices[i] do
     begin
         u := UVRound(refu + un.Dot(x - refx, y - refy, z - refz) * PixelPerUnit * surf.uscale);
 //      u := UVRound(refu + SMult(un.dx, un.dy, un.dz, x - refx, y - refy,
@@ -2787,7 +2786,7 @@ end;
 
 Procedure ApplyTXDataToVX(const surf: TJKSurface; vx: integer; const txd: TXData);
 begin
-  With surf.txvertices[vx], surf.vertices[vx] do
+  with surf.txvertices[vx], surf.vertices[vx] do
   begin
     u := UVRound(txd.u + txd.un.Dot(x - txd.x, y - txd.y, z - txd.z) * PixelPerUnit * surf.uscale);
     v := UVRound(txd.v + txd.vn.Dot(x - txd.x, y - txd.y, z - txd.z) * PixelPerUnit * surf.vscale);
@@ -2800,14 +2799,14 @@ end;
 
 Procedure ArrangeTexture(const surf: TJKSurface; orgvx: integer; const un, vn: TVector);
 begin
-  With surf.Vertices[orgvx], surf.txvertices[orgvx] do
+  with surf.vertices[orgvx], surf.txVertices[orgvx] do
     ArrangeTextureBy(surf, un, vn, x, y, z, u, v);
 end;
 
 Procedure SaveTXData(const surf: TJKSurface; vx: integer; var txd: TXData);
 begin
   try
-    With surf.vertices[vx], surf.txvertices[vx] do
+    with surf.vertices[vx], surf.txvertices[vx] do
     begin
       txd.x := x;
       txd.y := y;
@@ -2824,7 +2823,7 @@ end;
 
 Procedure ApplyTXData(const surf: TJKSurface; const txd: TXData);
 begin
-  With txd do
+  with txd do
     ArrangeTextureBy(surf, un, vn, x, y, z, u, v);
 end;
 
@@ -2838,7 +2837,8 @@ end;
 
 Function IsPointWithInLine(x, y, z, x1, y1, z1, x2, y2, z2: double): boolean;
 begin
-  result := (x >= real_min(x1, x2)) and (x <= real_max(x1, x2)) and
+  result :=
+    (x >= real_min(x1, x2)) and (x <= real_max(x1, x2)) and
     (y >= real_min(y1, y2)) and (y <= real_max(y1, y2)) and
     (z >= real_min(z1, z2)) and (z <= real_max(z1, z2));
 end;

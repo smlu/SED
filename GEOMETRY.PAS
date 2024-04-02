@@ -356,7 +356,7 @@ end;
 
 Function TPolygon.NextVx(n: integer): integer;
 begin
-  if n >= Vertices.count - 1 then
+  if n >= vertices.Count - 1 then
     Result := 0
   else
     Result := n + 1;
@@ -365,7 +365,7 @@ end;
 Function TPolygon.PrevVx(n: integer): integer;
 begin
   if n <= 0 then
-    Result := Vertices.count - 1
+    Result := vertices.Count - 1
   else
     Result := n - 1;
 end;
@@ -389,7 +389,7 @@ var
   en: TVector;
   v1, v2: TVertex;
 begin
-  n := Vertices.count;
+  n := vertices.Count;
   if n = 0 then
   begin
     Result := 0;
@@ -399,8 +399,8 @@ begin
   xsum := 0;
   ysum := 0;
   zsum := 0;
-  for i := 0 to Vertices.count - 1 do
-    With Vertices[i] do
+  for i := 0 to vertices.Count - 1 do
+    with vertices[i] do
     begin
       xsum := xsum + x;
       ysum := ysum + y;
@@ -411,7 +411,7 @@ begin
   zsum := zsum / n;
 
   Result := 0;
-  for i := 0 to Vertices.count - 1 do
+  for i := 0 to vertices.Count - 1 do
   begin
     v1 := Vertices[i];
     v2 := Vertices[NextVx(i)];
@@ -437,17 +437,18 @@ var
   i, n: integer;
   d: double;
 begin
-  n := Vertices.count;
+  n := vertices.Count;
   if n = 0 then
   begin
     Result := 0;
     exit;
   end;
+
   xsum := 0;
   ysum := 0;
   zsum := 0;
-  for i := 0 to Vertices.count - 1 do
-    With Vertices[i] do
+  for i := 0 to vertices.Count - 1 do
+    With vertices[i] do
     begin
       xsum := xsum + x;
       ysum := ysum + y;
@@ -458,8 +459,8 @@ begin
   zsum := zsum / n;
 
   Result := 0;
-  for i := 0 to Vertices.count - 1 do
-    With Vertices[i] do
+  for i := 0 to vertices.Count - 1 do
+    with vertices[i] do
     begin
       d := sqr(x - xsum) + sqr(y - ysum) + sqr(z - zsum);
       if d > Result then
@@ -480,51 +481,51 @@ begin
   z0 := IsClose(normal.dz, 0);
 
   if (not x0) and not(y0) then
-  begin
-    nz := z;
-    ny := (d - normal.dx * x - normal.dz * z) / normal.dy;
-    nx := (d - normal.dz * z - normal.dy * y) / normal.dx;
-  end
+    begin
+      nz := z;
+      ny := (d - normal.dx * x - normal.dz * z) / normal.dy;
+      nx := (d - normal.dz * z - normal.dy * y) / normal.dx;
+    end
   else if (not x0) and (not z0) then
-  begin
-    ny := y;
-    nz := (d - normal.dx * x - normal.dy * y) / normal.dz;
-    nx := (d - normal.dz * z - normal.dy * y) / normal.dx;
-  end
+    begin
+      ny := y;
+      nz := (d - normal.dx * x - normal.dy * y) / normal.dz;
+      nx := (d - normal.dz * z - normal.dy * y) / normal.dx;
+    end
   else if (not y0) and (not z0) then
-  begin
-    nx := x;
-    nz := (d - normal.dx * x - normal.dy * y) / normal.dz;
-    ny := (d - normal.dz * z - normal.dx * x) / normal.dy;
-  end
+    begin
+      nx := x;
+      nz := (d - normal.dx * x - normal.dy * y) / normal.dz;
+      ny := (d - normal.dz * z - normal.dx * x) / normal.dy;
+    end
   else if x0 and y0 then
-  begin
-    Result := IsClose(z, Vertices[0].z);
-    exit;
-  end
+    begin
+      Result := IsClose(z, vertices[0].z);
+      exit;
+    end
   else if x0 and z0 then
-  begin
-    Result := IsClose(y, Vertices[0].y);
-    exit;
-  end
+    begin
+      Result := IsClose(y, vertices[0].y);
+      exit;
+    end
   else if y0 and z0 then
-  begin
-    Result := IsClose(x, Vertices[0].x);
-    exit;
-  end;
+    begin
+      Result := IsClose(x, vertices[0].x);
+      exit;
+    end;
   Result := IsClose(nx, x) and IsClose(ny, y) and IsClose(nz, z);
 end;
 
 Function TPolygons.GetItem(n: integer): TPolygon;
 begin
-  if (n < 0) or (n >= count) then
+  if (n < 0) or (n >= Count) then
     raise EListError.CreateFmt('Polygon Index is out of bounds: %d', [n]);
   Result := TPolygon(List[n]);
 end;
 
 Procedure TPolygons.SetItem(n: integer; p: TPolygon);
 begin
-  if (n < 0) or (n >= count) then
+  if (n < 0) or (n >= Count) then
     raise EListError.CreateFmt('Vertex Index is out of bounds: %d', [n]);
   List[n] := p;
 end;

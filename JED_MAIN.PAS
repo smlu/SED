@@ -1958,7 +1958,7 @@ begin
             Ord('1') .. Ord('6'):
                 if MapRot = MR_old then
                 begin
-                    With renderer do
+                    with renderer do
                         Case char(Key) of
                             '1':
                                 begin
@@ -2124,65 +2124,65 @@ begin
             VK_NEXT,
             VK_PRIOR:
                 if MapRot = MR_old then
-                begin
-                    case Key of
-                        VK_RIGHT:
-                            rYaw := rYaw - 5;
-                        VK_LEFT:
-                            rYaw := rYaw + 5;
-                        VK_UP:
-                            rPch := rPch - 5;
-                        VK_DOWN:
-                            rPch := rPch + 5;
-                        VK_PRIOR:
-                            rRol := rRol - 5;
-                        VK_NEXT:
-                            rRol := rRol + 5;
-                    end;
-                    SetRendFromPYR;
-                    //with renderer do
-                      //SetGridNormal(zv.dx, zv.dy, zv.dz); // New code, fixes cleaving
-                    Invalidate;
-                end
+                  begin
+                      case Key of
+                          VK_RIGHT:
+                              rYaw := rYaw - 5;
+                          VK_LEFT:
+                              rYaw := rYaw + 5;
+                          VK_UP:
+                              rPch := rPch - 5;
+                          VK_DOWN:
+                              rPch := rPch + 5;
+                          VK_PRIOR:
+                              rRol := rRol - 5;
+                          VK_NEXT:
+                              rRol := rRol + 5;
+                      end;
+                      SetRendFromPYR;
+                      //with renderer do
+                        //SetGridNormal(zv.dx, zv.dy, zv.dz); // New code, fixes cleaving
+                      Invalidate;
+                  end
                 else
-                    With renderer do
-                    begin
-                        { SetVec(nx,1,0,0);
-                          SetVec(ny,0,1,0);
-                          SetVec(nz,0,0,1);
-                          RotatePoint(0,0,0,nx.dx,nx.dy,nx.dz,PCH,ny.dx,ny.dy,ny.dz);
-                          RotatePoint(0,0,0,nx.dx,nx.dy,nx.dz,PCH,ny.dz,nz.dy,nz.dz);
+                  with renderer do
+                  begin
+                      { SetVec(nx,1,0,0);
+                        SetVec(ny,0,1,0);
+                        SetVec(nz,0,0,1);
+                        RotatePoint(0,0,0,nx.dx,nx.dy,nx.dz,PCH,ny.dx,ny.dy,ny.dz);
+                        RotatePoint(0,0,0,nx.dx,nx.dy,nx.dz,PCH,ny.dz,nz.dy,nz.dz);
 
-                          RotatePoint(0,0,0,ny.dx,ny.dy,ny.dz,YAW,nx.dx,nx.dy,nx.dz);
-                          RotatePoint(0,0,0,ny.dx,ny.dy,ny.dz,YAW,nz.dx,nz.dy,nz.dz);
+                        RotatePoint(0,0,0,ny.dx,ny.dy,ny.dz,YAW,nx.dx,nx.dy,nx.dz);
+                        RotatePoint(0,0,0,ny.dx,ny.dy,ny.dz,YAW,nz.dx,nz.dy,nz.dz);
 
-                          RotatePoint(0,0,0,nz.dy,nz.dy,nz.dz,ROL,nx.dx,nx.dy,nx.dz);
-                          RotatePoint(0,0,0,nz.dy,nz.dy,nz.dz,ROL,ny.dx,ny.dy,ny.dz); }
-                        With renderer do
-                            case Key of
-                                VK_RIGHT:
-                                    RotAxis(zv, xv, -1);
-                                VK_LEFT:
-                                    RotAxis(zv, xv, 1);
-                                VK_UP:
-                                    RotAxis(yv, zv, -1);
-                                VK_Down:
-                                    RotAxis(yv, zv, 1);
-                                VK_PRIOR:
-                                    RotAxis(xv, yv, -1);
-                                VK_NEXT:
-                                    RotAxis(xv, yv, 1);
-                            end;
-                        With renderer do
-                        begin
-                            with zv do
-                                SetZ(dx, dy, dz);
-                            with xv do
-                                SetX(dx, dy, dz);
-                        end;
-                        Invalidate;
-                        exit;
-                    end;
+                        RotatePoint(0,0,0,nz.dy,nz.dy,nz.dz,ROL,nx.dx,nx.dy,nx.dz);
+                        RotatePoint(0,0,0,nz.dy,nz.dy,nz.dz,ROL,ny.dx,ny.dy,ny.dz); }
+                      With renderer do
+                          case Key of
+                              VK_RIGHT:
+                                  RotAxis(zv, xv, -1);
+                              VK_LEFT:
+                                  RotAxis(zv, xv, 1);
+                              VK_UP:
+                                  RotAxis(yv, zv, -1);
+                              VK_Down:
+                                  RotAxis(yv, zv, 1);
+                              VK_PRIOR:
+                                  RotAxis(xv, yv, -1);
+                              VK_NEXT:
+                                  RotAxis(xv, yv, 1);
+                          end;
+                      With renderer do
+                      begin
+                          with zv do
+                              SetZ(dx, dy, dz);
+                          with xv do
+                              SetX(dx, dy, dz);
+                      end;
+                      Invalidate;
+                      exit;
+                  end;
             VK_INSERT:
                 DoStitch(ssCtrl in shift);
             188:
@@ -2323,7 +2323,6 @@ begin
                     ScaleTexture(st_up);
                     exit;
                 end;
-
         end;
 
         renderer.SetGridNormal(n.dx, n.dy, n.dz);
@@ -5245,7 +5244,7 @@ begin
 
         LevelChanged;
     finally
-        scs.free;
+        scs.Free;
     end;
 end;
 
@@ -7055,7 +7054,7 @@ var
         SectorChanged(surf.sector);
     end;
 
-Var
+var
     i, sc, SF, ED, n: Integer;
 
 begin

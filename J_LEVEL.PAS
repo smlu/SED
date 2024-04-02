@@ -372,12 +372,12 @@ end;
 
 Procedure TSedLight.Assign(l: TSedLight);
 begin
-  flags        := l.flags;
-  intensity    := l.intensity;
-  range        := l.range;
-  color        := l.color;
-  position     := l.position;
-  layer        := l.layer;
+  flags     := l.flags;
+  intensity := l.intensity;
+  range     := l.range;
+  color     := l.color;
+  position  := l.position;
+  layer     := l.layer;
 end;
 
 Function TSedLights.GetItem(n: integer): TSedLight;
@@ -398,23 +398,23 @@ end;
 
 Procedure TJKVertex.Assign(v: TJKVertex);
 begin
-  X := v.X;
-  Y := v.Y;
-  Z := v.Z;
+  x := v.x;
+  y := v.y;
+  z := v.z;
 end;
 
 Function TJKVertex.GetUV(): TTXVertex;
 begin
   if Sector = nil then exit;
-  for var i := 0 to Sector.surfaces.count - 1 do
+  for var i := 0 to Sector.surfaces.Count - 1 do
     begin
-      var surf := Sector.surfaces[i];
-      for var j := 0 to surf.Vertices.count - 1 do
+      var surf := sector.surfaces[i];
+      for var j := 0 to surf.vertices.Count - 1 do
         begin
            var v := surf.vertices[j];
            if IsClose(v.x, x) and IsClose(v.y, y) and IsClose(v.z, z) then
            begin
-              Result := surf.TXVertices[j];
+              Result := surf.txVertices[j];
               break;
            end
         end;
@@ -423,14 +423,14 @@ end;
 
 Function TJKVertices.GetItem(n: integer): TJKVertex;
 begin
-  if (n < 0) or (n >= count) then
+  if (n < 0) or (n >= Count) then
     raise EListError.CreateFmt('Vertex Index is out of bounds: %d', [n]);
   Result := TJKVertex(List[n]);
 end;
 
 Procedure TJKVertices.SetItem(n: integer; v: TJKVertex);
 begin
-  if (n < 0) or (n >= count) then
+  if (n < 0) or (n >= Count) then
     raise EListError.CreateFmt('Vertex Index is out of bounds: %d', [n]);
   List[n] := v;
 end;
@@ -588,7 +588,7 @@ end;
 
 Destructor TCOG.Destroy;
 begin
-  vals.free;
+  vals.Free;
 end;
 
 Procedure TCOG.GetValues;
@@ -661,17 +661,17 @@ end;
 Constructor TJKSurface.Create;
 begin
   Inherited Create;
-  Sector := owner;
+  sector := owner;
 
-  AdjoinFlags := SAF_Visible or SAF_Move;
+  adjoinFlags := SAF_Visible or SAF_Move;
   if CurrentProject <> IJIM then
     BitSet(AdjoinFlags, SAF_AllowSoundPass);
 
-  Material    := 'dflt.mat';
-  SurfFlags   := SF_Collision;
-  FaceFlags   := 0;
-  geo         := integer(Texture);
-  light       := integer(Gouraud);
+  material  := 'dflt.mat';
+  surfflags := SF_Collision;
+  faceFlags := 0;
+  geo       := integer(Texture);
+  light     := integer(Gouraud);
 
   tex := 1;
   if CurrentProject = IJIM then tex := 3;
@@ -686,9 +686,9 @@ var
 begin
   cosa := normal.Dot(TVector.Up); //Smult(normal.dx, normal.dy, normal.dz, 0, 0, 1);
   if (cosa <= 1) and (cosa > cos(PI / 4)) then //Round(Math.RadToDeg(Math.ArcCos(cosa))) <= 45 then//(cosa > cos(PI / 4)) then
-    SurfFlags := SurfFlags or SF_Floor or SF_Collision
+    surfflags := surfflags or SF_Floor or SF_Collision
   else
-    SurfFlags := SurfFlags and (-1 xor SF_Floor);
+    surfflags := surfflags and (-1 xor SF_Floor);
 end;
 
 Function TJKSurface.GetRefVector(var v: TVector): boolean;
@@ -696,7 +696,7 @@ var
   v1, v2: TJKVertex;
 begin
   Result := false;
-  if vertices.count < 2 then
+  if vertices.Count < 2 then
     exit;
   v1 := vertices[0];
   v2 := vertices[1];
@@ -706,24 +706,24 @@ end;
 
 Function TJKSurface.GetVXs: TJKVertices;
 begin
-  Result := TJKVertices(TPolygon(self).Vertices);
+  Result := TJKVertices(TPolygon(self).vertices);
 end;
 
 Procedure TJKSurface.SetVXs(vxs: TJKVertices);
 begin
-  TPolygon(self).Vertices := vxs;
+  TPolygon(self).vertices := vxs;
 end;
 
 procedure TJKSurface.Assign(surf: TJKSurface);
 begin
-  AdjoinFlags := surf.AdjoinFlags;
-  Material    := surf.Material;
-  SurfFlags   := surf.SurfFlags;
-  FaceFlags   := surf.FaceFlags;
+  adjoinFlags := surf.AdjoinFlags;
+  material    := surf.Material;
+  surfFlags   := surf.SurfFlags;
+  faceFlags   := surf.FaceFlags;
   geo         := surf.geo;
   light       := surf.light;
   tex         := surf.tex;
-  ExtraLight  := surf.ExtraLight;
+  extraLight  := surf.ExtraLight;
   uscale      := surf.uscale;
   vscale      := surf.vscale;
 end;
@@ -768,14 +768,14 @@ end;
 Constructor TJKSector.Create;
 begin
   surfaces := TSurfaces.Create;
-  Vertices := TJKVertices.Create;
-  surfaces.VXList := Vertices;
+  vertices := TJKVertices.Create;
+  surfaces.VXList := vertices;
   level := owner;
 
   if CurrentProject = IJIM then
-    Ambient := MakeColor(1, 1, 1, 1)
+    ambient := MakeColor(1, 1, 1, 1)
   else
-    Ambient := MakeColor(5, 5, 5, 5);
+    ambient := MakeColor(5, 5, 5, 5);
 
   ColorMap := 'dflt.cmp';
 end;
@@ -784,34 +784,34 @@ Destructor TJKSector.Destroy;
 var
   i: integer;
 begin
-  for i := 0 to surfaces.count - 1 do
+  for i := 0 to surfaces.Count - 1 do
     surfaces[i].free;
   surfaces.free;
-  for i := 0 to Vertices.count - 1 do
-    Vertices[i].free;
-  Vertices.free;
+  for i := 0 to vertices.Count - 1 do
+    vertices[i].Free;
+  vertices.Free;
 end;
 
 Function TJKSector.NewVertex: TJKVertex;
 begin
   Result := TJKVertex.Create;
-  Result.Sector := self;
-  Result.num := Vertices.Add(Result) - 1;
+  Result.sector := self;
+  Result.num := vertices.Add(Result) - 1;
 end;
 
 Function TJKSector.NewSurface: TJKSurface;
 begin
   Result := TJKSurface.Create(self);
-  Result.ExtraLight := MakeColor(0.0, 0.0, 0.0, 1.0);
+  Result.extraLight := MakeColor(0.0, 0.0, 0.0, 1.0);
 end;
 
 Procedure TJKSector.Renumber;
 var
   i: integer;
 begin
-  for i := 0 to Vertices.count - 1 do
-    Vertices[i].num := i;
-  for i := 0 to surfaces.count - 1 do
+  for i := 0 to vertices.Count - 1 do
+    vertices[i].num := i;
+  for i := 0 to surfaces.Count - 1 do
     surfaces[i].num := i;
 end;
 
@@ -821,9 +821,9 @@ var
   i: integer;
 begin
   Result := -1;
-  for i := 0 to Vertices.count - 1 do
+  for i := 0 to vertices.Count - 1 do
   begin
-    v := Vertices[i];
+    v := vertices[i];
     if IsClose(v.X, X) and IsClose(v.Y, Y) and IsClose(v.Z, Z) then
     begin
       Result := i;
@@ -838,10 +838,10 @@ var
 begin
   i := FindVX(X, Y, Z);
   if i <> -1 then
-    Result := Vertices[i]
+    Result := vertices[i]
   else
     begin
-      Result := NewVertex;
+      Result   := NewVertex;
       Result.X := X;
       Result.Y := Y;
       Result.Z := Z;
@@ -851,15 +851,15 @@ end;
 Procedure TJKSector.Assign(Sec: TJKSector);
 begin
   flags       := Sec.flags;
-  Ambient     := Sec.Ambient;
-  ExtraLight  := Sec.ExtraLight;
-  PointLight  := Sec.PointLight;
-  ColorMap    := Sec.ColorMap;
-  Tint        := Sec.Tint;
-  Sound       := Sec.Sound;
+  ambient     := Sec.Ambient;
+  extraLight  := Sec.ExtraLight;
+  pointLight  := Sec.PointLight;
+  colorMap    := Sec.ColorMap;
+  tint        := Sec.Tint;
+  sound       := Sec.Sound;
   soundVolume := Sec.soundVolume;
   thrust      := Sec.Thrust;
-  CollideBox  := Sec.CollideBox;
+  collideBox  := Sec.CollideBox;
   layer       := Sec.layer;
 end;
 
@@ -881,8 +881,8 @@ var
   i: integer;
 begin
   Result := -1;
-  for i := 0 to Things.count - 1 do
-    If Things[i].ID = ID then
+  for i := 0 to things.Count - 1 do
+    If things[i].ID = ID then
     begin
       Result := i;
       exit;
@@ -894,7 +894,7 @@ var
   i: integer;
 begin
   Result := -1;
-  for i := 0 to sectors.count - 1 do
+  for i := 0 to sectors.Count - 1 do
     If sectors[i].ID = ID then
     begin
       Result := i;
@@ -907,8 +907,8 @@ var
   i: integer;
 begin
   Result := -1;
-  for i := 0 to Lights.count - 1 do
-    If Lights[i].ID = ID then
+  for i := 0 to lights.Count - 1 do
+    If lights[i].ID = ID then
     begin
       Result := i;
       exit;
@@ -920,7 +920,7 @@ var
   i: integer;
 begin
   Result := -1;
-  for i := 0 to h3donodes.count - 1 do
+  for i := 0 to h3donodes.Count - 1 do
     If h3donodes[i].ID = ID then
     begin
       Result := i;
@@ -957,7 +957,7 @@ Procedure TJKLevel.RenumSecs;
 var
   i: integer;
 begin
-  for i := 0 to sectors.count - 1 do
+  for i := 0 to sectors.Count - 1 do
     sectors[i].num := i;
 end;
 
@@ -965,29 +965,29 @@ Procedure TJKLevel.RenumThings;
 var
   i: integer;
 begin
-  for i := 0 to Things.count - 1 do
-    Things[i].num := i;
+  for i := 0 to things.Count - 1 do
+    things[i].num := i;
 end;
 
 Function TJKLevel.GetLayerName(n: integer): String;
 begin
-  if (n < 0) or (n >= Layers.count) then
+  if (n < 0) or (n >= layers.Count) then
     Result := Format('LAYER%d', [n])
   else
-    Result := Layers[n];
+    Result := layers[n];
 end;
 
 Function TJKLevel.AddLayer(const name: string): integer;
 begin
-  Result := Layers.IndexOf(name);
+  Result := layers.IndexOf(name);
   if Result = -1 then
-    Result := Layers.Add(name);
+    Result := layers.Add(name);
 end;
 
 Function TJKLevel.GetMasterCMP: string;
 begin
   Result := masterCMP;
-  if (Result = '') and (sectors.count > 0) then
+  if (Result = '') and (sectors.Count > 0) then
     Result := sectors[0].ColorMap;
   if Result = '' then
     Result := 'dflt.cmp';
@@ -1013,29 +1013,29 @@ Procedure TJKLevel.Clear;
 var
   i, j, k: integer;
 begin
-  For i := 0 to sectors.count - 1 do
-    sectors[i].free;
+  for i := 0 to sectors.Count - 1 do
+    sectors[i].Free;
   sectors.Clear;
 
   self.templates.Clear;
 
-  For i := 0 to Things.count - 1 do
-    Things[i].free;
-  Things.Clear;
+  for i := 0 to things.Count - 1 do
+    things[i].Free;
+  things.Clear;
 
-  For i := 0 to Cogs.count - 1 do
-    Cogs[i].free;
-  Cogs.Clear;
+  for i := 0 to cogs.Count - 1 do
+    cogs[i].Free;
+  cogs.Clear;
 
-  For i := 0 to Lights.count - 1 do
-    Lights[i].free;
+  for i := 0 to lights.Count - 1 do
+    lights[i].Free;
 
-  for i := 0 to h3donodes.count - 1 do
-    h3donodes[i].free;
+  for i := 0 to h3donodes.Count - 1 do
+    h3donodes[i].Free;
   h3donodes.Clear;
 
-  Lights.Clear;
-  Layers.Clear;
+  lights.Clear;
+  layers.Clear;
   kind := TProjectType.JKDF2;
   masterCMP := '';
   lvisstring := '';
@@ -1047,16 +1047,16 @@ end;
 Destructor TJKLevel.Destroy;
 begin
   Clear;
-  sectors.free;
-  self.things.free;
+  sectors.Free;
+  self.things.Free;
   templates.Free;
-  lights.free;
-  layers.free;
+  lights.Free;
+  layers.Free;
 end;
 
 Procedure TJKLevel.SetDefaultHeader;
 begin
-  With header do
+  with header do
   begin
     version := 1;
     Gravity := 4;
@@ -1096,25 +1096,26 @@ Procedure TJKLevel.AddMissingLayers;
 var
   i: integer;
 begin
-  for i := 0 to sectors.count - 1 do
-    With sectors[i] do
+  for i := 0 to sectors.Count - 1 do
+    with sectors[i] do
     begin
-      if (layer < 0) or (layer >= Layers.count) then
-        layer := AddLayer(Format('Layer%d', [layer]));
-    end;
-  for i := 0 to Things.count - 1 do
-    With Things[i] do
-    begin
-      if (layer < 0) or (layer >= Layers.count) then
-        layer := AddLayer(Format('Layer%d', [layer]));
-    end;
-  for i := 0 to Lights.count - 1 do
-    With Lights[i] do
-    begin
-      if (layer < 0) or (layer >= Layers.count) then
+      if (layer < 0) or (layer >= layers.Count) then
         layer := AddLayer(Format('Layer%d', [layer]));
     end;
 
+  for i := 0 to things.count - 1 do
+    with things[i] do
+    begin
+      if (layer < 0) or (layer >= layers.Count) then
+        layer := AddLayer(Format('Layer%d', [layer]));
+    end;
+
+  for i := 0 to lights.Count - 1 do
+    with lights[i] do
+    begin
+      if (layer < 0) or (layer >= layers.Count) then
+        layer := AddLayer(Format('Layer%d', [layer]));
+    end;
 end;
 
 Function TJKLevel.GetSectorN(n: integer): TJKSector;
@@ -1124,10 +1125,11 @@ begin
     Result := nil;
     exit;
   end;
-  Try
+
+  try
     Result := sectors[n];
   except
-    On Exception do
+    on Exception do
       Result := nil;
   end;
 end;
@@ -1143,15 +1145,15 @@ begin
     exit;
   end;
 
-  for s := 0 to sectors.count - 1 do
-    With sectors[s] do
+  for s := 0 to sectors.Count - 1 do
+    with sectors[s] do
     begin
-      if (n >= nsf) and (n < nsf + surfaces.count) then
+      if (n >= nsf) and (n < nsf + surfaces.Count) then
       begin
         Result := surfaces[n - nsf];
         exit;
       end;
-      Inc(nsf, surfaces.count);
+      Inc(nsf, surfaces.Count);
     end;
   Result := nil;
 end;
@@ -1166,10 +1168,10 @@ begin
   if sec = nil then
     exit;
 
-  Try
+  try
     Result := sec.surfaces[sf];
   except
-    On Exception do
+    on Exception do
       Result := nil;
   end;
 end;
@@ -1199,10 +1201,11 @@ begin
     Result := nil;
     exit;
   end;
-  Try
+
+  try
     Result := things[n];
   except
-    On Exception do
+    on Exception do
     begin
       Result := nil;
     end;
@@ -1216,10 +1219,11 @@ begin
     Result := nil;
     exit;
   end;
-  Try
+
+  try
     Result := lights[n];
   except
-    On Exception do
+    on Exception do
     begin
       Result := nil;
     end;
@@ -1235,9 +1239,10 @@ begin
     Result := -1;
     exit;
   end;
+
   nsf := 0;
-  For i := 0 to sc - 1 do
-    With sectors[i] do
+  for i := 0 to sc - 1 do
+    with sectors[i] do
     begin
       Inc(nsf, surfaces.count);
     end;
@@ -1362,7 +1367,6 @@ begin
       Result := IJIMStaticCogScriptList;
   end;
 end;
-
 
 Procedure InitStaticResources();
 begin
