@@ -7694,7 +7694,7 @@ var
     Procedure AddTHValue(const name, vs: string);
     begin
         tv := TTPLValue.Create;
-        th.Vals.Add(tv);
+        th.vals.Add(tv);
         tv.name := name;
         tv.vtype := GetTPLVType(tv.name);
         tv.atype := GetTPLType(tv.name);
@@ -7707,7 +7707,7 @@ begin
         ShowMessage('You must be in Thing mode');
         exit;
     end;
-    th := Level.Things[Cur_TH];
+    th := level.things[Cur_TH];
 
     i := th.Vals.IndexOfName('numframes');
     if i <> -1 then
@@ -7726,9 +7726,9 @@ begin
     StartUndoRec('Make Door');
     SaveThingUndo(th, ch_changed);
 
-    for i := 0 to th.Vals.Count - 1 do
-        th.Vals[i].free;
-    th.Vals.Clear;
+    for i := 0 to th.vals.Count - 1 do
+        th.vals[i].Free;
+    th.vals.Clear;
 
     AddTHValue('thingflags', '0x408');
     AddTHValue('numframes', '2');
@@ -7743,20 +7743,20 @@ begin
     cf := TCOGFile.Create;
     cg := TCOG.Create;
     cg.name := '00_door.cog';
-    Level.cogs.Add(cg);
+    level.cogs.Add(cg);
     cf.LoadNoLocals(cg.name);
     for i := 0 to cf.Count - 1 do
     begin
         v := TCOgValue.Create;
         v.Assign(cf[i]);
-        cg.Vals.Add(v);
+        cg.vals.Add(v);
         if i = 0 then
             v.Val(IntToStr(th.num))
         else
             v.Val(cf[i].AsString);
         v.Resolve;
     end;
-    cf.free;
+    cf.Free;
     CogForm.RefreshList;
 end;
 
@@ -9082,17 +9082,17 @@ begin
         MM_SC:
             begin
                 ctype := ct_sec;
-                obj := Level.Sectors[Cur_SC];
+                obj := level.sectors[Cur_SC];
             end;
         MM_SF:
             begin
                 ctype := ct_srf;
-                obj := Level.Sectors[Cur_SC].surfaces[Cur_SF];
+                obj := level.sectors[Cur_SC].surfaces[Cur_SF];
             end;
         MM_TH:
             begin
                 ctype := ct_thg;
-                obj := Level.Things[Cur_TH];
+                obj := level.things[Cur_TH];
             end;
     else
         exit;
@@ -9103,10 +9103,10 @@ begin
 
     if ResPicker.PickCOGVal(icog, ival, ctype) then
     begin
-        Level.cogs[icog].Vals[ival].obj := obj;
+        level.cogs[icog].vals[ival].obj := obj;
         CogForm.UpdateCOG(icog);
         PanMessageFmt(mt_info, 'Item is assigned to value %s in cog %s',
-          [Level.cogs[icog].Vals[ival].name, Level.cogs[icog].name]);
+          [Level.cogs[icog].Vals[ival].name, level.cogs[icog].name]);
     end;
 
 end;

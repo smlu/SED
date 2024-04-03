@@ -3355,7 +3355,7 @@ begin
   if not CheckLightIndex(lev, n) then
     exit;
 
-  var lt := lev.Lights[n];
+  var lt := lev.lights[n];
   if not force and not ToolBar.IsLayerVisible(lt.layer) then
     exit;
 
@@ -3364,7 +3364,7 @@ begin
   if JedMain.Cur_LT = n then
     JedMain.SetCurLT(Max(0, GetPreviousLight(lev, n)));
 
-  lev.Lights.Delete(n);
+  lev.lights.Delete(n);
   JedMain.LightDeleted(lt);
   lt.Free;
 end;
@@ -3379,18 +3379,19 @@ begin
 
   cg := lev.cogs[n];
   lev.cogs.Delete(n);
-  cg.free;
-  for i := 0 to lev.cogs.count - 1 do
+  cg.Free;
+
+  for i := 0 to lev.cogs.Count - 1 do
     with lev.cogs[i] do
     begin
-      for j := 0 to Vals.count - 1 do
-        with Vals[j] do
+      for j := 0 to vals.Count - 1 do
+        with vals[j] do
           if Cog_Type = ct_cog then
           begin
             if int = n then
               int := -1;
             if int > n then
-              dec(int);
+              Dec(int);
           end;
     end;
   CogForm.RefreshList;
@@ -3403,13 +3404,13 @@ var
   i, j: integer;
 begin
   result := false;
-  for i := 0 to surf1.Vertices.count - 1 do
+  for i := 0 to surf1.vertices.Count - 1 do
   begin
-    v1 := surf1.Vertices[i];
-    j := surf2.Vertices.IndexOf(v1);
+    v1 := surf1.vertices[i];
+    j := surf2.vertices.IndexOf(v1);
     if j = -1 then
       continue;
-    if surf1.Vertices[surf1.NextVX(i)] = surf2.Vertices[surf2.PrevVX(j)] then
+    if surf1.vertices[surf1.NextVX(i)] = surf2.vertices[surf2.PrevVX(j)] then
     begin
       ed1 := i;
       ed2 := surf2.PrevVX(j);
@@ -3438,13 +3439,14 @@ var
       surf := sec.surfaces[i];
       if surf = surf2 then
         continue;
-      if surf.Vertices.IndexOf(v) <> -1 then
+      if surf.vertices.IndexOf(v) <> -1 then
         exit;
     end;
-    i := sec.Vertices.IndexOf(v);
+
+    i := sec.vertices.IndexOf(v);
     if i = -1 then
       exit;
-    sec.Vertices.Delete(i);
+    sec.vertices.Delete(i);
     v.free;
   end;
 
@@ -3474,18 +3476,18 @@ begin
     exit;
   end;
 
-  for i := 0 to surf1.Vertices.count - 1 do
+  for i := 0 to surf1.vertices.Count - 1 do
   begin
-    vx := surf1.Vertices[i];
-    if surf2.Vertices.IndexOf(vx) = -1 then
-      inc(nv);
+    vx := surf1.vertices[i];
+    if surf2.vertices.IndexOf(vx) = -1 then
+      Inc(nv);
   end;
 
-  for i := 0 to surf2.Vertices.count - 1 do
+  for i := 0 to surf2.vertices.Count - 1 do
   begin
-    vx := surf2.Vertices[i];
-    if surf1.Vertices.IndexOf(vx) = -1 then
-      inc(nv);
+    vx := surf2.vertices[i];
+    if surf1.vertices.IndexOf(vx) = -1 then
+      Inc(nv);
   end;
 
   if nv > MaxSurfaceVertices(level) then
@@ -3501,21 +3503,21 @@ begin
 
   v := surf2.PrevVX(edge2);
   lastv := surf2.NextVX(edge2);
-  ipos := surf1.NextVX(edge1);
-  While v <> lastv do
+  ipos  := surf1.NextVX(edge1);
+  while v <> lastv do
   begin
-    surf1.InsertVertex(ipos, surf2.Vertices[v]);
+    surf1.InsertVertex(ipos, surf2.vertices[v]);
     v := surf2.PrevVX(v);
   end;
 
   repeat
     nv := 0;
     With surf1 do
-      for i := Vertices.count - 1 downto 0 do
+      for i := vertices.Count - 1 downto 0 do
       begin
-        if Vertices[PrevVX(i)] = Vertices[NextVX(i)] then
+        if vertices[PrevVX(i)] = vertices[NextVX(i)] then
         begin
-          vx := Vertices[i];
+          vx := vertices[i];
           surf1.DeleteVertex(i);
           DeleteVXIfunused(surf1.sector, vx);
           inc(nv);
@@ -3523,12 +3525,12 @@ begin
       end;
 
     With surf1 do
-      for i := Vertices.count - 1 downto 0 do
+      for i := vertices.Count - 1 downto 0 do
       begin
-        if Vertices[i] = Vertices[NextVX(i)] then
+        if vertices[i] = vertices[NextVX(i)] then
         begin
           surf1.DeleteVertex(i);
-          inc(nv);
+          Inc(nv);
         end;
       end;
 
@@ -3560,10 +3562,10 @@ begin
 
   end;
 
-  RemoveSurfRefs(surf1.sector.Level, surf2);
+  RemoveSurfRefs(surf1.sector.level, surf2);
   nv := surf2.sector.surfaces.IndexOf(surf2);
   surf2.sector.surfaces.Delete(nv);
-  surf2.free;
+  surf2.Free;
 
   surf1.sector.Renumber;
   JedMain.SectorChanged(surf1.sector);
@@ -3601,23 +3603,23 @@ var
   nsf1: integer;
 begin
   result := false;
-  v1 := surf.Vertices[edge];
+  v1 := surf.vertices[edge];
   With surf do
-    v2 := Vertices[NextVX(edge)];
+    v2 := vertices[NextVX(edge)];
 
   surf1 := nil;
   sec := surf.sector;
 
-  for sf := 0 to sec.surfaces.count - 1 do
+  for sf := 0 to sec.surfaces.Count - 1 do
   begin
     asf := sec.surfaces[sf];
     if asf = surf then
       continue;
 
-    for v := 0 to asf.Vertices.count - 1 do
+    for v := 0 to asf.vertices.Count - 1 do
     begin
-      av1 := asf.Vertices[v];
-      av2 := asf.Vertices[asf.NextVX(v)];
+      av1 := asf.vertices[v];
+      av2 := asf.vertices[asf.NextVX(v)];
       if (v1 <> av2) or (v2 <> av1) then
         continue;
 
@@ -3649,8 +3651,8 @@ var
   sfs, sfs1: TSurfaces;
 begin
   result := nil;
-  if not ToolBar.IsLayerVisible(sec.Layer) or
-     not ToolBar.IsLayerVisible(sec1.Layer) then
+  if not ToolBar.IsLayerVisible(sec.layer) or
+     not ToolBar.IsLayerVisible(sec1.layer) then
   begin
     PanMessageFmt(mt_info, 'Cannot merge sectors %d and %d - locked layer(s)', [sec.num, sec1.num]);
     exit;
@@ -3658,7 +3660,7 @@ begin
 
   sfs := TSurfaces.Create;
   sfs1 := TSurfaces.Create;
-  for i := 0 to sec.surfaces.count - 1 do
+  for i := 0 to sec.surfaces.Count - 1 do
   begin
     surf := sec.surfaces[i];
     if (surf.adjoin <> nil) and (surf.adjoin.sector = sec1) and
@@ -3723,7 +3725,7 @@ begin
       result := sec;
 
       if not IsSectorConvex(sec) then
-        PanMessageFmt(mt_info, 'The sector %d is not convex', [sec.Num]);
+        PanMessageFmt(mt_info, 'The sector %d is not convex', [sec.num]);
     end;
 
   sfs.Free;

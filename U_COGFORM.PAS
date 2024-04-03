@@ -62,7 +62,7 @@ var
   s: string;
   vl: TCogValue;
 begin
-  if n >= LVCOGs.Items.Count then
+  if not CheckCogIndex(level, n) then
     exit;
 
   li := LVCOGs.Items[n];
@@ -71,21 +71,19 @@ begin
     s := '';
     for j := 0 to vals.Count - 1 do
     begin
-      vl := Vals[j];
-      s := Concat(s, ' ', vl.Name, '=', vl.AsString);
+      vl := vals[j];
+      s := Concat(s, ' ', vl.name, '=', vl.AsString);
     end;
     li.SubItems.BeginUpdate;
     li.SubItems[0] := s;
     li.SubItems.EndUpdate;
-    LVCOGsChange(nil, nil, ctText);  // update grid view of  cog values
+    LVCOGsChange(nil, nil, ctText);  // update grid view of cog values
   end;
 end;
 
 Procedure TCogForm.RefreshList;
 var
-  i, j: integer;
   li: TListItem;
-  s: string;
   vl: TCogValue;
   ce: TLVChangeEvent;
 begin
@@ -95,16 +93,16 @@ begin
   LVCOGs.Items.BeginUpdate;
   LVCOGs.Items.Clear;
   try
-    for i := 0 to level.cogs.Count - 1 do
+    for var i := 0 to level.cogs.Count - 1 do
       with level.cogs[i] do
       begin
         li := LVCOGs.Items.Add;
-        li.Caption := Format('%d: %s', [i, Name]);
-        s := '';
-        for j := 0 to vals.Count - 1 do
+        li.Caption := Format('%d: %s', [i, name]);
+        var s := '';
+        for var j := 0 to vals.Count - 1 do
         begin
           vl := vals[j];
-          s := Concat(s, ' ', vl.Name, '=', vl.AsString);
+          s := Concat(s, ' ', vl.name, '=', vl.AsString);
         end;
         li.SubItems.Add(s);
       end;
@@ -151,21 +149,21 @@ begin
         for j := vals.Count - 1 downto 0 do
         begin
           v := vals[j];
-          vnames.Add(v.Name);
+          vnames.Add(v.name);
           vvals.Add(v.AsString);
-          Vals.Delete(j);
+          vals.Delete(j);
           v.Free;
         end;
 
-        cf.LoadNoLocals(Name);
+        cf.LoadNoLocals(name);
         for j := 0 to cf.Count - 1 do
         begin
           v := TCogValue.Create;
-          Vals.Add(v);
+          vals.Add(v);
           vnew := cf[j];
           v.Assign(vnew);
 
-          k := vnames.IndexOf(vnew.Name);
+          k := vnames.IndexOf(vnew.name);
           if k <> -1 then
             v.Val(vvals[k])
           else
@@ -173,7 +171,6 @@ begin
 
           v.Resolve;
         end;
-
       end;
   finally
     vvals.Free;
@@ -201,7 +198,7 @@ begin
     exit;
 
   n := LVCOGs.ItemFocused.Index;
-  if n >= level.cogs.Count then
+  if not CheckCogIndex(level, n) then
     exit;
 
   with level.cogs[n] do
@@ -209,12 +206,12 @@ begin
     Caption := Format('Placed Cogs - COG %d: %s', [n, name]);
     for i := 0 to vals.Count - 1 do
       with vals[i] do
-        fe.AddFieldStr(Name + ' (' + GetCogTypeName(cog_type) + ')', i,
+        fe.AddFieldStr(name + ' (' + GetCogTypeName(cog_type) + ')', i,
           AsJedString);
   end;
 
   fe.DoneAdding;
-  fe.OnChange := FieldChange;
+  fe.OnChange   := FieldChange;
   fe.OnDblClick := FieldDblClick;
 end;
 
@@ -227,9 +224,10 @@ var
 begin
   if LVCOGs.ItemFocused = nil then
     exit;
-  n := LVCOGs.ItemFocused.Index;
+
+  n  := LVCOGs.ItemFocused.Index;
   cg := level.cogs[n];
-  v := cg.Vals[fi.id];
+  v  := cg.Vals[fi.id];
   Result := v.JedVal(fi.s);
   if not Result then
     PanMessage(mt_error, Format('Invalid value for %s: %s',
@@ -246,6 +244,7 @@ var
 begin
   if LVCOGs.ItemFocused = nil then
     exit;
+
   n  := LVCOGs.ItemFocused.Index;
   cg := level.cogs[n];
   v  := cg.vals[fi.id];
@@ -258,11 +257,11 @@ begin
       begin
         i := StrToInt(fi.s);
         if (i < 0) then
-        begin
-          fname := ResPicker.PickCog('');
-          if fname <> '' then
-            fi.s := IntToStr(AddCog(fname));
-        end
+          begin
+            fname := ResPicker.PickCog('');
+            if fname <> '' then
+              fi.s := IntToStr(AddCog(fname));
+          end
         else
           GotoCOG(i);
       end;
@@ -320,22 +319,23 @@ begin
   cf := TCogFile.Create;
   cf.LoadNoLocals(fname);
   cg := TCOG.Create;
-  cg.Name := fname;
+  cg.name := fname;
+
   for i := 0 to cf.Count - 1 do
   begin
     cv := cf[i];
     v := TCogValue.Create;
     v.Assign(cv);
     v.Val(cv.AsString);
-    cg.Vals.Add(v);
+    cg.vals.Add(v);
   end;
-  cf.free;
+  cf.Free;
 
   if fromcog <> nil then
-    for i := 0 to cg.Vals.Count - 1 do
+    for i := 0 to cg.vals.Count - 1 do
     begin
       v := cg.vals[i];
-      n := fromcog.vals.IndexOfName(v.Name);
+      n := fromcog.vals.IndexOfName(v.name);
       if n <> -1 then
         v.JedVal(fromcog.vals[n].AsJedString);
     end;
@@ -346,18 +346,17 @@ begin
   LVCOGs.OnChange := nil;
 
   li := LVCOGs.Items.Add;
-  li.Caption := cg.Name;
+  li.Caption := cg.name;
 
   s := '';
   for i := 0 to cg.vals.Count - 1 do
   begin
-    v := cg.Vals[i];
-    s := Concat(s, ' ', v.Name, '=', v.AsString);
+    v := cg.vals[i];
+    s := Concat(s, ' ', v.name, '=', v.AsString);
   end;
 
   li.SubItems.Add(s);
   LVCOGs.OnChange := ce;
-
 end;
 
 procedure TCogForm.BNAddClick(Sender: TObject);
@@ -382,7 +381,7 @@ begin
     exit;
 
   n := LVCOGs.ItemFocused.Index;
-  lev_utils.DeleteCOG(Level, n);
+  lev_utils.DeleteCOG(level, n);
   if n >= LVCOGs.Items.Count then
     n := LVCOGs.Items.Count - 1;
   GotoCOG(n);
@@ -395,10 +394,11 @@ end;
 
 Procedure TCogForm.GotoCOG(n: integer);
 begin
-  if (n < 0) or (n >= level.cogs.Count) then
+  if not CheckCogIndex(level, n) then
     exit;
+
   LVCOGs.ItemFocused := LVCOGs.Items[n];
-  LVCOGs.Selected := LVCOGs.Items[n];
+  LVCOGs.Selected    := LVCOGs.Items[n];
   LVCOGs.Selected.MakeVisible(false);
   Show;
   ActiveControl := LVCOGs;
@@ -421,25 +421,27 @@ begin
     exit;
 
   n  := LVCOGs.ItemFocused.Index;
+  if not CheckCogIndex(level, n) then
+    exit;
   cg := level.cogs[n];
 
   fname := '';
-  if FileExists(ProjectDir + cg.Name) then
-    fname := ProjectDir + cg.Name
-  else if FileExists(projectdir + 'cog\' + cg.Name) then
-    fname := ProjectDir + 'cog\' + cg.Name;
+  if FileExists(ProjectDir + cg.name) then
+    fname := ProjectDir + cg.name
+  else if FileExists(projectdir + 'cog\' + cg.name) then
+    fname := ProjectDir + 'cog\' + cg.name;
 
   if fname = '' then
   begin
     if MsgBox('The COG is inside a GOB file. Extract it to edit?', 'Question',
       MB_YESNO) <> idYes then
       exit;
-    f := OpenGameFile(cg.Name);
+    f := OpenGameFile(cg.name);
 {$I-}
     MkDir(projectdir + 'cog');
     if ioresult = 0 then;
 {$I+}
-    fname := ProjectDir + 'cog\' + cg.Name;
+    fname := ProjectDir + 'cog\' + cg.name;
     f1 := OpenFileWrite(fname, 0);
     CopyFileData(f, f1, f.fsize);
     f.FClose;
@@ -468,6 +470,7 @@ begin
     ShowMessage('No COG selected');
     exit;
   end;
+
   n := LVCOGs.ItemFocused.Index;
   i := SGVals.Row;
   if i < 0 then
@@ -511,7 +514,7 @@ begin
     exit;
   end;
   n := LVCOGs.ItemFocused.Index;
-  GotoCOG(AddCogWithVals(level.cogs[n].Name, level.cogs[n]));
+  GotoCOG(AddCogWithVals(level.cogs[n].name, level.cogs[n]));
 end;
 
 procedure TCogForm.FormDestroy(Sender: TObject);
