@@ -64,21 +64,26 @@ var t: TTextFile; cpos:word; s,w1,w2: string;
     vr,vg,vb: Single;
 
 Procedure GetNextLine(var s: string; upper: boolean = true);
-var cmt_pos:word; {Position of #}
+var cmt_pos: Word; {Position of #}
 begin
- s:='';
- Repeat
-  if t.eof then begin EndOfSection:=true; exit; end;
-  t.Readln(s);
-  inc(cur_line);
-  cmt_pos:=Pos('#',s);
-  if cmt_pos<>0 then SetLength(s,cmt_pos-1);
-  s:=Trim(s);
-  if upper then s := UpperCase(s);
-  
- Until s<>'';
- if SameText(s, 'END') then begin CurSection:=''; EndOfSection:=true; end;
- if SameText(GetWordN(s,1), 'SECTION:') then begin CurSection:=GetWordN(s,2); EndOfSection:=true; end;
+  s := '';
+  repeat
+    if t.eof then
+    begin
+      EndOfSection := True;
+      exit;
+    end;
+
+    t.Readln(s);
+    Inc(cur_line);
+    cmt_pos := Pos('#',s);
+    if cmt_pos <> 0 then SetLength(s, cmt_pos - 1);
+    s := Trim(s);
+    if upper then s := UpperCase(s);
+  until s <> '';
+
+  if SameText(s, 'END') then begin CurSection := ''; EndOfSection := True; end;
+  if SameText(GetWordN(s, 1), 'SECTION:') then begin CurSection := GetWordN(s,2); EndOfSection := True; end;
 end; {GetNextLine}
 
 Procedure SkipToNextSection;
@@ -91,31 +96,31 @@ begin
   PanMessageFmt(mt_error, 'File %s Error at line %d: %s', [filename, cur_line, s]);
 end;
 
-Const
+const
    pi_steps = 100;
 var
    ppos,fsize: LongInt;
 
 Procedure DO_Progress;
-var pos:integer;
+var pos: Integer;
 begin
- pos:=Round(t.fpos*pi_steps/fsize);
- While pos>ppos do
- begin
-  inc(ppos);
-  Progress.Step;
- end;
+  pos := Round(t.fpos * pi_steps / fsize);
+  while pos > ppos do
+  begin
+    Inc(ppos);
+    Progress.Step;
+  end;
 end;
 
-Function GetCmp(n:integer):String;
+Function GetCmp(n: Integer):String;
 begin
- if (n<0) or (n>=cmps.count) then n:=0;
- result:=cmps[n];
+ if (n < 0) or (n >= cmps.Count) then n := 0;
+ result := cmps[n];
 end;
 
 Function GetMat(n:integer):String;
 begin
-  result:='';
+  result := '';
   if n >= StaticResIdxMask then
     begin
       var sr := GetStaticMatList(kind);
@@ -124,21 +129,22 @@ begin
         Result := sr[si];
     end;
 
- if (n<0) or (n>=mats.count) then exit;
- result:=mats[n];
+  if (n < 0) or (n >= mats.count) then exit;
+  result := mats[n];
 end;
 
 Procedure LoadMats;
-var i,n:integer;
+var i,n: Integer;
 begin
- CurSection:='';
+ CurSection := '';
  GetNextLine(s);
- n:=StrToInt(GetWordN(s,3));
- i:=0;
- While (i<n) and (not EndOfSection) do
+
+ n := StrToInt(GetWordN(s, 3));
+ i := 0;
+ while (i < n) and (not EndOfSection) do
  begin
-  GetNextLine(s, false);
-  GetWord(s,1,w1);
+  GetNextLine(s, False);
+  GetWord(s, 1, w1);
   if SameText(w1, 'end') then break;
 
   // Parse mat name with whitespaces
@@ -152,7 +158,7 @@ begin
   begin
     PanMessageFmt(mt_warning, 'Invalid mat filename: ''%s'' at index %d line %d', [w2, i, t.curline]);
     mats.Add(w1); // Add it to the list anyway so the surface mat indices won't break
-    inc(i);
+    Inc(i);
     continue;
   end;
 
@@ -160,21 +166,21 @@ begin
   Delete(w2, p, w2.Length - p+1);
   w2 := w2.Trim;
   mats.Add(w2);
-  inc(i);
+  Inc(i);
  end;
 end;
 
 Procedure LoadGeometry;
-var i,j,n,p,pc:integer;
-    tempVX:TTempVertex;
-    nvx,vx,tvx:integer;
-    TSurf:TTempSurf;
-    txvx:TTempTXVertex;
-    adj:TAdjoin;
-    vxInt:TVXIntensity;
-    il:TSingleList;
+var i,j,n,p,pc: Integer;
+    tempVX: TTempVertex;
+    nvx,vx,tvx: Integer;
+    TSurf: TTempSurf;
+    txvx: TTempTXVertex;
+    adj: TAdjoin;
+    vxInt: TVXIntensity;
+    il: TSingleList;
 begin
- il:=TSingleList.Create;
+ il := TSingleList.Create;
  
  CurSection:='';
  {ColorMaps}
@@ -182,7 +188,7 @@ begin
   begin
    GetNextLine(s);
    SScanf(s,'WORLD COLORMAPS %d',[@n]);
-   For i:=0 to n-1 do
+   for i := 0 to n - 1 do
    begin
     GetNextLine(s);
     SScanf(s,'%s %s',[@w1,@w2]);
@@ -199,15 +205,15 @@ begin
 
  Progress.Msg:='Loading Vertices';
  GetNextLine(s);
-{ n:=StrToInt(GetWordN(s,3));}
+ { n:=StrToInt(GetWordN(s,3));}
  SScanf(s,'WORLD VERTICES %d',[@n]);
- For i:=0 to n-1 do
+ for i:=0 to n-1 do
  begin
   GetNextLine(s);
-  p:=pos(':',s);
-  w1:=copy(s,1,p-1);
-  if StrToInt(w1)<>i then Raise Exception.Create('');
-  TempVX:=TTempVertex.Create;
+  p := pos(':', s);
+  w1 := Copy(s, 1, p - 1);
+  if StrToInt(w1) <> i then raise Exception.Create('');
+  TempVX := TTempVertex.Create;
   GVXList.Add(TempVX);
   With TempVX do SSCanf(s,'%s %f %f %f',[@w1,@x,@y,@z]);
  end;
@@ -216,11 +222,11 @@ begin
  Progress.Msg:='Loading Texture Vertices';
  GetNextLine(s);
  SScanf(s,'WORLD TEXTURE VERTICES %d',[@n]);
- For i:=0 to n-1 do
+ for i:=0 to n-1 do
  begin
   DO_Progress;
   GetNextLine(s);
-  txvx:=TTempTXVertex.Create;
+  txvx := TTempTXVertex.Create;
   GTXVXList.Add(txvx);
   SScanf(s,'%s %l %l',[@w1,@txvx.u,@txvx.v]);
  end;
@@ -230,43 +236,44 @@ begin
  DO_Progress;
  Progress.Msg:='Loading Adjoins';
  SScanf(s,'WORLD ADJOINS %d',[@n]);
- For i:=0 to n-1 do
+
+ for i := 0 to n - 1 do
  begin
   GetNextLine(s);
-  adj:=TAdjoin.Create;
-{!}  SScanf(s,'%s %x %d',[@w1,@adj.flags,@adj.mirror]);
+  adj := TAdjoin.Create;
+{!}  SScanf(s,'%s %x %d',[@w1, @adj.flags, @adj.mirror]);
   GAdjoins.Add(adj);
-  adj.surf:=-1;
+  adj.surf := -1;
  end;
 
-{Surfaces}
+ {Surfaces}
  GetNextLine(s);
  Progress.Msg:='Loading Surfaces';
 
  SSCanf(s,'WORLD SURFACES %d',[@n]);
- For i:=0 to n-1 do
+ for i := 0 to n - 1 do
  begin
   DO_Progress;
   GetNextLine(s);
-  TSurf:=TTempSurf.Create;
+  TSurf := TTempSurf.Create;
   GSurfList.Add(TSurf);
-  p:=GetWord(s,1,w1);
-  p:=GetWord(s,p,w1); {material}
-  ValInt(w1,TSurf.nmat);
-  p:=GetWord(s,p,w1); {surfflags}
+  p := GetWord(s, 1, w1);
+  p := GetWord(s, p, w1); {material}
+  ValInt(w1, TSurf.nmat);
+  p := GetWord(s, p, w1); {surfflags}
   ValHex(w1,TSurf.SurfFlags);
-  p:=GetWord(s,p,w1); {faceflags}
+  p := GetWord(s, p, w1); {faceflags}
   ValHex(w1,TSurf.FaceFlags);
-  p:=GetWord(s,p,w1); {geo}
+  p := GetWord(s, p, w1); {geo}
   ValInt(w1,TSurf.geo);
-  p:=GetWord(s,p,w1); {light}
+  p := GetWord(s, p, w1); {light}
   ValInt(w1,TSurf.light);
-  p:=GetWord(s,p,w1); {tex}
+  p := GetWord(s, p, w1); {tex}
   ValInt(w1,TSurf.tex);
-  p:=GetWord(s,p,w1); {adjoin}
+  p := GetWord(s, p, w1); {adjoin}
   ValInt(w1,TSurf.nadj);
 
-  if TSurf.nadj<>-1 then
+  if TSurf.nadj <> -1 then
    TAdjoin(GAdjoins[TSurf.nadj]).Surf:=i;
 
   {extralight}
@@ -278,23 +285,23 @@ begin
     end
   else // IJIM
     begin
-      p:=GetWord(s,p,w1);
-      ValSingle(w1,TSurf.extralight.r);
-      p:=GetWord(s,p,w1);
-      ValSingle(w1,TSurf.extralight.g);
-      p:=GetWord(s,p,w1);
-      ValSingle(w1,TSurf.extralight.b);
-      p:=GetWord(s,p,w1);
-      ValSingle(w1,TSurf.extralight.a);
+      p := GetWord(s, p, w1);
+      ValSingle(w1, TSurf.extralight.r);
+      p := GetWord(s, p, w1);
+      ValSingle(w1, TSurf.extralight.g);
+      p := GetWord(s, p, w1);
+      ValSingle(w1, TSurf.extralight.b);
+      p := GetWord(s, p, w1);
+      ValSingle(w1, TSurf.extralight.a);
     end;
 
-  p:=GetWord(s,p,w1); {Nvert}
-  nvx:=StrToInt(w1);
-  for j:=0 to nvx-1 do
+  p := GetWord(s,p,w1); {Nvert}
+  nvx := StrToInt(w1);
+  for j := 0 to nvx - 1 do
   begin
-   p:=GetWord(s,p,w1);
-   pc:=Pos(',',w1);
-   if pc<>0 then w1[pc]:=' ';
+   p := GetWord(s, p, w1);
+   pc := Pos(',',w1);
+   if pc <> 0 then w1[pc] := ' ';
    if pc = Length(w1) then // if there is no UV idx in w1, get it
     begin
      p:=GetWord(s,p,w2);
@@ -306,9 +313,9 @@ begin
   end;
   il.Clear;
 
-  While p<=length(s) do
+  while p <= Length(s) do
   begin
-   p:=GetWord(s,p,w1);
+   p := GetWord(s,p,w1);
    il.Add(StrToFloat(w1, TFormatSettings.Invariant));
   end;
 
@@ -317,6 +324,7 @@ begin
     begin {MOTS and IJIM}
      if header.Version = 1 then
       kind := TProjectType.MOTS;
+
      for j:=0 to nvx-1 do
       begin
         vxInt:=TVXIntensity.Create;
@@ -327,21 +335,21 @@ begin
             vxInt.a:=il[viofs];
             Inc(viofs)
           end;
-        vxInt.r:=il[viofs]; Inc(viofs);
-        vxInt.g:=il[viofs]; Inc(viofs);
-        vxInt.b:=il[viofs]; Inc(viofs);
+        vxInt.r := il[viofs]; Inc(viofs);
+        vxInt.g := il[viofs]; Inc(viofs);
+        vxInt.b := il[viofs]; Inc(viofs);
       end;
     end
   else {JK}
   begin
-   for j:=0 to nvx-1 do
+   for j := 0 to nvx - 1 do
    begin
-    vxInt:=TVXIntensity.Create;
+    vxInt := TVXIntensity.Create;
     TSurf.Intensities.Add(vxInt);
-    vxInt.a:=il[j];
-    vxInt.r:=vxInt.a;
-    vxInt.g:=vxInt.a;
-    vxInt.b:=vxInt.a;
+    vxInt.a := il[j];
+    vxInt.r := vxInt.a;
+    vxInt.g := vxInt.a;
+    vxInt.b := vxInt.a;
    end;
   end;
  end;
@@ -349,8 +357,8 @@ begin
  il.free;
 
  DO_Progress;
- Progress.Msg:='Loading Normals';
- For i:=0 to n-1 do
+ Progress.Msg := 'Loading Normals';
+ for i := 0 to n - 1 do
  begin
   GetNextLine(s);
  end;
@@ -377,9 +385,9 @@ Procedure LoadSectors;
 
   Procedure SetJVX(sv: TTempVertex; dv: TJKVertex);
   begin
-   dv.x:=sv.x;
-   dv.y:=sv.y;
-   dv.z:=sv.z;
+   dv.x := sv.x;
+   dv.y := sv.y;
+   dv.z := sv.z;
   end;
 begin
 
@@ -732,37 +740,39 @@ begin
 end; {LoadLayers}
 
 Procedure LoadCogs;
-var i,n,p,idx:integer;
-    cg:TCog;
-    cv:TCogValue;
-    cf:TCogFile;
-    nval:integer;
+var i,n,p,idx: Integer;
+    cg: TCog;
+    cv: TCogValue;
+    cf: TCogFile;
+    nval: Integer;
 begin
  cf := TCogFile.Create;
 
- CurSection:='';
+ CurSection := '';
  DO_Progress;
- Progress.Msg:='Loading Cogs';
+ Progress.Msg := 'Loading Cogs';
  GetNextLine(s);
- SScanf(s,'WORLD COGS %d',[@n]);
+ SScanf(s,'WORLD COGS %d', [@n]);
 
- for i:=0 to n - 1 do
+ for i := 0 to n - 1 do
  begin
-  GetNextLine(s, false);
+  GetNextLine(s, False);
   if (SameText(s, 'end')) or EndOfSection then break;
-  p := GetWord(s,1,w1);
-  p := GetWord(s,p,w1);
+
+  p  := GetWord(s, 1, w1);
+  p  := GetWord(s, p, w1);
   cg := TCog.Create;
-  Cogs.Add(cg);
-  cg.Name:=w1;
+  cogs.Add(cg);
+  cg.Name := w1;
   cf.LoadNoLocals(cg.Name);
   nval := 0;
-  While p <= Length(s) do
+
+  while p <= Length(s) do
     begin
-      p:=getWord(s,p,w1);
+      p := GetWord(s,p,w1);
       if w1 = '' then continue;
-      cv:=TCOGValue.Create;
-      cg.Vals.Add(cv);
+      cv := TCOGValue.Create;
+      cg.vals.Add(cv);
 
       if nval<cf.Count then
         cv.Assign(cf[nval]);
@@ -775,11 +785,11 @@ begin
 end;
 
 Procedure LoadHeader;
-var p:integer;
+var p: Integer;
 begin
- CurSection:='';
- With header do
- While not EndOfSection do
+ CurSection := '';
+ with header do
+ while not EndOfSection do
  begin
   GetNextLine(s);
   p := GetWord(s,1,w1);
@@ -818,105 +828,110 @@ begin
   end;
 end;
 
-var i,j:integer;
-    cv:TCOGValue;
-    tmpsurf:TJKSurface;
+var i,j: Integer;
+    cv: TCOGValue;
+    tmpsurf: TJKSurface;
 begin {LoadFromJKL begin}
   kind := TProjectType.JKDF2; // set level project type
-  ppos:= 0;
-  FormatSettings.DecimalSeparator := '.';
+  ppos := 0;
   mats := TStringList.Create;
   cmps := TStringList.Create;
+  FormatSettings.DecimalSeparator := '.';
 
   t := TTextFile.CreateRead(OpenFileRead(filename, 0));
   fsize := t.Fsize;
 
   Clear;
 
-  cur_line:=0;
-  EndOfSection:=false;
-  CurSection:='';
+  cur_line     := 0;
+  EndOfSection := False;
+  CurSection   := '';
   SetDefaultHeader;
-  GVXList:=TVertices.Create;
-  GSurfList:=TList.Create;
-  GTXVXList:=TList.Create;
-  GAdjoins:=TList.Create;
+
+  GVXList   := TVertices.Create;
+  GSurfList := TList.Create;
+  GTXVXList := TList.Create;
+  GAdjoins  := TList.Create;
   Progress.Reset(pi_steps);
 
   try
     try
       repeat
-      while (CurSection='') and (not t.eof) do GetNextLine(s);
+      while (CurSection = '') and (not t.eof) do GetNextLine(s);
        if t.eof then break;
-       EndOfSection:=false;
-       if CurSection='GEORESOURCE' then LoadGeometry
-       else if CurSection='HEADER' then LoadHeader
-       else if CurSection='SECTORS' then LoadSectors
-       else if CurSection='MATERIALS' then LoadMats
-       else if CurSection='COGS' then LoadCogs
-       else if CurSection='TEMPLATES' then LoadTemplates
-       else if CurSection='THINGS' then LoadThings
-       else if CurSection='LIGHTS' then LoadLights
-       else if CurSection='LAYERS' then LoadLayers
+       EndOfSection := False;
+       if CurSection = 'GEORESOURCE' then LoadGeometry
+       else if CurSection = 'HEADER' then LoadHeader
+       else if CurSection = 'SECTORS' then LoadSectors
+       else if CurSection = 'MATERIALS' then LoadMats
+       else if CurSection = 'COGS' then LoadCogs
+       else if CurSection = 'TEMPLATES' then LoadTemplates
+       else if CurSection = 'THINGS' then LoadThings
+       else if CurSection = 'LIGHTS' then LoadLights
+       else if CurSection = 'LAYERS' then LoadLayers
        else SkipToNextSection;
       until t.eof;
-    Finally
+    finally
       t.FClose;
 
     Progress.Hide;
 
     {Post process}
-    for i:=0 to sectors.Count-1 do
-    With sectors[i] do
-      for j:= 0 to surfaces.Count-1 do
-      With Surfaces[j] do
+    for i := 0 to sectors.Count - 1 do
+      with sectors[i] do
+      for j := 0 to surfaces.Count - 1 do
+      with surfaces[j] do
       begin
-       if nadj < 0 then begin adjoin:= nil; continue; end;
-       With TAdjoin(GAdjoins[nadj]) do
-       begin
-        Adjoin:=GetSurfByN(TAdjoin(GAdjoins[mirror]).surf);
-        AdjoinFlags:=Flags;
-       end;
+        if nadj < 0 then begin adjoin := nil; continue; end;
+        with TAdjoin(GAdjoins[nadj]) do
+        begin
+          adjoin      := GetSurfByN(TAdjoin(GAdjoins[mirror]).surf);
+          adjoinFlags := flags;
+        end;
       end;
 
     {Free all stuff}
-    for i:=0 to GVXList.Count-1 do TTempVertex(GVXList[i]).Free;
+    for i := 0 to GVXList.Count - 1 do TTempVertex(GVXList[i]).Free;
     GVXList.Free;
-    For i:=0 to GSurfList.Count-1 do TTempSurf(GSurfList[i]).Free;
+
+    for i := 0 to GSurfList.Count - 1 do TTempSurf(GSurfList[i]).Free;
     GSurfList.Free;
-    For i:=0 to GTXVXList.Count-1 do TTempTXVertex(GTXVXList[i]).Free;
+
+    for i := 0 to GTXVXList.Count - 1 do TTempTXVertex(GTXVXList[i]).Free;
     GTXVXList.Free;
-    For i:=0 to GAdjoins.Count-1 do TAdjoin(GAdjoins[i]).Free;
+
+    for i := 0 to GAdjoins.Count - 1 do TAdjoin(GAdjoins[i]).Free;
     GAdjoins.Free;
 
-     RenumSecs;
-     RenumThings;
+    RenumSecs;
+    RenumThings;
 
-     for i:=0 to sectors.Count-1 do
-     With Sectors[i] do
-     begin
-      Renumber;
-      for j:=0 to surfaces.Count-1 do
-      begin
-       tmpsurf:=Surfaces[j];
-       tmpsurf.Recalc; // TODO: parse normals
-       if IsTXFlipped(tmpsurf) then tmpsurf.FaceFlags:=longint(tmpsurf.FaceFlags or FF_SF_Flip)
-       else tmpsurf.FaceFlags:=tmpsurf.FaceFlags and (not FF_SF_Flip);
-       FindUVScales(tmpsurf);
+    for i := 0 to sectors.Count - 1 do
+      with sectors[i] do
+        begin
+          Renumber;
+          for j := 0 to surfaces.Count - 1 do
+          begin
+            tmpsurf := Surfaces[j];
+            tmpsurf.Recalc; // TODO: parse normals
+            if IsTXFlipped(tmpsurf) then
+              BitSet(tmpsurf.faceFlags, FF_SF_Flip)
+          else
+            BitClear(tmpsurf.faceFlags, FF_SF_Flip);
+            FindUVScales(tmpsurf);
+          end;
+        end;
 
-      end;
-     end;
-
-     For i:=0 to Cogs.Count-1 do
-     With Cogs[i] do
-     for j:=0 to Vals.count-1 do
-       Vals[j].Resolve;
+    for i := 0 to cogs.Count - 1 do
+      with cogs[i] do
+      for j := 0 to vals.Count - 1 do
+        vals[j].Resolve;
 
      AddMissingLayers;
-     for i:=0 to Mats.Count-1 do Mats.Objects[i].Free;
-     Mats.Free;
-     Cmps.Free;
-    end;
+     for i := 0 to mats.Count - 1 do mats.Objects[i].Free;
+     mats.Free;
+     cmps.Free;
+  end;
   except
    On e:exception do PanMessage(mt_warning,e.message);
   end;
@@ -1154,22 +1169,22 @@ begin
   ReadFmt('LOD %f %f %f %f',
    [@lodDistances[1], @lodDistances[2], @lodDistances[3], @lodDistances[4]]);
 end;
-if MasterCMp='-' then MasterCMP:='';
+if MasterCMp = '-' then MasterCMP := '';
 end;
 
 Procedure LoadGeometry;
-var s,sf,vx,ns,nv,nsf:integer;
-    sec:TJKSector;
-    V:TJKVertex;
-    surf:TJKSurface;
-    asec,asf:integer;
-    p,nsv:integer;
-    st,w:string;
+var s,sf,vx,ns,nv,nsf: Integer;
+    sec: TJKSector;
+    V: TJKVertex;
+    surf: TJKSurface;
+    asec,asf: Integer;
+    p,nsv: Integer;
+    st,w: string;
 begin
  Progress.Msg:='Loading Geometry';
 
  ReadFmt('SECS %d',[@ns]);
- for s:=0 to ns-1 do
+ for s := 0 to ns - 1 do
  begin
 
 try
@@ -1243,48 +1258,49 @@ end;
   end;
  end;
  end;
- For s:=0 to Sectors.Count-1 do
- With Sectors[s] do
- for sf:=0 to Surfaces.Count-1 do
+
+ for s:=0 to sectors.Count - 1 do
+ with sectors[s] do
+  for sf:=0 to surfaces.Count - 1 do
 
  With Surfaces[sf] do
  begin
-  asec:=Num shr 16;
-  asf:=Num and 65535;
+  asec := num shr 16;
+  asf  := num and 65535;
  try
-  if (ASec=65535) or (aSf=65535) then Adjoin:=nil
-  else Adjoin:=Sectors[Asec].Surfaces[aSf];
+  if (ASec=65535) or (aSf=65535) then adjoin:=nil
+  else adjoin := sectors[Asec].surfaces[aSf];
  except
-  on e:exception do PanMessage(mt_warning,e.message);
+  on e:exception do PanMessage(mt_warning, e.message);
  end;
  end;
 end;
 
 Procedure LoadThings;
-var t,nt,ns,p:integer;
-    th:TThing;
-    st,w:string;
-    v:TTPLValue;
+var t,nt,ns,p: Integer;
+    th: TThing;
+    st,w: string;
+    v: TTPLValue;
 begin
- Progress.Msg:='Loading Things';
+ Progress.Msg := 'Loading Things';
  
  ReadFmt('THS %d',[@nt]);
- For t:=0 to nt-1 do
+ For t := 0 to nt - 1 do
  begin
   DO_Progress;
-  th:=NewThing;
+  th := NewThing;
   Things.Add(th);
-  With th do
+  with th do
    ReadFmt('%s %f %f %f %f %f %f %d %d',
    [@Name,@X,@Y,@Z,@PCH,@YAW,@ROL,@ns,@Layer]);
-   if ns<0 then Th.Sec:=nil else th.Sec:=Sectors[ns];
+   if ns < 0 then Th.Sec := nil else th.sec := sectors[ns];
   ReadS(st);
   p:=1;
-  With th do
-  While p<Length(st) do
+  with th do
+  while p < Length(st) do
   begin
-   p:=GetWord(st,p,w);
-   v:=TTPLValue.Create;
+   p := GetWord(st,p,w);
+   v := TTPLValue.Create;
    Vals.Add(v);
    S2TPLVal(w,v);
   end;
@@ -1292,26 +1308,27 @@ begin
 end;
 
 Procedure LoadCogs;
-var cg:TCog;
-    i,p,ncg:integer;
-    st,w:string;
-    v:TCOGvalue;
+var cg: TCog;
+    i,p,ncg: Integer;
+    st,w: string;
+    v: TCOGvalue;
 begin
-Progress.Msg:='Loading Cogs';
-ReadFmt('COGS %d',[@ncg]);
- For i:=0 to ncg-1 do
+ Progress.Msg:='Loading Cogs';
+ ReadFmt('COGS %d',[@ncg]);
+ for i := 0 to ncg - 1 do
  begin
   DO_Progress;
   ReadS(st);
-  cg:=TCog.Create;
+  cg := TCog.Create;
   Cogs.Add(cg);
-  p:=GetWord(st,1,w);
-  cg.Name:=w;
-  With cg do
-  While p<length(st) do
+  p := GetWord(st,1,w);
+  cg.Name := w;
+
+  with cg do
+  while p < Length(st) do
   begin
-   p:=GetWord(st,p,w);
-   v:=TCOGValue.Create;
+   p := GetWord(st, p, w);
+   v := TCOGValue.Create;
    Vals.Add(v);
    GetJedVal(w,v);
   end;
@@ -1319,23 +1336,23 @@ end;
 end;
 
 Procedure LoadLights;
-var nl:integer;
-    l:TSEDLight;
-    i:integer;
-    rgbRange: double;
-    RGBIntensity: single;
+var nl: integer;
+    l: TSEDLight;
+    i: Integer;
+    rgbRange: Double;
+    RGBIntensity: Single;
 begin
  Progress.Msg:='Loading Lights';
  ReadFmt('LTS %d',[@nl]);
-  for i:=0 to nl-1 do
+  for i := 0 to nl - 1 do
     begin
-      l:=NewLight;
-      Lights.Add(l);
+      l := NewLight;
+      lights.Add(l);
       With l do
-        if not ReadFmt('%f %f %f %d %f %f %x %l %l %l',[@position.x,@position.y,@position.z,@layer,@intensity,@range,
-           @flags,@color.r,@color.g,@color.b]) then
-          if not ReadFmt('%f %f %f %d %f %f %x %f %l %l %l %l',[@position.x,@position.y,@position.z,@layer,@intensity,@range,
-           @flags,@RGBRange,@RGBIntensity,@color.r,@color.g,@color.b]) then
+        if not ReadFmt('%f %f %f %d %f %f %x %l %l %l',[@position.x, @position.y, @position.z, @layer, @intensity, @range,
+           @flags, @color.r, @color.g, @color.b]) then
+          if not ReadFmt('%f %f %f %d %f %f %x %f %l %l %l %l',[@position.x, @position.y, @position.z, @layer, @intensity, @range,
+           @flags, @RGBRange, @RGBIntensity, @color.r, @color.g, @color.b]) then
             PanMessageFmt(mt_warning, 'Corrupted entry in light section at line %d', [t.curline]);
       if kind = TProjectType.JKDF2 then
         begin
@@ -1345,15 +1362,15 @@ begin
 end;
 
 Procedure LoadLayers;
-var i,nl:integer;
-    s:string;
+var i,nl: Integer;
+    s: string;
 begin
  Progress.Msg:='Loading Layers';
  ReadFmt('LAYERS %d',[@nl]);
-  for i:=0 to nl-1 do
+  for i := 0 to nl - 1 do
   begin
    ReadS(s);
-   Layers.Add(s);
+   layers.Add(s);
   end;
 end;
 
@@ -1363,81 +1380,77 @@ begin
 end;
 
 Procedure LoadHierarrchy;
-var i,nl:integer;
-    s:string;
-    hnode:THNode;
+var i,nl: Integer;
+    s: string;
+    hnode: THNode;
 begin
  Progress.Msg:='Loading Layers';
  ReadFmt('NODES %d',[@nl]);
-  for i:=0 to nl-1 do
+  for i := 0 to nl - 1 do
   begin
    ReadS(s);
-   hnode:=THNode.Create;
-   StringToHNode(s,hnode);
+   hnode := THNode.Create;
+   StringToHNode(s, hnode);
    h3donodes.Add(hnode);
   end;
 end;
 
-var tmpsurf:TJKSurface;
+var tmpsurf: TJKSurface;
 
 begin
- FormatSettings.DecimalSeparator:='.';
- t:=TTextFile.CreateRead(OpenFileRead(f,0));
+ FormatSettings.DecimalSeparator := '.';
+ t := TTextFile.CreateRead(OpenFileRead(f,0));
  Clear;
  {ReadS(St);}
- ppos:=0; fsize:=T.Fsize;
+ ppos := 0; fsize := T.Fsize;
  Progress.Reset(pi_steps);
 
 Try
  try
- jedver:=0.1;
- ReadFmt('JED %f',[@jedver]);
+ jedver := 0.1;
+ ReadFmt('JED %f', [@jedver]);
 
- While not t.eof do
+ while not t.eof do
  begin
   ReadS(st);
-  p:=GetWord(st,1,w);
-  if w='SEC:' then
+  p := GetWord(st, 1, w);
+  if w = 'SEC:' then
   begin
-   p:=GetWord(st,p,w);
-   if w='HEADER' then LoadHeader
-   else if w='GEO' then LoadGeometry
-   else if w='THINGS' then LoadThings
-   else if w='LIGHTS' then LoadLights
-   else if w='LAYERS' then LoadLayers
-   else if w='COGS' then LoadCogs
-   else if w='MOTS' then kind := TProjectType.MOTS
-   else if w='LVIS' then LoadLVis
-   else if w='HIERARCHYDEF' then LoadHierarrchy;
+   p := GetWord(st,p,w);
+   if w = 'HEADER' then LoadHeader
+   else if w = 'GEO' then LoadGeometry
+   else if w = 'THINGS' then LoadThings
+   else if w = 'LIGHTS' then LoadLights
+   else if w = 'LAYERS' then LoadLayers
+   else if w = 'COGS' then LoadCogs
+   else if w = 'MOTS' then kind := TProjectType.MOTS
+   else if w = 'LVIS' then LoadLVis
+   else if w = 'HIERARCHYDEF' then LoadHierarrchy;
    SkipToEOS;
   end;
-
  end;
 
  finally
   RenumThings;
   RenumSecs;
-  For i:=0 to Cogs.Count-1 do
-  With Cogs[i] do
-  begin
-   for j:=0 to Vals.count-1 do Vals[j].Resolve;
-  end;
+  for i := 0 to cogs.Count - 1 do
+  with cogs[i] do
+   for j := 0 to vals.count - 1 do vals[j].Resolve;
 
-  For s:=0 to Sectors.Count-1 do
-  With Sectors[s] do
+  for s := 0 to sectors.Count - 1 do
+  with sectors[s] do
   begin
    Renumber;
 
-   for j:=0 to Surfaces.Count-1 do
+   for j := 0 to surfaces.Count - 1 do
    begin
     tmpsurf:=Surfaces[j];
     tmpsurf.Recalc;
-    if JedVer<0.81 then
-    if IsTXFlipped(tmpsurf) then tmpsurf.FaceFlags:=tmpsurf.FaceFlags or FF_SF_Flip
-    else tmpsurf.FaceFlags:=tmpsurf.FaceFlags and (not FF_SF_Flip);
-    if JedVer<0.81 then tmpsurf.vscale:=tmpsurf.uscale;
+    if JedVer < 0.81 then
+    if IsTXFlipped(tmpsurf) then tmpsurf.faceFlags := tmpsurf.faceFlags or FF_SF_Flip
+    else tmpsurf.FaceFlags := tmpsurf.faceFlags and (not FF_SF_Flip);
+    if JedVer < 0.81 then tmpsurf.vscale := tmpsurf.uscale;
    end;
-
   end;
 
   AddMissingLayers;

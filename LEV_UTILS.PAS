@@ -2462,7 +2462,7 @@ var
   i: integer;
 begin
   v1 := surf.vertices[orgvx];
-  v2 := surf.vertices[NextIdx(orgvx, surf.Vertices.count)];
+  v2 := surf.vertices[NextIdx(orgvx, surf.vertices.Count)];
   with un do
   begin
     dx := v2.x - v1.x;

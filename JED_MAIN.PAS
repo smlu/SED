@@ -5186,81 +5186,81 @@ begin
     StartUndoRec('Calculate lighting');
 
     try
-       if sender = CalcLightInSel then
-          begin
-            case mapMode of
-              MM_SC:
-                begin
-                  var sci := scsel.AddSC(Cur_SC);
-                  for i := 0 to scsel.Count - 1 do
-                    AddSectorIndex(scsel.GetSC(i));
-                  scsel.DeleteN(sci);
-                end;
-              MM_SF:
-                begin
-                  var sfi := sfsel.AddSF(Cur_SC, Cur_SF);
-                  for i := 0 to sfsel.Count - 1 do
-                  begin
-                    sfsel.GetSCSF(i, sc, SF);
-                    AddSectorIndex(sc);
-                  end;
-                  sfsel.DeleteN(sfi);
-                end;
-              MM_ED:
-                begin
-                  var edi := edsel.AddED(Cur_SC, Cur_SF, Cur_ED);
-                  for i := 0 to edsel.Count - 1 do
-                  begin
-                    edsel.GetSCSFED(i, sc, SF, a);
-                    AddSectorIndex(sc);
-                  end;
-                  edsel.DeleteN(edi);
-                end;
-              MM_VX:
-                begin
-                  var vxi := vxsel.AddVX(Cur_SC, Cur_VX);
-                  for i := 0 to vxsel.Count - 1 do
-                  begin
-                    vxsel.GetSCVX(i, sc, a);
-                    AddSectorIndex(sc);
-                  end;
-                  vxsel.DeleteN(vxi);
-                end;
-            else
+      if sender = CalcLightInSel then
+        begin
+          case mapMode of
+            MM_SC:
               begin
-                ShowMessage('You must be in sector, surface, edge or vertex mode to use this option');
-                exit;
+                var sci := scsel.AddSC(Cur_SC);
+                for i := 0 to scsel.Count - 1 do
+                  AddSectorIndex(scsel.GetSC(i));
+                scsel.DeleteN(sci);
               end;
+            MM_SF:
+              begin
+                var sfi := sfsel.AddSF(Cur_SC, Cur_SF);
+                for i := 0 to sfsel.Count - 1 do
+                begin
+                  sfsel.GetSCSF(i, sc, SF);
+                  AddSectorIndex(sc);
+                end;
+                sfsel.DeleteN(sfi);
+              end;
+            MM_ED:
+              begin
+                var edi := edsel.AddED(Cur_SC, Cur_SF, Cur_ED);
+                for i := 0 to edsel.Count - 1 do
+                begin
+                  edsel.GetSCSFED(i, sc, SF, a);
+                  AddSectorIndex(sc);
+                end;
+                edsel.DeleteN(edi);
+              end;
+            MM_VX:
+              begin
+                var vxi := vxsel.AddVX(Cur_SC, Cur_VX);
+                for i := 0 to vxsel.Count - 1 do
+                begin
+                  vxsel.GetSCVX(i, sc, a);
+                  AddSectorIndex(sc);
+                end;
+                vxsel.DeleteN(vxi);
+              end;
+          else
+            begin
+              ShowMessage('You must be in sector, surface, edge or vertex mode to use this option');
+              exit;
             end;
-          end
-        else  // select sectors which are on visible layer
-          begin
-            for i := 0 to level.sectors.Count - 1 do
-              AddSectorIndex(i);
           end;
+        end
+      else  // select sectors which are on visible layer
+        begin
+          for i := 0 to level.sectors.Count - 1 do
+            AddSectorIndex(i);
+        end;
 
-        //ClearUndoBuffer;
-        sms := GetMSecs;
+      //ClearUndoBuffer;
+      sms := GetMSecs;
 
-        if NewLightCalc then
-          CalcLightingNew(Level, scs)
-        else
-          CalcLighting(Level, scs);
+      if NewLightCalc then
+        CalcLightingNew(Level, scs)
+      else
+        CalcLighting(Level, scs);
 
-        ems := GetMSecs;
-        sms := SubMSecs(sms, ems);
-        PanMessage(mt_info, Format('%d lights processed in %s',
-          [Level.Lights.Count, StrMSecs(sms)]));
+      ems := GetMSecs;
+      sms := SubMSecs(sms, ems);
+      PanMessage(mt_info, Format('%d lights processed in %s',
+        [Level.Lights.Count, StrMSecs(sms)]));
 
-        if level.sectors.Count = scs.Count then
-          Preview3D.ReloadLevel
-        else
-          for i := 0 to scs.Count - 1 do
-            SectorChanged(level.sectors[scs.GetSC(i)]);
+      if level.sectors.Count = scs.Count then
+        Preview3D.ReloadLevel
+      else
+        for i := 0 to scs.Count - 1 do
+          SectorChanged(level.sectors[scs.GetSC(i)]);
 
-        LevelChanged;
+      LevelChanged;
     finally
-        scs.Free;
+      scs.Free;
     end;
 end;
 
@@ -6446,9 +6446,8 @@ var
           exit;
 
         SaveSecUndo(surf.sector, ch_changed, sc_geo);
-
-        for i := 0 to surf.TXVertices.Count - 1 do
-            With surf.TXVertices[i] do
+        for i := 0 to surf.txVertices.Count - 1 do
+            With surf.txVertices[i] do
             begin
                 u := u + du;
                 v := v + dv;
@@ -6493,7 +6492,6 @@ begin
         sfsel.GetSCSF(i, sc, SF);
         ShiftSurf(Level.Sectors[sc].surfaces[SF]);
     end;
-
     sfsel.DeleteN(n);
 end;
 
@@ -6535,8 +6533,8 @@ var
 
         UpdateSurfUVData(surf, nu, nv);
         ArrangeTexture(surf, fv, nu, nv);
-//        var refsurf := Level.Sectors[Cur_SC].surfaces[Cur_SF];
-//        With refsurf.Vertices[fv], refsurf.txvertices[fv] do
+//        var refsurf := level.sectors[Cur_SC].surfaces[Cur_SF];
+//        with refsurf.vertices[fv], refsurf.txvertices[fv] do
 //         ArrangeTextureBy(surf, nu, nv, x, y, z, u, v);
 
         SectorChanged(surf.sector);
@@ -6566,9 +6564,8 @@ begin
     for var i := 0 to sfsel.Count - 1 do
     begin
         sfsel.GetSCSF(i, sc, sf);
-        RotateUV(Level.Sectors[sc].surfaces[sf], sina, cosa);
+        RotateUV(level.sectors[sc].surfaces[sf], sina, cosa);
     end;
-
     sfsel.DeleteN(n);
 end;
 
@@ -6633,7 +6630,7 @@ end;
 
 Procedure TJedMain.LightChanged(lt: TSedLight);
 begin
-    if (mapMode = MM_LT) and (lt = Level.Lights[Cur_LT]) then
+    if (mapMode = MM_LT) and (lt = level.lights[Cur_LT]) then
       UpdateItemEditor;
     LevelChanged;
 end;
@@ -6673,7 +6670,7 @@ begin
     case mapMode of
         MM_SC:
             begin
-                sec := Level.Sectors[Cur_SC];
+                sec := level.sectors[Cur_SC];
                 if axis <> rt_grid then
                     CalcSecCenter(sec, cx, cy, cz);
                 StartUndoRec('Rotate Sector(s)');
@@ -6692,7 +6689,7 @@ begin
             end;
         MM_TH:
             begin
-                th := Level.Things[Cur_TH];
+                th := level.things[Cur_TH];
                 if axis <> rt_grid then
                 begin
                     cx := th.X;
@@ -6707,7 +6704,7 @@ begin
             end;
         MM_LT:
             begin
-                LT := Level.Lights[Cur_LT];
+                LT := level.lights[Cur_LT];
                 if axis <> rt_grid then
                 begin
                     cx := LT.position.x;
@@ -6717,7 +6714,7 @@ begin
 
                 StartUndoRec('Rotate Light(s)');
                 i := ltsel.AddLT(Cur_LT);
-                RotateLights(Level, ltsel, vec, cx, cy, cz, angle);
+                RotateLights(level, ltsel, vec, cx, cy, cz, angle);
                 ltsel.DeleteN(i);
             end;
         MM_FR:
@@ -6725,14 +6722,14 @@ begin
                 if axis <> rt_grid then
                 begin
                     if Cur_FR < 0 then
-                        with Level.Things[Cur_TH] do
+                        with level.things[Cur_TH] do
                         begin
                             cx := X;
                             cy := Y;
                             cz := z;
                         end
                     else
-                        Level.Things[Cur_TH].Vals[Cur_FR].GetFrame(cx, cy,
+                        level.things[Cur_TH].vals[Cur_FR].GetFrame(cx, cy,
                           cz, a, a, a);
                 end;
 
@@ -6776,7 +6773,7 @@ begin
                     FlipThingsOverPlane(level, thsel, renderer.gnormal,
                       renderer.GridX, renderer.GridY, renderer.GridZ)
                 else
-                    With level.things[Cur_TH] do
+                    with level.things[Cur_TH] do
                         FlipThings(level, thsel, X, Y, z, how);
                 thsel.DeleteN(i);
             end;
@@ -6818,14 +6815,14 @@ begin
                 i := frsel.AddFR(Cur_TH, Cur_FR);
 
                 if Cur_FR < 0 then
-                    With level.Things[Cur_TH] do
+                    with level.things[Cur_TH] do
                     begin
                         cx := X;
                         cy := Y;
                         cz := z;
                     end
                 else
-                    level.things[Cur_TH].Vals[Cur_FR].GetFrame(cx, cy,
+                    level.things[Cur_TH].vals[Cur_FR].GetFrame(cx, cy,
                       cz, a, a, a);
 
                 case how of
@@ -6892,13 +6889,13 @@ begin
             begin
                 StartUndoRec('Scale Thing(s)');
                 i := thsel.AddTH(Cur_TH);
-                With level.things[Cur_TH] do
+                with level.things[Cur_TH] do
                 begin
                     sd.cx := X;
                     sd.cy := Y;
                     sd.cz := z;
                 end;
-                ScaleThings(Level, thsel, sd);
+                ScaleThings(level, thsel, sd);
                 thsel.DeleteN(i);
             end;
         MM_LT:
@@ -6931,7 +6928,6 @@ begin
                 ScaleFrames(level, frsel, sd);
                 frsel.DeleteN(i);
             end;
-
     end;
     Invalidate;
 end;
@@ -6977,7 +6973,7 @@ begin
     end;
 
     if (level.sectors.IndexOf(stitchSec) < 0) or
-      (stitchSec.surfaces.IndexOf(stitchSurf) < 0) then
+       (stitchSec.surfaces.IndexOf(stitchSurf) < 0) then
     begin
         PanMessage(mt_error, 'The stitching start surface was deleted');
         exit;
@@ -7034,7 +7030,7 @@ var
             CalcDefaultUVNormals(surf, ED, u, v);
 
         if zero then
-            with surf.TXVertices[ED] do
+            with surf.txVertices[ED] do
             begin
                 u := 0;
                 v := 0;
@@ -7045,12 +7041,12 @@ var
 
     Procedure StrSurf(surf: TJKSurface);
     begin
-        if not ToolBar.IsLayerVisible(surf.sector.layer) then
-          exit;
+      if not ToolBar.IsLayerVisible(surf.sector.layer) then
+        exit;
 
-        SaveSecUndo(surf.sector, ch_changed, sc_geo);
+      SaveSecUndo(surf.sector, ch_changed, sc_geo);
 
-        if rot90 then
+      if rot90 then
         begin
             CalcUVNormals(surf, v, u);
             v.dx := -v.dx;

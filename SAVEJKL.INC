@@ -463,16 +463,16 @@ Procedure WriteGeometry;
       end;
   end;
 
-Var    i,s,sf,v:integer;
-       surf:TJKSurface;
-       vx:TJKVertex;
-       txvx:TTXVertex;
-       nsurf:integer;
-       Adjoins:TList;
-       adj:TAdjoin;
-       st:string;
-       cx,cy,cz:double;
-       sec:TJKSector;
+var    i,s,sf,v: Integer;
+       surf: TJKSurface;
+       vx: TJKVertex;
+       txvx: TTXVertex;
+       nsurf: integer;
+       adjoins :TList;
+       adj: TAdjoin;
+       st: string;
+       cx,cy,cz: Double;
+       sec: TJKSector;
 begin {WriteGeometry}
  {Write VXs, TX VXs, Surfs, normals}
  {Compile list of unique vertices}
@@ -481,43 +481,42 @@ begin {WriteGeometry}
  Progress.Step;
 
 
- VXList:=TVertices.Create;
- TXVXList:=TTXVertices.Create;
+ vxList   := TVertices.Create;
+ txVXList := TTXVertices.Create;
 
- VxIdx:=TVertices.Create;
- TxIdx:=TTXVertices.Create;
+ vxIdx := TVertices.Create;
+ txIdx := TTXVertices.Create;
 
- for s:=0 to Sectors.Count-1 do
- With Sectors[s] do
+ for s := 0 to sectors.Count-1 do
+ with Sectors[s] do
  begin
-  for v:=0 to vertices.count-1 do
+  for v := 0 to vertices.Count - 1 do
   begin
-   vx:=Vertices[v];
-   vx.num:=AddVX(vx);
+   vx := Vertices[v];
+   vx.num := AddVX(vx);
   end;
  end;
+ vxIdx.Free;
 
- VxIdx.Free;
+ Progress.Msg := 'Writing vertices';
 
- Progress.Msg:='Writing vertices';
-
- WriteFmt('World vertices %d',[VXList.Count]);
+ WriteFmt('World vertices %d', [vxList.Count]);
  WriteS('#num:	vertex:');
- for v:=0 to VXList.Count-1 do
- With VXList[v] do
-  WriteFmt('%d: %.8f %.8f %.8f',[v,x,y,z]);
+ for v := 0 to vxList.Count - 1 do
+ with VXList[v] do
+  WriteFmt('%d: %.8f %.8f %.8f', [v,x,y,z]);
  WriteS('');
- VXList.Free;
+ vxList.Free;
 
  {Number surfaces}
- nsurf:=0;
- For s:=0 to Sectors.Count-1 do
- With Sectors[s] do
+ nsurf := 0;
+ for s := 0 to sectors.Count - 1 do
+ with Sectors[s] do
  begin
- for Sf:=0 to Surfaces.count-1 do
-  With Surfaces[sf] do
+ for sf := 0 to surfaces.Count - 1 do
+  with surfaces[sf] do
   begin
-   Num:=nsurf; inc(nsurf);
+   num := nsurf; inc(nsurf);
   end;
  end;
 
@@ -527,120 +526,122 @@ begin {WriteGeometry}
 
  {Pool texture vertices}
  //txvx := TTXVertex.Create;
- for s:=0 to Sectors.Count-1 do
- With Sectors[s] do
+ for s := 0 to sectors.Count - 1 do
+ with sectors[s] do
    begin
-   For sf:=0 to Surfaces.Count-1 do
+   for sf := 0 to surfaces.Count-1 do
     begin
       const uvsurf = Surfaces[sf];
-      var matSize := TSize.Create(1,1);
-      if (kind = IJIM) and (not uvsurf.Material.IsEmpty) then
-       try
-        matSize := uvsurf.GetMaterialSize;
-       except on E:Exception do PanMessage(mt_warning,
+      var matSize := TSize.Create(1, 1);
+      if (kind = IJIM) and (not uvsurf.material.IsEmpty) then
+        try
+          matSize := uvsurf.GetMaterialSize;
+        except on e: Exception do PanMessage(mt_warning,
           Format('Cannot load %s for sector %d surface %d: %s' + sLineBreak
             + '  Surface UV coords will be saved but are invalid!',
-            [uvsurf.Material, uvsurf.Sector.num, uvsurf.num, e.message]));
-       end;
+            [uvsurf.material, uvsurf.sector.num, uvsurf.num, e.message]));
+        end;
 
-      for v:=0 to uvsurf.txvertices.count-1 do
+      for v := 0 to uvsurf.txVertices.Count - 1 do
       begin
        txvx := TTXVertex.Create;
        txvx.Assign(uvsurf.TxVertices[v]);
        //txvx := uvsurf.TxVertices[v];
        txvx.u := txvx.u / matSize.Width;
        txvx.v := txvx.v / matSize.Height;
-       uvsurf.TxVertices[v].num := AddTXVX(txvx);
+       uvsurf.txVertices[v].num := AddTXVX(txvx);
       end;
     end;
    end;
- TxIdx.Free;
+ txIdx.Free;
 
-Progress.Msg:='Writing texture vertices';
+ Progress.Msg:='Writing texture vertices';
 
- WriteFmt('World texture vertices %d',[TXVXList.Count]);
+ WriteFmt('World texture vertices %d', [txVXList.Count]);
  WriteS('#num:	u:	v:');
 
- For v:=0 to TXVXList.Count-1 do
+ for v:=0 to txVXList.Count-1 do
  begin
-  txvx := TXVXList[v];
+  txvx := txVXList[v];
   with txvx do
     WriteFmt('%d: %.8f %.8f',[num,u,v]);
   txvx.Free;
  end;
- WriteS('');
- TXVxList.Free;
 
- Adjoins:=TList.Create;
- For s:=0 to Sectors.Count-1 do
- With Sectors[s] do
-   for Sf:=0 to Surfaces.count-1 do
-   With Surfaces[sf] do
+ WriteS('');
+ txVxList.Free;
+
+ adjoins:=TList.Create;
+ for s := 0 to sectors.Count-1 do
+ with sectors[s] do
+   for sf := 0 to surfaces.Count-1 do
+   with surfaces[sf] do
    begin
-     if Adjoin<>nil then
+     if adjoin <> nil then
        begin
-        Adj:=TAdjoin.Create;
-        nadj:=Adjoins.Add(Adj);
-        Adj.Surf:=num;
-        Adj.Flags:=AdjoinFlags and $7FFFFFFF;
-        Sec:=Sectors[s];
-        FindCenter(Sec,cx,cy,cz);
-        Adj.Dist:=DistToPlane(Surfaces[sf],cx,cy,cz);
+        adj       := TAdjoin.Create;
+        nadj      := adjoins.Add(Adj);
+        adj.surf  := num;
+        adj.flags := adjoinFlags and $7FFFFFFF;
+
+        sec := sectors[s];
+        FindCenter(sec, cx,cy,cz);
+        adj.dist := DistToPlane(surfaces[sf], cx,cy,cz);
        end
-       else nadj:=-1;
+       else nadj := -1;
    end;
 
- For s:=0 to Sectors.Count-1 do
-   With Sectors[s] do
-   for Sf:=0 to Surfaces.count-1 do
-   With Surfaces[sf] do
+ for s:=0 to sectors.Count-1 do
+   with Sectors[s] do
+   for Sf:=0 to surfaces.Count - 1 do
+   with surfaces[sf] do
      begin
-       if Adjoin<>nil then
+       if adjoin <> nil then
        begin
-        TAdjoin(Adjoins[nadj]).mirror:=Adjoin.nadj;
+        TAdjoin(Adjoins[nadj]).mirror:= adjoin.nadj;
        end;
      end;
 
- WriteFmt('World adjoins %d',[adjoins.count]);
+ WriteFmt('World adjoins %d', [adjoins.Count]);
  WriteS('#num:	flags:	mirror:	dist:');
- for i:=0 to Adjoins.Count-1 do
- With TAdjoin(Adjoins[i]) do
+ for i:=0 to adjoins.Count-1 do
+ with TAdjoin(adjoins[i]) do
    begin
     WriteFmt('%d: 0x%x %d %.2f',[i, flags, mirror, dist]);
-    free;
+    Free;
    end;
- Adjoins.free;
+ adjoins.Free;
 
  WriteS('');
  WriteFmt('World surfaces %d',[nsurf]);
  WriteS('#num:   mat:     surfflags:	faceflags:	geo:	light:	tex:	adjoin:	extralight:	nverts:	vertices:			intensities:');
- For s:=0 to Sectors.Count-1 do
- With Sectors[s] do
-   for sf:=0 to surfaces.count-1 do
-   With Surfaces[sf] do
+ for s := 0 to sectors.Count-1 do
+ with sectors[s] do
+   for sf := 0 to surfaces.Count-1 do
+   with Surfaces[sf] do
      begin
-      nmat:=GetMatN(Material);
+      nmat := GetMatN(Material);
       if kind = TProjectType.IJIM then
-        st:=Sprintf('%d:'#9'%d'#9'0x%x'#9'0x%x'#9'%d'#9'%d'#9'%d'#9'%d'#9'%.8f %.8f %.8f %.8f'#9'%d',
-          [num,nMat,SurfFlags,FaceFlags and (not FF_SF_FLIP),geo,light,tex,nadj,
-          ExtraLight.r, ExtraLight.g, ExtraLight.b, ExtraLight.a,vertices.Count])
+        st := Sprintf('%d:'#9'%d'#9'0x%x'#9'0x%x'#9'%d'#9'%d'#9'%d'#9'%d'#9'%.8f %.8f %.8f %.8f'#9'%d',
+          [num, nMat, SurfFlags, faceFlags and (not FF_SF_FLIP), geo, light, tex, nadj,
+          extraLight.r, extraLight.g, extraLight.b, extraLight.a, vertices.Count])
       else
-        st:=Sprintf('%d:'#9'%d'#9'0x%x'#9'0x%x'#9'%d'#9'%d'#9'%d'#9'%d'#9'%.6f'#9'%d',
-          [num,nMat,SurfFlags,FaceFlags and (not FF_SF_FLIP),geo,light,tex,nadj,RgbaToIntensity(ExtraLight),vertices.Count]);
+        st := Sprintf('%d:'#9'%d'#9'0x%x'#9'0x%x'#9'%d'#9'%d'#9'%d'#9'%d'#9'%.6f'#9'%d',
+          [num, nMat, surfflags, faceFlags and (not FF_SF_FLIP), geo, light, tex, nadj, RgbaToIntensity(extraLight), vertices.Count]);
 
-      for v:=0 to Vertices.Count-1 do
-      With Vertices[v] do
-        st:=Concat(st,Format(#9'%d,%d',[num,TXVertices[v].num]));
+      for v := 0 to vertices.Count - 1 do
+      with vertices[v] do
+        st := Concat(st, Format(#9'%d,%d', [num, txVertices[v].num]));
 
-      for v:=0 to Vertices.Count-1 do
+      for v:=0 to vertices.Count-1 do
       begin
-        With TXVertices[v] do
+        with txVertices[v] do
         begin
          if kind = TProjectType.MOTS then
-          st:=Concat(st,Sprintf(#9'%.4f'#9'%.4f'#9'%.4f'#9'%.4f',[color.a,color.r,color.g,color.b]))
+          st := Concat(st,Sprintf(#9'%.4f'#9'%.4f'#9'%.4f'#9'%.4f', [color.a, color.r, color.g, color.b]))
          else if kind = TProjectType.IJIM then
-          st:=Concat(st,Sprintf(#9'%.8f'#9'%.8f'#9'%.8f',[color.r,color.g,color.b]))
-         else st:=Concat(st,Sprintf(#9'%.4f',[color.a]));
+          st := Concat(st,Sprintf(#9'%.8f'#9'%.8f'#9'%.8f', [color.r, color.g, color.b]))
+         else st := Concat(st,Sprintf(#9'%.4f', [color.a]));
         end;
       end;
     //  With TXVertices[v] do

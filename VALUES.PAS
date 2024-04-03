@@ -28,7 +28,7 @@ type
     vector }
 
   TValue = class
-    Name: string;
+    name: string;
     vtype: v_type;
     int: longint;
     float: double;
@@ -148,7 +148,7 @@ end;
 
 Function GetCogVType(const stype: string): v_type;
 var
-  n: integer;
+  n: Integer;
 begin
   n := CogVtypes.IndexOf(stype);
   if n = -1 then
@@ -182,7 +182,7 @@ end;
 Function GetCOGVal(const st: string; v: TCOGValue): boolean;
 var
   w: string;
-  p, pe: integer;
+  p, pe: Integer;
 begin
   result := false;
   p := GetWord(st, 1, w);
@@ -201,7 +201,7 @@ begin
     v.Val(Copy(w, pe + 1, length(w)));
   end;
 
-  While p < length(st) do
+  while p < Length(st) do
   begin
     p := GetWord(st, p, w);
     if w = '' then
@@ -214,7 +214,7 @@ end;
 
 Function GetJedVal(const st: string; v: TCOGValue): boolean;
 var
-  pe, ps: integer;
+  pe, ps: Integer;
   w: string;
 begin
   ps := Pos(':', st);
@@ -259,9 +259,9 @@ begin
     ct_sec:
       result := IntToStr(TJKSector(obj).num);
     ct_srf:
-      With TJKSUrface(obj) do
-        result := IntToStr(sector.Level.GetGlobalSFN(sector.num,
-          sector.Surfaces.IndexOf(obj)));
+      with TJKSUrface(obj) do
+        result := IntToStr(sector.level.GetGlobalSFN(sector.num,
+          sector.surfaces.IndexOf(obj)));
     ct_thg:
       result := IntToStr(TJKThing(obj).num);
   else
@@ -274,7 +274,7 @@ begin
   Name := cv.Name;
   cog_type := cv.cog_type;
   vtype := cv.vtype;
-  desc := cv.desc;
+  desc  := cv.desc;
   local := cv.local;
 end;
 
@@ -282,11 +282,11 @@ Procedure TCOGValue.Resolve;
 begin
   case cog_type of
     ct_sec:
-      obj := Level.GetSectorN(int);
+      obj := level.GetSectorN(int);
     ct_srf:
-      obj := Level.GetSurfaceN(int);
+      obj := level.GetSurfaceN(int);
     ct_thg:
-      obj := Level.GetThingN(int);
+      obj := level.GetThingN(int);
   else
     exit;
   end;
@@ -325,12 +325,13 @@ begin
           obj := nil;
           exit;
         end;
+
         GetWord(s, p, w);
         result := ValInt(w, p);
         if not result then
           exit;
         try
-          obj := Level.Sectors[i].Surfaces[p];
+          obj := level.sectors[i].surfaces[p];
         except
           On Exception do
             result := false;
@@ -349,15 +350,15 @@ begin
         case cog_type of
           ct_sec:
             begin
-              if i < Level.Sectors.Count then
-                obj := Level.Sectors[i]
+              if i < level.sectors.Count then
+                obj := level.sectors[i]
               else
                 result := false;
             end;
           ct_thg:
             begin
-              if i < Level.Things.Count then
-                obj := Level.Things[i]
+              if i < level.things.Count then
+                obj := level.things[i]
               else
                 result := false;
             end;
@@ -544,7 +545,7 @@ Procedure InitValues;
 begin
   CogTypes := TStringList.Create;
   CogTypes.Sorted := true;
-  With CogTypes Do
+  with CogTypes Do
   begin
     AddObject('ai', TObject(ct_ai));
     AddObject('cog', TObject(ct_cog));
@@ -565,7 +566,7 @@ begin
 
   CogVtypes := TStringList.Create;
   CogVtypes.Sorted := true;
-  With CogVtypes do
+  with CogVtypes do
   begin
     AddObject('flex', TObject(vt_float));
     AddObject('float', TObject(vt_float));
@@ -587,7 +588,7 @@ begin
 
   tplNames := TStringList.Create;
   tplNames.Sorted := true;
-  With tplNames do
+  with tplNames do
   begin
     AddObject('material', TObject(at_mat));
     AddObject('cog', TObject(at_cog));
@@ -610,7 +611,7 @@ begin
 
   TplVtypes := TStringList.Create;
   TplVtypes.Sorted := true;
-  With TplVtypes do
+  with TplVtypes do
   begin
     AddObject('frame', TObject(vt_frame));
     AddObject('thingflags', TObject(vt_flag));

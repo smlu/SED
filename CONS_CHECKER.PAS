@@ -384,11 +384,11 @@ begin { Check }
       AddError('Thing is not in specified sector', th);
   end;
 
-  for i := 0 to Level.Cogs.Count - 1 do
+  for i := 0 to level.cogs.Count - 1 do
   begin
-    cog := Level.Cogs[i];
-    For j := 0 to cog.vals.Count - 1 do
-      With cog.vals[j] do
+    cog := level.cogs[i];
+    for j := 0 to cog.vals.Count - 1 do
+      with cog.vals[j] do
       begin
         case cog_type of
           ct_unk:
@@ -434,7 +434,7 @@ begin { Check }
   end;
 
   LBLTotalCnt.Caption := IntToStr(NErrors);
-  if cursel > 0  then
+  if cursel > 0 then
     begin
       if cursel < NErrors then
         Errors.ItemIndex := cursel
@@ -500,15 +500,15 @@ begin
   Wavs := CreateList;
   Cogs := CreateList;
 
-  if (Level.kind <> IJIM) and (Level.MasterCMP <> '') then
+  if (level.kind <> IJIM) and (level.masterCMP <> '') then
     if NoFile(Level.MasterCMP, cmps) then
       AddError('Level''s Master CMP is not found', nil);
 
   try
-    for i := 0 to Level.Sectors.Count - 1 do
+    for i := 0 to level.sectors.Count - 1 do
       begin
-        sec := Level.Sectors[i];
-        if (Level.kind <> IJIM) and NoFile(sec.colormap, cmps) then
+        sec := level.sectors[i];
+        if (level.kind <> IJIM) and NoFile(sec.colormap, cmps) then
           AddError('Colormap not found', sec);
         if sec.sound <> '' then
           if NoFile(sec.sound, Wavs) then
@@ -522,17 +522,17 @@ begin
         end;
       end;
 
-    For i := 0 to Level.Things.Count - 1 do
+    for i := 0 to level.things.Count - 1 do
     begin
-      th := Level.Things[i];
-      if Templates.IndexOfName(th.name) = -1 then
+      th := level.things[i];
+      if templates.IndexOfName(th.name) = -1 then
         AddError('Template not found', th);
     end;
 
-    For i := 0 to Level.Cogs.Count - 1 do
+    For i := 0 to level.cogs.Count - 1 do
     begin
-      cg := Level.Cogs[i];
-      if NoFile(cg.name, Cogs) then
+      cg := level.cogs[i];
+      if NoFile(cg.name, cogs) then
         AddError('Cog not found', cg);
     end;
 
@@ -557,7 +557,9 @@ begin
       Errors.ItemIndex := 0
     else
       Errors.OnClick(nil);
-    { if Not Visible then } Show;
+
+    { if Not Visible then }
+    Show;
   end;
 end;
 

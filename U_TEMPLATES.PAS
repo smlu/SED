@@ -5,7 +5,6 @@ interface
 uses Classes, Values, Files, FileOperations, Misc_utils, GlobalVars, Windows, sysutils;
 
 type
-
   TTemplate = class
     Name, parent: String;
     vals: TTPLValues;
@@ -44,7 +43,7 @@ type
   end;
 
 var
-  Templates: TTemplates;
+  templates: TTemplates;
 
 implementation
 
@@ -87,11 +86,11 @@ end;
 
 Function TTemplate.GetAsString: string;
 var
-  i: integer;
+  i: Integer;
 begin
   Result := PadRight(Name, 17) + ' ' + PadRight(parent, 17) + ' ';
   for i := 0 to vals.Count - 1 do
-    With vals[i] do
+    with vals[i] do
       Result := Concat(Result, ' ', Name, '=', AsString);
 end;
 
@@ -101,7 +100,7 @@ var
 begin
   Result := '';
   for i := 0 to vals.Count - 1 do
-    With vals[i] do
+    with vals[i] do
       Result := Concat(Result, ' ', Name, '=', AsString);
 end;
 
@@ -127,7 +126,7 @@ end;
 
 Procedure TTemplates.Clear;
 var
-  i: integer;
+  i: Integer;
 begin
   names.Clear;
   for i := 0 to Count - 1 do
@@ -137,7 +136,7 @@ end;
 
 Function TTemplates.IndexOfName(const Name: string): integer;
 var
-  i: integer;
+  i: Integer;
 begin
   Result := -1;
   i := names.IndexOf(name);
@@ -182,7 +181,7 @@ end;
 
 Function TTemplates.AddFromString(const s: string): integer;
 var
-  p, peq: integer;
+  p, peq: Integer;
   w: string;
   tpl: TTemplate;
   vl: TTPLValue;
@@ -203,7 +202,7 @@ begin
   p := GetWord(s, p, w);
   tpl.parent := w;
 
-  While p < length(s) do
+  while p < length(s) do
   begin
     p := GetWord(s, p, w);
     if w = '' then
@@ -259,12 +258,13 @@ begin
   t := TTextFile.CreateRead(f);
   Clear;
   Try
-    While not t.eof do
+    while not t.eof do
     begin
       t.Readln(s);
       p := GetWord(s, 1, w);
       if w = '' then
         continue;
+
       if w = '#' then
       begin
         p := GetWord(s, p, w);
@@ -304,7 +304,7 @@ begin
   Rewrite(t);
   Try
     for i := 0 to Count - 1 do
-      With Items[i] do
+      with Items[i] do
       begin
         Writeln(t, '# DESC: ', desc);
         With bbox do
@@ -357,15 +357,15 @@ Initialization
 
 begin
   InitValues;
-  Templates := TTemplates.Create;
+  templates := TTemplates.Create;
   { templates.LoadFromFile(BaseDir+'dataDir + '\' + master.tpl'); }
 end;
 
 Finalization
 
 begin
-  Templates.Clear;
-  Templates.Free;
+  templates.Clear;
+  templates.Free;
 end;
 
 end.
