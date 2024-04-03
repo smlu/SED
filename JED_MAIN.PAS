@@ -7006,6 +7006,33 @@ begin
     StartStitch;
 end;
 
+procedure GetPerpendicularUVNormals(const normal: TVector; var axis1, axis2: TVector);
+begin
+
+  if normal.y < 0 then
+    axis1 := TVector.left
+  else
+    axis1 := TVector.right;
+
+  axis1 := axis1 - normal * axis1.Dot(normal);
+
+  if (Abs(axis1.x) < 0.001) and (Abs(axis1.y) < 0.001) and (Abs(axis1.z) < 0.001) then
+  begin
+    if normal.x < 0 then
+      axis1 := TVector.forward
+    else
+      axis1 := TVector.back;
+
+    axis1 := axis1 - normal * axis1.Dot(normal);
+  end;
+
+  axis1.Normalize;
+
+  // Calculate axis2 as the cross product of the normal and axis1
+  axis2 := normal.Cross(axis1);
+  axis2.Normalize;
+end;
+
 Procedure TJedMain.StraightenTexture(zero, rot90: boolean);
 var
     u, v: TVector;
@@ -7054,16 +7081,20 @@ var
             v.dz := -v.dz;
             UpdateSurfUVData(surf, u, v);
         end
-        else
-            CalcUVNormals(surf, u, v);
-        if zero then
-            With surf.TXVertices[0] do
-            begin
-                u := 0;
-                v := 0;
-            end;
-        ArrangeTexture(surf, 0, u, v);
-        SectorChanged(surf.sector);
+      else
+        begin
+          GetPerpendicularUVNormals(surf.normal, u, v);
+        end;
+
+      if zero then
+        with surf.txVertices[0] do
+        begin
+            u := 0;
+            v := 0;
+        end;
+
+      ArrangeTexture(surf, 0, u, v);
+      SectorChanged(surf.sector);
     end;
 
 var
