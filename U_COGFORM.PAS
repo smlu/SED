@@ -42,6 +42,7 @@ type
     fe: TFieldEdit;
     Procedure RefreshList;
     Procedure GotoCOG(n: integer);
+    Procedure GotoCOGVal(c,v: integer);
     Procedure UpdateCOG(n: integer);
     { Public declarations }
   end;
@@ -87,6 +88,7 @@ var
   vl: TCogValue;
   ce: TLVChangeEvent;
 begin
+  var selc := LVCOGs.Selected;
   ce := LVCOGs.OnChange;
   LVCOGs.OnChange := nil;
 
@@ -111,17 +113,23 @@ begin
     LVCOGs.OnChange := ce;
   end;
 
-  if LVCOGs.Items.Count > 0 then
+  if LVCOGs.Items.IndexOf(selc) >= 0then
   begin
-    LVCOGs.Selected := LVCOGs.Items[0];
-    LVCOGs.ItemFocused := LVCOGs.Items[0];
+    LVCOGs.ItemFocused := selc;
+    LVCOGs.Selected := selc;
+    LVCOGs.Selected.MakeVisible(false);
   end
+  else if LVCOGs.Items.Count > 0 then
+    begin
+      LVCOGs.Selected := LVCOGs.Items[0];
+      LVCOGs.ItemFocused := LVCOGs.Items[0];
+    end
   else
-  begin
-    LVCOGs.Selected := nil;
-    LVCOGs.ItemFocused := nil;
-    LVCOGsChange(nil, nil, ctText);
-  end;
+    begin
+      LVCOGs.Selected := nil;
+      LVCOGs.ItemFocused := nil;
+      LVCOGsChange(nil, nil, ctText);
+    end;
   { LVCOGsChange(nil,nil,ctText); }
 
 end;
@@ -135,9 +143,11 @@ var
   vvals, vnames: TStringList;
 
 begin
-  cf       := TCogFile.Create;
-  vvals    := TStringList.Create;
-  vnames   := TStringList.Create;
+  var sc := LVCOGs.ItemIndex;
+  var sv := SGVals.Row;
+  cf     := TCogFile.Create;
+  vvals  := TStringList.Create;
+  vnames := TStringList.Create;
 
   try
     for i := 0 to level.cogs.Count - 1 do
@@ -177,6 +187,7 @@ begin
     vnames.Free;
     cf.Free;
     RefreshList;
+    GotoCOGVal(sc, sv);
   end;
 end;
 
@@ -402,6 +413,20 @@ begin
   LVCOGs.Selected.MakeVisible(false);
   Show;
   ActiveControl := LVCOGs;
+end;
+
+Procedure TCogForm.GotoCOGVal(c,v: integer);
+begin
+  if not CheckCogIndex(level, c) then
+    exit;
+  GotoCOG(c);
+
+  var cog := level.cogs[c];
+  if (v < 0) or (v >= level.cogs[c].vals.Count) then
+    exit;
+
+  SGVals.Row := v;
+  SGVals.SetFocus;
 end;
 
 procedure TCogForm.BNEditClick(Sender: TObject);
