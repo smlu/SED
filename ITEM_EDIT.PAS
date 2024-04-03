@@ -895,6 +895,7 @@ begin
         else
           fe.AddFieldStr(Name, ID_TH_LAST + i, AsString);
   end;
+
   fe.DoneAdding;
   AddCogs(ct_thg, Cur_Thing);
   if not Visible then
@@ -2073,17 +2074,34 @@ begin
   end;
 end;
 
-procedure TItemEdit.LBCogsDblClick(Sender: TObject);
+function ExtractCogSymName(const AStr: string): string;
 var
-  i: integer;
+  Index: Integer;
 begin
-  i := LBCogs.ItemIndex;
+  Index := LastDelimiter('\', AStr);
+  if Index > 0 then
+    Result := Copy(AStr, Index + 1, Length(AStr) - Index)
+  else
+    Result := '';
+end;
+
+procedure TItemEdit.LBCogsDblClick(Sender: TObject);
+begin
+  var i := LBCogs.ItemIndex;
   if i < 0 then
     exit;
 
-  i := level.cogs.IndexOf(LBCogs.Items.Objects[i]);
-  if i >= 0 then
-    CogForm.GotoCOG(i);
+  var cog := TCog(LBCogs.Items.Objects[i]);
+  var sname := ExtractCogSymName(LBCogs.Items.Strings[i]);
+  var ci := level.cogs.IndexOf(cog);
+  if ci >= 0 then
+    begin
+      var vi := cog.vals.IndexOfName(sname);
+      if vi >= 0 then
+        CogForm.GotoCOGVal(ci, vi)
+      else
+        CogForm.GotoCOG(ci);
+    end;
 end;
 
 end.
