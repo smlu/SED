@@ -147,7 +147,7 @@ begin
       end;
 
       sector_ := nil;
-      var sc := FindSectorForXYZ(level, x, y, z);
+      var sc := FindSectorForXYZ(level, x, y, z, (*visibleOnly*) P3DVisLayers);
       if sc <> -1 then
         begin
           var sec := level.sectors[sc];

@@ -97,11 +97,12 @@ function IsPointWithInLine(x, y, z, x1, y1, z1, x2, y2, z2: double): boolean;
 function IsInSector(const sec: TJKSector; x, y, z: double): boolean;
 function DoSectorsOverlap(const sec1, sec2: TJKSector): boolean;
 
-function FindSectorForThing(const thing: TJKThing): integer;
-function FindSectorForXYZ(const lev: TJKLevel; x, y, z: double): integer;
-function GetPreviousSector(const lev: TJKLevel; n: integer): integer; // Returns index of the previous sector on the visible layer or -1
-function GetPreviousThing(const lev: TJKLevel; n: integer): integer;  // Returns index of the previous thing on the visible layer or -1
-function GetPreviousLight(const lev: TJKLevel; n: integer): integer;  // Returns index of the previous light on the visible layer or -1
+function FindSectorForThing(const thing: TJKThing): Integer;
+function FindSectorForXYZ(const lev: TJKLevel; x, y, z: double): Integer; overload;
+function FindSectorForXYZ(const lev: TJKLevel; x, y, z: double; visibleOnly: Boolean): Integer; overload;
+function GetPreviousSector(const lev: TJKLevel; n: integer): Integer; // Returns index of the previous sector on the visible layer or -1
+function GetPreviousThing(const lev: TJKLevel; n: integer): Integer;  // Returns index of the previous thing on the visible layer or -1
+function GetPreviousLight(const lev: TJKLevel; n: integer): Integer;  // Returns index of the previous light on the visible layer or -1
 
 { Level modifications }
 procedure TranslateSectors(lev: TJKLevel; scsel: TSCMultiSel; cursc: integer;
@@ -2887,30 +2888,33 @@ begin
   result := true;
 end;
 
-Function FindSectorForXYZ(const lev: TJKLevel; x, y, z: double): integer;
-var
-  i: integer;
+function FindSectorForXYZ(const lev: TJKLevel; x, y, z: double; visibleOnly: Boolean): Integer;
 begin
   result := -1;
-  for i := 0 to lev.sectors.Count - 1 do
+  for var i := 0 to lev.sectors.Count - 1 do
+  begin
+    var sec := lev.sectors[i];
+    if visibleOnly and not ToolBar.IsLayerVisible(sec.layer) then
+      continue;
+
     if IsInSector(lev.sectors[i], x, y, z) then
     begin
       result := i;
       exit;
     end;
+  end;
+end;
+
+Function FindSectorForXYZ(const lev: TJKLevel; x, y, z: double): integer;
+begin
+  Result := FindSectorForXYZ(lev, x, y, z, False);
 end;
 
 Function FindSectorForThing(const thing: TJKThing): integer;
 var
   i: integer;
 begin
-  result := -1;
-  for i := 0 to thing.level.sectors.Count - 1 do
-    if IsInSector(thing.level.sectors[i], thing.x, thing.y, thing.z) then
-    begin
-      result := i;
-      exit;
-    end;
+  result := FindSectorForXYZ(thing.level, thing.x, thing.y, thing.z);
 end;
 
 Function GetPreviousSector(const lev: TJKLevel; n: integer): integer;
