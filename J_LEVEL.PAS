@@ -18,8 +18,9 @@ const
   SECF_IJIM_Aetherim  = $100;    // sector is in aetherium
 
   // SED sector flags (not used in the game)
-  SECF_3DO            = 1 shl 30;   // marks 3DO sec mesh
-  SECF_NOAMBINETLIGHT = 1 shl 31;   // marks sector to not use ambient light when calculating  lights
+  SECF_NORGBAMBINETLIGHT = 1 shl 29;   // marks sector to use use only light intensity for ambient light when calculating lights
+  SECF_NOAMBINETLIGHT    = 1 shl 30;   // marks sector to not calculate ambient light when calculating lights
+  SECF_3DO               = 1 shl 31;   // marks 3DO sec mesh
 
   // Surface flags
   SF_Floor        = $1;

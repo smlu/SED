@@ -698,7 +698,7 @@ begin
   FindBSphere(Sectors[s],CX,CY,CZ,Rad);
 
   // Remove SED flags
-  // Note: SECF_NOAMBINETLIGHT is left set so the correct
+  // Note: SECF_NORGBAMBINETLIGHT and SECF_NOAMBINETLIGHT are left set so the correct
   //       light logic is preserved the next time level is loaded into editor
   BitClear(Flags, SECF_3DO);
 

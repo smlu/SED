@@ -6130,6 +6130,12 @@ begin
 
     vlight := vlight / nv;
     sflight := sflight / sec.surfaces.Count;
+    if BitMaskTest(sec.flags, SECF_NORGBAMBINETLIGHT) then
+    begin
+      vlight  := MakeColor(vlight.Intensity);
+      sflight := MakeColor(sflight.Intensity);
+    end;
+
     if vlight.Intensity > sflight.Intensity then
       sec.ambient := vlight
     else
