@@ -677,11 +677,11 @@ var s,sf,v:integer;
 
 Function GetNCMP(const name:string):integer;
 begin
- Result:=UsedCmps.IndexOf(name);
- if Result<0 then
+ Result := UsedCmps.IndexOf(name);
+ if Result < 0 then
  begin
-  result:=0;
-  PanMessageFmt(mt_warning,'Invalid colormap in sec %d',[s]);
+  result := 0;
+  PanMessageFmt(mt_warning,'Invalid colormap in sec %d', [s]);
  end;
 end;
 
@@ -691,8 +691,8 @@ begin
  WriteFmt('World sectors'#9'%d',[Sectors.Count]);
  WriteS('');
  nsurf:=0;
- For s:=0 to Sectors.Count-1 do
- With Sectors[s] do
+ for s := 0 to sectors.Count - 1 do
+ with sectors[s] do
  begin
   FindBBox(Sectors[s],bbox);
   FindBSphere(Sectors[s],CX,CY,CZ,Rad);
@@ -710,63 +710,64 @@ begin
 
   if kind = TProjectType.IJIM then
     begin
-      WriteFmt('AMBIENT LIGHT'#9'%.8f %.8f %.8f',[Ambient.r, Ambient.g, Ambient.b]);
-      WriteFmt('EXTRA LIGHT'#9'%.8f %.8f %.8f',[ExtraLight.r, ExtraLight.g, ExtraLight.b]);
+      WriteFmt('AMBIENT LIGHT'#9'%.8f %.8f %.8f',[ambient.r, ambient.g, ambient.b]);
+      WriteFmt('EXTRA LIGHT'#9'%.8f %.8f %.8f', [extraLight.r, extraLight.g, extraLight.b]);
       if not tint.IsZero() then
-         WriteFmt('TINT'#9'%.8f %.8f %.8f',[Tint.r,Tint.g,Tint.b]);
+         WriteFmt('TINT'#9'%.8f %.8f %.8f', [tint.r, tint.g, tint.b]);
       if not PointLight.Color.IsZero() then
         WriteFmt('AVERAGE LIGHT INTENSITY'#9'%.8f %.8f %.8f',
-          [PointLight.Color.r, PointLight.Color.g, PointLight.Color.b]);
-      if not PointLight.Position.IsZero() then
+          [pointLight.Color.r, pointLight.Color.g, pointLight.Color.b]);
+      if not pointLight.position.IsZero() then
         WriteFmt('AVERAGE LIGHT POSITION'#9'%.8f %.8f %.8f',
-          [PointLight.Position.x, PointLight.Position.y, PointLight.Position.z]);
-       if not IsZero(PointLight.minRange) or not IsZero(PointLight.maxRange)  then
+          [pointLight.position.x, pointLight.position.y, pointLight.position.z]);
+       if not IsZero(pointLight.minRange) or not IsZero(pointLight.maxRange)  then
         WriteFmt('AVERAGE LIGHT FALLOFF'#9'%.8f %.8f',
-          [PointLight.minRange, PointLight.maxRange]);
+          [pointLight.minRange, pointLight.maxRange]);
     end
   else
     begin
-      WriteFmt('AMBIENT LIGHT'#9'%.6f',[RgbToIntensity(ambient)]);
-      WriteFmt('EXTRA LIGHT'#9'%.6f',[RgbToIntensity(ExtraLight)]);
-      WriteFmt('COLORMAP'#9'%d',[GetNCMP(ColorMap)]);
-      WriteFmt('TINT'#9'%.6f'#9'%.6f'#9'%.6f',[Tint.r,Tint.g,Tint.b]);
+      WriteFmt('AMBIENT LIGHT'#9'%.6f', [RgbToIntensity(ambient)]);
+      WriteFmt('EXTRA LIGHT'#9'%.6f', [RgbToIntensity(extraLight)]);
+      WriteFmt('COLORMAP'#9'%d', [GetNCMP(colorMap)]);
+      WriteFmt('TINT'#9'%.6f'#9'%.6f'#9'%.6f', [tint.r, tint.g, tint.b]);
     end;
 
   With BBox do
-    WriteFmt('BOUNDBOX'#9'%.8f %.8f %.8f %.8f %.8f %.8f',[X1,Y1,Z1,X2,Y2,Z2]);
+    WriteFmt('BOUNDBOX'#9'%.8f %.8f %.8f %.8f %.8f %.8f', [X1,Y1,Z1,X2,Y2,Z2]);
 
-  if BitMaskTest(Flags, SECF_CollideBox) then With CollideBox do
+  if BitMaskTest(flags, SECF_CollideBox) then with collideBox do
     WriteFmt('COLLIDEBOX'#9'%.8f %.8f %.8f %.8f %.8f %.8f',[X1,Y1,Z1,X2,Y2,Z2]);
 
-  if Sound <> '' then WriteFmt('SOUND'#9'%s %.6f',[Sound,soundVolume]);
+  if Sound <> '' then WriteFmt('SOUND'#9'%s %.6f', [sound, soundVolume]);
   if (kind = TProjectType.IJIM) and not Thrust.IsZero() then
-    WriteFmt('THRUST'#9'%.8f'#9'%.8f'#9'%.8f',[Thrust.x,Thrust.y,Thrust.z]);
+    WriteFmt('THRUST'#9'%.8f'#9'%.8f'#9'%.8f', [thrust.x, thrust.y, thrust.z]);
 
-  WriteFmt('CENTER'#9'%.8f %.8f %.8f',[CX,CY,CZ]);
-  WriteFmt('RADIUS'#9'%.8f',[rad]);
+  WriteFmt('CENTER'#9'%.8f %.8f %.8f', [CX,CY,CZ]);
+  WriteFmt('RADIUS'#9'%.8f', [rad]);
 
-  WriteFmt('VERTICES'#9'%d',[Vertices.Count]);
-  for v:=0 to Vertices.Count-1 do
-  WriteFmt('%d: %d',[v,Vertices[v].Num]);
-  WriteFmt('SURFACES'#9'%d'#9'%d',[nsurf,Surfaces.Count]);
-  inc(nsurf,Surfaces.Count);
+  WriteFmt('VERTICES'#9'%d', [vertices.Count]);
+  for v := 0 to vertices.Count - 1 do
+  WriteFmt('%d: %d',[v, vertices[v].num]);
+  WriteFmt('SURFACES'#9'%d'#9'%d', [nsurf, surfaces.Count]);
+
+  Inc(nsurf, surfaces.Count);
   WriteS('');  
  end;
 end;
 
 Procedure WriteCogs;
-var i,j:integer;
-    st:string;
+var i,j: Integer;
+    st: string;
 begin
  {Write Placed cogs}
  WriteS('');
  WriteFmt('World cogs'#9'%d',[Cogs.Count+UsedCogs.Count]);
  WriteS('#Num	Script          Symbol values');
- for i:=0 to Cogs.Count-1 do
- With Cogs[i] do
+ for i:=0 to cogs.Count - 1 do
+ with cogs[i] do
  begin
-  St:=Format('%d:'#9'%s',[i,Name]);
-  for j:=0 to Vals.Count-1 do st:=Concat(st,#9,Vals[j].AsString);
+  st := Format('%d:'#9'%s',[i,Name]);
+  for j := 0 to vals.Count - 1 do st := Concat(st, #9, vals[j].AsString);
   WriteS(st);
  end;
 
@@ -784,9 +785,9 @@ begin
   {Arrange templates in a proper order}
 
   {first set Objects[] to template object}
-  for i := UsedTpls.Count-1 downto 0 do
+  for i := usedTpls.Count-1 downto 0 do
     begin
-    ti := u_templates.Templates.IndexOfName(UsedTpls[i]);
+    ti := u_templates.templates.IndexOfName(UsedTpls[i]);
     if ti = -1 then
       begin
         PanMessageFmt(mt_warning,
@@ -794,7 +795,7 @@ begin
         UsedTpls.delete(i);
         continue;
       end;
-    UsedTpls.Objects[i] := u_templates.Templates[ti];
+    usedTpls.Objects[i] := u_templates.templates[ti];
   end;
   {First put base level objects in list}
 
@@ -806,10 +807,10 @@ begin
     UsedTpls.Delete(i);
    end;}
 
-  While UsedTpls.Count>0 do
+  while usedTpls.Count > 0 do
     begin
-      n := UsedTpls.Count;
-      For i := UsedTpls.Count - 1 downto 0 do
+      n := usedTpls.Count;
+      For i := usedTpls.Count - 1 downto 0 do
         begin
           tp := TTemplate(UsedTpls.Objects[i]);
           if (CompareText(tp.parent,'none') <> 0) and
@@ -818,7 +819,7 @@ begin
               if (UsedTpls.IndexOf(tp.parent) = -1) then
                 begin
                   // Find parent template and insert it into used list
-                  ti := u_templates.Templates.IndexOfName(tp.parent);
+                  ti := u_templates.templates.IndexOfName(tp.parent);
                   if ti = -1 then
                   begin
                     PanMessageFmt(mt_warning,
@@ -826,34 +827,34 @@ begin
                     UsedTpls.Delete(i);
                     continue;
                   end;
-                  UsedTpls.AddObject(tp.parent, u_templates.Templates[ti]);
+                  UsedTpls.AddObject(tp.parent, u_templates.templates[ti]);
                 end;
               continue;
             end;
 
           norefs:=true;
-          for j:=0 to tp.Vals.count-1 do
+          for j := 0 to tp.vals.Count - 1 do
             begin
-              vl := tp.Vals[j];
-              if vl.atype<>at_tpl then continue;
-              if (CompareText(vl.s,'none')<>0) and
-                 (wtpls.IndexOf(vl.s) = -1) then begin norefs := false; break; end;
+              vl := tp.vals[j];
+              if vl.atype <> at_tpl then continue;
+              if (CompareText(vl.s,'none') <> 0) and
+                 (wtpls.IndexOf(vl.s) = -1) then begin norefs := False; break; end;
             end;
 
           if not norefs then continue;
 
           { if wtpls.IndexOf(tp.Parent)=-1 then continue;}
           wtpls.AddObject(tp.Name,tp);
-          UsedTpls.Delete(i);
+          usedTpls.Delete(i);
         end; // For i:=UsedTpls.Count-1 downto 0 do
-      if n = UsedTpls.Count then break;
+      if n = usedTpls.Count then break;
     end;
 
   {Write templates - UsedTpls}
   WriteS('');
-  WriteFmt('World templates %d',[WTpls.Count]);
+  WriteFmt('World templates %d', [WTpls.Count]);
   WriteS('#Name:           Based On:        Params:');
-  For i := 0 to WTpls.Count-1 do
+  for i := 0 to WTpls.Count-1 do
     begin
       tp := TTemplate(Wtpls.Objects[i]);
       WriteS(Tp.GetAsString);
@@ -862,25 +863,25 @@ begin
 end;
 
 Procedure WriteThings;
-var i,j:integer;
+var i,j: Integer;
     s:string;
     v:TValue;
     snum:integer;
 begin
  {Write things}
  RenumSecs;
- WriteFmt('World things %d',[Things.Count + 256]);
+ WriteFmt('World things %d', [things.Count + 256]); // Note,  256 is buffer size. TODO: should read buffer size from level header
  WriteS('#num template:       name:         	X:		Y:		Z:		Pitch:		Yaw:		Roll:		Sector:');
- For i:=0 to Things.Count-1 do
- With Things[i] do
+ For i := 0 to things.Count-1 do
+ with things[i] do
  begin
-  if Sec=nil then snum:=-1 else snum:=Sec.Num;
-  s:=Sprintf('%d: %s %s %.8f %.8f %.8f %.8f %.8f %.8f %d',[i,LowerCase(Name),LowerCase(Name),X,Y,Z,PCH,YAW,ROL,SNum]);
-  if kind = TProjectType.MOTS then s:=s+' -1';
-  for j:=0 to Vals.Count-1 do
+  if sec = nil then snum := -1 else snum := sec.num;
+  s := Sprintf('%d: %s %s %.8f %.8f %.8f %.8f %.8f %.8f %d', [i, LowerCase(Name), LowerCase(Name), X,Y,Z, PCH,YAW,ROL, snum]);
+  if kind = TProjectType.MOTS then s:= s + ' -1';
+  for j := 0 to vals.Count - 1 do
   begin
-   v:=Vals[j];
-   s:=Concat(s,' ',LowerCase(v.Name),'=',v.AsString);
+   v := vals[j];
+   s := Concat(s, ' ', LowerCase(v.Name), '=', v.AsString);
   end;
   WriteS(s);
  end;
@@ -892,7 +893,7 @@ var i,j:integer;
     v:TValue;
     snum:integer;
 begin
- WriteFmt('Editor lights %d',[Lights.Count]);
+ WriteFmt('Editor lights %d', [Lights.Count]);
  WriteS('');
 
  if kind = JKDF2 then
@@ -900,14 +901,14 @@ begin
  else
   WriteS('#num:  flags:  layer:  x:    y:    z:    range:  intensity:  r:    g:    b:');
 
- For i:=0 to Lights.Count-1 do
- With Lights[i] do
+ for i:=0 to lights.Count - 1 do
+ with lights[i] do
    if kind = JKDF2 then
     WriteFmt('%d: %x %d %.8f %.8f %.8f %.8f %.8f',
       [i, flags, layer, position.x,position.y,position.z, range, intensity])
    else
     WriteFmt('%d: %x %d %.8f %.8f %.8f %.8f %.8f %.8f %.8f %.8f',
-      [i, flags, layer, position.x,position.y,position.z, range, intensity, color.r,color.g, color.b]);
+      [i, flags, layer, position.x,position.y,position.z, range, intensity, color.r, color.g, color.b]);
 end;
 
 Procedure WriteLayers;
@@ -916,20 +917,20 @@ begin
   var lths := TObjectDictionary<integer, TList<integer>>.Create([doOwnsValues]);
   for var i := 0 to sectors.Count -1 do
     begin
-      const l = sectors[i].Layer;
+      const l = sectors[i].layer;
       if not lsecs.ContainsKey(l) then
          lsecs.Add(l, TList<integer>.Create);
       lsecs[l].Add(i);
     end;
   for var i := 0 to things.Count -1 do
     begin
-      const l = things[i].Layer;
+      const l = things[i].layer;
       if not lths.ContainsKey(l) then
          lths.Add(l, TList<integer>.Create);
       lths[l].Add(i);
     end;
 
-  WriteFmt('Editor layers %d',[Layers.Count]);
+  WriteFmt('Editor layers %d', [layers.Count]);
   WriteS('');
   WriteS('#name secs things');
   For var i:=0 to Layers.Count-1 do
@@ -944,7 +945,7 @@ begin
           for var j := 0 to lsecs[i].Count -1 do
             begin
               if (j > 0) and  (j mod 64 = 0) then lix := lix + sLineBreak;
-              lix := Concat(lix, Sprintf(#9'%d',[lsecs[i][j]]));
+              lix := Concat(lix, Sprintf(#9'%d', [lsecs[i][j]]));
             end;
         end
       else
@@ -957,7 +958,7 @@ begin
           for var j := 0 to lths[i].Count -1 do
             begin
               if (j > 0) and  (j mod 64 = 0) then lix := lix + sLineBreak;
-              lix := Concat(lix, Sprintf(#9'%d',[lths[i][j]]));
+              lix := Concat(lix, Sprintf(#9'%d', [lths[i][j]]));
             end;
         end
       else

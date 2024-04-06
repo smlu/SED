@@ -49,7 +49,7 @@ const
   SAF_AllowSoundPass = $04;       // JKDF specific
   SAF_NoAiMove       = $08;       // Only player can move through adjoin
   SAF_NoPlayerMove   = $10;       // Don't allow player to move throug adjoin
-  SAF_BlockLight     = $80000000; // SED specifc flag to block ligh pass through adjoin to another sector.
+  SAF_BlockLight     = LongInt($80000000); // SED specifc flag to block ligh pass through adjoin to another sector.
 
   // Light flags
   LF_NoBlock = 1;

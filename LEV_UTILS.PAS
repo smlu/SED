@@ -6117,19 +6117,19 @@ begin
     for sf := 0 to sec.surfaces.Count - 1 do
     begin
       surf := sec.surfaces[sf];
-      sflight := sflight + surf.ExtraLight;
-      inc(nv, surf.Vertices.Count);
+      sflight := sflight + surf.extraLight;
+      Inc(nv, surf.vertices.Count);
 
-      for v := 0 to surf.Vertices.Count - 1 do
-        With surf.txvertices[v] do
+      for v := 0 to surf.vertices.Count - 1 do
+        with surf.txvertices[v] do
         begin
           color.Normalize;
           vlight := vlight + color;
         end;
     end;
-    // TODO: Check if sector.extra light has to be applied.
+
     vlight := vlight / nv;
-    sflight := sflight / sec.surfaces.count;
+    sflight := sflight / sec.surfaces.Count;
     if vlight.Intensity > sflight.Intensity then
       sec.ambient := vlight
     else
@@ -6139,7 +6139,7 @@ end;
 
 Procedure CalcLighting(lev: TJKLevel; scs: TSCMultiSel);
 var
-  l, s, sf, v: integer;
+  l, sc, sf, v: integer;
   surf: TJKSurface;
   cv, v0: TJKVertex;
   lt: TSedLight;
@@ -6166,9 +6166,9 @@ var
       if asurf = surf then
         exit;
       if (asurf.adjoin <> nil) then
-        if (asurf.AdjoinFlags and SAF_BlockLight = 0) then
+        if not BitMaskTest(asurf.adjoinFlags, SAF_BlockLight) then
           exit;
-      csd := Pointer(sfd + asurf.Mark * sizeof(TLCSurfData));
+      csd := Pointer(sfd + asurf.mark * sizeof(TLCSurfData));
       D := csd^.D;
 
       if newLight then
@@ -6223,7 +6223,7 @@ var
           end;
         end;
 
-    With lev.sectors[s] do
+    With lev.sectors[sc] do
       for lsf := 0 to surfaces.Count - 1 do
       begin
         if SurfBlocks(surfaces[lsf]) then
@@ -6234,7 +6234,7 @@ var
       end;
 
     for ls := 0 to lev.sectors.Count - 1 do
-      if (ls <> s) and (ls <> lt.mark) then
+      if (ls <> sc) and (ls <> lt.mark) then
         With lev.sectors[ls] do
           for lsf := 0 to surfaces.Count - 1 do
           begin
@@ -6256,23 +6256,23 @@ begin { CalcLighting }
 
   { Precalculate surface data }
 
-  For s := 0 to lev.sectors.Count - 1 do
-    With lev.sectors[s] do
+  for sc := 0 to lev.sectors.Count - 1 do
+    with lev.sectors[sc] do
     begin
       for sf := 0 to surfaces.Count - 1 do
-        With surfaces[sf] do
-          Mark := gsfs + sf;
-      inc(gsfs, surfaces.count);
+        with surfaces[sf] do
+          mark := gsfs + sf;
+      Inc(gsfs, surfaces.count);
     end;
 
   GetMem(sfd, gsfs * sizeof(TLCSurfData));
 
   try
-    for s := 0 to lev.sectors.Count - 1 do
-      with lev.sectors[s] do
+    for sc := 0 to lev.sectors.Count - 1 do
+      with lev.sectors[sc] do
       begin
         for sf := 0 to surfaces.Count - 1 do
-          With surfaces[sf] do
+          with surfaces[sf] do
           begin
             csd := Pointer(sfd + mark * sizeof(TLCSurfData));
             csd^.D := CalcD;
@@ -6281,10 +6281,10 @@ begin { CalcLighting }
       end;
 
     { Find sectors for lights }
-    for l := 0 to lev.Lights.Count - 1 do
-      with lev.Lights[l] do
+    for l := 0 to lev.lights.Count - 1 do
+      with lev.lights[l] do
       begin
-        Mark := FindSectorForXYZ(lev, position.x, position.y, position.z);
+        mark := FindSectorForXYZ(lev, position.x, position.y, position.z);
       end;
 
     { Calc lights }
@@ -6292,8 +6292,8 @@ begin { CalcLighting }
     Progress.Reset(lev.sectors.Count);
     Progress.Msg := 'Calculating lights';
 
-    for s := 0 to scs.Count - 1 do
-      with lev.sectors[scs.getSC(s)] do
+    for sc := 0 to scs.Count - 1 do
+      with lev.sectors[scs.getSC(sc)] do
       begin
 
         for sf := 0 to surfaces.Count - 1 do
@@ -6324,12 +6324,12 @@ begin { CalcLighting }
 
               { if light and vertex aren't in the same sector }
               { Check if the light is blocked }
-              if (s <> lt.mark) and (lt.flags and LF_NoBlock = 0) then
+              if (sc <> lt.mark) and not BitMaskTest(lt.flags, LF_NoBlock) then
                 if IsBlocked(lt.position.x, lt.position.y, lt.position.z, cv.x, cv.y, cv.z) then
                   continue;
 
               { Light vertex }
-              With surf.txvertices[v] do
+              with surf.txvertices[v] do
               begin
                   var intf := lt.Intensity * sqr((lt.range - dist) / lt.range);
                   if CurrentProject = JKDF2 then
@@ -6478,7 +6478,7 @@ end;
 
 Procedure CalcLightingNew(lev: TJKLevel; scs: TSCMultiSel);
 var
-  i, l, s, sf, v, nl: integer;
+  i, l, sc, sf, v, nl: integer;
   sec: TJKSector;
   surf: TJKSurface;
 
@@ -6515,8 +6515,8 @@ var
     for i := 0 to viasec.surfaces.Count - 1 do
     begin
       surf := viasec.surfaces[i];
-      if (surf.adjoin = nil) { or (surf.geo>=4) }
-        or (surf.Vertices.Count = 0) or (surf.AdjoinFlags and SAF_BlockLight <> 0)
+      if (surf.adjoin = nil) or (surf.vertices.Count = 0) or
+          BitMaskTest(surf.adjoinFlags, SAF_BlockLight)
       then
         continue;
 
@@ -6564,7 +6564,7 @@ begin
         if mark = -1 then
           PanMessageFmt(mt_warning, 'Light %d is not in any sector', [l])
         else
-          inc(nl);
+          Inc(nl);
       end;
 
   if nl = 0 then
@@ -6584,9 +6584,9 @@ begin
   Progress.Reset(lev.sectors.Count);
   Progress.Msg := 'Calculating lights';
 
-  for s := 0 to scs.Count - 1 do
+  for sc := 0 to scs.Count - 1 do
   begin
-    sec := lev.sectors[scs.getSC(s)];
+    sec := lev.sectors[scs.getSC(sc)];
     for sf := 0 to sec.surfaces.Count - 1 do
     begin
       surf := sec.surfaces[sf];
@@ -6599,7 +6599,7 @@ begin
         if lt.mark = -1 then
           continue;
 
-        lsec := level.sectors[lt.mark];
+        lsec   := level.sectors[lt.mark];
         range2 := sqr(lt.range);
         vx := surf.vertices[0];
 
@@ -6617,7 +6617,7 @@ begin
             panMessageFmt(mt_info,'Light %d',[l]);
             end; }
 
-          vx := surf.vertices[v];
+          vx   := surf.vertices[v];
           lvec := lt.position.Sub(vx.x, vx.y, vx.z);
           //lvec.SetCoords(lt.position.x - vx.x, lt.position.y - vx.y, lt.position.z - vx.z);
 
@@ -6625,7 +6625,7 @@ begin
           if dist2 >= range2 then
             continue; { Light is out of range }
 
-          if (lt.flags and LF_NoBlock = 0) then
+          if not BitMaskTest(lt.flags, LF_NoBlock) then
             if IsBlocked then
               continue;
 
@@ -6638,7 +6638,7 @@ begin
 
           dist2 := sqr((lt.range - dist) / lt.range);
 
-          with surf.txvertices[v] do
+          with surf.txVertices[v] do
           begin
             { Intensity:=Intensity+dist2*lt.Intensity;
               r:=r+lt.Intensity*dist2*lt.r;

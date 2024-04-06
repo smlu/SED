@@ -266,7 +266,7 @@ begin { Check }
       continue;
     end;
 
-    if (sec.flags and SECF_3DO) = 0 then
+    if not BitMaskTest(sec.flags, SECF_3DO) then
       if not IsSectorConvex(sec) then
         AddError('Sector is not convex', sec);
 
