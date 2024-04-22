@@ -406,9 +406,9 @@ end;
 
 Initialization
 begin
-  BaseDir := ExtractFilePath(Paramstr(0));
   FormatSettings := TFormatSettings.Invariant;
   FormatSettings.DecimalSeparator := '.';
+  BaseDir := ExtractFilePath(Paramstr(0));
 end;
 
 end.

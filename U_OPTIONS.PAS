@@ -361,6 +361,7 @@ Procedure WriteConfigFile(bExit: boolean);
   var confile: TMemIniFile;
 begin
   try
+    FormatSettings.DecimalSeparator:='.';
     confile := TMemIniFile.Create(GetConfigFilePath(), TEncoding.UTF8, (*caseSensitive=*)false);
     try
       for var i := 0 to SizeOf(regValues) div SizeOf(TRegValue) - 1 do

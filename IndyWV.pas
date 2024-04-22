@@ -5,15 +5,12 @@ uses System.Classes, System.SysUtils;
 
 function IsWVSound(const istream: TMemoryStream): Boolean;
 procedure ConvertWMSoundToWAV(const istream: TMemoryStream; out ostream: TMemoryStream); // Converts raw IndyWV file bytes to WAV raw bytes
-
 implementation
 uses MMSystem;
-
 type
  TWVSM = array[0..3] of AnsiChar;
  TIndyWV = array[0..5] of AnsiChar;
  PTWVSM = ^TWVSM;
-
  TIndyWVHeader = packed record
     tag: TIndyWV;
     sampleRate: UInt32;
@@ -23,7 +20,6 @@ type
     dataOffset: Int32;
   end;
   PIndyWVHeader = ^TIndyWVHeader;  
-
   TVWCompressorState = record
     unknown1: Byte;
     unknown2: Int16;
@@ -41,19 +37,16 @@ type
     blockAlign: UInt16;
     sampleBitSize: UInt16;
   end;
-
   TWavHeader = record
     tag: UInt32;
     size: UInt32;
     format: UInt32;
     fmt: TWavFmt;
   end;
-
   TWavDataChunkHeader = record
     tag: UInt32;
     size: UInt32;
   end;  
-
 const
   kWVSM: TWVSM         = ('W', 'V', 'S', 'M');
   kIndyWV: TIndyWV     = ('I', 'N', 'D', 'Y', 'W', 'V');
@@ -66,12 +59,7 @@ const
 
 function Swap16(x: UInt16): UInt16; overload;
 begin
-  Result := ((x and $FF00) shr 8) or ((x and $00FF) shl 8);
-end;
-
-function Swap16(x: Int16): Int16; overload;
-begin
-  Result := Int16(((x and $FF00) shr 8) or ((x and $00FF) shl 8));
+  Result := UInt16(((Int16(x) and $FF00) shr 8) or ((Int16(x) and $00FF) shl 8));
 end;
 
 procedure WVSMInflateBlock(const istream: TMemoryStream; blockSize: Integer; var dest: TBytes; destOffset: Integer);
@@ -81,7 +69,7 @@ var
   sel, ser: Integer;
   compressedSize: UInt16;
 
-  function InflateSample(expander: Integer): Int16;
+  function InflateSample(expander: Integer): UInt16;
   begin
     var bval: Byte;
     istream.ReadBuffer(bval, 1); // Read just a byte
@@ -91,12 +79,12 @@ var
         Result := Swap16(Result);
       end
     else
-      Result := Int16((Int8(bval and $FF) shl expander) and $FFFF);
+      Result := UInt16((Int8(bval) shl expander) and $FFFF);
   end;
 
   procedure InflateChannelSample(var i: Integer; const expander: Integer) ;
   begin
-    var s: Int16 := InflateSample(expander);
+    var s: UInt16 := InflateSample(expander);
     Move(s, dest[destOffset + i * SizeOf(s)], SizeOf(s));
     Inc(i);
   end;  
@@ -121,7 +109,6 @@ begin
     InflateChannelSample(i, ser); 
   end;
 end;
-
 function WMInflate(const istream: TMemoryStream): TBytes;
 var
   numChannels: Integer;
