@@ -168,6 +168,9 @@ function GetNearestWorldVertexToLine(lev: TJKLevel; lx, ly, lz: double; lineNorm
 function GetNearestWorldVertexToLine(lev: TJKLevel; linePoint: Tvector; lineNormal: TVector; radius: double; var vx, vy, vz: double): boolean; overload;
 function GetNearestWorldVertexToLine(lev: TJKLevel; linePoint: Tvector; lineNormal: TVector; radius: double; var v: TVector): boolean; overload;
 
+// Thing utility functions
+Procedure GetThingPoseOnSurface(const thing: TJKThing; const surf: TJKSurface; var x,y,z: double; var pitch,yaw,roll: double);
+
 procedure ExtrudeSurface(surf: TJKSurface; by: double);
 procedure ExtrudeAndExpandSurface(surf: TJKSurface; by: double);
 
@@ -181,8 +184,6 @@ function CleaveEdge(surf: TJKSurface; edge: integer; const cnormal: TVector;
 { Creates adjoin by cleaving both surfaces to reduce them to their
   common area }
 function ConnectSurfaces(surf1, surf2: TJKSurface): boolean;
-
-
 function ConnectSectors(sec1, sec2: TJKSector): boolean;
 
 function BuildSector(lev: TJKLevel; sfsel: TSFMultiSel): TJKSector;
@@ -4339,6 +4340,31 @@ begin
   z := pZ + nx.dz * u + ny.dz * v;
 end;
 
+Procedure GetThingPoseOnSurface(const thing: TJKThing; const surf: TJKSurface; var x,y,z: double; var pitch,yaw,roll: double);
+var
+    l: double;
+    pos, xv, yv, zv: TVector;
+    v1, v2: TJKVertex;
+begin
+    CalcSurfCenter(surf, pos.x, pos.y, pos.z);
+
+    l := -thing.bbox.z1;
+    pos := pos + surf.normal.Scaled(l);
+    x := pos.x;
+    y := pos.y;
+    z := pos.z;
+
+    v1 := surf.vertices[0];
+    v2 := surf.vertices[1];
+    zv := surf.normal;
+
+    yv.SetCoords(v2.X - v1.X, v2.Y - v1.Y, v2.z - v1.z);
+    yv.Normalize;
+    xv := yv.Cross(zv);
+
+    GetJKPYR(xv, yv, zv, pitch, yaw, roll);
+end;
+
 (* Procedure StitchSurface(surf:TJKSurface;nv1,nv2:integer;u1,v1,u2,v2:double);
   var vx1,vx2:TJKVertex;
   l2d,l3d,scale:double;
@@ -6498,7 +6524,7 @@ var
   { debug }
   dsc, dsf, dvx, dl: integer;
 
-  Function CanReach(viasec: TJKSector): boolean;
+  Function CanReach(viasec: TJKSector): Boolean;
   { if a ray from lt can reach vx by passing though this sector.
     Checks recursively }
   var
@@ -6550,7 +6576,7 @@ var
     end;
   end;
 
-  Function IsBlocked: boolean;
+  Function IsBlocked: Boolean;
   { is a ray from lt to vx blocked }
   var
     i: integer;
@@ -6607,7 +6633,7 @@ begin
 
         lsec   := level.sectors[lt.mark];
         range2 := sqr(lt.range);
-        vx := surf.vertices[0];
+        vx     := surf.vertices[0];
 
         // if a surface doesn't face the light, skip it
         D := lt.position.Sub(vx.x, vx.y, vx.z).Dot(surf.normal);// With surf.normal do SMult(lt.position.x - vx.x, lt.position.y - vx.y, lt.position.z - vx.z, dx, dy, dz);
@@ -6638,8 +6664,8 @@ begin
           { Normalize }
           dist := sqrt(dist2);
           { SetVec(lvec,lvec.dx/dist,lvec.dy/dist,lvec.dz/dist);
-            With surf do
-            dist2:=Smult(normal.dx,normal.dy,normal.dz,
+            with surf do
+            dist2 := Smult(normal.dx, normal.dy, normal.dz,
             lvec.dx,lvec.dy,lvec.dz); }
 
           dist2 := sqr((lt.range - dist) / lt.range);

@@ -582,8 +582,9 @@ type
         Procedure LayerThings;
 
         Procedure BringThingToSurf(th, sc, SF: Integer);
-        Procedure BringLightToSurf(LT, sc, SF: Integer);
-        Procedure AddThingAtSurf;
+        Procedure BringLightToSurf(lt, sc, SF: Integer);
+        Procedure AddThingOnCurSurf;
+        Procedure AddThingAtXYZPYR(X, Y, z, pch, yaw, rol: double);
         Procedure ClearExtraObjs;
         Function AddExtraVertex(X, Y, z: double; const name: string): Integer;
         Function AddExtraLine(x1, y1, z1, x2, y2, z2: double; const name: string): Integer; overload;
@@ -591,7 +592,7 @@ type
         Function AddExtraLine(startPos: TVector; endPos: TVector; const name: string): Integer; overload;
         Function TranslateExtras(Cur_EX: Integer; dx, dy, dz: double): Integer;
         Procedure DeleteExtraObj(n: Integer);
-        Procedure AddThingAtXYZPYR(X, Y, z, pch, yaw, rol: double);
+
         Procedure SetHideLights(hide: boolean);
         Procedure SetHideThings(hide: boolean);
 
@@ -9296,58 +9297,35 @@ begin
 end;
 
 Procedure TJedMain.BringThingToSurf(th, sc, SF: Integer);
-const surf: TJKSurface = nil;
-var
-    thing: TJKThing;
-    l: double;
-    pos, xv, yv, zv: TVector;
-    v1, v2: TJKVertex;
 begin
     if not CheckSurfaceIndex(level, sc, sf) or not CheckThingIndex(level, th) then
       exit;
 
     StartUndoRec('Bring Thing to Surface');
-    surf := level.sectors[sc].surfaces[SF];
-    CalcSurfCenter(surf, pos.x, pos.y, pos.z);
-    thing := level.things[th];
+
+    const surf = level.sectors[sc].surfaces[SF];
+    var thing := level.things[th];
 
     SaveThingUndo(thing, ch_changed);
+    GetThingPoseOnSurface(thing, surf, thing.x, thing.y, thing.z, thing.pch, thing.yaw, thing.rol);
 
-    l := -thing.bbox.z1;
-    pos := pos + surf.normal.Scaled(l);
-//    X := X + surf.normal.dx * l;
-//    Y := Y + surf.normal.dy * l;
-//    z := z + surf.normal.dz * l;
-    thing.x := pos.x;
-    thing.y := pos.y;
-    thing.z := pos.z;
-
-    v1 := surf.vertices[0];
-    v2 := surf.vertices[1];
-    zv := surf.normal;
-
-    yv.SetCoords(v2.X - v1.X, v2.Y - v1.Y, v2.z - v1.z);
-    yv.Normalize;
-    xv := yv.Cross(zv);
-
-    GetJKPYR(xv, yv, zv, thing.pch, thing.yaw, thing.rol);
-
+    LayerThing(thing.num);
     ThingChanged(thing);
 end;
 
-Procedure TJedMain.BringLightToSurf(LT, sc, SF: Integer);
+Procedure TJedMain.BringLightToSurf(lt, sc, SF: Integer);
 var
     surf: TJKSurface;
     light: TSedLight;
     x, y, z, l: double;
 begin
     StartUndoRec('Bring Light to Surface');
-    surf := Level.Sectors[sc].surfaces[SF];
+    surf := level.sectors[sc].surfaces[SF];
     CalcSurfCenter(surf, X, Y, z);
     X := X + surf.normal.dx * 0.001;
     Y := Y + surf.normal.dy * 0.001;
     z := z + surf.normal.dz * 0.001;
-    light := Level.Lights[LT];
+    light := level.lights[lt];
     SaveLightUndo(light, ch_changed);
     light.position.x := x;
     light.position.y := y;
@@ -9355,27 +9333,28 @@ begin
     LightChanged(light);
 end;
 
-Procedure TJedMain.AddThingAtSurf;
-var
-    th: TJKThing;
-    n: Integer;
+Procedure TJedMain.AddThingOnCurSurf;
 begin
-    StartUndoRec('Add Thing(s)');
+    if not CheckSurfaceIndex(level, Cur_SC, Cur_SF) then  // just sanity check
+      exit;
+
+    StartUndoRec('Add Thing');
 
     { Copy data from currently selcted thing }
-    th := Level.NewThing;
-    if Cur_TH < Level.Things.Count then
-        th.Assign(Level.Things[Cur_TH]);
-    n := Level.Things.Add(th);
-    ThingAdded(th);
-    Level.RenumThings;
+    var thing := level.NewThing;
+    if Cur_TH < level.things.Count then
+        thing.Assign(level.things[Cur_TH]);
 
-    BringThingToSurf(n, Cur_SC, Cur_SF);
+    var n := level.things.Add(thing);
+    ThingAdded(thing);
+    level.RenumThings;
+
+    const surf = level.sectors[Cur_SC].surfaces[Cur_SF];
+    GetThingPoseOnSurface(thing, surf, thing.x, thing.y, thing.z, thing.pch, thing.yaw, thing.rol);
 
     LayerThing(n);
-    SaveThingUndo(th, ch_added);
+    SaveThingUndo(thing, ch_added);
     SetCurTH(n);
-
 end;
 
 Procedure TJedMain.AddThingAtXYZPYR(X, Y, z, pch, yaw, rol: double);
@@ -9383,18 +9362,18 @@ var
     th: TJKThing;
     n: Integer;
 begin
-    StartUndoRec('Add Thing(s)');
+    StartUndoRec('Add Thing');
 
     { Copy data from currently selcted thing }
-    th := Level.NewThing;
-    if Cur_TH < Level.Things.Count then
-        th.Assign(Level.Things[Cur_TH]);
-    n := Level.Things.Add(th);
+    th := level.NewThing;
+    if Cur_TH < level.things.Count then
+        th.Assign(level.things[Cur_TH]);
+    n := level.things.Add(th);
     ThingAdded(th);
-    Level.RenumThings;
+    level.RenumThings;
 
-    th.X := X;
-    th.Y := Y;
+    th.x := X;
+    th.y := Y;
     th.z := z;
     th.pch := pch;
     th.yaw := yaw;

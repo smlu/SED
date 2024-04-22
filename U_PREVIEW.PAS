@@ -452,7 +452,7 @@ begin
           self.MoveThingUp;
       Ord('I'):
         if Shift = [] then
-          JedMain.AddThingAtSurf
+          JedMain.AddThingOnCurSurf
         else if Shift = [ssShift] then
           with GetCamera() do
             JedMain.AddThingAtXYZPYR(position.x, position.y, position.z, -rotation.pitch, 360 - rotation.yaw, 0.0)
