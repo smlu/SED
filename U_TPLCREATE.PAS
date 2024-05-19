@@ -64,11 +64,11 @@ procedure TTPLCreator.BNTPLClick(Sender: TObject);
 var tpl:string;
     i:integer;
 begin
- tpl:=ResPicker.PickTemplate(EBTPL.Text);
- EBTPL.Text:=tpl;
- i:=Templates.IndexOfName(tpl);
- if i=-1 then exit;
- EBParent.Text:=Templates[i].Parent;
+ tpl := ResPicker.PickTemplate(EBTPL.Text);
+ EBTPL.Text := tpl;
+ i := templates.IndexOfName(tpl);
+ if i = -1 then exit;
+ EBParent.Text := templates[i].parent;
 end;
 
 Procedure TTPLCreator.CreateTemplate;
@@ -78,92 +78,101 @@ begin
   ShowMessage('Save project first');
   exit;
  end;
- EbTPL.Text:='';
- EBParent.Text:='none';
+
+ EbTPL.Text    := '';
+ EBParent.Text := 'none';
+ EBDesc.Text   := '';
+ EBBBox.Text   := '';
  MMFields.Lines.Clear;
- changed:=false;
- if ShowModal=mrOK then;
+ changed := False;
+ if ShowModal = mrOK then;
 end;
 
 Function TTPLCreator.CheckChanged:boolean;
 begin
- result:=true;
+ Result := True;
  if Changed then
-  result:=MsgBox('You''re about to lose changes you''ve made. Proceed?',
-                 'Warning',MB_YESNO)=idYes;
+  Result := MsgBox('You''re about to lose changes you''ve made. Proceed?',
+                 'Warning', MB_YESNO) = idYes;
 end;
 
 procedure TTPLCreator.MMFieldsChange(Sender: TObject);
 begin
- Changed:=true;
+ Changed := True;
 end;
 
 procedure TTPLCreator.BNParentClick(Sender: TObject);
 begin
- EBParent.Text:=ResPicker.PickTemplate(EBParent.Text);
+ EBParent.Text := ResPicker.PickTemplate(EBParent.Text);
 end;
 
 procedure TTPLCreator.BNUpdateClick(Sender: TObject);
 var tname:string;
     i:integer;
-    tpl:TTemplate;
+    tpl: TTemplate;
 begin
  if not CheckChanged then exit;
- tname:=EBTpl.Text;
- i:=templates.IndexOfName(tname);
+ tname := EBTpl.Text;
+ i := templates.IndexOfName(tname);
  MMFields.Lines.Clear;
- if i<>-1 then
+ if i <> -1 then
  begin
-  tpl:=templates[i];
-  EBDesc.Text:=tpl.Desc;
-  With tpl.Bbox do EBBBox.Text:=Sprintf('%1f %1f %1f %1f %1f %1f',
+  tpl := templates[i];
+  EBDesc.Text := tpl.Desc;
+  with tpl.Bbox do EBBBox.Text := Sprintf('%1f %1f %1f %1f %1f %1f',
    [x1,y1,z1,x2,y2,z2]);
 
-  for i:=0 to tpl.Vals.Count-1 do
-  With tpl.Vals[i] do
+  for i := 0 to tpl.vals.Count-1 do
+  with tpl.vals[i] do
   begin
-   MMFields.Lines.Add(Name+'='+AsString);
+   MMFields.Lines.Add(Name + '=' + AsString);
   end;
  end;
- changed:=false;
+ changed := False;
 end;
 
-Procedure TTPLCreator.SetField(const fname,fval:string);
+Procedure TTPLCreator.SetField(const fname, fval:string);
 var i,p:integer;
     f,s:string;
 begin
- for i:=0 to MMFields.Lines.count-1 do
+ for i:=0 to MMFields.Lines.Count-1 do
  begin
-  s:=MMFields.Lines[i];
-  p:=Pos('=',s);
-  if p=0 then f:=s else f:=Copy(s,1,p-1);
-  if CompareText(f,fname)=0 then
+  s := MMFields.Lines[i];
+  p := Pos('=',s);
+  if p = 0 then
+    f := s
+  else
+    f := Copy(s, 1, p - 1);
+
+  if CompareText(f, fname) = 0 then
   begin
-   MMFields.Lines[i]:=fname+'='+fval;
+   MMFields.Lines[i] := fname + '=' + fval;
    exit;
   end;
  end;
- MMFields.Lines.Add(fname+'='+fval);
+ MMFields.Lines.Add(fname + '=' + fval);
 end;
 
 procedure TTPLCreator.BN3DOClick(Sender: TObject);
 var s:string;
     a3DO:T3DO;
-    bbox:TThingBox;
+    bbox: TThingBox;
 begin
- s:=ResPicker.Pick3DO('');
+ s := ResPicker.Pick3DO('');
  if s='' then exit;
- a3DO:=Load3DO(s);
- if a3Do<>nil then
+ a3DO := Load3DO(s);
+ if a3Do <> nil then
  begin
   a3DO.GetBBox(bbox);
-  With Bbox do EBBBox.Text:=Sprintf('%1f %1f %1f %1f %1f %1f',
+  with Bbox do EBBBox.Text := Sprintf('%1f %1f %1f %1f %1f %1f',
    [x1,y1,z1,x2,y2,z2]);
-  SetField('size',DoubleToStr(a3DO.FindRadius));
-  SetField('movesize',DoubleToStr(a3DO.FindRadius));
+
+  SetField('size', DoubleToStr(a3DO.FindRadius));
+  SetField('movesize', DoubleToStr(a3DO.FindRadius));
   Free3DO(a3DO);
  end;
- SetField('model3d',s);
+
+ SetField('model3d', s);
 end;
 
 procedure TTPLCreator.BNAIClick(Sender: TObject);
@@ -171,7 +180,7 @@ var s:string;
 begin
  s:=ResPicker.PickAI('');
  if s='' then exit;
- SetField('aiclass',s);
+ SetField('aiclass', s);
 end;
 
 procedure TTPLCreator.BNSNDClick(Sender: TObject);
@@ -196,7 +205,7 @@ var s:string;
 begin
  s:=ResPicker.PickCOG('');
  if s='' then exit;
- SetField('cog',s);
+ SetField('cog', s);
 end;
 
 procedure TTPLCreator.FormCloseQuery(Sender: TObject;
@@ -216,59 +225,64 @@ var s,t:string;
     tpl:TTemplate;
     th:TJKthing;
 begin
- i:=Templates.IndexOfName(EBTPL.Text);
- if i<>-1 then
+ i := templates.IndexOfName(EBTPL.Text);
+ if i <> -1 then
  begin
-  if MsgBox('Template '+EBTPL.Text+' already exists! Replace?','Warning',MB_YESNO)<>idYes
-  then exit;
-  templates.DeleteTemplate(i);
+  if MsgBox(Format('Template %s already exists! Replace?', [EBTPL.Text]), 'Warning', MB_YESNO) <> idYes
+    then exit;
  end;
 
- s:=Format('%18s %18s',[EBTPL.Text,EBParent.Text]);
- for i:=0 to MMFields.Lines.Count-1 do
+ s := Format('%18s %18s', [EBTPL.Text, EBParent.Text]);
+ for i := 0 to MMFields.Lines.Count - 1 do
  begin
-  t:=MMFields.Lines[i];
-  For j:=Length(t) downto 1 do if (t[j] in [' ',#9]) then Delete(t,j,1);
-  s:=s+' '+t;
+  t := MMFields.Lines[i];
+  for j := Length(t) downto 1 do if (t[j] in [' ', #9]) then Delete(t, j, 1);
+  s := s + ' '+ t;
  end;
- i:=Templates.AddFromString(s);
- if i<>-1 then
+
+ i := templates.AddFromString(s, (*replace=*)True);
+ if i <> -1 then
  begin
-  tpl:=Templates[i];
-  tpl.Desc:=EBDesc.Text;
-  With tpl.bbox do
-  if not SScanf(EBBBox.Text,'%l %l %l %l %l %l',[@x1,@y1,@z1,@x2,@y2,@z2])
-   then FillChar(tpl.Bbox,sizeof(tpl.BBox),0);
+  tpl := templates[i];
+  tpl.Desc := EBDesc.Text;
+
+  with tpl.bbox do
+  if not SScanf(EBBBox.Text,'%l %l %l %l %l %l',[@x1, @y1 ,@z1, @x2, @y2, @z2])
+   then FillChar(tpl.Bbox, sizeof(tpl.BBox), 0);
 
   case CurrentProject of
     TProjectType.JKDF2:
-      t:='master.tpl';
+      t := 'master.tpl';
     TProjectType.MOTS:
-      t:='mots.tpl';
+      t := 'mots.tpl';
     else // IJIM
-      t:='ijim.tpl';
+      t := 'ijim.tpl';
   end;
 
-  Templates.SaveToFile(ProjectDir+t);
+  templates.SaveToFile(ProjectDir + t);
 
-  for i:=0 to Level.Things.Count-1 do
+  // Update level template
+  i := level.templates.IndexOfName(tpl.name);
+  if i <> -1 then
   begin
-   th:=Level.Things[i];
-   if CompareText(th.name,tpl.name)=0 then JedMain.ThingChanged(th);
+    level.templates.AddOrUpdate(tpl.Clone, (*update=*)True);
   end;
 
-
+  for i := 0 to level.things.Count - 1 do
+  begin
+   th := level.things[i];
+   if CompareText(th.name, tpl.name) = 0 then JedMain.ThingChanged(th);
+  end;
  end;
 
-
- changed:=false;
+ changed := False;
  close;
 end;
 
 procedure TTPLCreator.FormCreate(Sender: TObject);
 begin
- ClientWidth:=BNCancel.Left+BNCancel.width+BN3DO.Top;
- ClientHeight:=BNCancel.top+BNCancel.Height+BN3DO.Top;
+ ClientWidth  := BNCancel.Left + BNCancel.width  + BN3DO.Top;
+ ClientHeight := BNCancel.top  + BNCancel.Height + BN3DO.Top;
 end;
 
 end.

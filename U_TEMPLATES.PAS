@@ -29,7 +29,7 @@ type
     Procedure LoadFromFile(const fname: string);
     Procedure SaveToFile(const fname: string);
     Function AddOrUpdate(const t: TTemplate; update: Boolean = True): integer;
-    Function AddFromString(const s: string): integer;
+    Function AddFromString(const s: string; replace: Boolean = False): integer;
     Procedure Merge(const tlist: TTemplates);
     function GetAsString(n: integer): String;
     Function IndexOfName(const Name: string): integer;
@@ -165,10 +165,13 @@ end;
 
 Function TTemplates.AddOrUpdate(const t: TTemplate; update: Boolean): integer;
 begin
-  Result := IndexOfName(t.Name);
+  Result := IndexOfName(t.name);
   if (Result <> -1) then
     begin
       if not update then exit;
+      var otpl := TTemplate(self[Result]);
+      if otpl = t then exit;
+      
       TTemplate(self[Result]).Free;
       self[Result] := t;
     end
@@ -179,7 +182,7 @@ begin
     end;
 end;
 
-Function TTemplates.AddFromString(const s: string): integer;
+Function TTemplates.AddFromString(const s: string; replace: Boolean): integer;
 var
   p, peq: Integer;
   w: string;
@@ -190,8 +193,10 @@ begin
   p := GetWord(s, 1, w);
   if w = '' then
     exit;
-  if IndexOfName(w) <> -1 then
+
+  if not replace and (IndexOfName(w) <> -1) then
     exit;
+
   tpl := TTemplate.Create;
   tpl.Name := w;
 
@@ -207,6 +212,7 @@ begin
     p := GetWord(s, p, w);
     if w = '' then
       continue;
+
     peq := Pos('=', w);
     if peq = 0 then
       continue;
@@ -255,9 +261,11 @@ begin
       exit;
     end;
   end;
+
   t := TTextFile.CreateRead(f);
   Clear;
-  Try
+
+  try
     while not t.eof do
     begin
       t.Readln(s);
@@ -302,7 +310,7 @@ var
 begin
   AssignFile(t, fname);
   Rewrite(t);
-  Try
+  try
     for i := 0 to Count - 1 do
       with Items[i] do
       begin
