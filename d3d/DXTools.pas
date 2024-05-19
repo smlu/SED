@@ -1211,7 +1211,7 @@ begin
 //    D3DRMERR_BADMAJORVERSION: Result := 'D3DRMERR_BADMAJORVERSION';
 //    D3DRMERR_BADMINORVERSION: Result := 'D3DRMERR_BADMINORVERSION';
 //    D3DRMERR_UNABLETOEXECUTE: Result := 'D3DRMERR_UNABLETOEXECUTE';
-    else Result := UnrecognizedError;
+    else Result := Format('%s (%x)', [UnrecognizedError, Value]);
   end;
 end;
 
