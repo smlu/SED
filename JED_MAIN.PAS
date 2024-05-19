@@ -560,6 +560,7 @@ type
         Function AskSave: boolean;
         Procedure SetThingView(how: Integer);
         Procedure SetMSelMode(mode: Integer);
+        Procedure UpdateSelCount;
         Procedure UpdateThingData(th: TJKThing);
         Procedure LoadTemplates;
         Procedure SetProjectTypeIndicator;
@@ -4883,6 +4884,7 @@ begin
       vxsel.Clear;
       thsel.Clear;
       ltsel.Clear;
+      SetMSelMode(DefMSelMode);
     end
   else
     begin
@@ -7289,6 +7291,7 @@ begin
                 if not CheckLightIndex(level, ltsel.getLT(i)) then
                     ltsel.DeleteN(i);
     end;
+    UpdateSelCount;
 end;
 
 Procedure TJedMain.VerifySelection;
@@ -8087,6 +8090,8 @@ begin
         MM_LT:
             ltsel.Clear;
     end;
+
+    UpdateSelCount;
     if (mapMode = MM_SC) or (mapMode = MM_SF) or (mapMode = MM_TH) then
       Preview3D.Repaint;
 end;
@@ -8137,7 +8142,7 @@ begin
                 edsel.Clear;
             end;
     end;
-
+    UpdateSelCount;
 end;
 
 Procedure TJedMain.AddKBItem(mi: TMenuItem; const name: string; c: char; sc: TShiftState);
@@ -8712,6 +8717,8 @@ begin
                 Invalidate;
             end;
     end;
+
+    UpdateSelCount;
 end;
 
 procedure TJedMain.N3DPreviewtoItem1Click(sender: TObject);
@@ -8782,7 +8789,100 @@ begin
         exit;
     end;
     mselMode := mode;
-    PMsel.hint := 'Current multiselction mode is ' + mname + ' Click to change';
+    PMsel.hint := 'Current multiselction mode is ' + mname + '. Click to change';
+    UpdateSelCount;
+end;
+
+procedure ResizePanelToCaption(APanel: TPanel);
+var
+  CaptionWidth, CaptionHeight: Integer;
+begin
+  with TControlCanvas.Create do
+  try
+    Control := APanel;
+    CaptionWidth := TextWidth(APanel.Caption) + 40;
+  finally
+    Free;
+  end;
+  APanel.Width := CaptionWidth;
+end;
+
+Procedure TJedMain.UpdateSelCount;
+begin
+    case mselMode of
+        mm_Toggle:
+            begin
+                PMsel.Caption := '*';
+            end;
+        mm_Add:
+            begin
+                PMsel.Caption := '+';
+            end;
+        mm_Subtract:
+            begin
+                PMsel.Caption := '-';
+            end;
+    end;
+
+    var count := 1;
+    case mapMode of
+        MM_SC:
+          begin
+            count := scsel.Count;
+            if scsel.FindSC(Cur_SC) = -1 then
+              count := count + 1;
+          end;
+        MM_SF:
+          begin
+            count := sfsel.Count;
+            if sfsel.FindSF(Cur_SC, Cur_SF) = -1 then
+              count := count + 1;
+          end;
+        MM_ED:
+          begin
+            count := edsel.Count;
+            if edsel.FindED(Cur_SC, Cur_SF, Cur_ED) = -1 then
+              count := count + 1;
+          end;
+        MM_VX:
+          begin
+            count := vxsel.Count;
+            if vxsel.FindVX(Cur_SC, Cur_VX) = -1 then
+              count := count + 1;
+          end;
+        MM_TH:
+          begin
+            count := thsel.Count;
+            if thsel.FindTH(Cur_TH) = -1 then
+              count := count + 1;
+          end;
+        MM_FR:
+          begin
+            count := frsel.Count;
+            if frsel.FindFR(Cur_TH, Cur_FR) = -1 then
+              count := count + 1;
+          end;
+        MM_LT:
+          begin
+            count := ltsel.Count;
+            if ltsel.FindLT(Cur_LT) = -1 then
+              count := count + 1;
+          end;
+        MM_Extra:
+          begin
+            count := exsel.Count;
+            if exsel.FindTH(Cur_EX) = -1 then
+              count := count + 1;
+          end;
+    else
+        exit;
+    end;
+
+    if count > 1 then
+    begin
+      PMsel.Caption := Format('%s (%d)', [PMsel.Caption, count]);
+    end;
+    ResizePanelToCaption(PMsel);
 end;
 
 procedure TJedMain.PMselClick(sender: TObject);
@@ -8828,6 +8928,7 @@ begin
                     scsel.DeleteN(i);
             end;
     end;
+    UpdateSelCount;
 end;
 
 Procedure TJedMain.DO_SelSF(sc, SF: Integer);
@@ -8849,6 +8950,7 @@ begin
                     sfsel.DeleteN(i);
             end;
     end;
+    UpdateSelCount;
 end;
 
 Procedure TJedMain.DO_SelVX(sc, VX: Integer);
@@ -8870,6 +8972,7 @@ begin
                     vxsel.DeleteN(i);
             end;
     end;
+    UpdateSelCount;
 end;
 
 Procedure TJedMain.DO_SelED(sc, SF, ED: Integer);
@@ -8891,6 +8994,7 @@ begin
                     edsel.DeleteN(i);
             end;
     end;
+    UpdateSelCount;
 end;
 
 Procedure TJedMain.DO_SelTH(th: Integer);
@@ -8912,6 +9016,7 @@ begin
                     thsel.DeleteN(i);
             end;
     end;
+    UpdateSelCount;
 end;
 
 Procedure TJedMain.DO_SelFR(th, fr: Integer);
@@ -8935,6 +9040,7 @@ begin
                     frsel.DeleteN(i);
             end;
     end;
+    UpdateSelCount;
 end;
 
 Procedure TJedMain.DO_SelLT(LT: Integer);
@@ -8956,6 +9062,7 @@ begin
                     ltsel.DeleteN(i);
             end;
     end;
+    UpdateSelCount;
 end;
 
 procedure TJedMain.ExceptHandler(sender: TObject; E: Exception);
