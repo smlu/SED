@@ -235,7 +235,7 @@ function DO_Surf_Match(surf, surf1: TJKSurface): boolean;
 function MakeAdjoin(surf: TJKSurface): boolean;
 function MakeAdjoinSCUP(surf: TJKSurface; sc: integer): boolean;
 function UnAdjoin(surf: TJKSurface): boolean;
-procedure SysAdjoinSurfaces(surf1, surf2: TJKSurface);
+procedure SysAdjoinSurfaces(surf1, surf2: TJKSurface; reset: Boolean = True);
 function AdjoinSectors(sec, sec1: TJKSector): boolean;
 function UnAdjoinSectors(sec, sec1: TJKSector): boolean;
 
@@ -1383,12 +1383,15 @@ begin
     sf.material := 'dflt.mat';
 end;
 
-Procedure SysAdjoinSurfaces(surf1, surf2: TJKSurface);
+Procedure SysAdjoinSurfaces(surf1, surf2: TJKSurface; reset: Boolean);
 begin
   surf1.adjoin := surf2;
   surf2.adjoin := surf1;
-  SetAdjoinParams(surf1);
-  SetAdjoinParams(surf2);
+  if (reset) then
+  begin
+    SetAdjoinParams(surf1);
+    SetAdjoinParams(surf2);
+  end;
 end;
 
 Procedure ExtrudeAndExpandSurface(surf: TJKSurface; by: double);
@@ -1870,8 +1873,7 @@ begin
   end;
 end;
 
-Procedure CleaveAdjoin(surf: TJKSurface; cnormal: TVector; cx, cy, cz: double;
-  nsf: TJKSurface);
+Procedure CleaveAdjoin(surf: TJKSurface; cnormal: TVector; cx, cy, cz: double; nsf: TJKSurface);
 var
   sf1, nsf1: TJKSurface;
 begin
@@ -1891,22 +1893,22 @@ begin
 
   if DO_Surf_Overlap(surf, sf1) then
   begin
-    SysAdjoinSurfaces(surf, sf1);
+    SysAdjoinSurfaces(surf, sf1, (*reset=*)False);
   end;
 
   if DO_Surf_Overlap(surf, nsf1) then
   begin
-    SysAdjoinSurfaces(nsf1, surf);
+    SysAdjoinSurfaces(nsf1, surf, (*reset=*)False);
   end;
 
   if DO_Surf_Overlap(nsf, sf1) then
   begin
-    SysAdjoinSurfaces(nsf, sf1);
+    SysAdjoinSurfaces(nsf, sf1, (*reset=*)False);
   end;
 
   if DO_Surf_Overlap(nsf, nsf1) then
   begin
-    SysAdjoinSurfaces(nsf, nsf1);
+    SysAdjoinSurfaces(nsf, nsf1, (*reset=*)False);
   end;
 
   JedMain.SectorChanged(surf.sector);
@@ -2282,17 +2284,17 @@ begin
     with surf do
       if cnormal.Dot(normal) > 0 then
       //if SMult(cnormal.dx, cnormal.dy, cnormal.dz, normal.dx, normal.dy, normal.dz) > 0 then
-      begin
-        sec.surfaces.Add(surf);
-        surf1.sector := sec1;
-        sec1.surfaces.Add(surf1);
-      end
+        begin
+          sec.surfaces.Add(surf);
+          surf1.sector := sec1;
+          sec1.surfaces.Add(surf1);
+        end
       else
-      begin
-        sec.surfaces.Add(surf1);
-        surf.sector := sec1;
-        sec1.surfaces.Add(surf);
-      end;
+        begin
+          sec.surfaces.Add(surf1);
+          surf.sector := sec1;
+          sec1.surfaces.Add(surf);
+        end;
 
     Result := True;
   finally
