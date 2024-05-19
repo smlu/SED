@@ -564,6 +564,26 @@ begin
   Result := CheckSectorSurfaceIndex(level.sectors[sec], surf);
 end;
 
+Function ParseSector(const s: string; var sec: Integer): Boolean;
+  var w: string;
+begin
+  Result := False;
+  var i := GetWord(s, 1, w);
+  if w = '' then
+    exit;
+
+  if not ValInt(w, sec) then
+    exit;
+
+  if sec = -1 then
+    begin
+      Result := True;
+      exit;
+    end;
+
+  Result := CheckSectorIndex(level, sec);
+end;
+
 Function ValSurfField(const s: string; surf: TJKSurface; id: integer): boolean;
 var
   sc, sf, i: integer;
@@ -962,20 +982,14 @@ begin
         end;
       ID_TH_SECTOR:
         begin
-          Result := ValInt(s, i);
+          Result := ParseSector(s, i);
           if not Result then
             exit;
+
           if i = -1 then
-          begin
-            sec := nil;
-            exit;
-          end;
-          if (i < 0) or (i >= level.sectors.Count) then
-          begin
-            Result := false;
-            exit;
-          end;
-          sec := level.sectors[i];
+            sec := nil
+          else
+            sec := level.sectors[i];
         end;
       ID_X:
         begin
@@ -1103,6 +1117,15 @@ begin
           var tmpl := ResPicker.PickThing(Fi.s);
           bChanged := CompareText(Fi.s, tmpl) <> 0;
           Fi.s := tmpl;
+        end;
+      ID_TH_SECTOR:
+        begin
+          // Select thing sector
+          if not ParseSector(Fi.s, i) or (i = -1) then
+            exit;
+          JedMain.SetCurSC(i);
+          JedMain.SetMapMode(MM_SC);
+          exit;
         end;
       ID_TH_LAST .. ID_TH_LAST + 100:
         begin
