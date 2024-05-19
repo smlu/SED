@@ -538,7 +538,7 @@ end;
 Function ParseMirrorAdjoin(const s: string; var sec, surf: Integer): Boolean;
   var w: string;
 begin
-  Result := false;
+  Result := False;
   var i := GetWord(s, 1, w);
   if w = '' then
     exit;
@@ -548,7 +548,7 @@ begin
 
   if sec = -1 then
     begin
-      Result := true;
+      Result := True;
       exit;
     end;
 
@@ -953,7 +953,7 @@ begin
   SaveThingUndo(Cur_Thing, ch_changed);
 
   i := id;
-  With Cur_Thing do
+  with Cur_Thing do
     case i of
       ID_TH_NAME:
         begin

@@ -406,15 +406,16 @@ var
   i: Integer;
 begin
   InitTPLPreview;
-  SetCMP(Level.GetMasterCMP);
-  Try
+  SetCMP(level.GetMasterCMP);
+  try
     ClearGroups;
     sl := TStringList.Create;
     for i := 0 to templates.Count - 1 do
-      With templates[i] do
+      with templates[i] do
       begin
         sl.Add(Name);
       end;
+
     TVGroups.Items.AddObject(nil, 'Templates', sl);
 
     case CurrentProject of
@@ -1382,7 +1383,7 @@ begin
   ClearGroups;
 
   for i := 0 to level.cogs.Count - 1 do
-    With level.cogs[i] do
+    with level.cogs[i] do
     begin
       sl := TStringList.Create;
       for j := 0 to vals.Count - 1 do

@@ -1366,12 +1366,12 @@ end;
 
 Procedure SetAdjoinParams(sf: TJKSurface);
 begin
-  sf.SurfFlags := 0;
-  sf.FaceFlags := 0;
+  sf.surfFlags := 0;
+  sf.faceFlags := 0;
   sf.geo       := 0;
-  sf.AdjoinFlags := SAF_Visible or SAF_Move;
+  sf.adjoinFlags := SAF_Visible or SAF_Move;
   if CurrentProject <> IJIM then
-    BitSet(sf.AdjoinFlags, SAF_AllowSoundPass);
+    BitSet(sf.adjoinFlags, SAF_AllowSoundPass);
 end;
 
 Procedure ClearAdjoinParams(sf: TJKSurface);
@@ -1503,7 +1503,7 @@ begin
   // Update level and new sector
   lev.sectors.Add(nsec);
   lev.RenumSecs;
-  for i := 0 to nsec.surfaces.Count - 1 do
+  for i := 0 to nsec.Surfaces.Count - 1 do
     nsec.surfaces[i].NewRecalcAll;
   nsec.Renumber;
 
@@ -1535,10 +1535,10 @@ begin
   { Construct adjoin }
   asurf := nsec.newsurface;
   asurf.Assign(surf);
-  for v := surf.Vertices.count - 1 downto 0 do
+  for v := surf.vertices.Count - 1 downto 0 do
   begin
     nvx := nsec.NewVertex;
-    nvx.Assign(surf.Vertices[v]);
+    nvx.Assign(surf.vertices[v]);
     asurf.AddVertex(nvx);
   end;
   nsec.surfaces.Add(asurf);
@@ -1546,10 +1546,10 @@ begin
   { Construct opposite surface }
   osurf := nsec.newsurface;
   osurf.Assign(surf);
-  for v := 0 to surf.Vertices.count - 1 do
+  for v := 0 to surf.vertices.Count - 1 do
   begin
     nvx := nsec.NewVertex;
-    With surf.Vertices[v] do
+    With surf.vertices[v] do
     begin
       nvx.x := x + (-surf.normal.dx) * by;
       nvx.y := y + (-surf.normal.dy) * by;
@@ -1557,31 +1557,31 @@ begin
     end;
     osurf.AddVertex(nvx);
   end;
-  nsec.surfaces.Add(osurf);
+  nsec.Surfaces.Add(osurf);
   osurf.NewRecalcAll;
   osurf.Planarize;
 
   { Construct other surfaces }
-  vc := surf.Vertices.count;
+  vc := surf.vertices.Count;
 
   for i := 0 to vc - 1 do
   begin
     nsurf := nsec.newsurface;
     nsurf.Assign(surf);
 
-    nsurf.AddVertex(asurf.Vertices[i]);
+    nsurf.AddVertex(asurf.vertices[i]);
 
     if i = 0 then
-      nsurf.AddVertex(asurf.Vertices[vc - 1])
+      nsurf.AddVertex(asurf.vertices[vc - 1])
     else
-      nsurf.AddVertex(asurf.Vertices[i - 1]);
+      nsurf.AddVertex(asurf.vertices[i - 1]);
 
     if i = 0 then
-      nsurf.AddVertex(osurf.Vertices[0])
+      nsurf.AddVertex(osurf.vertices[0])
     else
-      nsurf.AddVertex(osurf.Vertices[vc - i]);
+      nsurf.AddVertex(osurf.vertices[vc - i]);
 
-    nsurf.AddVertex(osurf.Vertices[vc - i - 1]);
+    nsurf.AddVertex(osurf.vertices[vc - i - 1]);
     nsec.surfaces.Add(nsurf);
   end;
 
@@ -1589,7 +1589,7 @@ begin
   // Update level and new sector
   lev.sectors.Add(nsec);
   lev.RenumSecs;
-  for i := 0 to nsec.surfaces.count - 1 do
+  for i := 0 to nsec.surfaces.Count - 1 do
     nsec.surfaces[i].NewRecalcAll;
   nsec.Renumber;
 
@@ -1722,7 +1722,7 @@ begin
         v1 := surf.vertices[sf];
         v2 := surf.vertices[NextIdx(sf, vc)];
 
-        if (v1.Mark = 0) or (v1.Mark <> -v2.Mark) then
+        if (v1.mark = 0) or (v1.mark <> -v2.mark) then
           continue;
 
         PlaneLineXn(cnormal, D, v1.x, v1.y, v1.z, v2.x, v2.y, v2.z, ax, ay, az);
@@ -1781,12 +1781,12 @@ begin
 
     { Remove edges that lie on the clipping plane and face the wrong way }
 
-    With surf do { Find "right" vector }
+    with surf do { Find "right" vector }
       rvec := normal.Cross(cnormal);
 //      VMult(normal.dx, normal.dy, normal.dz, cnormal.dx, cnormal.dy, cnormal.dz,
 //        rvec.dx, rvec.dy, rvec.dz);
 
-    For i := surf.vertices.Count - 1 downto 0 do
+    for i := surf.vertices.Count - 1 downto 0 do
       begin
         v0 := surf.vertices[surf.PrevVX(i)];
         v1 := surf.vertices[i];
@@ -1799,7 +1799,7 @@ begin
           surf.vertices.Delete(i);
       end;
 
-    For i := nsf.vertices.Count - 1 downto 0 do
+    for i := nsf.vertices.Count - 1 downto 0 do
       begin
         v0 := nsf.vertices[nsf.PrevVX(i)];
         v1 := nsf.vertices[i];
@@ -1812,7 +1812,7 @@ begin
           nsf.vertices.Delete(i);
       end;
 
-    For sf := 0 to vc - 1 do
+    for sf := 0 to vc - 1 do
       With cd^[sf] do
       begin
         if vx = nil then
@@ -1918,7 +1918,7 @@ Function CleaveSurface(surf: TJKSurface; const cnormal: TVector;
 var
   nsf: TJKSurface;
 begin
-  SplitVertices(surf.Vertices, cnormal, cx, cy, cz);
+  SplitVertices(surf.vertices, cnormal, cx, cy, cz);
 
   SaveSecUndo(surf.sector, ch_changed, sc_both);
 
@@ -1938,17 +1938,17 @@ var
   D: double;
 begin
   result := false;
-  SplitVertices(surf.Vertices, cnormal, cx, cy, cz);
-  v1 := surf.Vertices[edge];
-  v2 := surf.Vertices[surf.NextVX(edge)];
-  if (v1.Mark = 0) or (v1.Mark <> -v2.Mark) then
+  SplitVertices(surf.vertices, cnormal, cx, cy, cz);
+  v1 := surf.vertices[edge];
+  v2 := surf.vertices[surf.NextVX(edge)];
+  if (v1.mark = 0) or (v1.mark <> -v2.mark) then
     exit;
 
   SaveSecUndo(surf.sector, ch_changed, sc_both);
 
   D := cnormal.dx * cx + cnormal.dy * cy + cnormal.dz * cz;
 
-  With nvx do
+  with nvx do
     PlaneLineXn(cnormal, D, v1.x, v1.y, v1.z, v2.x, v2.y, v2.z, ax, ay, az);
 
   SaveSecUndo(surf.sector, ch_changed, sc_geo);
@@ -1957,13 +1957,13 @@ begin
 
   surf.InsertVertex(surf.NextVX(edge), nvx);
 
-  For i := 0 to surf.sector.surfaces.count - 1 do
-    With surf.sector.surfaces[i] do
+  for i := 0 to surf.sector.surfaces.Count - 1 do
+    with surf.sector.surfaces[i] do
     begin
-      for j := 0 to Vertices.count - 1 do
+      for j := 0 to vertices.Count - 1 do
       begin
-        nv1 := Vertices[j];
-        nv2 := Vertices[NextVX(j)];
+        nv1 := vertices[j];
+        nv2 := vertices[NextVX(j)];
         if ((v1 = nv1) and (v2 = nv2)) or ((v1 = nv2) and (v2 = nv1)) then
           InsertVertex(NextVX(j), nvx);
       end;
@@ -1971,7 +1971,7 @@ begin
 
   surf.sector.Renumber;
 
-  For i := 0 to surf.sector.surfaces.count - 1 do
+  for i := 0 to surf.sector.surfaces.Count - 1 do
     surf.sector.surfaces[i].RecalcAll;
 
   JedMain.SectorChanged(surf.sector);
@@ -2109,9 +2109,9 @@ begin
   for i := 0 to sec.vertices.Count - 1 do
     with sec.vertices[i] do
     begin
-      if Mark = -1 then
+      if mark = -1 then
         Inc(nleft);
-      if Mark = 1 then
+      if mark = 1 then
         Inc(nright);
     end;
 
@@ -2133,7 +2133,7 @@ begin
       begin
         nleft := 0;
         for i := 0 to vertices.Count - 1 do
-          if vertices[i].Mark <> 0 then
+          if vertices[i].mark <> 0 then
           begin
             nleft := 1;
             break;
@@ -2147,7 +2147,7 @@ begin
         begin
           v1 := vertices[i];
           v2 := vertices[NextIdx(i, Vertices.Count)];
-          if (v1.Mark = 0) and (v2.Mark = 0) then
+          if (v1.mark = 0) and (v2.mark = 0) then
             AddVXs(vxs, v1, v2);
         end;
       end;
@@ -2220,7 +2220,7 @@ begin
       surf := sec.surfaces[sf];
       for i := 0 to surf.vertices.Count - 1 do
       begin
-        sfside := surf.vertices[i].Mark;
+        sfside := surf.vertices[i].mark;
         if sfside <> 0 then
           break;
       end;
@@ -2233,7 +2233,7 @@ begin
             sec.surfaces.Delete(sf);
           end;
         0:
-          With surf do
+          with surf do
             if cnormal.Dot(normal) < 0 then
             //if SMult(cnormal.dx, cnormal.dy, cnormal.dz, normal.dx, normal.dy, normal.dz) < 0 then
             begin
@@ -2248,7 +2248,7 @@ begin
     for sf := sec.vertices.Count - 1 downto 0 do
     begin
       v1 := sec.vertices[sf];
-      case v1.Mark of
+      case v1.mark of
         - 1:
           begin
             v1.sector := sec1;
@@ -2302,7 +2302,7 @@ begin
         for i := 0 to vertices.Count - 1 do
         begin
           v1 := vertices[i];
-          if v1.Mark <> 0 then
+          if v1.mark <> 0 then
             continue;
           vertices[i] := sec1.AddVertex(v1.x, v1.y, v1.z);
           { nv:=nsf.IndexOf(v1);
@@ -3517,7 +3517,7 @@ begin
 
   repeat
     nv := 0;
-    With surf1 do
+    with surf1 do
       for i := vertices.Count - 1 downto 0 do
       begin
         if vertices[PrevVX(i)] = vertices[NextVX(i)] then
@@ -3529,7 +3529,7 @@ begin
         end;
       end;
 
-    With surf1 do
+    with surf1 do
       for i := vertices.Count - 1 downto 0 do
       begin
         if vertices[i] = vertices[NextVX(i)] then

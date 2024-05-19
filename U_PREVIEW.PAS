@@ -815,13 +815,13 @@ begin
     cyaw := 0;
     case JedMain.mapMode of
         MM_SC:
-            FindCenter(Level.Sectors[JedMain.Cur_SC], cx, cy, cz);
+            FindCenter(level.sectors[JedMain.Cur_SC], cx, cy, cz);
         { MM_VX: with Level.Sectors[Cur_SC].Vertices[Cur_VX] do begin cx:=x; cy:=y; cz:=z; end; }
         MM_SF,
         MM_ED:
-            CalcSurfCenter(level.Sectors[JedMain.Cur_SC].surfaces[JedMain.Cur_SF], cx, cy, cz);
+            CalcSurfCenter(level.sectors[JedMain.Cur_SC].surfaces[JedMain.Cur_SF], cx, cy, cz);
         MM_TH:
-            with Level.Things[JedMain.Cur_TH] do
+            with level.things[JedMain.Cur_TH] do
               begin
                   cx := X;
                   cy := Y;
@@ -830,7 +830,7 @@ begin
                   cyaw := yaw;
               end;
         MM_LT:
-            with Level.Lights[JedMain.Cur_LT] do
+            with level.lights[JedMain.Cur_LT] do
               begin
                   cx := position.X;
                   cy := position.Y;
@@ -839,7 +839,7 @@ begin
         MM_FR:
           begin
             if JedMain.Cur_FR = -1 then
-              with Level.Things[JedMain.Cur_TH] do
+              with level.things[JedMain.Cur_TH] do
                 begin
                   cx := x;
                   cy := y;
@@ -848,7 +848,7 @@ begin
                   cyaw := yaw;
                 end
             else
-              Level.Things[JedMain.Cur_TH].Vals[JedMain.Cur_FR]
+              level.things[JedMain.Cur_TH].Vals[JedMain.Cur_FR]
                 .GetFrame(cx, cy, cz, cpch, cyaw, crol);
           end;
         else
@@ -863,7 +863,7 @@ begin
    case JedMain.mapMode of
       MM_TH:
         begin
-          var curth := level.Things[JedMain.Cur_TH];
+          var curth := level.things[JedMain.Cur_TH];
           with Render3D.GetCamera() do
           begin
             var dx := position.x - curth.X;

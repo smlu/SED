@@ -648,28 +648,31 @@ var
     LT: TSedLight;
     i: Integer;
 begin
-    for i := 0 to Level.Things.Count - 1 do
-        Free3DO(Level.Things[i].a3DO);
+    for i := 0 to level.things.Count - 1 do
+        Free3DO(level.things[i].a3DO);
 
-    Level.Clear;
-    Level.MasterCMP := '';
-    Level.kind := CurrentProject;
+    level.Clear;
+    level.MasterCMP := '';
+    level.kind := CurrentProject;
 
-    sec := Level.NewSector;
-    Level.Sectors.Add(sec);
+    sec := level.NewSector;
+    level.sectors.Add(sec);
 
     v := sec.newVertex;
     v.X := -1;
     v.Y := 1;
     v.z := 0;
+
     v := sec.newVertex;
     v.X := -1;
     v.Y := -1;
     v.z := 0;
+
     v := sec.newVertex;
     v.X := 1;
     v.Y := -1;
     v.z := 0;
+
     v := sec.newVertex;
     v.X := 1;
     v.Y := 1;
@@ -679,14 +682,17 @@ begin
     v.X := -1;
     v.Y := 1;
     v.z := 1;
+
     v := sec.newVertex;
     v.X := 1;
     v.Y := 1;
     v.z := 1;
+
     v := sec.newVertex;
     v.X := 1;
     v.Y := -1;
     v.z := 1;
+
     v := sec.newVertex;
     v.X := -1;
     v.Y := -1;
@@ -737,20 +743,20 @@ begin
         surf.AddVertex(vertices[0]);
     end;
 
-    th := Level.NewThing;
-    Level.Things.Add(th);
+    th := level.NewThing;
+    level.things.Add(th);
     With th do
     begin
         X := 0;
         Y := 0;
         z := 0.1;
         name := 'walkplayer';
-        sec := Level.Sectors[0];
+        sec := level.sectors[0];
     end;
 
-    LT := Level.NewLight;
-    Level.Lights.Add(LT);
-    With LT do
+    lt := level.NewLight;
+    level.lights.Add(lt);
+    With lt do
     begin
         position.x := 0;
         position.y := 0;
@@ -762,13 +768,12 @@ begin
 
     sec.Renumber;
 
-    Level.SetDefaultHeader;
+    level.SetDefaultHeader;
 
     AskSaveAs := true;
-    NewLevel := true;
+    NewLevel  := true;
     LevelFile := 'Untitled';
     Level.AddMissingLayers;
-
 end;
 
 Procedure TJedMain.OpenProject(const filename: string; how: Integer);
@@ -1343,7 +1348,7 @@ begin
                     sec := level.sectors[sc];
                     surf := sec.surfaces[SF];
                     SetLineDrawModeForLayer(sec.layer);
-                    With surf do
+                    with surf do
                         renderer.DrawLine(vertices[ED], vertices[NextVX(ED)]);
                 end;
             end;
@@ -1355,7 +1360,7 @@ begin
                 for s := 0 to vxsel.Count - 1 do
                 begin
                     vxsel.GetSCVX(s, sc, vx);
-                    With level.sectors[sc].vertices[vx] do
+                    with level.sectors[sc].vertices[vx] do
                         renderer.DrawVertex(x, y, z);
                 end;
             end;
@@ -2668,7 +2673,7 @@ begin
 
                             while scsel.Count > 1 do
                             begin
-                                sec := Level.Sectors[scsel.GetSC(scsel.Count - 1)];
+                                sec := level.sectors[scsel.GetSC(scsel.Count - 1)];
                                 for i := 0 to scsel.Count - 2 do
                                 begin
                                     var msec := level.sectors[scsel.GetSC(i)];
@@ -2755,7 +2760,7 @@ begin
                             surf := level.sectors[Cur_SC].surfaces[Cur_SF];
                             StartUndoRec('Merge Surfaces');
                             if MergeSurfacesAt(surf, Cur_ED) then
-                                edsel.Clear;
+                              edsel.Clear;
                         end;
                 end;
                 SetMapMode(mapMode);
@@ -2870,6 +2875,7 @@ begin
                             end;
                             PanMessageFmt(mt_info, '%d vertices deleted', [a]);
                             vxsel.Clear;
+
                         end;
                 end;
                 SetMapMode(mapMode);
@@ -3325,13 +3331,13 @@ begin
     case mapMode of
         MM_SC:
             begin
-                for i := 0 to level.sectors.count - 1 do
-                    With level.sectors[i] do
-                        if ToolBar.IsLayerVisible(Layer) then
+                for i := 0 to level.sectors.Count - 1 do
+                    with level.sectors[i] do
+                        if ToolBar.IsLayerVisible(layer) then
                         begin
                             allin := true;
                             for VX := 0 to vertices.Count - 1 do
-                                With vertices[VX] do
+                                with vertices[VX] do
                                     if not renderer.IsVertexInRect(X, Y, z) then
                                     begin
                                         allin := false;
@@ -3344,8 +3350,8 @@ begin
         MM_SF:
             begin
                 for i := 0 to level.sectors.Count - 1 do
-                    With level.sectors[i] do
-                        if ToolBar.IsLayerVisible(Layer) then
+                    with level.sectors[i] do
+                        if ToolBar.IsLayerVisible(layer) then
                             For SF := 0 to surfaces.Count - 1 do
                                 if renderer.IsPolygonInRect(surfaces[SF]) then
                                     DO_SelSF(i, SF);
@@ -3354,10 +3360,10 @@ begin
         MM_ED:
             begin
                 for i := 0 to level.sectors.Count - 1 do
-                    With level.sectors[i] do
-                        if ToolBar.IsLayerVisible(Layer) then
+                    with level.sectors[i] do
+                        if ToolBar.IsLayerVisible(layer) then
                             For SF := 0 to surfaces.Count - 1 do
-                                With surfaces[SF] do
+                                with surfaces[SF] do
                                     for ED := 0 to vertices.Count - 1 do
                                         if renderer.IsLineInRect(vertices[ED],
                                         vertices[NextVX(ED)]) then
@@ -3366,36 +3372,36 @@ begin
         MM_VX:
             begin
                 for i := 0 to level.sectors.Count - 1 do
-                    With level.sectors[i] do
-                        if ToolBar.IsLayerVisible(Layer) then
+                    with level.sectors[i] do
+                        if ToolBar.IsLayerVisible(layer) then
                             for VX := 0 to vertices.Count - 1 do
-                                With vertices[VX] do
+                                with vertices[VX] do
                                     if renderer.IsVertexInRect(X, Y, z) then
                                         DO_SelVX(i, VX);
             end;
         MM_TH:
             begin
                 for i := 0 to level.things.Count - 1 do
-                    With level.things[i] do
-                        if ToolBar.IsLayerVisible(Layer) then
+                    with level.things[i] do
+                        if ToolBar.IsLayerVisible(layer) then
                             if renderer.IsVertexInRect(X, Y, z) then
                                 DO_SelTH(i);
             end;
         MM_LT:
             begin
                 for i := 0 to level.lights.Count - 1 do
-                    With level.lights[i] do
-                        if ToolBar.IsLayerVisible(Layer) then
+                    with level.lights[i] do
+                        if ToolBar.IsLayerVisible(layer) then
                             if renderer.IsVertexInRect(position.x, position.y, position.z) then
                                 DO_SelLT(i);
             end;
         MM_FR:
             begin
-                for i := 0 to Level.Things.Count - 1 do
-                    With Level.Things[i] do
-                        if ToolBar.IsLayerVisible(Layer) then
+                for i := 0 to level.things.Count - 1 do
+                    with level.things[i] do
+                        if ToolBar.IsLayerVisible(layer) then
                             for fr := 0 to Vals.Count - 1 do
-                                With Vals[fr] do
+                                with Vals[fr] do
                                 begin
                                     if atype <> at_frame then
                                         continue;
@@ -4283,7 +4289,7 @@ begin
               end
             else if s = '.asc' then
               begin
-                  Level.ImportAsc(FileName);
+                  level.ImportAsc(FileName);
               end
             else
               begin
@@ -4292,28 +4298,28 @@ begin
                   if DFImport.ShowModal <> mrOK then
                       exit;
                   Scale := DFImport.VScale.AsFloat;
-                  Level.ImportLev(FileName, Scale, DFImport.RGTX.ItemIndex);
+                  level.ImportLev(FileName, Scale, DFImport.RGTX.ItemIndex);
               end;
 
             PMsg.Caption := '';
             LevelFile := 'Untitled';
             NewLevel := true;
             ResetEditor(true);
-            Level.kind := CurrentProject;
-            for i := 0 to Level.Things.Count - 1 do
+            level.kind := CurrentProject;
+            for i := 0 to level.things.Count - 1 do
             begin
-                th := Level.Things[i];
+                th := level.things[i];
                 th.z := th.z - th.bbox.z1;
                 nsec := FindSectorForThing(th);
                 if nsec <> -1 then
-                    th.sec := Level.Sectors[nsec];
+                    th.sec := level.sectors[nsec];
                 if th.sec = nil then
-                    th.Layer := Level.AddLayer('Orphan things')
+                    th.Layer := level.AddLayer('Orphan things')
                 else
                 begin
-                    s := Level.GetLayerName(th.sec.Layer);
+                    s := level.GetLayerName(th.sec.Layer);
                     s := 'Things' + Copy(s, 6, length(s));
-                    th.Layer := Level.AddLayer(s);
+                    th.Layer := level.AddLayer(s);
                 end;
             end;
         end;
@@ -4578,6 +4584,7 @@ begin
             exit;
         end;
     end;
+
     BNSC.Down := mm = MM_SC;
     BNSF.Down := mm = MM_SF;
     BNVX.Down := mm = MM_VX;
@@ -4621,7 +4628,7 @@ begin
     if Cur_SC < 0 then
         Cur_SC := level.sectors.Count - 1;
 
-    With level.sectors[Cur_SC] do
+    with level.sectors[Cur_SC] do
     begin
         if Cur_SF < 0 then
             Cur_SF := surfaces.Count - 1;
@@ -4640,7 +4647,7 @@ begin
     if sc < 0 then
         Cur_SC := level.sectors.Count - 1;
 
-    With level.sectors[Cur_SC] do
+    with level.sectors[Cur_SC] do
     begin
         if VX < 0 then
             Cur_VX := vertices.Count - 1;
@@ -4660,7 +4667,7 @@ begin
     if sc < 0 then
         Cur_SC := level.sectors.Count - 1;
 
-    With level.sectors[Cur_SC] do
+    with level.sectors[Cur_SC] do
     begin
         if SF < 0 then
             Cur_SF := surfaces.Count - 1;
@@ -4668,7 +4675,7 @@ begin
             Cur_SF := 0;
     end;
 
-    With level.sectors[Cur_SC].surfaces[Cur_SF] do
+    with level.sectors[Cur_SC].surfaces[Cur_SF] do
     begin
         if vertices.Count = 0 then
             exit;
@@ -4736,7 +4743,7 @@ end;
 
 Procedure TJedMain.SaveJKLto(const name: string);
 begin
-    Level.SaveToJKL(name);
+    level.SaveToJKL(name);
 end;
 
 Function TJedMain.GetTargetJKLName: string;
@@ -4868,9 +4875,8 @@ begin
   if DefaultParams then
     begin
       SetMapMode(MM_SC);
-      ToolBar.SetLVis(Level.LVisString);
+      ToolBar.SetLVis(level.lvisString);
       SetThingView(defThingView);
-      SetMSelMode(DefMSelMode);
       scsel.Clear;
       sfsel.Clear;
       edsel.Clear;
@@ -5332,18 +5338,18 @@ begin
                 fi := Cur_TH;
                 n := fi;
                 repeat
-                    if n >= Level.Things.Count - 1 then
+                    if n >= level.things.Count - 1 then
                         n := 0
                     else
                         Inc(n);
                     if n = fi then
                         exit;
-                until ToolBar.IsLayerVisible(Level.Things[n].Layer);
+                until ToolBar.IsLayerVisible(level.things[n].Layer);
                 SetCurTH(n);
             end;
         MM_FR:
             begin
-                th := Level.Things[Cur_TH];
+                th := level.things[Cur_TH];
                 Cur_FR := th.NextFrame(Cur_FR);
                 SetCurFR(Cur_TH, Cur_FR);
             end;
@@ -5352,13 +5358,13 @@ begin
                 fi := Cur_LT;
                 n := fi;
                 repeat
-                    if n >= Level.Lights.Count - 1 then
+                    if n >= level.lights.Count - 1 then
                         n := 0
                     else
                         Inc(n);
                     if n = fi then
                         exit;
-                until ToolBar.IsLayerVisible(Level.Lights[n].Layer);
+                until ToolBar.IsLayerVisible(level.lights[n].Layer);
                 SetCurLT(n);
             end;
         MM_Extra:
@@ -5375,7 +5381,7 @@ begin
     case mapMode of
         MM_SC:
             begin
-              n := GetPreviousSector(Level, Cur_SC);
+              n := GetPreviousSector(level, Cur_SC);
               if n < 0 then
                 exit;
               SetCurSC(n);
@@ -5388,14 +5394,14 @@ begin
             SetCurED(Cur_SC, Cur_SF, Cur_ED - 1);
         MM_TH:
             begin
-                n := GetPreviousThing(Level, Cur_TH);
+                n := GetPreviousThing(level, Cur_TH);
                 if n < 0 then
                   exit;
                 SetCurTH(n);
             end;
         MM_FR:
             begin
-                th := Level.Things[Cur_TH];
+                th := level.things[Cur_TH];
                 if Cur_FR = -1 then
                     Cur_FR := th.Vals.Count - 1
                 else
@@ -5404,7 +5410,7 @@ begin
             end;
         MM_LT:
             begin
-                n := GetPreviousLight(Level, Cur_LT);
+                n := GetPreviousLight(level, Cur_LT);
                 if n < 0 then
                   exit;
                 SetCurLT(n);
@@ -5618,35 +5624,35 @@ var
 begin
     case mapMode of
         MM_SC:
-            With Level.Sectors[Cur_SC].vertices[0] do
+            with level.sectors[Cur_SC].vertices[0] do
             begin
                 cx := X;
                 cy := Y;
                 cz := z;
             end;
         MM_SF:
-            With Level.Sectors[Cur_SC].surfaces[Cur_SF].vertices[0] do
+            with level.sectors[Cur_SC].surfaces[Cur_SF].vertices[0] do
             begin
                 cx := X;
                 cy := Y;
                 cz := z;
             end;
         MM_ED:
-            With Level.Sectors[Cur_SC].surfaces[Cur_SF].vertices[Cur_ED] do
+            with level.sectors[Cur_SC].surfaces[Cur_SF].vertices[Cur_ED] do
             begin
                 cx := X;
                 cy := Y;
                 cz := z;
             end;
         MM_VX:
-            With Level.Sectors[Cur_SC].vertices[Cur_VX] do
+            with level.sectors[Cur_SC].vertices[Cur_VX] do
             begin
                 cx := X;
                 cy := Y;
                 cz := z;
             end;
         MM_TH:
-            With Level.Things[Cur_TH] do
+            with level.things[Cur_TH] do
             begin
                 cx := X;
                 cy := Y;
@@ -5654,19 +5660,19 @@ begin
             end;
         MM_FR:
             if Cur_FR <> -1 then
-                With Level.Things[Cur_TH].Vals[Cur_FR] do
+                with level.things[Cur_TH].vals[Cur_FR] do
                 begin
                     GetFrame(cx, cy, cz, a, a, a);
                 end
             else
-                With Level.Things[Cur_TH] do
+                With level.things[Cur_TH] do
                 begin
                     cx := X;
                     cy := Y;
                     cz := z;
                 end;
         MM_LT:
-            With Level.Lights[Cur_LT] do
+            with level.lights[Cur_LT] do
             begin
                 cx := position.x;
                 cy := position.y;
@@ -5810,7 +5816,7 @@ begin
                   end;
             end;
         MM_TH:
-            With level.things[Cur_TH] do
+            with level.things[Cur_TH] do
             begin
                 rx := x;
                 ry := y;
@@ -5818,7 +5824,7 @@ begin
             end;
         MM_FR:
             if Cur_FR = -1 then
-                With level.things[Cur_TH] do
+                with level.things[Cur_TH] do
                 begin
                     rx := x;
                     ry := y;
@@ -5830,7 +5836,7 @@ begin
                     GetFrame(rx, ry, rz, p, Y, r);
                 end;
         MM_LT:
-            With level.lights[Cur_LT] do
+            with level.lights[Cur_LT] do
             begin
                 rx := position.x;
                 ry := position.y;
@@ -6784,7 +6790,7 @@ begin
                 { SaveSelThingsUndo('Change thing(s)',ch_changed); }
                 i := ltsel.AddLT(Cur_LT);
 
-                With level.lights[Cur_LT] do
+                with level.lights[Cur_LT] do
                 begin
                     cx := position.x;
                     cy := position.y;
@@ -6903,7 +6909,7 @@ begin
             begin
                 StartUndoRec('Scale Light(s)');
                 i := ltsel.AddLT(Cur_LT);
-                With level.lights[Cur_LT] do
+                with level.lights[Cur_LT] do
                 begin
                     sd.cx := position.x;
                     sd.cy := position.y;
@@ -6917,7 +6923,7 @@ begin
                 StartUndoRec('Scale Light(s)');
                 i := frsel.AddFR(Cur_TH, Cur_FR);
                 if Cur_FR = -1 then
-                    With level.things[Cur_TH] do
+                    with level.things[Cur_TH] do
                     begin
                         sd.cx := X;
                         sd.cy := Y;
@@ -7608,7 +7614,7 @@ begin
     else
         Templates.LoadFromFile(ProjectDir + tplname);
 
-    Templates.Merge(Level.templates);
+    templates.Merge(level.templates);
 end;
 
 Procedure TJedMain.SetProjectTypeIndicator;
@@ -8191,34 +8197,38 @@ begin
           z.SetCoords(0, 0, 1);
           gX.SetCoords(1, 0, 0);
           gZ.SetCoords(0, 0, 1);
-          scale := 4;
-          cmx := 0;
-          cmy := 0;
-          cmz := 0;
-          grx := 0;
-          gry := 0;
-          grz := 0;
-          grdot :=0.2;
+          scale  := 4;
+          cmx    := 0;
+          cmy    := 0;
+          cmz    := 0;
+          grx    := 0;
+          gry    := 0;
+          grz    := 0;
+          grdot  := 0.2;
           grstep := 0.2;
           grline := 1;
       end
     else
       begin
-          X := renderer.xv;
-          z := renderer.zv;
+          X  := renderer.xv;
+          z  := renderer.zv;
           gX := renderer.gxnormal;
           gZ := renderer.gnormal;
-          scale := renderer.scale;
-          cmx := renderer.CamX;
-          cmy := renderer.CamY;
-          cmz := renderer.CamZ;
-          grx := renderer.GridX;
-          gry := renderer.GridY;
-          grz := renderer.GridZ;
-          grdot := renderer.GridDot;
+
+          scale  := renderer.scale;
+          cmx    := renderer.CamX;
+          cmy    := renderer.CamY;
+          cmz    := renderer.CamZ;
+
+          grx    := renderer.GridX;
+          gry    := renderer.GridY;
+          grz    := renderer.GridZ;
+
+          grdot  := renderer.GridDot;
           grline := renderer.GridLine;
           grstep := renderer.GridStep;
-          renderer.free;
+
+          renderer.Free;
           renderer := nil;
       end;
     try
@@ -8249,15 +8259,17 @@ begin
     renderer.SetGridNormal(gZ.dx, gZ.dy, gZ.dz);
     renderer.SetGridXNormal(gX.dx, gX.dy, gX.dz);
     renderer.scale := scale;
-    With renderer do
+    with renderer do
     begin
         CamX := cmx;
         CamY := cmy;
         CamZ := cmz;
+
         GridX := grx;
         GridY := gry;
         GridZ := grz;
-        GridDot := grdot;
+
+        GridDot  := grdot;
         GridLine := grline;
         GridStep := grstep;
     end;
@@ -8641,8 +8653,8 @@ begin
                     scsel.AddSC(i);
                     SectorAdded(Level.sectors[i]);
                 end;
-                Invalidate;
 
+                Invalidate;
             end;
         MM_LT:
             begin
@@ -8710,10 +8722,10 @@ begin
     cyaw := 0;
     case mapMode of
         MM_SC:
-            FindCenter(Level.Sectors[Cur_SC], cx, cy, cz);
+            FindCenter(level.sectors[Cur_SC], cx, cy, cz);
         { MM_VX: with Level.Sectors[Cur_SC].Vertices[Cur_VX] do begin cx:=x; cy:=y; cz:=z; end; }
         MM_TH:
-            with Level.Things[Cur_TH] do
+            with level.things[Cur_TH] do
             begin
                 cx := X;
                 cy := Y;
@@ -8722,7 +8734,7 @@ begin
                 cyaw := yaw;
             end;
         MM_LT:
-            with Level.Lights[Cur_LT] do
+            with level.lights[Cur_LT] do
             begin
                 cx := position.x;
                 cy := position.y;
@@ -8730,14 +8742,14 @@ begin
             end;
         MM_FR:
             if Cur_FR = -1 then
-                with Level.Lights[Cur_LT] do
+                with level.lights[Cur_LT] do
                 begin
                     cx := position.x;
                     cy := position.y;
                     cz := position.z;
                 end
             else
-                Level.Things[Cur_TH].Vals[Cur_FR].GetFrame(cx, cy, cz,
+                level.things[Cur_TH].Vals[Cur_FR].GetFrame(cx, cy, cz,
                   cpch, cyaw, a);
     end;
     Preview3D.SetCam(cx, cy, cz, cpch, cyaw);
