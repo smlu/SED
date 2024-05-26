@@ -5183,7 +5183,7 @@ var
     begin
       if ToolBar.IsLayerVisible(sec.layer) then
       begin
-        SaveSecUndo(sec, ch_changed, sc_geo);
+        SaveSecUndo(sec, ch_changed, sc_both);  // Must be both because geometry vertex light and sector ambient light is changed
         scs.AddSC(sec.num);
       end;
     end;
