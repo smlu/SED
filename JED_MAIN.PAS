@@ -1552,6 +1552,7 @@ begin
                         with level.lights[Cur_LT] do
                         begin
                             renderer.DrawVertex(position.x, position.y, position.z);
+                            SetLineDrawModeForLayer(layer);
                             renderer.DrawCircle(position.x, position.y, position.z, range);
                         end;
                 end;
