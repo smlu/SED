@@ -152,9 +152,9 @@
             <Form>Form1</Form>
         </DCCReference>
         <DCCReference Include="values.pas"/>
-        <DCCReference Include="U_TEMPLATES.PAS"/>
+        <DCCReference Include="u_templates.pas"/>
         <DCCReference Include="ListRes.pas"/>
-        <DCCReference Include="U_COGFORM.PAS">
+        <DCCReference Include="U_CogForm.pas">
             <Form>CogForm</Form>
         </DCCReference>
         <DCCReference Include="D3D_PRender.pas"/>
@@ -167,17 +167,17 @@
         </DCCReference>
         <DCCReference Include="FieldEdit.pas"/>
         <DCCReference Include="misc_utils.pas"/>
-        <DCCReference Include="COG_UTILS.PAS"/>
+        <DCCReference Include="Cog_utils.pas"/>
         <DCCReference Include="ResourcePicker.pas">
             <Form>ResPicker</Form>
         </DCCReference>
         <DCCReference Include="Preview.pas"/>
         <DCCReference Include="graph_files.pas"/>
         <DCCReference Include="Images.pas"/>
-        <DCCReference Include="CONS_CHECKER.PAS">
+        <DCCReference Include="Cons_checker.pas">
             <Form>Consistency</Form>
         </DCCReference>
-        <DCCReference Include="FLAGEDITOR.PAS">
+        <DCCReference Include="FlagEditor.pas">
             <Form>FlagEdit</Form>
         </DCCReference>
         <DCCReference Include="U_Tools.pas">

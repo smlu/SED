@@ -664,9 +664,9 @@ begin
   Inherited Create;
   sector := owner;
 
-  adjoinFlags := SAF_Visible or SAF_Move;
+  adjoinflags := SAF_Visible or SAF_Move;
   if CurrentProject <> IJIM then
-    BitSet(AdjoinFlags, SAF_AllowSoundPass);
+    BitSet(adjoinflags, SAF_AllowSoundPass);
 
   material  := 'dflt.mat';
   surfflags := SF_Collision;
@@ -717,14 +717,14 @@ end;
 
 procedure TJKSurface.Assign(surf: TJKSurface);
 begin
-  adjoinFlags := surf.AdjoinFlags;
-  material    := surf.Material;
-  surfFlags   := surf.SurfFlags;
-  faceFlags   := surf.FaceFlags;
+  adjoinFlags := surf.adjoinFlags;
+  material    := surf.material;
+  surfflags   := surf.surfflags;
+  faceflags   := surf.faceflags;
   geo         := surf.geo;
   light       := surf.light;
   tex         := surf.tex;
-  extraLight  := surf.ExtraLight;
+  extraLight  := surf.extraLight;
   uscale      := surf.uscale;
   vscale      := surf.vscale;
 end;

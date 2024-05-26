@@ -1078,8 +1078,9 @@ begin
     v2.y := v1.Y + d.dy;
     v2.z := v1.z + d.dz;
     renderer.DrawLine(v1, v2);
-    v1.free;
-    v2.free;
+
+    v1.Free;
+    v2.Free;
 end;
 
 Procedure TJedMain.DrawSelFrame(th, fr: Integer);
@@ -1119,8 +1120,9 @@ begin
     v2.Y := v1.Y + d.dy;
     v2.z := v1.z + d.dz;
     renderer.DrawLine(v1, v2);
-    v1.free;
-    v2.free;
+
+    v1.Free;
+    v2.Free;
 end;
 
 Procedure TJedMain.DrawFrame(fr: TTPLValue);
@@ -1276,7 +1278,7 @@ begin
                   With TJKVertex(obj) do
                       renderer.DrawVertex(X, Y, z)
               else if obj is TExtraLine then
-                  With TExtraLine(obj) do
+                  with TExtraLine(obj) do
                       renderer.DrawLine(v1, v2)
               else if obj is TIsolatedPolygon then
                   renderer.DrawPolygon(TPolygon(obj));
@@ -1395,7 +1397,7 @@ begin
                   renderer.SetColor(CL_FRONT, r, g, b);
                 SetRendererObjVertexSize;
                 for s := 0 to ltsel.Count - 1 do
-                  With level.lights[ltsel.GetLT(s)] do
+                  with level.lights[ltsel.GetLT(s)] do
                       renderer.DrawVertex(position.x, position.y, position.z);
             end;
     end;
@@ -1868,8 +1870,8 @@ begin
           if surf.Adjoin <> nil then
             begin
                 surf.geo         := integer(TGeoMode.NotDrawn);
-                surf.AdjoinFlags := (SAF_Visible or SAF_Move)
-                  or (surf.AdjoinFlags and not (SAF_NoAIMove or SAF_NoPlayerMove));
+                surf.adjoinflags := (SAF_Visible or SAF_Move)
+                  or (surf.adjoinflags and not (SAF_NoAIMove or SAF_NoPlayerMove));
             end;
       end;
 
@@ -2642,7 +2644,7 @@ begin
                 SetMouseMode(MM_TranslateGrid);
                 Do_StartTranslateGrid(X, Y);
             end;
-        VK_Space:
+        VK_SPACE:
             DO_MultiSelect;
         { if GetMousePos(X,Y) then begin SetMouseMode(MM_TranslateCam); Do_StartTranslateCam(X,Y); end; }
         Ord('R'):
@@ -5259,7 +5261,7 @@ begin
       ems := GetMSecs;
       sms := SubMSecs(sms, ems);
       PanMessage(mt_info, Format('%d lights processed in %s',
-        [Level.Lights.Count, StrMSecs(sms)]));
+        [level.lights.Count, StrMSecs(sms)]));
 
       if level.sectors.Count = scs.Count then
         Preview3D.ReloadLevel
@@ -8594,11 +8596,11 @@ procedure TJedMain.miCopyClick(sender: TObject);
 begin
     case mapMode of
         MM_SC:
-            CopySectors(Level, scsel, Cur_SC);
+            CopySectors(level, scsel, Cur_SC);
         MM_LT:
-            CopyLights(Level, ltsel, Cur_LT);
+            CopyLights(level, ltsel, Cur_LT);
         MM_TH:
-            CopyThings(Level, thsel, Cur_TH);
+            CopyThings(level, thsel, Cur_TH);
     end;
 end;
 
@@ -8643,8 +8645,8 @@ begin
                 for i := n to level.sectors.Count - 1 do
                 begin
                     nsc := level.sectors[i];
-                    nsc.Layer := sec.Layer;
-                    nsc.ColorMap := sec.ColorMap;
+                    nsc.layer := sec.layer;
+                    nsc.colormap := sec.colormap;
 
                     SaveSecUndo(nsc, ch_added, sc_both);
 
@@ -8656,7 +8658,7 @@ begin
                     end;
 
                     scsel.AddSC(i);
-                    SectorAdded(Level.sectors[i]);
+                    SectorAdded(level.sectors[i]);
                 end;
 
                 Invalidate;

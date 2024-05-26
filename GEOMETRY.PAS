@@ -199,7 +199,7 @@ type
   end;
 
   TPolygon = class
-    faceFlags: Longint;
+    faceflags: Longint;
     geo, light, tex: integer;
     extraLight: TColorF;
     normal: TVector;

@@ -463,9 +463,9 @@ begin
   if not IsWirePolygonInView(p) then
     exit;
 
-  n := p.vertices.count;
+  n := p.vertices.Count;
   glBegin(GL_LINE_LOOP);
-    for i := 0 to p.vertices.count - 1 do
+    for i := 0 to p.vertices.Count - 1 do
       with p.vertices[i] do
       begin
         glVertex3d(x, y, z);

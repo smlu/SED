@@ -18,16 +18,16 @@ Function PasteLights(lev: TJKLevel; atX,atY,atZ: Double): Integer; {Returns firs
 implementation
 uses U_undo, Clipbrd, WIndows;
 
-var CF_JKSectors:Word;
-    CF_JKThings:Word;
-    CF_JKLights:Word;
-    at_frame:TAdjType;
+var CF_JKSectors: Word;
+    CF_JKThings: Word;
+    CF_JKLights: Word;
+    at_frame: TAdjType;
 
 Function CanPasteSectors:Boolean;
 var Clp:TClipboard;
 begin
- Clp:=Clipboard;
- Result:=Clp.HasFormat(CF_JKSectors);
+ Clp := Clipboard;
+ Result := Clp.HasFormat(CF_JKSectors);
 end;
 
 Function CanPasteThings:Boolean;
@@ -57,54 +57,54 @@ var i,j,sf,n,msize: integer;
 begin
   n:=scsel.AddSC(Cur_SC);
 
-  FindCenter(Lev.Sectors[Cur_SC], rx, ry, rz);
+  FindCenter(lev.sectors[Cur_SC], rx, ry, rz);
 
   {Calculate the size of memory to allocate}
   msize := sizeof(longint);
-  for i:=0 to scsel.count-1 do
+  for i := 0 to scsel.Count-1 do
     begin
       inc(msize, GetSecRecSize);
-      sec:=lev.Sectors[scsel.GetSC(i)];
+      sec := lev.sectors[scsel.GetSC(i)];
 
       inc(msize, SCVertSize(sec.vertices));
 
-      for sf:=0 to sec.surfaces.count-1 do
+      for sf:=0 to sec.surfaces.Count-1 do
         begin
-         surf:=sec.surfaces[sf];
+         surf := sec.surfaces[sf];
          inc(msize, GetSurfRecSize);
          inc(msize, SFVertSize(surf.vertices));
         end;
     end;
 
-  hg := GlobalAlloc(GMEM_MOVEABLE or GMEM_SHARE,msize);
+  hg := GlobalAlloc(GMEM_MOVEABLE or GMEM_SHARE, msize);
   pg := GlobalLock(hg);
-  Longint(pg^) := scsel.count;
+  LongInt(pg^) := scsel.Count;
   inc(PAnsiChar(pg), sizeof(Longint));
 
-  for i:=0 to scsel.count-1 do
+  for i := 0 to scsel.Count - 1 do
     begin
-      sec:=lev.Sectors[scsel.GetSC(i)];
-      GetSec(sec,TSecRec(pg^));
-      inc(PAnsiChar(pg),GetSecRecSize);
+      sec := lev.sectors[scsel.GetSC(i)];
+      GetSec(sec, TSecRec(pg^));
+      inc(PAnsiChar(pg), GetSecRecSize);
 
-      GetSCVertices(sec.vertices,pg);
+      GetSCVertices(sec.vertices, pg);
 
-      pvx:=pg;
-      for j:=0 to sec.vertices.count-1 do
+      pvx := pg;
+      for j:=0 to sec.vertices.Count - 1 do
         begin
-         pvx^.x:=pvx^.x-rx;
-         pvx^.y:=pvx^.y-ry;
-         pvx^.z:=pvx^.z-rz;
-         inc(pvx);
+         pvx^.x := pvx^.x - rx;
+         pvx^.y := pvx^.y - ry;
+         pvx^.z := pvx^.z - rz;
+         Inc(pvx);
         end;
 
-      inc(PAnsiChar(pg),SCVertSize(sec.vertices));
+      Inc(PAnsiChar(pg),SCVertSize(sec.vertices));
 
-      for sf:=0 to sec.surfaces.count-1 do
+      for sf := 0 to sec.surfaces.Count - 1 do
         begin
-         surf:=sec.surfaces[sf];
+         surf := sec.surfaces[sf];
 
-         GetSurf(surf,TSurfRec(pg^));
+         GetSurf(surf, TSurfRec(pg^));
          inc(PAnsiChar(pg), GetSurfRecSize);
 
          GetSFVertices(surf,pg);
@@ -113,7 +113,7 @@ begin
     end;
 
   GlobalUnlock(hg);
-  Clp:=Clipboard;
+  Clp := Clipboard;
   Clp.Clear;
   Clp.SetAsHandle(CF_JKSectors, hg);
   Clp.Close;
@@ -122,74 +122,74 @@ begin
 end;
 
 Function PasteSectors(lev: TJKLevel; atX, atY, atZ: Double): Integer; {Returns first pasted Sector}
-var hg:integer;
-    pg:Pointer;
-    i,j,sf,n:integer;
-    sec:TJKSector;
-    surf:TJKSurface;
-    vx:TJKVertex;
-    clp:TClipboard;
-    psrec:^TSecRec;
-    psfrec:^TSurfRec;
+var hg: Integer;
+    pg: Pointer;
+    i,j,sf,n: Integer;
+    sec: TJKSector;
+    surf: TJKSurface;
+    vx: TJKVertex;
+    clp: TClipboard;
+    psrec: ^TSecRec;
+    psfrec: ^TSurfRec;
 begin
-  Result:=-1;
-  Clp:=Clipboard;
+  Result := -1;
+  Clp := Clipboard;
   Clp.Open;
   try
    hg := Clp.GetAsHandle(CF_JKSectors);
    if hg = 0 then exit;
    pg := GlobalLock(hg);
    n  := Longint(pg^);
-   inc(PAnsiChar(pg),sizeof(longint));
+   Inc(PAnsiChar(pg), sizeof(longint));
 
-   Result:=Lev.Sectors.count;
+   Result := lev.sectors.Count;
 
-   for i:=0 to n-1 do
+   for i := 0 to n - 1 do
      begin
-      sec:=Lev.NewSector;
-      Lev.Sectors.Add(sec);
+      sec := lev.NewSector;
+      lev.sectors.Add(sec);
 
-      psrec:=pg;
-      inc(PAnsiChar(pg), GetSecRecSize);
+      psrec := pg;
+      Inc(PAnsiChar(pg), GetSecRecSize);
 
-      SetSec(sec,PSrec^);
-      for j:=0 to PSrec^.nvxs-1 do sec.NewVertex;
+      SetSec(sec, PSrec^);
+      for j := 0 to PSrec^.nvxs - 1 do sec.NewVertex;
 
       SetSCVertices(sec.vertices, PSrec^.nvxs, pg);
-      inc(PAnsiChar(pg), SCVertSize(sec.vertices));
+      Inc(PAnsiChar(pg), SCVertSize(sec.vertices));
 
-      for j:=0 to Sec.vertices.count-1 do
-      With sec.vertices[j] do
+      for j := 0 to sec.vertices.Count - 1 do
+      with sec.vertices[j] do
         begin
-         x:=x+AtX;
-         y:=y+AtY;
-         z:=z+AtZ;
+         x := x + AtX;
+         y := y + AtY;
+         z := z + AtZ;
         end;
 
       sec.Renumber;
 
-      for sf:=0 to PSrec^.nsfs-1 do
+      for sf := 0 to PSrec^.nsfs - 1 do
         begin
-         surf:=sec.NewSurface;
-         sec.Surfaces.Add(surf);
+         surf := sec.NewSurface;
+         sec.surfaces.Add(surf);
 
-         psfRec:=pg;
-         inc(PAnsiChar(pg), GetSurfRecSize);
+         psfRec := pg;
+         Inc(PAnsiChar(pg), GetSurfRecSize);
 
-         SetSurf(surf,PSfRec^);
+         SetSurf(surf, PSfRec^);
 
-         for j:=0 to PSfRec^.Nvxs-1 do surf.AddVertex(nil);
+         for j := 0 to PSfRec^.Nvxs - 1 do surf.AddVertex(nil);
 
-         SetSFVertices(sec,surf,PSfRec^.nvxs,pg);
-         inc(PAnsiChar(pg), SFVertSize(surf.vertices));
+         SetSFVertices(sec, surf, PSfRec^.nvxs, pg);
+         Inc(PAnsiChar(pg), SFVertSize(surf.vertices));
 
          surf.RecalcAll;
         end;
 
-      Sec.Renumber;
+      sec.Renumber;
      end;
-  Finally
-   Lev.RenumSecs;
+  finally
+   lev.RenumSecs;
    GlobalUnlock(hg);
    clp.Close;
   end;
@@ -220,13 +220,13 @@ begin
 
   for i := 0 to ltsel.Count - 1 do
     begin
-      light:=lev.lights[ltsel.getLT(i)];
+      light := lev.lights[ltsel.getLT(i)];
       pl := pg;
       GetLight(light,Pl^);
-      pl^.position.x :=pl^.position.x - rx;
-      pl^.position.y :=pl^.position.y - ry;
-      pl^.position.z :=pl^.position.z - rz;
-      inc(PAnsiChar(pg), GetLightRecSize);
+      pl^.position.x := pl^.position.x - rx;
+      pl^.position.y := pl^.position.y - ry;
+      pl^.position.z := pl^.position.z - rz;
+      Inc(PAnsiChar(pg), GetLightRecSize);
     end;
 
   GlobalUnlock(hg);
@@ -295,13 +295,13 @@ begin
     end;
 
   {Offset things by R#}
-  for i := 0 to thsel.Count-1 do
+  for i := 0 to thsel.Count - 1 do
     begin
       thing   := lev.things[thsel.getTH(i)];
       thing.x := thing.x-rx;
       thing.y := thing.y-ry;
       thing.z := thing.z-rz;
-      for j := 0 to thing.Vals.count-1 do
+      for j := 0 to thing.vals.count-1 do
       with thing.vals[j] do
         begin
          GetFrame(x,y,z, pch,yaw,rol);
@@ -312,7 +312,7 @@ begin
   try
     size := SizeOf(integer);
 
-    for i:=0 to thsel.Count-1 do
+    for i := 0 to thsel.Count - 1 do
       begin
         thing := lev.things[thsel.getTH(i)];
         Inc(size, GetThingRecSize(thing));
@@ -339,7 +339,7 @@ begin
   finally
 
     {Offset things back by R#}
-  for i:=0 to thsel.count-1 do
+  for i := 0 to thsel.Count - 1 do
     begin
       thing   := lev.things[thsel.getTH(i)];
       thing.x := thing.x + rx;
@@ -382,7 +382,7 @@ begin
 
     pg := GlobalLock(hg);
     n := Integer(pg^);
-    inc(PAnsiChar(pg), sizeof(integer));
+    Inc(PAnsiChar(pg), sizeof(integer));
 
     Result := lev.things.Count;
     for i := 0 to n - 1 do

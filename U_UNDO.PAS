@@ -41,8 +41,8 @@ TSecRec = record
   ambient: TColorF;
   extraLight: TColorF;
   pointLight: TPointLight;
-  ColorMap: array[0..31] of char;
-  Tint: TColorF;
+  colormap: array[0..31] of char;
+  tint: TColorF;
   Sound: array[0..63] of char;
   soundVolume: double;
   thrust: TVector;
@@ -52,10 +52,10 @@ end;
 PSecRec = ^TSecRec;
 
 TSurfRec = record
-  AdjSC,AdjSF: Integer;
-  AdjoinFlags: Longint;
-  Material: array[0..63] of char;
-  SurfFlags, FaceFlags: Longint;
+  adjSC,adjSF: Integer;
+  adjoinflags: Longint;
+  material: array[0..63] of char;
+  surfflags, faceflags: Longint;
   geo, light, tex: Integer;
   extraLight: TColorF;
   uscale, vscale: single;
@@ -74,9 +74,9 @@ TLightRec = record
 end;
 
 TThingRec = record
-  Sec: Integer;
+  sec: Integer;
   name: array[0..63] of char;
-  X,Y,Z: double;
+  x,y,z: double;
   PCH,YAW,ROL: Double;
   layer: Integer;
   vals:array[0..0] of char;
@@ -312,7 +312,7 @@ begin
 
       srec.soundVolume := soundVolume;
       srec.thrust      := thrust;
-      srec.layer       := Layer;
+      srec.layer       := layer;
       srec.nvxs        := vertices.count;
       srec.nsfs        := surfaces.count;
     end;
@@ -347,24 +347,24 @@ begin
         end
       else
         begin
-          sfrec.AdjSC := adjoin.sector.num;
+          sfrec.adjSC := adjoin.sector.num;
           sfrec.adjSF := adjoin.num;
           sfrec.adjID := adjoin.sector.id;
         end;
 
-      FillChar(sfrec.Material, SizeOf(sfrec.Material), #0);
-      StrLCopy(sfrec.Material, PChar(Material), System.Math.Min(Material.Length, Length(sfrec.Material) - 1));
+      FillChar(sfrec.material, SizeOf(sfrec.material), #0);
+      StrLCopy(sfrec.material, PChar(material), System.Math.Min(material.Length, Length(sfrec.material) - 1));
 
-      sfrec.AdjoinFlags := AdjoinFlags;
-      sfrec.SurfFlags   := SurfFlags;
-      sfrec.FaceFlags   := FaceFlags;
+      sfrec.adjoinflags := adjoinflags;
+      sfrec.surfflags   := surfflags;
+      sfrec.faceflags   := faceflags;
       sfrec.geo         := geo;
       sfrec.light       := light;
       sfrec.tex         := tex;
       sfrec.extraLight  := extralight;
       sfrec.uscale      := uscale;
       sfrec.vscale      := vscale;
-      sfrec.nvxs        := Vertices.count;
+      sfrec.nvxs        := vertices.Count;
     end;
 end;
 
@@ -377,15 +377,15 @@ Procedure SetSurf(surf:TJKSurface; var sfrec:TSurfRec);
 begin
  surf.mark        := sfrec.AdjSC * 65536 + sfrec.AdjSF;
  surf.nadj        := sfrec.adjID;
- surf.AdjoinFlags := sfrec.AdjoinFlags;
- surf.Material    := sfrec.Material;
+ surf.adjoinflags := sfrec.adjoinflags;
+ surf.material    := sfrec.material;
  //SetString(surf.Material, sfrec.Material, Length(sfrec.Material));
- surf.SurfFlags   := sfrec.SurfFlags;
- surf.FaceFlags   := sfrec.FaceFlags;
+ surf.surfflags   := sfrec.surfFlags;
+ surf.faceFlags   := sfrec.faceflags;
  surf.geo         := sfrec.geo;
  surf.light       := sfrec.light;
  surf.tex         := sfrec.tex;
- surf.extralight  := sfrec.extraLight;
+ surf.extraLight  := sfrec.extraLight;
  surf.uscale      := sfrec.uscale;
  surf.vscale      := sfrec.vscale;
 end;
@@ -398,7 +398,7 @@ end;
 Procedure GetSCVertices(vs:TJKVertices;vxrecs:PVXRec);
 var i: Integer;
 begin
-  for i:=0 to vs.count-1 do
+  for i:= 0 to vs.Count-1 do
     with vs[i] do
     begin
       vxrecs^.x := x;
@@ -440,7 +440,7 @@ begin
       pvxs^.color.r := color.r;
       pvxs^.color.g := color.g;
       pvxs^.color.b := color.b;
-      inc(pvxs);
+      Inc(pvxs);
     end;
 end;
 
@@ -450,14 +450,14 @@ begin
   for i := 0 to nvxs - 1 do
     with surf.txvertices[i] do
     begin
-      surf.vertices[i] := sec.Vertices[pvxs^.nvx];
+      surf.vertices[i] := sec.vertices[pvxs^.nvx];
       u := pvxs^.u;
       v := pvxs^.v;
       color.a := pvxs^.color.a;
       color.r := pvxs^.color.r;
       color.g := pvxs^.color.g;
       color.b := pvxs^.color.b;
-      inc(pvxs);
+      Inc(pvxs);
     end;
 end;
 
@@ -850,7 +850,7 @@ begin
     ch_changed, ch_deleted:
       begin
         n := level.GetSectorByID(objid);
-        if not CheckSectorIndex(Level, n) then exit;
+        if not CheckSectorIndex(level, n) then exit;
         sec := level.sectors[n];
       end;
     else exit;
@@ -1153,7 +1153,7 @@ begin
   With CurUndoRec do
     begin
       {Undo sec geometry}
-      for i := 0 to scgchanges.count - 1 do
+      for i := 0 to scgchanges.Count - 1 do
         begin
           id := scgchanges.GetObjID(i);
           uobj := scgchanges.GetObj(i);
@@ -1161,7 +1161,7 @@ begin
         end;
 
       {Undo sec values}
-      for i:=0 to scvchanges.count - 1 do
+      for i:=0 to scvchanges.Count - 1 do
         begin
           id := scvchanges.GetObjID(i);
           uobj := scvchanges.GetObj(i);
@@ -1169,7 +1169,7 @@ begin
         end;
 
       {Undo lights}
-      for i := 0 to ltchanges.count - 1 do
+      for i := 0 to ltchanges.Count - 1 do
         begin
           id := ltchanges.GetObjID(i);
           uobj := ltchanges.GetObj(i);
@@ -1177,14 +1177,14 @@ begin
         end;
 
       {Undo things}
-      for i:=0 to thchanges.count-1 do
+      for i:=0 to thchanges.Count-1 do
       begin
        id:=thchanges.GetObjID(i);
        uobj:=thchanges.GetObj(i);
        uobj.Undo(id);
       end;
 
-      for i := 0 to nodechanges.count - 1 do
+      for i := 0 to nodechanges.Count - 1 do
         begin
           id := nodechanges.GetObjID(i);
           uobj := nodechanges.GetObj(i);

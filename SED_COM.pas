@@ -777,14 +777,14 @@ begin
         adjoin := Level.Sectors[rec.adjoinSec].Surfaces[rec.adjoinSurf];
       end;
 
-      if (rflags and sf_adjoinflags) <> 0 then AdjoinFlags := rec.adjoinflags;
-      if (rflags and sf_SurfFlags)   <> 0 then SurfFlags   := rec.surfflags;
-      if (rflags and sf_FaceFlags)   <> 0 then FaceFlags   := rec.faceflags;
-      if (rflags and sf_Material)    <> 0 then Material    := rec.aMaterial;
+      if (rflags and sf_adjoinflags) <> 0 then adjoinflags := rec.adjoinflags;
+      if (rflags and sf_SurfFlags)   <> 0 then surfflags   := rec.surfflags;
+      if (rflags and sf_FaceFlags)   <> 0 then faceflags   := rec.faceflags;
+      if (rflags and sf_Material)    <> 0 then material    := rec.aMaterial;
       if (rflags and sf_geo)         <> 0 then geo         := rec.geo;
       if (rflags and sf_light)       <> 0 then light       := rec.light;
       if (rflags and sf_tex)         <> 0 then tex         := rec.tex;
-      if (rflags and sf_ExtraLight)  <> 0 then ExtraLight  := TColorF(rec.ExtraLight);
+      if (rflags and sf_ExtraLight)  <> 0 then extraLight  := TColorF(rec.extraLight);
       if (rflags and sf_txscale)     <> 0 then
       begin
         uscale := rec.uscale;
@@ -793,92 +793,92 @@ begin
     end;
 end;
 
-Procedure TSedCOMLevel.SurfaceGetNormal(sc,sf:integer;var n:TSedVector3);
+Procedure TSedCOMLevel.SurfaceGetNormal(sc,sf: Integer; var n: TSedVector3);
 begin
- With Level.Sectors[sc].surfaces[sf].normal do
+ with level.sectors[sc].surfaces[sf].normal do
  begin
-  n.dx:=dx;
-  n.dy:=dy;
-  n.dz:=dz;
+  n.dx := dx;
+  n.dy := dy;
+  n.dz := dz;
  end;
 end;
 
 Procedure TSedCOMLevel.SurfaceUpdate(sc,sf:integer;how:integer);
 var surf:TJKSurface;
 begin
- surf:=Level.Sectors[sc].Surfaces[sf];
- if how and su_texture<>0 then surf.RecalcAll else surf.Recalc;
- if how and su_floorflag<>0 then surf.CheckIfFloor;
- if how and su_sector<>0 then JedMain.SectorChanged(surf.sector);
+ surf := level.sectors[sc].surfaces[sf];
+ if how and su_texture   <> 0 then surf.RecalcAll else surf.Recalc;
+ if how and su_floorflag <> 0 then surf.CheckIfFloor;
+ if how and su_sector    <> 0 then JedMain.SectorChanged(surf.sector);
 end;
 
 Function TSedCOMLevel.SurfaceNumVertices(sc,sf:integer):Integer;
 begin
- Result:=Level.Sectors[sc].surfaces[sf].vertices.count;
+ Result := level.sectors[sc].surfaces[sf].vertices.count;
 end;
 
 Function TSedCOMLevel.SurfaceGetVertexNum(sc,sf,vx:integer):integer;
 begin
- Result:=Level.Sectors[sc].surfaces[sf].vertices[vx].num;
+ Result := level.sectors[sc].surfaces[sf].vertices[vx].num;
 end;
 
 Procedure TSedCOMLevel.SurfaceSetVertexNum(sc,sf,vx:integer;secvx:integer);
 begin
- With Level.Sectors[sc] do
+ with level.sectors[sc] do
  begin
-  surfaces[sf].vertices[vx]:=vertices[secvx];
+  surfaces[sf].vertices[vx] := vertices[secvx];
  end;
 end;
 
 Function TSedCOMLevel.SurfaceAddVertex(sc,sf:integer;secvx:integer):Integer;
 begin
- With Level.Sectors[sc] do
+ with level.sectors[sc] do
  begin
-  result:=surfaces[sf].AddVertex(vertices[secvx]);
+  result := surfaces[sf].AddVertex(vertices[secvx]);
  end;
 end;
 
 Function TSedCOMLevel.SurfaceInsertVertex(sc,sf:integer;at:integer;secvx:integer):Integer;
 begin
- With Level.Sectors[sc] do
+ with level.sectors[sc] do
  begin
-  result:=surfaces[sf].InsertVertex(at,vertices[secvx]);
+  result := surfaces[sf].InsertVertex(at, vertices[secvx]);
  end;
- result:=at;
+ result := at;
 end;
 
 Procedure TSedCOMLevel.SurfaceDeleteVertex(sc,sf:integer;n:integer);
 begin
- Level.Sectors[sc].surfaces[sf].DeleteVertex(n);
+ level.sectors[sc].surfaces[sf].DeleteVertex(n);
 end;
 
 Procedure TSedCOMLevel.SurfaceGetVertexUV(sc,sf,vx:integer;var u,v:single);
 var tv:TTXVertex;
 begin
- tv:=Level.Sectors[sc].surfaces[sf].txvertices[vx];
- u:=tv.u;
- v:=tv.v;
+ tv := level.sectors[sc].surfaces[sf].txvertices[vx];
+ u := tv.u;
+ v := tv.v;
 end;
 
 Procedure TSedCOMLevel.SurfaceSetVertexUV(sc,sf,vx:integer;u,v:single);
-var tv:TTXVertex;
+var tv: TTXVertex;
 begin
- tv:=Level.Sectors[sc].surfaces[sf].txvertices[vx];
- tv.u:=u;
- tv.v:=v;
+ tv := level.sectors[sc].surfaces[sf].txvertices[vx];
+ tv.u := u;
+ tv.v := v;
 end;
 
 Procedure TSedCOMLevel.SurfaceGetVertexLight(sc, sf, vx: integer; var color: TSedColor);
 var tv:TTXVertex;
 begin
- tv := Level.Sectors[sc].surfaces[sf].txvertices[vx];
+ tv := level.sectors[sc].surfaces[sf].txvertices[vx];
  color := TSedColor(tv.color);
 end;
 
 Procedure TSedCOMLevel.SurfaceSetVertexLight(sc, sf, vx: integer; const color: TSedColor);
 var tv:TTXVertex;
 begin
- tv:=Level.Sectors[sc].surfaces[sf].txvertices[vx];
+ tv := level.sectors[sc].surfaces[sf].txvertices[vx];
  tv.color := TColorF(color);
 end;
 
@@ -887,26 +887,26 @@ end;
 Function TSedCOMLevel.ThingAdd:Integer;
 var th:TJKThing;
 begin
- th:=Level.NewThing;
- Result:=Level.Things.Add(th);
- Level.RenumThings;
+ th := level.NewThing;
+ Result := level.things.Add(th);
+ level.RenumThings;
  JedMain.ThingAdded(th);
 end;
 
-Procedure TSedCOMLevel.ThingDelete(th:integer);
+Procedure TSedCOMLevel.ThingDelete(th: integer);
 begin
- Lev_Utils.DeleteThing(Level,th);
+ Lev_Utils.DeleteThing(level, th);
 end;
 
-Procedure TSedCOMLevel.ThingGet(th:integer;var rec:TSedThingRec;rflags:integer);
+Procedure TSedCOMLevel.ThingGet(th: Integer;var rec: TSedThingRec; rflags:integer);
 begin
  with level.things[th] do
  begin
-  if (rflags and th_name)<>0 then rec.aName:=PChar(name);
-  if (rflags and th_sector)<>0 then
+  if (rflags and th_name) <> 0 then rec.aName := PChar(name);
+  if (rflags and th_sector) <> 0 then
   begin
-   if sec=nil then rec.Sector:=-1
-   else rec.Sector:=sec.num;
+   if sec = nil then rec.sector := -1
+   else rec.sector := sec.num;
   end;
 
   if (rflags and th_position)<>0 then
