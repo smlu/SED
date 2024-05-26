@@ -8655,7 +8655,7 @@ begin
                     begin
                         surf := nsc.surfaces[j];
                         if High(surf.mark) <> $FFFF then
-                            MakeAdjoinSCUP(surf, n);
+                            MakeAdjoinSCUP(surf, n, (*reset=*)False);
                     end;
 
                     scsel.AddSC(i);

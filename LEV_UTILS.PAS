@@ -233,7 +233,7 @@ function DO_Surf_Overlap(surf, surf1: TJKSurface): boolean;
 function DO_Surf_Match(surf, surf1: TJKSurface): boolean;
 
 function MakeAdjoin(surf: TJKSurface): boolean;
-function MakeAdjoinSCUP(surf: TJKSurface; sc: integer): boolean;
+function MakeAdjoinSCUP(surf: TJKSurface; sc: integer; reset: Boolean = True): boolean;
 function UnAdjoin(surf: TJKSurface): boolean;
 procedure SysAdjoinSurfaces(surf1, surf2: TJKSurface; reset: Boolean = True);
 function AdjoinSectors(sec, sec1: TJKSector): boolean;
@@ -1369,9 +1369,9 @@ begin
   sf.surfFlags := 0;
   sf.faceFlags := 0;
   sf.geo       := 0;
-  sf.adjoinFlags := SAF_Visible or SAF_Move;
+  sf.adjoinflags := SAF_Visible or SAF_Move;
   if CurrentProject <> IJIM then
-    BitSet(sf.adjoinFlags, SAF_AllowSoundPass);
+    BitSet(sf.adjoinflags, SAF_AllowSoundPass);
 end;
 
 Procedure ClearAdjoinParams(sf: TJKSurface);
@@ -3985,7 +3985,7 @@ begin
       end;
 end;
 
-Function MakeAdjoinSCUP(surf: TJKSurface; sc: integer): boolean;
+Function MakeAdjoinSCUP(surf: TJKSurface; sc: integer; reset: Boolean): boolean;
 var
   s, sf: integer;
   lev: TJKLevel;
@@ -4003,7 +4003,7 @@ begin
         surf1 := surfaces[sf];
         if DO_Surf_Overlap(surf, surf1) then
         begin
-          SysAdjoinSurfaces(surf, surf1);
+          SysAdjoinSurfaces(surf, surf1, reset);
           JedMain.SectorChanged(surf.sector);
           JedMain.SectorChanged(surf1.sector);
           Result := True;
