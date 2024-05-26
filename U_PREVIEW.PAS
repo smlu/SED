@@ -552,6 +552,8 @@ begin
               [position.x, position.y, position.z, -rotation.pitch, 360 - rotation.yaw, 0.0]);
         end;
 
+      VK_BACK:
+         JedMain.ClearMultiSelection;
     else
       exit;
     end;
@@ -1102,6 +1104,7 @@ begin
   AddKBItem(miControl, 'Move down', 'Z', []);
 
   AddKBItem(miControl, 'Select surface/thing'#9'Click', #0, []);
+  AddKBItem(miControl, 'Clear multiselection', Char(VK_BACK), []);
   AddKBItem(miControl, 'Change texture/template'#9'Double-Click', #0, []);
 
   AddKBItem(miControl, 'Snap grid to item', 'S', [ssShift]);
