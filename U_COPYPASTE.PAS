@@ -44,7 +44,7 @@ begin
  Result:=Clp.HasFormat(CF_JKLights);
 end;
 
-Procedure CopySectors(Lev:TJKLevel;scsel:TSCMultiSel;Cur_SC:integer);
+Procedure CopySectors(lev: TJKLevel; scsel:TSCMultiSel; Cur_SC: Integer);
 var i,j,sf,n,msize: integer;
     sec: TJKSector;
     surf: TJKSurface;
@@ -135,6 +135,7 @@ begin
   Result := -1;
   Clp := Clipboard;
   Clp.Open;
+
   try
    hg := Clp.GetAsHandle(CF_JKSectors);
    if hg = 0 then exit;
@@ -244,6 +245,7 @@ var hg: Integer;
     i,n: Integer;
     light: TSedLight;
     clp: TClipboard;
+    tx, ty, tz: Double;
 begin
   Result := -1;
   Clp := Clipboard;
@@ -261,11 +263,19 @@ begin
      begin
       light := lev.NewLight;
       SetLight(light, TLightRec(pg^));
-      inc(PAnsiChar(pg), GetLightRecSize);
+      Inc(PAnsiChar(pg), GetLightRecSize);
 
-      light.position.x := light.position.x + atX;
-      light.position.y := light.position.y + atY;
-      light.position.z := light.position.z + atZ;
+      // Get transform point from the position of first light in buffer
+      if i = 0 then
+      begin
+        tx :=  atX - light.position.x;
+        ty :=  atY - light.position.y;
+        tz :=  atZ - light.position.z;
+      end;
+
+      light.position.x := light.position.x + tx;
+      light.position.y := light.position.y + ty;
+      light.position.z := light.position.z + tz;
       lev.lights.Add(light);
      end;
   finally
@@ -371,6 +381,7 @@ var hg: Integer;
     thing: TJKThing;
     clp: TClipboard;
     x,y,z,pch,yaw,rol: Double;
+    tx,ty,tz: Double;
     size: Integer;
 begin
   Result := -1;
@@ -390,16 +401,26 @@ begin
         thing := lev.NewThing;
         inc(PAnsiChar(pg), SetThing(thing, PThingRec(pg)));
 
-        thing.x := thing.x + atX;
-        thing.y := thing.y + atY;
-        thing.z := thing.z + atZ;
+        // Get transform point from the osition of first thing in buffer
+        if i = 0 then
+        begin
+          tx :=  atX - thing.x;
+          ty :=  atY - thing.y;
+          tz :=  atZ - thing.z;
+        end;
 
-        for j:=0 to thing.vals.Count - 1 do
-        With thing.vals[j] do
+        // Transform thing
+        thing.x := thing.x + tx;
+        thing.y := thing.y + ty;
+        thing.z := thing.z + tz;
+
+        // Transform thing frames
+        for j := 0 to thing.vals.Count - 1 do
+        with thing.vals[j] do
         if atype = at_frame then
           begin
             GetFrame(x, y, z, pch, yaw, rol);
-            SetFrame(x + atX, y + atY, z + atZ, pch, yaw, rol);
+            SetFrame(x + tx, y + ty, z + tz, pch, yaw, rol);
           end;
 
         lev.things.Add(thing);
@@ -414,8 +435,8 @@ end;
 
 Initialization
 begin
- CF_JKThings:=RegisterClipboardFormat('JKTHINGS');
- CF_JKLights:=RegisterClipboardFormat('JKLIGHTS');
- CF_JKSectors:=RegisterClipboardFormat('JKSECTORS');
+ CF_JKThings  := RegisterClipboardFormat('SEDTHINGS');
+ CF_JKLights  := RegisterClipboardFormat('SEDLIGHTS');
+ CF_JKSectors := RegisterClipboardFormat('SEDSECTORS');
 end;
 end.
