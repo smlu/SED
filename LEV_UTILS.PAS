@@ -2035,9 +2035,13 @@ begin
         end;
 
   for i := 0 to lev.things.Count - 1 do
-    if lev.Things[i].sec = sec then
     begin
-      lev.Things[i].sec := nil;
+      const th = lev.things[i];
+      if th.sec = sec then
+      begin
+        SaveThingUndo(th, ch_changed);
+        lev.things[i].sec := nil;
+      end;
     end;
 end;
 
