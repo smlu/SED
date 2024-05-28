@@ -715,7 +715,7 @@ end;
 
 Procedure TThingUndo.SaveUndo(obj: TObject; ch: integer);
 begin
-  change:=ch;
+  change := ch;
   case change of
     ch_added:;
     ch_deleted,ch_changed:
@@ -727,9 +727,9 @@ begin
 end;
 
 procedure TThingUndo.Undo(objid: Integer);
-var n:integer;
-    th:TJKThing;
-    tmpur:TUndoRec;
+var n: Integer;
+    th: TJKThing;
+    tmpur: TUndoRec;
 begin
   n := level.GetThingByID(objid);
   case change of
@@ -776,7 +776,7 @@ begin
 
   pd := Data;
   GetSec(sec, PSecRec(pd)^);
-  inc(pd, GetSecRecSize);
+  Inc(pd, GetSecRecSize);
 
   for i:= 0 to sec.surfaces.Count - 1 do
   begin
@@ -1150,7 +1150,7 @@ var i: integer;
     uobj: TUndoChange;
 begin
   if CurUndoRec = nil then exit;
-  With CurUndoRec do
+  with CurUndoRec do
     begin
       {Undo sec geometry}
       for i := 0 to scgchanges.Count - 1 do
@@ -1161,7 +1161,7 @@ begin
         end;
 
       {Undo sec values}
-      for i:=0 to scvchanges.Count - 1 do
+      for i := 0 to scvchanges.Count - 1 do
         begin
           id := scvchanges.GetObjID(i);
           uobj := scvchanges.GetObj(i);

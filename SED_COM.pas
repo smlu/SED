@@ -465,24 +465,24 @@ end;
 
 function TSedCOM.AddRef: Longint;
 begin
- Result:=1;
+ Result := 1;
 end;
 
 function TSedCOM.Release: Longint;
 begin
- Result:=0;
+ Result := 0;
 end;
 
 Function TSedCOM.GetVersion:double;
 begin
  ValDouble(SedVerNum,Result);
- Result:=result*100;
+ Result := result * 100;
 end;
 
 Function TSedCOM.GetLevel: ISedLevel; {ISEDLevel object}
 begin
- if comlevel=nil then comlevel:=TSedCOMLevel.Create;
- result:=comLevel;
+ if comlevel = nil then comlevel := TSedCOMLevel.Create;
+ result := comLevel;
 end;
 
 {Level}
@@ -620,61 +620,61 @@ begin
 
   if (rflags and lh_PerspDist)   <> 0 then perspectiveDistance := lh.perspectiveDistance;
   if (rflags and lh_GouraudDist) <> 0 then gouraudDistance := lh.gouraudDistance;
-  if (rflags and lh_ppu)         <> 0 then Level.ppunit := lh.ppunit;
+  if (rflags and lh_ppu)         <> 0 then level.ppunit := lh.ppunit;
   if (rflags and lh_MasterCMP)   <> 0 then level.masterCMP := lh.aMasterCmp;
-  if (rflags and lh_Fog)         <> 0 then Fog := TFog(lh.fog);
+  if (rflags and lh_Fog)         <> 0 then fog := TFog(lh.fog);
  end;
 end;
 
 Function TSedCOMLevel.NumSectors:integer;
 begin
- result:=level.sectors.count;
+ result := level.sectors.Count;
 end;
 
 Function TSedCOMLevel.NumThings:integer;
 begin
- result:=level.things.count;
+ result := level.things.Count;
 end;
 
 Function TSedCOMLevel.NumLights:integer;
 begin
- result:=level.lights.count;
+ result := level.lights.Count;
 end;
 
 Function TSedCOMLevel.NumCogs:integer;
 begin
- result:=level.Cogs.Count;
+ result := level.cogs.Count;
 end;
 
 {Sectors}
 Function TSedCOMLevel.SectorAdd:integer;
 var sec:TJKSector;
 begin
- sec:=Level.NewSector;
- Result:=Level.Sectors.Add(sec);
- Level.RenumSecs;
+ sec := level.NewSector;
+ Result := level.sectors.Add(sec);
+ level.RenumSecs;
  JedMain.SectorAdded(sec);
 end;
 
 Procedure TSedCOMLevel.SectorDelete(n:integer);
 begin
- Lev_Utils.DeleteSector(Level,n);
+ lev_utils.DeleteSector(level, n);
 end;
 
 Function TSedCOMLevel.SectorNumVertices(sec:integer):integer;
 begin
- result:=Level.Sectors[sec].vertices.count;
+ result := level.sectors[sec].vertices.Count;
 end;
 
 Function TSedCOMLevel.SectorNumSurfaces(sec:integer):integer;
 begin
- result:=Level.Sectors[sec].surfaces.count;
+ result := level.sectors[sec].surfaces.Count;
 end;
 
 Procedure TSedCOMLevel.SectorGetVertex(sec, vn: Integer; var vert: TSedVector3);
 var v: TJKVertex;
 begin
-  v := Level.Sectors[sec].Vertices[vn];
+  v := level.sectors[sec].vertices[vn];
   vert.x := v.x;
   vert.y := v.y;
   vert.z := v.z;
@@ -683,7 +683,7 @@ end;
 Procedure TSedCOMLevel.SectorSetVertex(sec, vn: Integer; const vert: TSedVector3);
 var v: TJKVertex;
 begin
-  v := Level.Sectors[sec].Vertices[vn];
+  v := level.sectors[sec].vertices[vn];
   v.x := vert.x;
   v.y := vert.y;
   v.z := vert.z;
@@ -692,21 +692,21 @@ end;
 Function TSedCOMLevel.SectorAddVertex(sec: Integer; const vert: TSedVector3):integer;
 var v: TJKVertex;
 begin
-  v := Level.Sectors[sec].NewVertex;
+  v := level.sectors[sec].NewVertex;
   v.x := vert.x;
   v.y := vert.y;
   v.z := vert.z;
-  result := level.sectors[sec].vertices.count - 1;
+  result := level.sectors[sec].vertices.Count - 1;
 end;
 
 Function TSedCOMLevel.SectorFindVertex(sec: Integer; const vert: TSedVector3): integer;
 begin
- result := Level.Sectors[sec].FindVX(vert.x, vert.y, vert.z);
+ result := level.sectors[sec].FindVX(vert.x, vert.y, vert.z);
 end;
 
 Function TSedCOMLevel.SectorDeleteVertex(sec:integer;n:integer):integer;
 begin
- With Level.Sectors[sec] do
+ with level.sectors[sec] do
  begin
   vertices[n].Free;
   vertices.Delete(n);
@@ -714,15 +714,15 @@ begin
  end;
 end;
 
-Function TSedCOMLevel.SectorAddSurface(sec:integer):integer;
+Function TSedCOMLevel.SectorAddSurface(sec: integer): integer;
 begin
- With level.sectors[sec] do
+ with level.sectors[sec] do
  begin
-  Result:=surfaces.add(newSurface);
+  Result := surfaces.add(newSurface);
  end;
 end;
 
-Procedure TSedCOMLevel.SectorDeleteSurface(sc,sf:integer);
+Procedure TSedCOMLevel.SectorDeleteSurface(sc, sf: Integer);
 begin
  With level.sectors[sc] do
  begin
@@ -736,7 +736,7 @@ end;
 Procedure TSedCOMLevel.SectorUpdate(sec:integer);
 var asec:TJKSector;
 begin
- asec:=Level.Sectors[sec];
+ asec := level.sectors[sec];
  asec.Renumber;
  JedMain.SectorChanged(asec);
 end;
@@ -767,14 +767,14 @@ begin
     end;
 end;
 
-Procedure TSedCOMLevel.SurfaceSet(sc,sf:integer;const rec:TSedSurfaceRec;rflags:integer);
+Procedure TSedCOMLevel.SurfaceSet(sc,sf: Integer; const rec: TSedSurfaceRec; rflags: Integer);
 begin
   with level.sectors[sc].surfaces[sf] do
     begin
       if (rflags and sf_adjoin) <> 0 then
       begin
         if rec.adjoinSec < 0 then adjoin := nil else
-        adjoin := Level.Sectors[rec.adjoinSec].Surfaces[rec.adjoinSurf];
+        adjoin := level.sectors[rec.adjoinSec].surfaces[rec.adjoinSurf];
       end;
 
       if (rflags and sf_adjoinflags) <> 0 then adjoinflags := rec.adjoinflags;
@@ -1469,7 +1469,7 @@ begin
  lev_utils.RemoveSurfRefs(level, level.sectors[sc].surfaces[sf]);
 end;
 
-Procedure TSedCOM.RemoveSectorReferences(sec:integer;surfs:boolean);
+Procedure TSedCOM.RemoveSectorReferences(sec:integer; surfs:boolean);
 begin
  if surfs then lev_utils.RemoveSecRefs(level, level.sectors[sec], rs_surfs)
  else lev_utils.RemoveSecRefs(level, level.sectors[sec], 0);

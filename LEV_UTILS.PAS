@@ -1366,8 +1366,8 @@ end;
 
 Procedure SetAdjoinParams(sf: TJKSurface);
 begin
-  sf.surfFlags := 0;
-  sf.faceFlags := 0;
+  sf.surfflags := 0;
+  sf.faceflags := 0;
   sf.geo       := 0;
   sf.adjoinflags := SAF_Visible or SAF_Move;
   if CurrentProject <> IJIM then
@@ -1376,8 +1376,8 @@ end;
 
 Procedure ClearAdjoinParams(sf: TJKSurface);
 begin
-  sf.SurfFlags := SF_Collision;
-  sf.FaceFlags := 0;
+  sf.surfflags := SF_Collision;
+  sf.faceflags := 0;
   sf.geo       := 4;
   if sf.material = '' then
     sf.material := 'dflt.mat';
@@ -1414,7 +1414,7 @@ begin
 
   { CalcSurfCenterNCorner(surf,cx,cy,cz,cnx,cny,cnz); }
 
-  lev := surf.sector.Level;
+  lev := surf.sector.level;
   nsec := lev.NewSector;
   nsec.Assign(surf.sector);
   nsec.Num := lev.sectors.Count;
@@ -1527,16 +1527,16 @@ begin
   if surf.adjoin <> nil then
     exit;
 
-  lev := surf.sector.Level;
+  lev := surf.sector.level;
   nsec := lev.NewSector;
   nsec.Assign(surf.sector);
-  nsec.Num := lev.sectors.count;
+  nsec.Num := lev.sectors.Count;
 
   SaveSecUndo(nsec, ch_added, sc_both);
   SaveSecUndo(surf.sector, ch_changed, sc_val);
 
   { Construct adjoin }
-  asurf := nsec.newsurface;
+  asurf := nsec.NewSurface;
   asurf.Assign(surf);
   for v := surf.vertices.Count - 1 downto 0 do
   begin
@@ -1547,7 +1547,7 @@ begin
   nsec.surfaces.Add(asurf);
 
   { Construct opposite surface }
-  osurf := nsec.newsurface;
+  osurf := nsec.NewSurface;
   osurf.Assign(surf);
   for v := 0 to surf.vertices.Count - 1 do
   begin
@@ -2008,7 +2008,7 @@ begin
     for i := 0 to lev.sectors.Count - 1 do
       with lev.sectors[i] do
         for j := 0 to surfaces.Count - 1 do
-          With surfaces[j] do
+          with surfaces[j] do
           begin
             if adjoin = nil then
               continue;
@@ -2023,8 +2023,8 @@ begin
 
   for i := 0 to lev.cogs.Count - 1 do
     with lev.cogs[i] do
-      for j := 0 to Vals.Count - 1 do
-        with Vals[j] do
+      for j := 0 to vals.Count - 1 do
+        with vals[j] do
         begin
           if (Cog_Type = ct_sec) and (obj = sec) then
             obj := nil;
@@ -2064,8 +2064,8 @@ begin
 
   for i := 0 to lev.cogs.Count - 1 do
     with lev.cogs[i] do
-      for j := 0 to Vals.Count - 1 do
-        with Vals[j] do
+      for j := 0 to vals.Count - 1 do
+        with vals[j] do
           begin
             if (Cog_Type = ct_srf) and (obj = surf) then
               obj := nil;
@@ -3710,7 +3710,7 @@ begin
         RemoveSurfRefs(sec1.level, sfs[i]);
 
       for i := 0 to sfs1.Count - 1 do
-        RemoveSurfRefs(sec1.Level, sfs1[i]);
+        RemoveSurfRefs(sec1.level, sfs1[i]);
 
       for i := 0 to sfs.Count - 1 do
       begin
