@@ -724,13 +724,7 @@ end;
 
 Procedure TSedCOMLevel.SectorDeleteSurface(sc, sf: Integer);
 begin
- With level.sectors[sc] do
- begin
-  RemoveSurfRefs(level,surfaces[sf]);
-  surfaces[sf].Free;
-  surfaces.Delete(sf);
-  Renumber;
- end;
+ lev_utils.DeleteSurface(level, sc, sf);
 end;
 
 Procedure TSedCOMLevel.SectorUpdate(sec:integer);

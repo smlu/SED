@@ -636,13 +636,7 @@ begin
 end;
 Procedure TCOMLevel.SectorDeleteSurface(sc,sf:integer);
 begin
- With level.sectors[sc] do
- begin
-  RemoveSurfRefs(level,surfaces[sf]);
-  surfaces[sf].Free;
-  surfaces.Delete(sf);
-  Renumber;
- end;
+  lev_utils.DeleteSurface(level, sc, sf);
 end;
 Procedure TCOMLevel.SectorUpdate(sec:integer);
 var asec:TJKSector;
