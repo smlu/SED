@@ -2321,7 +2321,10 @@ begin
                 end;
             VK_DELETE:
                 if mapMode = MM_SF then
+                begin
+                    StartUndoRec('Delete Surface');
                     DeleteSurface(level, Cur_SC, Cur_SF);
+                end;
             188: { < }
                 begin
                     ScaleTexture(st_down);

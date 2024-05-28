@@ -3239,6 +3239,8 @@ begin
   if not force and not ToolBar.IsLayerVisible(sec.layer) then
     exit;
 
+  SaveSecUndo(sec, ch_changed, sc_both);
+
   RemoveSurfRefs(lev, surf);
   sec.surfaces.Delete(sf);
   surf.Free;
@@ -3301,6 +3303,7 @@ begin
   result := false;
   v1 := sec.vertices[vx];
   ns := 0;
+
   for sf := 0 to sec.surfaces.Count - 1 do
   begin
     asf := sec.surfaces[sf];
