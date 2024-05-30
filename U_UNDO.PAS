@@ -795,14 +795,6 @@ var sec: TJKSector;
         surf,asurf:TJKSurface;
         i:integer;
         sc,sf:integer;
-
-    Procedure SetAdjoinParamBasedOnAdjoin(srf, adjoin: TJKSurface);
-      begin
-        srf.surfflags   := adjoin.surfFlags;
-        srf.faceflags   := adjoin.faceflags;
-        srf.geo         := adjoin.geo;
-        srf.adjoinflags := adjoin.adjoinflags;
-      end;
   begin
     for i := 0 to sec.surfaces.Count - 1 do
       begin
@@ -822,25 +814,6 @@ var sec: TJKSector;
         {  if (asurf.adjoin<>nil) and (asurf.adjoin.sector<>sec) then continue;}
         surf.adjoin  := asurf;
         asurf.adjoin := surf;
-
-        // [new] Set surf adjoin params based on surf with lower geo.
-        // This is kind of hackish because the adjoin info of the asurf was lost during the sector undo.
-        //
-        // Why this is necessary:
-        //   When undoing sector cleaving the function RemoveSurfRefs or
-        //   RemoveSecRefs might be called which resets the opposite sector adjoin (asurf) to solid surface.
-        //   The adjoin params for that surface are not reset (and cannot be, in the case of sector deletion)
-        //   to previous state. Here we try to fix this by guessing what params
-        //   should be set for both adjoins based on the lower geo mode value.
-
-        if surf.geo < asurf.geo then
-          begin
-            SetAdjoinParamBasedOnAdjoin(asurf, surf);
-            JedMain.SectorChanged(asurf.sector);
-          end
-        else
-          SetAdjoinParamBasedOnAdjoin(surf, asurf);
-        {if asurf.adjoin=nil then}
       end;
   end; {end of ResolveRefs}
 
