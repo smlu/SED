@@ -4,7 +4,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
-  StdCtrls, ComCtrls, ExtCtrls, FieldEdit, globalVars, geometry;
+  StdCtrls, ComCtrls, ExtCtrls, FieldEdit, globalVars, geometry, u_undo;
 
 type
   TToolForm = class(TForm)
@@ -214,11 +214,15 @@ procedure TToolForm.BNStraightenClick(Sender: TObject);
 var
   i, j: integer;
 begin
-  for i := 0 to Level.Sectors.count - 1 do
-    With Level.Sectors[i] do
-      for j := 0 to surfaces.count - 1 do
-        With surfaces[j] do
-          RecalcAll;
+  StartUndoRec('Straighen All textures');
+  for i := 0 to level.sectors.Count - 1 do
+  begin
+    var sec := level.sectors[i];
+    SaveSecUndo(sec, ch_changed, sc_geo);
+    for j := 0 to sec.surfaces.Count - 1 do
+      with sec.surfaces[j] do
+        RecalcAll;
+  end;
   Preview3D.ReloadLevel;
   JedMain.LevelChanged;
 end;
