@@ -1126,7 +1126,8 @@ begin
   with CurUndoRec do
     begin
       {Undo sec geometry}
-      for i := 0 to scgchanges.Count - 1 do
+      //for i := 0 to scgchanges.Count - 1 do
+      for i := scgchanges.Count - 1 downto 0 do
         begin
           id := scgchanges.GetObjID(i);
           uobj := scgchanges.GetObj(i);
@@ -1134,7 +1135,8 @@ begin
         end;
 
       {Undo sec values}
-      for i := 0 to scvchanges.Count - 1 do
+      //for i := 0 to scvchanges.Count - 1 do
+      for i := scvchanges.Count - 1 downto 0 do
         begin
           id := scvchanges.GetObjID(i);
           uobj := scvchanges.GetObj(i);
