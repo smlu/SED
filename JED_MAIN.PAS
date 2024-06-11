@@ -6410,7 +6410,7 @@ var
         if not ToolBar.IsLayerVisible(surf.sector.layer) then  // prevent editing of locked surface
           exit;
 
-        SaveSecUndo(surf.sector, ch_changed, sc_geo);
+        SaveSecUndo(surf.sector, ch_changed, sc_both);   // scale values and UVs are changed
         case how of
             st_up:
                 begin

@@ -646,7 +646,10 @@ begin
           begin
             faceflags := f;
             if i > 0 then
+            begin
+              SaveSecUndo(surf.sector, ch_changed, sc_geo);  // RecalcAll changes UVs
               RecalcAll;
+            end;
           end;
         end;
       ID_SURF_EXTRA_LIGHT:
@@ -668,6 +671,7 @@ begin
           Result := ValSingle(s, sl);
           if Result then
           begin
+            SaveSecUndo(surf.sector, ch_changed, sc_geo);  // RecalcAll changes UVs
             uscale := sl;
             RecalcAll;
           end
@@ -677,6 +681,7 @@ begin
           Result := ValSingle(s, sl);
           if Result then
           begin
+            SaveSecUndo(surf.sector, ch_changed, sc_geo); // RecalcAll changes UVs
             vscale := sl;
             RecalcAll;
           end
@@ -1386,9 +1391,9 @@ begin
   Result := false;
   if Cur_VX = nil then
     exit;
-  SaveSecUndo(Cur_VX.Sector, ch_changed, sc_geo);
 
-  With Cur_VX do
+  SaveSecUndo(Cur_VX.Sector, ch_changed, sc_geo);
+  with Cur_VX do
     case id of
       ID_X:
         begin
