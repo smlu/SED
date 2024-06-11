@@ -1385,6 +1385,15 @@ begin
     sf.material := 'dflt.mat';
 end;
 
+procedure CopyAdjoinParams(const surfSrc: TJKSurface; surfDst: TJKSurface);
+begin
+  surfDst.surfflags   := surfSrc.surfflags;
+  surfDst.faceflags   := surfSrc.faceflags;
+  surfDst.geo         := surfSrc.geo;
+  surfDst.adjoinflags := surfSrc.adjoinflags;
+  surfDst.material    := surfSrc.material;
+end;
+
 Procedure SysAdjoinSurfaces(surf1, surf2: TJKSurface; reset: Boolean);
 begin
   surf1.adjoin := surf2;
@@ -1738,7 +1747,7 @@ begin
     nleft := 0;
     nright := 0;
     for sf := 0 to vc - 1 do
-      With surf.vertices[sf] do
+      with surf.vertices[sf] do
         begin
           if mark = 1 then
             inc(nright);
@@ -1924,9 +1933,8 @@ Function CleaveSurface(surf: TJKSurface; const cnormal: TVector;
 var
   nsf: TJKSurface;
 begin
-  SplitVertices(surf.vertices, cnormal, cx, cy, cz);
-
   SaveSecUndo(surf.sector, ch_changed, sc_both);
+  SplitVertices(surf.vertices, cnormal, cx, cy, cz);
 
   nsf := SysCleaveSurface(surf, cnormal, cx, cy, cz);
   result := nsf <> nil;
@@ -2251,6 +2259,19 @@ begin
               sec1.surfaces.Add(surf);
               sec.surfaces.Delete(sf);
             end;
+      end;
+
+      { Save undo info for adjoin sector }
+      if (surf.adjoin <> nil) and (surf.adjoin.sector <> nil) then
+      begin
+        // Save surface property data for all surfaces of adjoined sector.
+        //
+        // Why is this important:
+        // On applying undo after sector cleaving processthe sec1 is deleted via DeleteSector.
+        // This functions calls RemoveSecRefs(sec1) -> ClearAdjoinParams(surf.adjoin)
+        // causing the adjoin surface parameters to be lost in this process.
+        // e.g.: Invisible adjoin surface becomes visible (geo 0 -> 4).
+        SaveSecUndo(surf.adjoin.sector, ch_changed, sc_val);
       end;
     end;
 
@@ -3561,24 +3582,22 @@ begin
 
   if (surf1.adjoin <> nil) and (surf2.adjoin <> nil) then
   begin
+    if surf1.sector <> surf2.sector then
+      SaveSecUndo(surf2.sector, ch_changed, sc_val);
+
     sf1 := surf1.adjoin;
     sf2 := surf2.adjoin;
-
-    ClearAdjoinParams(surf1);
-    ClearAdjoinParams(surf2);
+    CopyAdjoinParams(surf1, surf2);
 
     if SysFindCommonEdge(sf1, sf2, i, j) then
-    begin
-      ClearAdjoinParams(sf1);
-      ClearAdjoinParams(sf2);
-      SysMergeSurfs(sf1, sf2, i, j);
-      if DO_Surf_Overlap(surf1, sf1) then
       begin
-        SysAdjoinSurfaces(surf1, sf1);
-        JedMain.SectorChanged(sf1.sector);
+        SysMergeSurfs(sf1, sf2, i, j);
+        if DO_Surf_Overlap(surf1, sf1) then
+          begin
+            SysAdjoinSurfaces(surf1, sf1, (*reset=*) False);
+            JedMain.SectorChanged(sf1.sector);
+          end;
       end;
-    end;
-
   end;
 
   RemoveSurfRefs(surf1.sector.level, surf2);
