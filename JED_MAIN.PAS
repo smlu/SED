@@ -699,7 +699,7 @@ begin
     v.Y := -1;
     v.z := 1;
 
-    With sec do
+    with sec do
     begin
         surf := NewSurface;
         sec.surfaces.Add(surf);
@@ -746,7 +746,7 @@ begin
 
     th := level.NewThing;
     level.things.Add(th);
-    With th do
+    with th do
     begin
         X := 0;
         Y := 0;
@@ -6415,16 +6415,17 @@ var
             st_up:
                 begin
                     surf.uscale := surf.uscale * TxScaleStep;
-                    surf.VScale := surf.VScale * TxScaleStep;
+                    surf.vscale := surf.vscale * TxScaleStep;
                 end;
             st_down:
                 begin
                     surf.uscale := surf.uscale / TxScaleStep;
-                    surf.VScale := surf.VScale / TxScaleStep;
+                    surf.vscale := surf.vscale / TxScaleStep;
                 end;
         else
             exit;
         end;
+
         CalcUVNormals(surf, u, v);
         ArrangeTexture(surf, 0, u, v);
         SectorChanged(surf.sector);

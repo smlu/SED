@@ -241,6 +241,8 @@ function UnAdjoinSectors(sec, sec1: TJKSector): boolean;
 
 procedure SetAdjoinParams(sf: TJKSurface);
 procedure ClearAdjoinParams(sf: TJKSurface);
+procedure CopyAdjoinParams(const surfSrc: TJKSurface; surfDst: TJKSurface);
+
 
 procedure CreateCube(lev: TJKLevel; x, y, z: double;
   const pnormal, edge: TVector);
@@ -1621,15 +1623,15 @@ var
   dist: double;
 begin
   for i := 0 to vs.count - 1 do
-    With vs[i] do
+    with vs[i] do
     begin
       dist := cnormal.Dot(x - cx, y - cy, z - cz);//SMult(cnormal.dx, cnormal.dy, cnormal.dz, x - cx, y - cy, z - cz);
       if IsClose(dist, 0) then
-        Mark := 0
+        mark := 0
       else if dist < 0 then
-        Mark := -1
+        mark := -1
       else
-        Mark := 1;
+        mark := 1;
     end;
 end;
 
@@ -1713,8 +1715,9 @@ begin
   D := cnormal.Dot(cx, cy, cz);//cnormal.dx * cx + cnormal.dy * cy + cnormal.dz * cz;
 
   lev := surf.sector.level;
-  vc := surf.vertices.Count;
+  vc  := surf.vertices.Count;
   GetMem(cd, sizeof(TCleaveData) * vc);
+
   try
     FillChar(cd^, sizeof(TCleaveData) * vc, 0);
 
@@ -1755,7 +1758,7 @@ begin
       With cd^[sf] do
         begin
           v1 := surf.vertices[sf];
-          if (v1.Mark = 1) or (v1.Mark = 0) then
+          if (v1.mark = 1) or (v1.mark = 0) then
             nsf.AddVertex(v1);
           if vx <> nil then
             nsf.AddVertex(vx);
@@ -1768,7 +1771,7 @@ begin
     surf.vertices := TJKVertices.Create;
 
     for sf := 0 to vxs.Count - 1 do
-      With cd^[sf] do
+      with cd^[sf] do
         begin
           v1 := vxs[sf];
           if (v1.mark = -1) or (v1.mark = 0) then
@@ -1873,46 +1876,47 @@ begin
   end;
 end;
 
-Procedure CleaveAdjoin(surf: TJKSurface; cnormal: TVector; cx, cy, cz: double; nsf: TJKSurface);
+Procedure CleaveAdjoin(surf: TJKSurface; cnormal: TVector; cx, cy, cz: double; nsurf: TJKSurface);
 var
-  sf1, nsf1: TJKSurface;
+  asurf, ansurf: TJKSurface;
 begin
-  if nsf = nil then
+  if nsurf = nil then
     exit;
   if surf.adjoin = nil then
     exit;
-  sf1 := surf.adjoin;
 
-  SaveSecUndo(sf1.sector, ch_changed, sc_both);
+  asurf := surf.adjoin;
 
-  sf1.adjoin := nil;
-  surf.adjoin := nil;
-  SplitVertices(sf1.Vertices, cnormal, cx, cy, cz);
+  SaveSecUndo(asurf.sector, ch_changed, sc_both);
 
-  nsf1 := SysCleaveSurface(sf1, cnormal, cx, cy, cz);
+  asurf.adjoin := nil;
+  surf.adjoin  := nil;
+  SplitVertices(asurf.vertices, cnormal, cx, cy, cz);
 
-  if DO_Surf_Overlap(surf, sf1) then
+  ansurf := SysCleaveSurface(asurf, cnormal, cx, cy, cz);
+
+  if DO_Surf_Overlap(surf, asurf) then
   begin
-    SysAdjoinSurfaces(surf, sf1, (*reset=*)False);
+    SysAdjoinSurfaces(surf, asurf, (*reset=*)False);
   end;
 
-  if DO_Surf_Overlap(surf, nsf1) then
+  if DO_Surf_Overlap(surf, ansurf) then
   begin
-    SysAdjoinSurfaces(nsf1, surf, (*reset=*)False);
+    SysAdjoinSurfaces(ansurf, surf, (*reset=*)False);
   end;
 
-  if DO_Surf_Overlap(nsf, sf1) then
+  if DO_Surf_Overlap(nsurf, asurf) then
   begin
-    SysAdjoinSurfaces(nsf, sf1, (*reset=*)False);
+    SysAdjoinSurfaces(nsurf, asurf, (*reset=*)False);
   end;
 
-  if DO_Surf_Overlap(nsf, nsf1) then
+  if DO_Surf_Overlap(nsurf, ansurf) then
   begin
-    SysAdjoinSurfaces(nsf, nsf1, (*reset=*)False);
+    SysAdjoinSurfaces(nsurf, ansurf, (*reset=*)False);
   end;
 
   JedMain.SectorChanged(surf.sector);
-  JedMain.SectorChanged(sf1.sector);
+  JedMain.SectorChanged(asurf.sector);
 end;
 
 Function CleaveSurface(surf: TJKSurface; const cnormal: TVector;
@@ -2203,7 +2207,7 @@ begin
 
     { Create new sector }
 
-    sec1 := lev.NewSector;
+    sec1     := lev.NewSector;
     sec1.Num := lev.sectors.Count;
     sec1.Assign(sec);
     lev.sectors.Add(sec1);
@@ -2231,8 +2235,8 @@ begin
           break;
       end;
 
-      Case sfside of
-        - 1:
+      case sfside of
+        -1:
           begin
             surf.sector := sec1;
             sec1.surfaces.Add(surf);
@@ -2255,7 +2259,7 @@ begin
     begin
       v1 := sec.vertices[sf];
       case v1.mark of
-        - 1:
+        -1:
           begin
             v1.sector := sec1;
             sec1.vertices.Add(v1);
@@ -3411,7 +3415,7 @@ begin
   CogForm.RefreshList;
 end;
 
-Function SysFindCommonEdge(surf1, surf2: TJKSurface;
+Function SysFindCommonEdge(const surf1, surf2: TJKSurface;
   var ed1, ed2: integer): boolean;
 var
   v1, v2: TJKVertex;
@@ -3424,6 +3428,7 @@ begin
     j := surf2.vertices.IndexOf(v1);
     if j = -1 then
       continue;
+
     if surf1.vertices[surf1.NextVX(i)] = surf2.vertices[surf2.PrevVX(j)] then
     begin
       ed1 := i;
@@ -3469,13 +3474,13 @@ begin
   nv := 0;
 
   // Prevent modifying locked sector
-  if not ToolBar.IsLayerVisible(surf1.sector.Layer) then
+  if not ToolBar.IsLayerVisible(surf1.sector.layer) then
     begin
       PanMessageFmt(mt_info, 'Can''t merge surface %d, %d - locked layer',
         [surf1.sector.num, surf1.num]);
       exit;
     end;
-  if not ToolBar.IsLayerVisible(surf2.sector.Layer) then
+  if not ToolBar.IsLayerVisible(surf2.sector.layer) then
     begin
       PanMessageFmt(mt_info, 'Can''t merge surface %d, %d - locked layer',
         [surf2.sector.num, surf2.num]);
@@ -3486,7 +3491,7 @@ begin
     ((surf2.adjoin = nil) and (surf1.adjoin <> nil)) then
   begin
     PanMessage(mt_error,
-      'Can''t merge - one surface is adjoined, the other isn''t');
+      'Can''t merge surfaces - one surface is adjoined and the other is not');
     exit;
   end;
 
@@ -3548,7 +3553,7 @@ begin
         end;
       end;
 
-  Until nv = 0;
+  until nv = 0;
 
   surf1.RecalcAll;
 
@@ -3672,7 +3677,7 @@ begin
     exit;
   end;
 
-  sfs := TSurfaces.Create;
+  sfs  := TSurfaces.Create;
   sfs1 := TSurfaces.Create;
   for i := 0 to sec.surfaces.Count - 1 do
   begin
@@ -3686,7 +3691,7 @@ begin
   end;
 
   if sfs.count = 0
-    then PanMessageFmt(mt_warning, 'Sectors %d and %d are not adjoined or adjoins don''t overlap', [sec.num,sec1.num])
+    then PanMessageFmt(mt_warning, 'Sectors %d and %d are not adjoined or adjoins don''t overlap', [sec.num, sec1.num])
   else
     begin
 
@@ -3781,7 +3786,7 @@ begin
         goto next;
 
       sec := v1.sector;
-      if not ToolBar.IsLayerVisible(sec.Layer) then // Prevent modifying sector on invisible layer
+      if not ToolBar.IsLayerVisible(sec.layer) then // Prevent modifying sector on invisible layer
         goto next;
 
       SaveSecUndo(sec, ch_changed, sc_geo);
@@ -3805,13 +3810,15 @@ begin
           end;
 
       sec.Vertices.Delete(nv2);
-      v2.free;
-      inc(result);
+      v2.Free;
+
+      Inc(result);
       JedMain.SectorChanged(sec);
     next:
-      inc(j);
+      Inc(j);
     end;
-    inc(i);
+
+    Inc(i);
   end;
 
 end;

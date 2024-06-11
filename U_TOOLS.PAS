@@ -249,19 +249,20 @@ begin
     end;
 
     if sfsel.FindSF(Cur_SC, Cur_SF) = 0 then
-    begin
-      sfsel.GetSCSF(0, sc, sf);
-      surf1 := Level.Sectors[sc].surfaces[sf];
-      sfsel.GetSCSF(1, sc, sf);
-      surf2 := Level.Sectors[sc].surfaces[sf];
-    end
+      begin
+        sfsel.GetSCSF(0, sc, sf);
+        surf1 := level.sectors[sc].surfaces[sf];
+        sfsel.GetSCSF(1, sc, sf);
+        surf2 := level.sectors[sc].surfaces[sf];
+      end
     else
-    begin
-      sfsel.GetSCSF(0, sc, sf);
-      surf2 := Level.Sectors[sc].surfaces[sf];
-      sfsel.GetSCSF(1, sc, sf);
-      surf1 := Level.Sectors[sc].surfaces[sf];
-    end;
+      begin
+        sfsel.GetSCSF(0, sc, sf);
+        surf2 := level.sectors[sc].surfaces[sf];
+
+        sfsel.GetSCSF(1, sc, sf);
+        surf1 := level.sectors[sc].surfaces[sf];
+      end;
 
     sfsel.Clear;
 
@@ -283,18 +284,18 @@ begin
 //    VMult(surf2.normal.dx, surf2.normal.dy, surf2.normal.dz, vec.dx, vec.dy,
 //      vec.dz, lvec.dx, lvec.dy, lvec.dz);
 
-    With surf1.vertices[0] do
+    with surf1.vertices[0] do
     begin
       px := x;
       py := y;
       pz := z;
     end;
 
-    With surf2.vertices[0] do
+    with surf2.vertices[0] do
       PlaneLineXnNew(surf1.normal, px, py, pz, x, y, z, x + lvec.dx,
         y + lvec.dy, z + lvec.dz, px, py, pz);
 
-    With JedMain.Renderer do
+    with JedMain.Renderer do
     begin
       GridX := px;
       GridY := py;
@@ -306,7 +307,6 @@ begin
     RGAxis.ItemIndex := rt_Grid;
     JedMain.SetMapMode(MM_SC);
     JedMain.Invalidate;
-
   end;
 end;
 

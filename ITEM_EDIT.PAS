@@ -597,9 +597,9 @@ begin
   if surf = nil then
     exit;
 
-  SaveSecUndo(surf.Sector, ch_changed, sc_val);
+  SaveSecUndo(surf.sector, ch_changed, sc_val);
 
-  With surf do
+  with surf do
     case id of
       ID_SURF_MATERIAL:
         begin
@@ -644,7 +644,7 @@ begin
 
           if Result then
           begin
-            faceFlags := f;
+            faceflags := f;
             if i > 0 then
               RecalcAll;
           end;
