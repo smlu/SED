@@ -21,6 +21,7 @@ Type
 
   T3DOMesh = class
     name: string;
+    geo, light, tex: Integer;
     faces: T3DOFaces;
 
     Function GetVXs: TVertices;

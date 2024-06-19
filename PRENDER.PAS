@@ -1738,25 +1738,28 @@ begin
 //  if (th.flags and (TF_INVISIBLE or TF_DISABLED)) <> 0 then
 //    alpha := 0.80;
 
-  for i := 0 to th.a3DO.meshes.count - 1 do
-    With th.a3Do.meshes[i] do
-      for k := 0 to faces.Count - 1 do
-        With faces[k] do
+  for i := 0 to th.a3DO.meshes.Count - 1 do
+    begin
+      const mesh = th.a3Do.meshes[i];
+      if mesh.geo < 1 then continue;
+
+      for k := 0 to mesh.faces.Count - 1 do
           begin
-            mat := th.A3DO.GetMat(imat);
-            if (geo = 0) or (mat = '') then continue;
+            const face = mesh.faces[k];
+            mat := th.A3DO.GetMat(face.imat);
+            if (face.geo < 1) or (mat = '') then continue;
 
             poly            := Result.AddPoly;
-            poly.geo        := TGeoMode(geo);
-            poly.light      := TLightMode(light);
-            poly.extraLight := extraLight;
-            poly.normal     := normal;
-            lev_utils.CalcNormal(faces[k], poly.normal);
-            faces[k].CalcNormal;
+            poly.faceflags  := face.faceflags;
+            poly.geo        := TGeoMode(face.geo);
+            poly.light      := TLightMode(Min(face.light, mesh.light));
+            poly.extraLight := face.extraLight;
+            poly.normal     := face.normal;
+            lev_utils.CalcNormal(face, poly.normal);
 
             // Enable rendering fog for poly (IJIM) and mark poly as special
-            poly.faceflags := LongInt(FaceFlags or FF_IJIM_FogEnabled);
-            if IsSpecial3doPoly(Faces[k]) then
+            BitSet(poly.faceflags, FF_IJIM_FogEnabled);
+            if IsSpecial3doPoly(face) then
               BitSet(poly.faceflags, FF_RD_SpecialSurfaceWf);
 
             ttx := nil;
@@ -1785,16 +1788,17 @@ begin
             { pim:=ttx.Itexture.GetImage;
             if pim=nil then;}
 
-            nvx := vertices.Count;
+            nvx := face.vertices.Count;
             //if nvx>24 then nvx:=24;
 
+            // Assign poly vertices
             for j := 0 to nvx - 1 do
-              With txVertices[j] do
+              with face.txVertices[j] do
                 begin
-                  ax := vertices[j].x;
-                  ay := vertices[j].y;
-                  az := vertices[j].z;
-                  MultVM3s(mx, ax, ay, az);
+                  ax := face.vertices[j].x;
+                  ay := face.vertices[j].y;
+                  az := face.vertices[j].z;
+                  MultVM3s(mx, ax, ay, az); // Rotate vertex to thing orientation
 
                   vd   := poly.AddVXD;
                   vd.x := th.x + ax;
@@ -1806,7 +1810,7 @@ begin
                   if alpha < 1.0 then
                     vd.intensity.a := alpha;
 
-                  // Tex uv
+                  // Texure UV
                   if ttx <> nil then
                     begin
                      vd.u := u;
@@ -1819,6 +1823,7 @@ begin
                     end;
                 end;
           end;
+    end;
  result.CalculateSphere;
 end;
 
@@ -1829,90 +1834,91 @@ var i,j,k:integer;
     cmp,mat:string;
     ax,ay,az:single;
     mx:TMat3x3s;
-    surf:T3DPoly;
     vd:TVXDets;
 begin
- { TODO: join this function with ThingToMesh }
+  { TODO: join this function with ThingToMesh }
 
- result := nil;
- if (a3do = nil) then exit;
+  result := nil;
+  if (a3do = nil) then exit;
 
- Result        := T3DPMesh.Create;
- Result.sec    := th.Sec;
+  Result        := T3DPMesh.Create;
+  Result.sec    := th.Sec;
 
- With th do CreateRotMatrixS(mx, pch, yaw, rol);
+  with th do CreateRotMatrixS(mx, pch, yaw, rol);
 
- for i := 0 to a3DO.Meshes.count - 1 do
- With a3Do.Meshes[i] do
-   for k := 0 to faces.count - 1 do
-     With Faces[k] do
-       begin
-          mat := A3DO.GetMat(imat);
-          if (geo = 0) or (Mat = '') then continue;
+  for i := 0 to a3DO.Meshes.Count - 1 do
+    begin
+      const mesh = a3Do.meshes[i];
+      if mesh.geo < 1 then continue;
+      
+      for k := 0 to mesh.faces.Count - 1 do
+         begin
+            const face = mesh.faces[k];
+            mat := A3DO.GetMat(face.imat);
+            if (face.geo < 1) or (Mat = '') then continue;
 
-          surf            := Result.AddPoly;
-          surf.geo        := TGeoMode(geo);
-          surf.light      := TLightMode(light);
-          surf.extraLight := ExtraLight;
-          surf.normal     := normal;
-          CalcNormal;
+            var poly        := Result.AddPoly;
+            poly.faceflags  := face.faceflags;
+            poly.geo        := TGeoMode(face.geo);
+            poly.light      := TLightMode(min(face.light, mesh.light));
+            poly.extraLight := face.extraLight;
+            //poly.normal     := face.normal;
+            lev_utils.CalcNormal(face, poly.normal);
 
-          surf.faceflags := LongInt(FaceFlags or FF_IJIM_FogEnabled);
-          if IsSpecial3doPoly(Faces[k]) then
-            surf.faceflags := LongInt(surf.faceflags or FF_RD_SpecialSurfaceWf);
+            BitSet(poly.faceflags, FF_IJIM_FogEnabled);
+            if IsSpecial3doPoly(face) then
+              BitSet(poly.faceflags, FF_RD_SpecialSurfaceWf);
 
-          ttx := nil;
-          Try
-           ttx     := GetTexture(Mat,thing_cmp);
-           surf.tx := ttx;
-          { if ttx<>nil then ttx.SetCurrent;}
-          except
-            on Exception do PanMessage(mt_warning,
-                Format('Cannot load %s for thing %d', [Mat, th.num]));
-            end;
-
-          if (surf.tx <> nil) and (surf.tx.ci.alphaBPP = 1) then
-            surf.faceflags := LongInt(surf.faceflags or FF_RD_AlphaRef);
-
-          { pim:=ttx.Itexture.GetImage;
-          if pim=nil then;}
-
-          nvx := Vertices.Count;
-           //if nvx>24 then nvx:=24;
-
-          for j := 0 to nvx - 1 do
-            With TXVertices[j] do
-              begin
-                vd := Surf.AddVXD;
-
-                ax := Vertices[j].tx;
-                ay := Vertices[j].ty;
-                az := Vertices[j].tz;
-
-                MultVM3s(mx, ax, ay, az);
-
-                vd.x := th.x + ax;
-                vd.y := th.y + ay;
-                vd.z := th.z + az;
-                vd.intensity := color;
-
-                if ttx<>nil then
-                  begin
-                   vd.u := u;
-                   vd.v := v;
-                   if CurrentProject <> IJIM then
-                     begin
-                      vd.u := u / ttx.width;
-                      vd.v := v / ttx.height;
-                     end;
-                  end;
-
-                 { glVertex3f(th.x+ax,th.y+ay,th.z+az);}
+            ttx := nil;
+            Try
+             ttx     := GetTexture(Mat,thing_cmp);
+             poly.tx := ttx;
+            { if ttx<>nil then ttx.SetCurrent;}
+            except
+              on Exception do PanMessage(mt_warning,
+                  Format('Cannot load %s for thing %d', [Mat, th.num]));
               end;
-       end;
 
- result.CalculateSphere;
+            if (poly.tx <> nil) and (poly.tx.ci.alphaBPP = 1) then
+              poly.faceflags := LongInt(poly.faceflags or FF_RD_AlphaRef);
 
+            { pim:=ttx.Itexture.GetImage;
+            if pim=nil then;}
+
+            nvx := face.vertices.Count;
+             //if nvx>24 then nvx:=24;
+
+            for j := 0 to nvx - 1 do
+              with face.txVertices[j] do
+                begin
+                  vd := poly.AddVXD;
+
+                  ax := face.vertices[j].tx;
+                  ay := face.vertices[j].ty;
+                  az := face.vertices[j].tz;
+
+                  MultVM3s(mx, ax, ay, az);
+
+                  vd.x := th.x + ax;
+                  vd.y := th.y + ay;
+                  vd.z := th.z + az;
+                  vd.intensity := color;
+
+                  if ttx <> nil then
+                    begin
+                     vd.u := u;
+                     vd.v := v;
+                     if CurrentProject <> IJIM then
+                       begin
+                        vd.u := u / ttx.width;
+                        vd.v := v / ttx.height;
+                       end;
+                    end;
+                end;
+
+         end;
+    end;
+  result.CalculateSphere;
 end;
 
 Procedure TNewPRenderer.RenderCircle(polys: TList<T3DPoly>; cx, cy, cz, rad: double);

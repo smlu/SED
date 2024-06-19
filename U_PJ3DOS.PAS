@@ -11,15 +11,16 @@ T3DOFace=class(TPolygon)
  extra_l:single;
 end;
 
-T3DOFaces=class(TPolygons)
+T3DOFaces = class(TPolygons)
  Function GetItem(n:integer):T3DOface;
  Procedure SetItem(n:integer;v:T3DOface);
-Property Items[n:integer]:T3DOface read GetItem write SetItem; default;
+ Property Items[n:integer]:T3DOface read GetItem write SetItem; default;
 end;
 
-T3DOMesh=class
- name:string;
- faces:T3DOFaces;
+T3DOMesh = class
+ name: string;
+ geo, light, tex: Integer;
+ faces: T3DOFaces;
  Constructor Create;
  Function GetVXs:TVertices;
  Property vertices:Tvertices read GetVXs;
@@ -27,15 +28,15 @@ T3DOMesh=class
  Function FindRadius:double;
 end;
 
-T3DOMeshes=class(TList)
+T3DOMeshes = class(TList)
  Function GetItem(n:integer):T3DOMesh;
  Procedure SetItem(n:integer;v:T3DOMesh);
 Property Items[n:integer]:T3DOMesh read GetItem write SetItem; default;
 end;
 
-T3DOHNode=class
- meshname:string;
- nmesh:Integer;
+T3DOHNode = class
+ meshname: string;
+ nmesh: Integer;
  parent:integer;
  orgX,orgY,orgZ,
  orgPCH,orgYAW,orgROL:double;
@@ -44,7 +45,7 @@ T3DOHNode=class
  pivotx,pivoty,pivotz:double;
 end;
 
-T3DOHNodes=class(TList)
+T3DOHNodes = class(TList)
  Function GetItem(n:integer):T3DOHNode;
  Procedure SetItem(n:integer;v:T3DOHNode);
 Property Items[n:integer]:T3DOHNode read GetItem write SetItem; default;
@@ -53,14 +54,14 @@ end;
 
 TPJ3DO=class
  ucount:integer;
- Mats:TStringList;
- Meshes:T3DOMeshes;
+ mats:TStringList;
+ meshes:T3DOMeshes;
  hnodes:T3DOHNodes;
  Constructor CreateNew;
  Constructor CreateFrom3DO(const name: string; lod: integer); overload;
  Constructor CreateFrom3DO(const name: string; lod: integer; var fileVersion: double); overload;
  Destructor Destroy;override;
- Function NewMesh:T3DOMesh;
+ Function NewMesh: T3DOMesh;
  Function GetMat(n:integer):string;
  Procedure GetBBox(var box:TThingBox);
  Function FindRadius:double;

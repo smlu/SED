@@ -137,32 +137,33 @@ begin
  {ColorMaps}
  GetNextLine(s); {Radius - don't care}
  GetNextLine(s); {Insert}
- SScanf(s,'INSERT OFFSET  %f %f %f',[@InsX,@InsY,@InsZ]);
+ SScanf(s,'INSERT OFFSET  %f %f %f', [@InsX, @InsY, @InsZ]);
  GetNextLine(s); {Geosets}
- SScanf(s,'GEOSETS %d',[@ngeos]);
+ SScanf(s,'GEOSETS %d', [@ngeos]);
 
- if lod > ngeos-1 then lod := ngeos-1;
+ if lod > ngeos - 1 then lod := ngeos - 1;
 
- While not EndOfSection do
+ while not EndOfSection do
  begin
   GetNextLine(s);
-  p:=GetWord(s,1,w1);
-  if w1<>'GEOSET' then continue;
-  GetWord(s,p,w1);
-  if StrToInt(w1)<>lod then continue;
+  p := GetWord(s, 1, w1);
+  if w1 <> 'GEOSET' then continue;
+  GetWord(s, p, w1);
+  if StrToInt(w1) <> lod then continue;
   break;
  end;
  if EndOfSection then exit;
 
+ // Meshes section
  GetNextLine(s); {Meshes}
- SScanf(s,'MESHES %d',[@nmeshes]);
+ SScanf(s,'MESHES %d', [@nmeshes]);
 
- for i:=0 to nmeshes-1 do
+ for i := 0 to nmeshes - 1 do
  begin
   While not EndOfSection do
     begin
      GetNextLine(s);
-     p:=GetWord(s,1,w1);
+     p := GetWord(s, 1, w1);
      if w1 <> 'MESH' then continue;
      break;
     end;
@@ -171,27 +172,30 @@ begin
   mesh := NewMesh;
   meshes.Add(mesh);
 
-  GetNextLine(s); {Name} mesh.name := GetWordN(s,2);
-(*  GetNextLine(s); {Radius}
-  GetNextLine(s); {GEOMETRYMODE}
-  GetNextLine(s); {LIGHTINGMODE}
-  GetNextLine(s); {TEXTUREMODE}
+  GetNextLine(s); {Name} mesh.name := GetWordN(s, 2);
 
-  GetNextLine(s); {Vertices}
-  SScanf(s,'VERTICES %d',[@Nvxs]); *)
-
-  While not EndOfSection do
+  while not EndOfSection do
   begin
    GetNextLine(s);
-   p:=GetWord(s,1,w1);
-   if w1 <> 'VERTICES' then continue;
-   SScanf(s,'VERTICES %d',[@Nvxs]);
-   SetLength(vertIntensities, Nvxs);
-   break;
+   p := GetWord(s, 1, w1);
+
+   // Note: parsing mesh radius is skipped, can be calculated
+   if w1 = 'GEOMETRYMODE' then
+    SScanf(s,'GEOMETRYMODE %d', [@mesh.geo])
+   else if w1 = 'LIGHTINGMODE' then
+    SScanf(s,'LIGHTINGMODE %d', [@mesh.light])
+   else if w1 = 'TEXTUREMODE' then
+    SScanf(s,'TEXTUREMODE %d', [@mesh.tex])
+   else if w1 = 'VERTICES' then
+   begin
+     SScanf(s, 'VERTICES %d', [@Nvxs]);
+     SetLength(vertIntensities, Nvxs);
+     break;
+   end;
   end;
   if EndOfSection then exit;
 
-  for j:=0 to nvxs-1 do
+  for j := 0 to nvxs - 1 do
   begin
    GetNextLine(s);
    v := TVertex.Create;

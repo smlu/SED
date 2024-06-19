@@ -135,40 +135,46 @@ begin
  if EndOfSection then exit;
 
  GetNextLine(s); {Meshes}
- SScanf(s,'MESHES %d',[@nmeshes]);
+ SScanf(s, 'MESHES %d', [@nmeshes]);
 
  for i:=0 to nmeshes-1 do
  begin
 
-  While not EndOfSection do
+  while not EndOfSection do
   begin
    GetNextLine(s);
-   p:=GetWord(s,1,w1);
-   if w1<>'MESH' then continue;
+   p := GetWord(s,1,w1);
+   if w1 <> 'MESH' then continue;
    break;
   end;
   if EndOfSection then exit;
 
-  Mesh:=NewMesh;
-  Meshes.Add(Mesh);
+  mesh := NewMesh;
+  meshes.Add(mesh);
 
-  GetNextLine(s); {Name} Mesh.Name:=GetWordN(s,2);
-(*  GetNextLine(s); {Radius}
-  GetNextLine(s); {GEOMETRYMODE}
-  GetNextLine(s); {LIGHTINGMODE}
-  GetNextLine(s); {TEXTUREMODE}*)
+  GetNextLine(s); {Name} mesh.name := GetWordN(s, 2);
 
-  While not EndOfSection do
+  while not EndOfSection do
   begin
    GetNextLine(s);
-   p:=GetWord(s,1,w1);
-   if w1<>'VERTICES' then continue;
-   SScanf(s,'VERTICES %d',[@Nvxs]);
-   SetLength(vertIntensities, Nvxs);
-   break;
-  end;
-  if EndOfSection then exit;
+   p := GetWord(s, 1, w1);
 
+   // Note: parsing mesh radius is skipped, can be calculated
+   if w1 = 'GEOMETRYMODE' then
+    SScanf(s,'GEOMETRYMODE %d', [@mesh.geo])
+   else if w1 = 'LIGHTINGMODE' then
+    SScanf(s,'LIGHTINGMODE %d', [@mesh.light])
+   else if w1 = 'TEXTUREMODE' then
+    SScanf(s,'TEXTUREMODE %d', [@mesh.tex])
+   else if w1  = 'VERTICES' then
+   begin
+     SScanf(s,'VERTICES %d',[@Nvxs]);
+     SetLength(vertIntensities, Nvxs);
+     break;
+   end;
+  end;
+
+  if EndOfSection then exit;
 
 (*  GetNextLine(s); {Vertices} *)
 
