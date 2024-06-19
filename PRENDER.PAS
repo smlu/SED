@@ -1610,9 +1610,15 @@ begin
         const sfFloor = SF_Floor or SF_Collision;
         if adjoin <> nil then
           begin
-            poly.faceflags := LongInt(poly.faceflags or FF_RD_Adjoin);
-            if ((AdjoinFlags and not SAF_Move) = AdjoinFlags) or BitMaskTest(AdjoinFlags, SAF_NoPlayerMove) then
-               BitSet(poly.faceflags, FF_RD_SolidSurfaceWf);
+            BitSet(poly.faceflags, FF_RD_Adjoin);
+            if ((adjoinflags and not SAF_Move) = adjoinflags) or BitMaskTest(AdjoinFlags, SAF_NoPlayerMove) then
+            begin
+               // Set solidface / floor flag  for nonpassable adjoin
+               if BitMaskTest(surfflags, sfFloor) then
+                BitSet(poly.faceflags, FF_RD_FloorWf)
+               else
+                 BitSet(poly.faceflags, FF_RD_SolidSurfaceWf);
+            end;
           end
         else if BitMaskTest(surfflags, sfFloor) then
           BitSet(poly.faceflags, FF_RD_FloorWf)
