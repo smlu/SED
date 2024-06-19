@@ -582,7 +582,7 @@ begin {WriteGeometry}
         adj       := TAdjoin.Create;
         nadj      := adjoins.Add(Adj);
         adj.surf  := num;
-        adj.flags := adjoinFlags and $7FFFFFFF;
+        adj.flags := adjoinflags; // Preserve block light SED flag; previous: adjoinflags and (not SAF_BlockLight);//and $7FFFFFFF;
 
         sec := sectors[s];
         FindCenter(sec, cx,cy,cz);
