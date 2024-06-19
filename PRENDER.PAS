@@ -109,7 +109,7 @@ TVXdets = class
   intensity: TColorF;
 end;
 
-T3DPoly=class
+T3DPoly = class
   faceflags: Longint;
   geo: TGeoMode;
   light: TLightMode;
@@ -809,7 +809,7 @@ begin
   if i < 0 then exit;
   thList[i].Free;
 
-  m := A3DOToMesh(th,a3do);
+  m := A3DOToMesh(th, a3do);
   if m = nil then
     m := BadThingMesh(th);
   ThList[i] := m;
@@ -1401,12 +1401,22 @@ var
       p := m.GetPoly(i);
       if p.geo < Wireframe then continue;
 
+      var normal := p.normal;
+
       //if SMult(p.normal.dx, p.normal.dy, p.normal.dz, lvec.dx, lvec.dy, lvec.dz) > 0 then continue;
-      if p.normal.Dot(lvec) > 0 then continue;
+      if normal.Dot(lvec) > 0 then
+      begin
+        if not BitMaskTest(p.faceflags, FF_DoubleSided) then
+          continue;
+
+        // Get normal on the opposite side
+        normal := -normal;
+        if normal.Dot(lvec) > 0 then continue;
+      end;
 
       if p.vxds.count = 0 then continue;
       vxd := p.getVXD(0);
-      if Not PlaneLineXnNew(p.normal, vxd.X, vxd.y, vxd.z, ax1, ay1, az1, ax2, ay2, az2, ax, ay, az)
+      if not PlaneLineXnNew(normal, vxd.X, vxd.y, vxd.z, ax1, ay1, az1, ax2, ay2, az2, ax, ay, az)
        then continue;
 
        {Debug version}
@@ -1561,23 +1571,25 @@ begin
   Result.sec    := sec;
  {getMem(vxs,sizeof(T3DPVertex)*s.vertices.count);}
 
-  for var i:=0 to sec.surfaces.count-1 do
-    With sec.surfaces[i] do
+  for var i:=0 to sec.surfaces.Count-1 do
+    with sec.surfaces[i] do
       begin
         //if (sec.Flags and SECF_3DO) = 0
           //then if (geo = 0) then begin D3DID:=-1; continue; end;
 
         poly              := Result.AddPoly;
-        poly.faceflags    := FaceFlags;
+        poly.faceflags    := faceflags;
         poly.geo          := TGeoMode(geo);
         poly.light        := TLightMode(light);
-        poly.ambientLight := sec.ExtraLight;
-        poly.extraLight   := ExtraLight;
-        poly.tint         := sec.Tint;
+        poly.ambientLight := sec.extraLight;
+        poly.extraLight   := extraLight;
+        poly.tint         := sec.tint;
 
         poly.normal := normal;
-        if BitMaskTest(sec.Flags, SECF_3DO) then
-          poly.normal.SetCoords(-normal.dx, -normal.dy, -normal.dz);
+        if BitMaskTest(sec.flags, SECF_3DO) then
+          poly.normal := -normal
+        else
+          BitClear(poly.faceflags, FF_DoubleSided);
 
         // Make sky poly unlit
         if BitMaskTest(sec.Flags, SECF_3DO) or
@@ -1592,11 +1604,11 @@ begin
         if BitTest(surfflags, SF_SkyHorizon or SF_SkyCeiling) = 0 then
           BitSet(poly.faceflags, FF_IJIM_FogEnabled)
         else
-           BitSet(poly.faceflags, IfThen(BitMaskTest(surfflags, SF_SkyHorizon), FF_RD_HorizonSky, FF_RD_CeilingSky ) );
+           BitSet(poly.faceflags, IfThen(BitMaskTest(surfflags, SF_SkyHorizon), FF_RD_HorizonSky, FF_RD_CeilingSky));
 
         // Mark poly as floor or has collision
         const sfFloor = SF_Floor or SF_Collision;
-        if Adjoin <> nil then
+        if adjoin <> nil then
           begin
             poly.faceflags := LongInt(poly.faceflags or FF_RD_Adjoin);
             if ((AdjoinFlags and not SAF_Move) = AdjoinFlags) or BitMaskTest(AdjoinFlags, SAF_NoPlayerMove) then
@@ -1611,11 +1623,11 @@ begin
         if IsSpecialSurface(sec.surfaces[i]) then
           BitSet(poly.faceflags, FF_RD_SpecialSurfaceWf);
 
-        D3DID := Result.polys.count - 1;
+        D3DID := Result.polys.Count - 1;
         Try
           poly.tx := nil;
           if Length(Material) > 0 then
-            poly.tx := GetTexture(Material, sec.ColorMap);
+            poly.tx := GetTexture(material, sec.colormap);
         except
           on E:Exception do PanMessage(mt_warning,
             Format('Cannot load %s for sector %d surface %d: %s', [Material, sec.num, i ,e.message]));
@@ -1684,15 +1696,15 @@ var
 begin
  // Functions crates mesh for Things without 3DO models, e.g. ghost Thing
 
- Result        := T3DPMesh.Cube(0.015, MakeColor(0.89, 0.89, 0.89));
+ Result := T3DPMesh.Cube(0.015, MakeColor(0.89, 0.89, 0.89));
  // assigning sector is skipped so colors won't apply
 
  // Translate and rotate object
- With th do CreateRotMatrixS(mx,pch,yaw,rol);
+ with th do CreateRotMatrixS(mx, pch, yaw, rol);
  for var i := 0 to Result.polys.Count -1 do
     begin
       with Result.GetPoly(i) do
-        for var j:=0 to vxds.Count-1 do
+        for var j := 0 to vxds.Count - 1 do
           With GetVXD(j) do
             begin
               var ax: single := x;
@@ -1700,9 +1712,9 @@ begin
               var az: single := z;
 
               MultVM3s(mx, ax, ay, az);
-              x:=th.x + ax;
-              y:=th.y + ay;
-              z:=th.z + az;
+              x := th.x + ax;
+              y := th.y + ay;
+              z := th.z + az;
             end;
     end;
 
@@ -1712,10 +1724,11 @@ end;
 Function TNewPRenderer.ThingToMesh(th: TJKThing):T3DPMesh;
 var i,j,k:integer;
     nv,nvx:integer;
-    ttx:T3DPTexture;
-    cmp,mat:string;
-    ax,ay,az:single;
-    mx:TMat3x3s;
+    ttx: T3DPTexture;
+    cmp,mat: string;
+    ax,ay,az: single;
+    mx: TMat3x3s;
+    mxd: TMat3x3;
     poly:T3DPoly;
     vd:TVXDets;
 begin
@@ -1732,7 +1745,7 @@ begin
   const jkdf2Lights: Boolean = ((th.level <> nil) and (th.level.kind = JKDF2) or (CurrentProject = JKDF2))
     or not P3DColoredLights;
 
-  With th do CreateRotMatrixS(mx, pch, yaw, rol);
+  with th do CreateRotMatrixS(mx, pch, yaw, rol);
 
   var alpha := 1.0; // TODO: assign thing.alpha? jonesEngine3D
 //  if (th.flags and (TF_INVISIBLE or TF_DISABLED)) <> 0 then
@@ -1822,6 +1835,9 @@ begin
                        end;
                     end;
                 end;
+
+            // Rotate normal
+            RotateVector(poly.normal, th.pch, th.yaw, th.rol);  // TODO: optimize to re-use  mx
           end;
     end;
  result.CalculateSphere;
@@ -1916,6 +1932,8 @@ begin
                     end;
                 end;
 
+            // Rotate normal
+            RotateVector(poly.normal, th.pch, th.yaw, th.rol);
          end;
     end;
   result.CalculateSphere;
