@@ -990,13 +990,13 @@ begin
       begin
         if Render3D = nil then
           exit;
-        With Render3D do
-          Case PickAt(x, y) of
+        with Render3D do
+          case PickAt(x, y) of
             pk_nothing:
               exit;
             pk_surface:
               begin
-                i := Level.Sectors.IndexOf(selSC);
+                i := level.sectors.IndexOf(selSC);
                 if i <> -1 then
                 begin
                   JedMain.SetMapMode(MM_SF);
@@ -1012,7 +1012,7 @@ begin
               end;
             pk_thing:
               begin
-                i := Level.Things.IndexOf(selTH);
+                i := level.things.IndexOf(selTH);
                 if i <> -1 then
                 begin
                   JedMain.SetMapMode(MM_TH);
