@@ -2495,6 +2495,12 @@ begin
   );
 
   StaticTemplates[Integer(TProjectType.IJIM)] := TArray<String>.Create(
+    // objects
+    'ghost',
+    'spritlemist',
+    'paddlesplash',
+    'minecarsparks',
+
     // chalk marks
     '+1947_mark',
     '+alien_mark',
@@ -2582,15 +2588,13 @@ begin
     '+imp4_glow',
     '+imp5',
     '+imp5_glow',
-    '+uw_spr_blast',
-    '+uw_spr_explode',
-    '+uw_explode',
-    '+uw_blast',
 
     // fx
+    //'+backpack',
     '+plcog',
     '+plcogend',
     '+laserbeam',
+    '+raft_splash',
     '+lightning',
     'zippo_glow',
     '+exhaust',
@@ -2598,7 +2602,13 @@ begin
     '+ripples',
     '+spray',
     '+bloodsplort',
-    '+vulcansplort'
+    '+vulcansplort',
+    '+raft_wake',
+    '+mardukhit',
+    '+uw_spr_blast',
+    '+uw_spr_explode',
+    '+uw_explode',
+    '+uw_blast'
   );
 
 end;
