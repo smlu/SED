@@ -291,6 +291,8 @@ type
 
         function IsCleaveMapMode: Boolean;
 
+        procedure PasteFromClipboard(x, y, z: double; bTranslate: Boolean);
+
         // Renderer stuff
         function ZoomIn: boolean;
         function ZoomOut: boolean;
@@ -8609,29 +8611,13 @@ begin
     end;
 end;
 
-procedure TJedMain.miPasteClick(sender: TObject);
+procedure TJedMain.PasteFromClipboard(x, y, z: double; bTranslate: Boolean);
 var
     i, j, n: Integer;
-    rx, ry, rz: double;
-    X, Y: Integer;
-    Layer: Integer;
+    layer: Integer;
     sec, nsc: TJKSector;
     surf: TJKSurface;
 begin
-    if sender <> nil then
-      begin
-          rx := renderer.CamX;
-          ry := renderer.CamY;
-          rz := renderer.CamZ;
-      end
-    else
-      begin
-          if not GetMousePos(X, Y) then
-              exit;
-          if not GetGridPosAt(X, Y, rx, ry, rz) then
-              exit;
-      end;
-
     case mapMode of
         MM_SC:
             begin
@@ -8639,13 +8625,13 @@ begin
                   exit;
 
                 sec := level.sectors[Cur_SC];
-                n := PasteSectors(level, rx, ry, rz);
+                n := PasteSectors(level, x, y, z, bTranslate);
                 if n = -1 then
                     exit;
 
                 StartUndoRec('Paste Sector(s)');
 
-                SetCurSC(n);
+                SetCurSC(level.sectors.Count - 1);
                 scsel.Clear;
                 for i := n to level.sectors.Count - 1 do
                 begin
@@ -8679,11 +8665,11 @@ begin
 
                 StartUndoRec('Paste Light(s)');
 
-                n := PasteLights(level, rx, ry, rz);
+                n := PasteLights(level, x, y, z, bTranslate);
                 if n = -1 then
                     exit;
 
-                SetCurLT(n);
+                SetCurLT(level.lights.Count - 1);
                 ltsel.Clear;
                 for i := n to level.lights.Count - 1 do
                 begin
@@ -8706,11 +8692,11 @@ begin
 
                 StartUndoRec('Paste Thing(s)');
 
-                n := PasteThings(level, rx, ry, rz);
+                n := PasteThings(level, x, y, z, bTranslate);
                 if n = -1 then
                     exit;
 
-                SetCurTH(n);
+                SetCurTH(level.things.Count - 1); // should be selected thing when copied
                 thsel.Clear;
                 for i := n to level.things.Count - 1 do
                 begin
@@ -8726,6 +8712,24 @@ begin
     end;
 
     UpdateSelCount;
+procedure TJedMain.miPasteClick(sender: TObject);
+var
+    rx, ry, rz: double;
+    X, Y: Integer;
+begin
+    rx := renderer.CamX;
+    ry := renderer.CamY;
+    rz := renderer.CamZ;
+    if sender = nil then
+      begin
+          if not GetMousePos(X, Y) then
+              exit;
+          if not GetGridPosAt(X, Y, rx, ry, rz) then
+              exit;
+      end;
+
+    PasteFromClipboard(rx, ry, rz, True);
+end;
 end;
 
 procedure TJedMain.N3DPreviewtoItem1Click(sender: TObject);

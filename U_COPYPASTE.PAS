@@ -11,9 +11,9 @@ Function CanPasteSectors: Boolean;
 Function CanPasteThings: Boolean;
 Function CanPasteLights: Boolean;
 
-Function PasteSectors(lev: TJKLevel; atX,atY,atZ: Double): Integer; {Returns first pasted Sector}
-Function PasteThings(lev: TJKLevel; atX,atY,atZ: Double): Integer; {Returns first pasted Object}
-Function PasteLights(lev: TJKLevel; atX,atY,atZ: Double): Integer; {Returns first pasted Object}
+Function PasteSectors(lev: TJKLevel; atX,atY,atZ: Double; bTranslate: Boolean): Integer; {Returns first pasted Sector}
+Function PasteThings(lev: TJKLevel; atX,atY,atZ: Double; bTranslate: Boolean): Integer; {Returns first pasted Object}
+Function PasteLights(lev: TJKLevel; atX,atY,atZ: Double; bTranslate: Boolean): Integer; {Returns first pasted Object}
 
 implementation
 uses U_undo, Clipbrd, WIndows;
@@ -51,13 +51,13 @@ var i,j,sf,n,msize: integer;
     hg: integer;
     pg: pointer;
     clp: TClipboard;
-    rx,ry,rz: double;
-    pvx: ^TVXRec;
+    //rx,ry,rz: double;
+    //pvx: ^TVXRec;
 
 begin
-  n:=scsel.AddSC(Cur_SC);
+  n := scsel.AddSC(Cur_SC);
 
-  FindCenter(lev.sectors[Cur_SC], rx, ry, rz);
+  //FindCenter(lev.sectors[Cur_SC], rx, ry, rz);
 
   {Calculate the size of memory to allocate}
   msize := sizeof(longint);
@@ -89,14 +89,14 @@ begin
 
       GetSCVertices(sec.vertices, pg);
 
-      pvx := pg;
-      for j:=0 to sec.vertices.Count - 1 do
-        begin
-         pvx^.x := pvx^.x - rx;
-         pvx^.y := pvx^.y - ry;
-         pvx^.z := pvx^.z - rz;
-         Inc(pvx);
-        end;
+//      pvx := pg;
+//      for j:=0 to sec.vertices.Count - 1 do
+//        begin
+////         pvx^.x := pvx^.x - rx;
+////         pvx^.y := pvx^.y - ry;
+////         pvx^.z := pvx^.z - rz;
+//         Inc(pvx);
+//        end;
 
       Inc(PAnsiChar(pg),SCVertSize(sec.vertices));
 
@@ -121,7 +121,7 @@ begin
   scsel.DeleteN(n);
 end;
 
-Function PasteSectors(lev: TJKLevel; atX, atY, atZ: Double): Integer; {Returns first pasted Sector}
+Function PasteSectors(lev: TJKLevel; atX, atY, atZ: Double; bTranslate: Boolean): Integer; {Returns first pasted Sector}
 var hg: Integer;
     pg: Pointer;
     i,j,sf,n: Integer;
@@ -131,6 +131,7 @@ var hg: Integer;
     clp: TClipboard;
     psrec: ^TSecRec;
     psfrec: ^TSurfRec;
+    tx, ty, tz: Double;
 begin
   Result := -1;
   Clp := Clipboard;
@@ -144,7 +145,6 @@ begin
    Inc(PAnsiChar(pg), sizeof(longint));
 
    Result := lev.sectors.Count;
-
    for i := 0 to n - 1 do
      begin
       sec := lev.NewSector;
@@ -159,13 +159,13 @@ begin
       SetSCVertices(sec.vertices, PSrec^.nvxs, pg);
       Inc(PAnsiChar(pg), SCVertSize(sec.vertices));
 
-      for j := 0 to sec.vertices.Count - 1 do
-      with sec.vertices[j] do
-        begin
-         x := x + AtX;
-         y := y + AtY;
-         z := z + AtZ;
-        end;
+//      for j := 0 to sec.vertices.Count - 1 do
+//      with sec.vertices[j] do
+//        begin
+//         x := x + AtX;
+//         y := y + AtY;
+//         z := z + AtZ;
+//        end;
 
       sec.Renumber;
 
@@ -189,6 +189,32 @@ begin
 
       sec.Renumber;
      end;
+
+    if bTranslate then
+    begin
+      sec := lev.sectors.Last; // should be the selected sector when selection was copied
+      FindCenter(sec, tx, ty, tz);
+      tx := (atX - tx) * Ord(atX <> 0);
+      ty := (atY - ty) * Ord(atY <> 0);
+      tz := (atZ - tz) * Ord(atZ <> 0);
+
+      for i := lev.sectors.Count - n to lev.sectors.Count - 1 do
+        begin
+          sec := lev.sectors[i];
+          for j := 0 to sec.vertices.Count - 1 do
+            begin
+             var v := sec.vertices[j];
+             v.x := v.x + tx;
+             v.y := v.y + ty;
+             v.z := v.z + tz;
+            end;
+            sec.Renumber;
+
+          for j := 0 to sec.surfaces.Count - 1 do
+             sec.surfaces[j].RecalcAll;
+          sec.Renumber;
+        end;
+    end;
   finally
    lev.RenumSecs;
    GlobalUnlock(hg);
@@ -199,7 +225,7 @@ end;
 Procedure CopyLights(lev: TJKLevel; ltsel: TLTMultiSel; Cur_LT: Integer);
 var hg: Integer;
     i,n: Integer;
-    rx,ry,rz: double;
+    //rx,ry,rz: double;
     pg: pointer;
     light: TSedLight;
     clp: TClipboard;
@@ -208,11 +234,6 @@ begin
   n := ltsel.AddLT(Cur_LT);
 
   with lev.Lights[Cur_LT] do
-    begin
-      rx := position.x;
-      ry := position.y;
-      rz := position.z;
-    end;
 
   hg := GlobalAlloc(GMEM_MOVEABLE or GMEM_SHARE,sizeof(integer)+ltsel.Count*GetLightRecSize);
   pg := GlobalLock(hg);
@@ -224,9 +245,6 @@ begin
       light := lev.lights[ltsel.getLT(i)];
       pl := pg;
       GetLight(light,Pl^);
-      pl^.position.x := pl^.position.x - rx;
-      pl^.position.y := pl^.position.y - ry;
-      pl^.position.z := pl^.position.z - rz;
       Inc(PAnsiChar(pg), GetLightRecSize);
     end;
 
@@ -239,7 +257,7 @@ begin
   ltsel.DeleteN(n);
 end;
 
-Function PasteLights(lev: TJKLevel; atX,atY,atZ: Double): Integer; {Returns first pasted Object}
+Function PasteLights(lev: TJKLevel; atX,atY,atZ: Double; bTranslate: Boolean): Integer; {Returns first pasted Object}
 var hg: Integer;
     pg: Pointer;
     i,n: Integer;
@@ -265,19 +283,28 @@ begin
       SetLight(light, TLightRec(pg^));
       Inc(PAnsiChar(pg), GetLightRecSize);
 
-      // Get transform point from the position of first light in buffer
-      if i = 0 then
-      begin
-        tx :=  atX - light.position.x;
-        ty :=  atY - light.position.y;
-        tz :=  atZ - light.position.z;
-      end;
-
-      light.position.x := light.position.x + tx;
-      light.position.y := light.position.y + ty;
-      light.position.z := light.position.z + tz;
+      light.position.x := light.position.x;
+      light.position.y := light.position.y;
+      light.position.z := light.position.z;
       lev.lights.Add(light);
      end;
+
+    if bTranslate then
+    begin
+      light := lev.lights.Last; // should be the selected light when selection was copied
+      tx := (atX - light.position.x) * Ord(atX <> 0);
+      ty := (atY - light.position.y) * Ord(atY <> 0);
+      tz := (atZ - light.position.z) * Ord(atZ <> 0);
+
+      for i := lev.lights.Count - n to lev.lights.Count - 1 do
+        begin
+          light := lev.lights[i];
+          light.position.x := light.position.x + tx;
+          light.position.y := light.position.y + ty;
+          light.position.z := light.position.z + tz;
+        end;
+    end;
+
   finally
     GlobalUnlock(hg);
     Clp.Close;
@@ -287,7 +314,7 @@ end;
 Procedure CopyThings(lev: TJKLevel;thsel:TTHMultiSel;Cur_TH:integer);
 var hg: Integer;
     i,j,n: Integer;
-    rx,ry,rz: Double;
+    //rx,ry,rz: Double;
     pg: Pointer;
     thing: TJKThing;
     clp: TClipboard;
@@ -297,39 +324,15 @@ var hg: Integer;
     po: PAnsiChar;
 begin
   n := thsel.AddTH(Cur_TH);
-  With lev.things[Cur_TH] do
-    begin
-      rx := x;
-      ry := y;
-      rz := z;
-    end;
-
-  {Offset things by R#}
-  for i := 0 to thsel.Count - 1 do
-    begin
-      thing   := lev.things[thsel.getTH(i)];
-      thing.x := thing.x-rx;
-      thing.y := thing.y-ry;
-      thing.z := thing.z-rz;
-      for j := 0 to thing.vals.count-1 do
-      with thing.vals[j] do
-        begin
-         GetFrame(x,y,z, pch,yaw,rol);
-         SetFrame(x - rx, y - ry, z - rz, pch,yaw,rol);
-        end;
-    end;
-
   try
     size := SizeOf(integer);
-
     for i := 0 to thsel.Count - 1 do
       begin
         thing := lev.things[thsel.getTH(i)];
         Inc(size, GetThingRecSize(thing));
       end;
 
-
-    hg := GlobalAlloc(GMEM_MOVEABLE or GMEM_SHARE,size);
+    hg := GlobalAlloc(GMEM_MOVEABLE or GMEM_SHARE, size);
     pg := GlobalLock(hg);
     po := pg;
     Integer(pg^) := thsel.Count; Inc(PAnsiChar(pg), SizeOf(Integer));
@@ -341,27 +344,10 @@ begin
 
       size := GetThing(thing, Pt);
       Inc(PAnsiChar(pg), size);
-      { pt^.x:=pt^.x-rx;
-      pt^.y:=pt^.y-ry;
-      pt^.z:=pt^.z-rz;}
     end;
 
   finally
 
-    {Offset things back by R#}
-  for i := 0 to thsel.Count - 1 do
-    begin
-      thing   := lev.things[thsel.getTH(i)];
-      thing.x := thing.x + rx;
-      thing.y := thing.y + ry;
-      thing.z := thing.z + rz;
-      for j := 0 to thing.vals.Count - 1 do
-        with thing.vals[j] do
-          begin
-           GetFrame(x,y,z, pch,yaw,rol);
-           SetFrame(x + rx, y + ry, z + rz, pch,yaw,rol);
-          end;
-    end;
   end;
 
  GlobalUnlock(hg);
@@ -374,7 +360,7 @@ begin
  if po = nil then;
 end;
 
-Function PasteThings(lev: TJKLevel; atX, atY, atZ: Double): Integer; {Returns first pasted Object}
+Function PasteThings(lev: TJKLevel; atX, atY, atZ: Double; bTranslate: Boolean): Integer; {Returns first pasted Object}
 var hg: Integer;
     pg: Pointer;
     i,j,n: Integer;
@@ -395,35 +381,41 @@ begin
     n := Integer(pg^);
     Inc(PAnsiChar(pg), sizeof(integer));
 
+    if n < 1 then
+      exit;
+
     Result := lev.things.Count;
     for i := 0 to n - 1 do
       begin
         thing := lev.NewThing;
-        inc(PAnsiChar(pg), SetThing(thing, PThingRec(pg)));
+        Inc(PAnsiChar(pg), SetThing(thing, PThingRec(pg)));
+        lev.things.Add(thing);
+      end;
 
-        // Get transform point from the osition of first thing in buffer
-        if i = 0 then
-        begin
-          tx :=  atX - thing.x;
-          ty :=  atY - thing.y;
-          tz :=  atZ - thing.z;
-        end;
+      if bTranslate then
+      begin
+        thing := lev.things.Last; // should be the selected thing when selection was copied
+        tx := (atX - thing.x) * Ord(atX <> 0);
+        ty := (atY - thing.y) * Ord(atY <> 0);
+        tz := (atZ - thing.z) * Ord(atZ <> 0);
 
-        // Transform thing
-        thing.x := thing.x + tx;
-        thing.y := thing.y + ty;
-        thing.z := thing.z + tz;
-
-        // Transform thing frames
-        for j := 0 to thing.vals.Count - 1 do
-        with thing.vals[j] do
-        if atype = at_frame then
+        for i := lev.things.Count - n to lev.things.Count - 1 do
           begin
-            GetFrame(x, y, z, pch, yaw, rol);
-            SetFrame(x + tx, y + ty, z + tz, pch, yaw, rol);
+            thing := lev.things[i];
+            thing.x := thing.x + tx;
+            thing.y := thing.y + ty;
+            thing.z := thing.z + tz;
+
+            // Transform thing frames
+            for j := 0 to thing.vals.Count - 1 do
+            with thing.vals[j] do
+            if atype = at_frame then
+              begin
+                GetFrame(x, y, z, pch, yaw, rol);
+                SetFrame(x + tx, y + ty, z + tz, pch, yaw, rol);
+              end;
           end;
 
-        lev.things.Add(thing);
       end;
   finally
     lev.RenumThings;
