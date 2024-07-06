@@ -134,7 +134,12 @@ Const
   MR_New  = 0;
   DataDir = 'data';
 
-Var
+  PerpStepMin: Double = 0.0001;
+  PerpStepMax: Double = 1.0;
+  P3DStepMin: Double  = 0.001;
+  P3DStepMax: Double  = 5.0;
+
+var
   BaseDir: String;
   ProjectDir: String;
   JKDir, MOTSDir, IJIMDir: String;

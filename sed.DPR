@@ -66,6 +66,7 @@ uses
   u_multisel in 'u_multisel.pas',
   GLunit in 'GLunit.pas',
   JED_OLE in 'JED_OLE.pas',
+  //JED_OLE in 'JED_OLE.pas',
   u_copypaste in 'u_copypaste.pas',
   u_errorform in 'u_errorform.pas' {ErrForm},
   U_tplcreate in 'U_tplcreate.pas' {TPLCreator},

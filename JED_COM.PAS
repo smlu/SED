@@ -306,12 +306,12 @@ end;
 
 Function GetJEDCOM:IJED;
 implementation
-uses  Item_edit, u_MsgForm, u_Tools, JED_Main,lev_utils,JED_OLE, listRes,
+uses  Item_edit, u_MsgForm, u_Tools, JED_Main,lev_utils,(*JED_OLE,*) listRes,
       u_CogForm, FlagEditor, U_SCFEdit,U_Options, u_tbar, Cons_Checker, u_Preview,
       Files,FileOperations,FileDialogs, System.Variants;
 const tmpStrBufSize = 32;
 var jedcom:IJED;
-    olejedapp:TJEDApp;
+    //olejedapp:TJEDApp;
     comlevel:TCOMLevel;
     ForeWnd:integer;
     tmpastr:array[0..2047] of AnsiChar;
