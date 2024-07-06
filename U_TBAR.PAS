@@ -104,6 +104,8 @@ type
     Procedure SetLVis(const S: string);
     Procedure SetDefaults;
     Procedure UpdatePrefabs;
+    Procedure UpdatePerpStep(step: Double);
+    Procedure UpdateP3DStep(step: Double);
   end;
 
 var
@@ -114,6 +116,33 @@ implementation
 uses GlobalVars, Misc_Utils, Jed_Main, FieldEdit, U_Options, U_Preview;
 
 {$R *.DFM}
+
+Procedure SetCBDouble(CB: TComboBox; d: double);
+var
+  a: TNotifyEvent;
+begin
+  a := CB.OnChange;
+  CB.OnChange := nil;
+  CB.Text := DoubleToStr(d);
+  CB.OnChange := a;
+end;
+
+Procedure CBValDouble(CB: TComboBox; var d: double; min, max: double);
+var
+  ad: double;
+  valid: Boolean;
+  oldp: TNotifyEvent;
+begin
+  valid := feValDouble(CB.Text, ad);
+  if (valid) and (ad >= min) and (ad <= max) then
+    d := ad
+  else
+    exit;
+  { oldp:=CB.OnChange;
+    CB.OnChange:=nil;
+    CB.Text:=Format('%g',[d]);
+    CB.OnChange:=oldp; }
+end;
 
 procedure TToolbar.FormCreate(Sender: TObject);
 var
@@ -145,6 +174,22 @@ begin
   else
     CBShapes.ItemIndex := i;
 end;
+
+Procedure TToolbar.UpdatePerpStep(step: Double);
+begin
+  PerpStep := PerpStep + step;
+  PerpStep := ClampD(PerpStep, PerpStepMin, PerpStepMax);
+  SetCBDouble(CBPerpStep, PerpStep);
+end;
+
+
+Procedure TToolbar.UpdateP3DStep(step: Double);
+begin
+  P3DStep := P3DStep + step;
+  P3DStep := ClampD(P3DStep, P3DStepMin, P3DStepMax);
+  SetCBDouble(CB3DPStep, P3DStep);
+end;
+
 
 Procedure TToolbar.SetDefaults;
   Procedure SetCB(CB: TComboBox; d: double);
@@ -525,33 +570,6 @@ begin
   Accept := Source = LVLayers;
 end;
 
-Procedure SetCBDouble(CB: TComboBox; d: double);
-var
-  a: TNotifyEvent;
-begin
-  a := CB.OnChange;
-  CB.OnChange := nil;
-  CB.Text := DoubleToStr(d);
-  CB.OnChange := a;
-end;
-
-Procedure CBValDouble(CB: TComboBox; var d: double; min, max: double);
-var
-  ad: double;
-  valid: Boolean;
-  oldp: TNotifyEvent;
-begin
-  valid := feValDouble(CB.Text, ad);
-  if (valid) and (ad >= min) and (ad <= max) then
-    d := ad
-  else
-    exit;
-  { oldp:=CB.OnChange;
-    CB.OnChange:=nil;
-    CB.Text:=Format('%g',[d]);
-    CB.OnChange:=oldp; }
-end;
-
 procedure TToolbar.CBGridStepChange(Sender: TObject);
 begin
   CBValDouble(CBGridStep, JedMain.Renderer.GridStep, 0.0001, 10);
@@ -612,7 +630,7 @@ end;
 
 procedure TToolbar.CBPerpStepChange(Sender: TObject);
 begin
-  CBValDouble(CBPerpStep, PerpStep, 0, 1);
+  CBValDouble(CBPerpStep, PerpStep, PerpStepMin, PerpStepMax);
 end;
 
 procedure TToolbar.CBPerpStepExit(Sender: TObject);
@@ -638,7 +656,7 @@ end;
 
 procedure TToolbar.CB3DPStepChange(Sender: TObject);
 begin
-  CBValDouble(CB3DPStep, P3DStep, 0.001, 5);
+  CBValDouble(CB3DPStep, P3DStep, P3DStepMin, P3DStepMax);
 end;
 
 procedure TToolbar.CB3DPStepExit(Sender: TObject);
@@ -688,20 +706,20 @@ end;
 
 procedure TToolbar.BNSaveClick(Sender: TObject);
 begin
-  DefTXStep := TXStep;
-  DefTXRotStep := TXRotStep;
+  DefTXStep      := TXStep;
+  DefTXRotStep   := TXRotStep;
   DefTXScaleStep := TXScaleStep;
-  DefPerpStep := PerpStep;
-  DefP3DStep := P3DStep;
-  DefThingView := JedMain.thingView;
-  DefMselMode := JedMain.mselMode;
+  DefPerpStep    := PerpStep;
+  DefP3DStep     := P3DStep;
+  DefThingView   := JedMain.thingView;
+  DefMselMode    := JedMain.mselMode;
 
   DefSnapToGrid := JedMain.bSnapToGrid;
-  DefGridStep := JedMain.Renderer.GridStep;
-  DefGridLine := JedMain.Renderer.GridLine;
-  DefGridDot := JedMain.Renderer.GridDot;
-  DefGridSize := GridSize;
-  DefShape := CBShapes.Text;
+  DefGridStep   := JedMain.Renderer.GridStep;
+  DefGridLine   := JedMain.Renderer.GridLine;
+  DefGridDot    := JedMain.Renderer.GridDot;
+  DefGridSize   := GridSize;
+  DefShape      := CBShapes.Text;
 
   WriteConfigFile(true);
 end;

@@ -1040,10 +1040,17 @@ begin
     if viewMode then
       begin
         if WheelDelta > 0 then
-          P3DStep := P3DStep + 0.005
+          toolbar.UpdateP3DStep(0.005)
         else if WheelDelta < 0 then
-          P3DStep := P3DStep - 0.005;
-        P3DStep := ClampD(P3DStep, 0.001, 0.2);
+          toolbar.UpdateP3DStep(-0.005);
+        Handled := true;
+      end
+    else if Shift = [ssShift] then
+      begin
+      if WheelDelta > 0 then
+          toolbar.UpdatePerpStep(0.001)
+        else if WheelDelta < 0 then
+          toolbar.UpdatePerpStep(-0.001);
         Handled := true;
       end
     else if Shift <> [] then  // prevents map zoom
