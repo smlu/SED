@@ -360,7 +360,7 @@ begin
   if Render3D = nil then
     exit;
 
-  With Render3D do
+  with Render3D do
     case Key of
       VK_ADD:
         If P3DGamma < 254.9 then
@@ -433,12 +433,16 @@ begin
           self.MoveCameraLeft
         else if Shift = [ssShift] then
           self.MoveThingLeft
-        else if (Shift = [ssAlt]) then
+        else if (Shift = [ssAlt]) then // Un-adjoin
           JedMain.FormKeyDown(nil, Key, Shift)
         else
           self.MoveCameraUp;
       Ord('B'):
         if Shift = [] then  // Bring Thing to surface
+          JedMain.FormKeyDown(nil, Key, Shift);
+
+      Ord('C'):
+        if Shift = [ssCtrl] then  // Copy
           JedMain.FormKeyDown(nil, Key, Shift);
       Ord('D'):
         if viewMode then
@@ -530,6 +534,10 @@ begin
 
       Ord('T'):
         if (Shift = []) then // allow only setting map mode to thing
+          JedMain.FormKeyDown(nil, Key, Shift);
+
+      Ord('V'):
+        if (Shift = [ssCtrl]) or (Shift = [ssShift, ssCtrl]) then  // Paste
           JedMain.FormKeyDown(nil, Key, Shift);
 
       Ord('W'):
@@ -1114,9 +1122,6 @@ begin
   AddKBItem(miControl, 'Clear multiselection', Char(VK_BACK), []);
   AddKBItem(miControl, 'Change texture/template'#9'Double-Click', #0, []);
 
-  AddKBItem(miControl, 'Snap grid to item', 'S', [ssShift]);
-  AddKBItem(miControl, 'Snap grid to item', 'W', [ssShift]);
-  AddKBItem(miControl, 'Swap Grid axis', 'G', [ssShift]);
   AddKBItem(miControl, 'Sector mode', 'S', []);
   AddKBItem(miControl, 'Select camera sector', 'S', [ssAlt]);
   AddKBItem(miControl, 'Item Editor', Char(VK_Return), []);
@@ -1143,8 +1148,7 @@ begin
   AddKBItem(miTex, 'Scale texture down', #188, [ssAlt]);
   AddKBItem(miTex, 'Scale texture Up', #190, [ssAlt]);
   AddKBItem(miTex, 'Straighten/zero/rotate90 texture', #191, [ssShift, ssCtrl]);
-  AddKBItem(miTex, 'Straighten/zero/rotate90 texture', Char(VK_HOME),
-    [ssShift, ssCtrl]);
+  AddKBItem(miTex, 'Straighten/zero/rotate90 texture', Char(VK_HOME), [ssShift, ssCtrl]);
   AddKBItem(miTex, 'Straighten/zero texture', #191, [ssCtrl]);
   AddKBItem(miTex, 'Straighten/zero texture', Char(VK_HOME), [ssCtrl]);
   AddKBItem(miTex, 'Rotate texture left', #188, [ssCtrl]);
