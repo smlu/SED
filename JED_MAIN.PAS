@@ -204,6 +204,7 @@ type
         BNEX: TSpeedButton;
         NewIJIMProject: TMenuItem;
         SetMapGeoBackfaceCulling: TMenuItem;
+        miPasteInPlace: TMenuItem;
 
         procedure Exit1Click(sender: TObject);
         procedure OpenMenuClick(sender: TObject);
@@ -299,6 +300,7 @@ type
 
         procedure SetRendererGeoVertexSize;
         procedure SetRendererObjVertexSize;
+        procedure miPasteInPlaceClick(Sender: TObject);
 
     public
         { Project vars }
@@ -1624,8 +1626,9 @@ begin
     CalcLightOnLayers.ShortCut := ShortCut(Ord('L'), [ssCtrl]);
     CalcLightInSel.ShortCut    := ShortCut(Ord('L'), [ssCtrl, ssAlt]);
 
-    miCopy.Caption := '&Copy'#9'Ctrl+C';
+    miCopy.Caption  := '&Copy'#9'Ctrl+C';
     miPaste.Caption := '&Paste'#9'Ctrl+V';
+    miPasteInPlace.Caption := '&Paste In Place'#9'Ctrl+Shift+V';
     { Renderer.CamZ:=-25; }
     Level.Sectors.Add(Level.NewSector);
 
@@ -2352,6 +2355,8 @@ begin
                 StraightenTexture(true, true);
             VK_INSERT:
                 DoStitch(True);
+            Ord('V'):
+                miPasteInPlaceClick(nil);
         end;
         exit;
     end;
@@ -8579,22 +8584,26 @@ begin
         MM_SC:
             begin
                 miPaste.Enabled := CanPasteSectors;
-                miCopy.Enabled := true;
+                miPasteInPlace.Enabled := CanPasteSectors;
+                miCopy.Enabled := True;
             end;
         MM_TH:
             begin
                 miPaste.Enabled := CanPasteThings;
-                miCopy.Enabled := true;
+                miPasteInPlace.Enabled := CanPasteThings;
+                miCopy.Enabled := True;
             end;
         MM_LT:
             begin
                 miPaste.Enabled := CanPasteLights;
-                miCopy.Enabled := true;
+                miPasteInPlace.Enabled := CanPasteLights;
+                miCopy.Enabled := True;
             end;
     else
         begin
-            miPaste.Enabled := false;
-            miCopy.Enabled := false;
+            miPaste.Enabled := False;
+            miPasteInPlace.Enabled := False;
+            miCopy.Enabled := False;
         end;
     end;
 end;
@@ -8712,6 +8721,9 @@ begin
     end;
 
     UpdateSelCount;
+
+end;
+
 procedure TJedMain.miPasteClick(sender: TObject);
 var
     rx, ry, rz: double;
@@ -8730,6 +8742,10 @@ begin
 
     PasteFromClipboard(rx, ry, rz, True);
 end;
+
+procedure TJedMain.miPasteInPlaceClick(Sender: TObject);
+begin
+  PasteFromClipboard(0, 0, 0, False);
 end;
 
 procedure TJedMain.N3DPreviewtoItem1Click(sender: TObject);
