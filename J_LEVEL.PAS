@@ -100,6 +100,7 @@ type
     Function GetItem(n: integer): TSedLight;
     Procedure SetItem(n: integer; v: TSedLight);
     Property Items[n: integer]: TSedLight read GetItem write SetItem; default;
+    Function Last: TSedLight;
   end;
 
   TJKVertices = class(TVertices)
@@ -154,6 +155,7 @@ type
   TJKThing = TThing;
 
   TThings = class(TList)
+    Function Last: TThing;
     Function GetItem(n: integer): TThing;
     Procedure SetItem(n: integer; v: TThing);
     Property Items[n: integer]: TThing read GetItem write SetItem; default;
@@ -242,7 +244,6 @@ type
     Procedure SetItem(n: integer; v: TCOG);
     Property Items[n: integer]: TCOG read GetItem write SetItem; default;
   end;
-
 
   TFog = record
     enabled: Boolean;
@@ -379,6 +380,11 @@ begin
   color     := l.color;
   position  := l.position;
   layer     := l.layer;
+end;
+
+Function TSedLights.Last: TSedLight;
+begin
+   Result := TSedLight(inherited Last);
 end;
 
 Function TSedLights.GetItem(n: integer): TSedLight;
@@ -627,6 +633,11 @@ end;
 Function TSectors.Last: TJKSector;
 begin
    Result := TJKSector(inherited Last);
+end;
+
+Function TThings.Last: TThing;
+begin
+   Result := TThing(inherited Last);
 end;
 
 Function TThings.GetItem(n: integer): TThing;

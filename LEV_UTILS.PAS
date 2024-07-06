@@ -418,8 +418,8 @@ begin
   box.z1 := 999999999999.0;
   box.z2 := -999999999999.0;
 
-  For i := 0 to sec.Vertices.count - 1 do
-    With sec.Vertices[i] do
+  for i := 0 to sec.vertices.Count - 1 do
+    with sec.vertices[i] do
     begin
       if x < box.x1 then
         box.x1 := x;
@@ -444,17 +444,17 @@ begin
   XSum := 0;
   Ysum := 0;
   ZSum := 0;
-  For i := 0 to sec.Vertices.count - 1 do
-    With sec.Vertices[i] do
+  for i := 0 to sec.vertices.Count - 1 do
+    With sec.vertices[i] do
     begin
       XSum := XSum + x;
       Ysum := Ysum + y;
       ZSum := ZSum + z;
     end;
 
-  cx := XSum / sec.Vertices.count;
-  cy := Ysum / sec.Vertices.count;
-  cz := ZSum / sec.Vertices.count;
+  cx := XSum / sec.vertices.Count;
+  cy := Ysum / sec.vertices.Count;
+  cz := ZSum / sec.vertices.Count;
 end;
 
 Procedure FindBSphere(const sec: TJKSector; var cx, cy, cz, Rad: double);
@@ -465,8 +465,8 @@ begin
   FindCenter(sec, cx, cy, cz);
   Rad := 0;
 
-  For i := 0 to sec.Vertices.count - 1 do
-    With sec.Vertices[i] do
+  For i := 0 to sec.vertices.Count - 1 do
+    With sec.vertices[i] do
     begin
       mdist := sqrt(sqr(x - cx) + sqr(y - cy) + sqr(z - cz));
       if mdist > Rad then
@@ -496,11 +496,11 @@ begin
   bz2 := true;
 
   xminus := (bbox.x1 - cx) / cbSteps;
-  xplus := (bbox.x2 - cx) / cbSteps;
+  xplus  := (bbox.x2 - cx) / cbSteps;
   yminus := (bbox.y1 - cy) / cbSteps;
-  yplus := (bbox.y2 - cy) / cbSteps;
+  yplus  := (bbox.y2 - cy) / cbSteps;
   zminus := (bbox.z1 - cz) / cbSteps;
-  zplus := (bbox.z2 - cz) / cbSteps;
+  zplus  := (bbox.z2 - cz) / cbSteps;
 
   x1 := cx + xminus;
   x2 := cx + xplus;
@@ -527,7 +527,7 @@ begin
   if not IsInSecNS(sec, x2, y2, z1) then
     exit;
 
-  For i := 0 to cbSteps - 1 do
+  for i := 0 to cbSteps - 1 do
   begin
     if bx1 then
       Repeat
@@ -1010,18 +1010,18 @@ Procedure ClearVXMarks(lev: TJKLevel);
 var
   s, v: integer;
 begin
-  for s := 0 to lev.sectors.count - 1 do
-    With lev.sectors[s] do
-      for v := 0 to Vertices.count - 1 do
-        Vertices[v].Mark := 0;
+  for s := 0 to lev.sectors.Count - 1 do
+    with lev.sectors[s] do
+      for v := 0 to vertices.Count - 1 do
+        vertices[v].mark := 0;
 end;
 
 Procedure ClearSCMarks(lev: TJKLevel);
 var
   s: integer;
 begin
-  for s := 0 to lev.sectors.count - 1 do
-    lev.sectors[s].Mark := 0;
+  for s := 0 to lev.sectors.Count - 1 do
+    lev.sectors[s].mark := 0;
 end;
 
 Procedure TranslateVX(v: TJKVertex; dx, dy, dz: double);
@@ -1045,7 +1045,7 @@ begin
       RecalcAll;
       if adjoin = nil then
         continue;
-      if adjoin.sector.Mark <> 0 then
+      if adjoin.sector.mark <> 0 then
         continue;
       for sf1 := 0 to adjoin.sector.surfaces.Count - 1 do
         adjoin.sector.surfaces[sf1].RecalcAll;
@@ -1065,7 +1065,7 @@ Procedure TranslateSectors(lev: TJKLevel; scsel: TSCMultiSel; cursc: integer;
     // First check that all affected sectors are on visible layer
     if not ToolBar.IsLayerVisible(sec.layer) then
       exit;
-    for sf := 0 to sec.surfaces.count - 1 do   // check adjoin sectors
+    for sf := 0 to sec.surfaces.Count - 1 do   // check adjoin sectors
       with sec.surfaces[sf] do
         if (adjoin <> nil) and (not ToolBar.IsLayerVisible(adjoin.sector.layer)) then
           exit;
@@ -1073,24 +1073,24 @@ Procedure TranslateSectors(lev: TJKLevel; scsel: TSCMultiSel; cursc: integer;
     // Now move sector(s)
     SaveSecUndo(sec, ch_changed, sc_geo);
 
-    for v := 0 to sec.vertices.count - 1 do
+    for v := 0 to sec.vertices.Count - 1 do
       TranslateVX(sec.vertices[v], dx, dy, dz);
 
-    for sf := 0 to sec.surfaces.count - 1 do
+    for sf := 0 to sec.surfaces.Count - 1 do
       with sec.surfaces[sf] do
       begin
         if adjoin = nil then
           continue;
 
         SaveSecUndo(adjoin.sector, ch_changed, sc_geo);
-        for v := 0 to adjoin.vertices.count - 1 do
+        for v := 0 to adjoin.vertices.Count - 1 do
           TranslateVX(adjoin.vertices[v], dx, dy, dz);
       end;
 
     RecalcSector(sec);
     JedMain.SectorChanged(sec);
 
-    for i := 0 to sec.surfaces.count - 1 do
+    for i := 0 to sec.surfaces.Count - 1 do
       with sec.surfaces[i] do
       begin
         if adjoin = nil then

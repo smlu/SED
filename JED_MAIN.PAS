@@ -1630,7 +1630,7 @@ begin
     miPaste.Caption := '&Paste'#9'Ctrl+V';
     miPasteInPlace.Caption := '&Paste In Place'#9'Ctrl+Shift+V';
     { Renderer.CamZ:=-25; }
-    Level.Sectors.Add(Level.NewSector);
+    level.sectors.Add(level.NewSector);
 
     scsel := TSCMultisel.Create;
     sfsel := TSFMultisel.Create;
