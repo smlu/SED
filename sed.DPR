@@ -65,7 +65,6 @@ uses
   u_undo in 'u_undo.pas',
   u_multisel in 'u_multisel.pas',
   GLunit in 'GLunit.pas',
-  JED_OLE in 'JED_OLE.pas',
   //JED_OLE in 'JED_OLE.pas',
   u_copypaste in 'u_copypaste.pas',
   u_errorform in 'u_errorform.pas' {ErrForm},
@@ -95,6 +94,7 @@ uses
 {$R SEDstatic.res}
 
 begin
+  InstallExceptionCallStack;
   Application.Initialize;
   Application.CreateForm(TJedMain, JedMain);
   Application.CreateForm(TForm1, Form1);
