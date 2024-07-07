@@ -828,7 +828,8 @@ begin
     if not SetOptions(JK) then
       begin
         SaveSettings := false;
-        Application.Terminate;
+        //Application.Terminate;
+        ExitProcess(0);
       end
     else
       WriteConfigFile(false);
