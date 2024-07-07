@@ -1,0 +1,123 @@
+[OPTIONS]
+TITLE=Jed Help v.0.93
+CONTENTS=Hlp_Contents
+COPYRIGHT=Jed Help 0.93 Copyright 1997 -1999 Code Alliance
+LCID=0x409 0x0 0x0
+COMPRESS=10
+
+[WINDOWS]
+main="Jed Help v.0.93",,,(192,192,192),(128,128,128)
+hlpwnd02="Second Windows help",(511,0,511,1000),,(255,255,255),(128,128,128)
+hlpwnd03="Third Windows help",(255,511,511,511),,(255,255,255),(128,128,128)
+
+[CONFIG]
+RR("mmsystem","sndPlaySound","Su")
+CB("btn_print","&Print","Print()")
+CB("btn_copy","C&opy","CT()")
+CB("btn_glossary","&Glossary","JI(`',`GLOSSARY')")
+
+[ALIAS]
+64000=GLOSSARY
+Glossary__C=Glossary__B
+Glossary__G=Glossary__F
+Glossary__I=Glossary__H
+Glossary__J=Glossary__H
+Glossary__O=Glossary__N
+Glossary__P=Glossary__N
+Glossary__R=Glossary__Q
+Glossary__S=Glossary__Q
+Glossary__V=Glossary__U
+Glossary__Y=Glossary__X
+Glossary__Z=Glossary__X
+
+[FILES]
+JEDHELP.rtf
+
+[MAP]
+Hlp_Installation 560
+Hlp_Tool_Window1 400
+Hlp_Tool_Window2 410
+Hlp_Tool_Window0 390
+GLOS_Cleave 800
+GLOS_Convex 770
+Hlp_Working_Area 130
+Hlp_Cursor_Coordinates 250
+Hlp_Keyboard_Summary 30
+Hlp_3D_Preview1 330
+Hlp_Item_Editor1 500
+Hlp_Item_Editor2 510
+Hlp_Item_Editor3 520
+Hlp_Item_Editor4 530
+Hlp_Item_Editor5 540
+Hlp_Item_Editor6 550
+Hlp_Item_Editor0 490
+Hlp_Menu_Tools 210
+Hlp_Resource_Picker 470
+Hlp_Placed_COGs 480
+Hlp_Contents 10
+Hlp_Edge_Mode 90
+Hlp_Multiselection_Mode 240
+Hlp_Menu_Plugins 220
+Hlp_3D_Preview 280
+Hlp_3D_Commands 260
+Hlp_Find_Dialog 450
+GLOS_Template 660
+GLOS_Surface 640
+Hlp_Sector_Mode 60
+Hlp_Menu_Edit 180
+Hlp_Menu_File 160
+Hlp_Menu_Help 230
+Hlp_Menu_View 190
+GLOS_Layer 700
+GLOS_Light 710
+Hlp_Light_Mode 110
+GLOS_Shape 890
+GLOS_Thing 650
+GLOS_Edge 680
+GLOS_MotS 720
+GLOS_Dark_Forces 730
+Hlp_Vertex_Mode 80
+Hlp_Episode_Editor 460
+GLOS_Mysteries_Of_The_Sith 880
+GLOS_Thing_Frame 580
+GLOS_Plugin 860
+Hlp_QuickxDirtyx_Template 430
+GLOS_Sector 630
+GLOS_Stitch 790
+Hlp_Thing_Frame 120
+Hlp_Consistency_Checker 440
+Hlp_Thing_Mode 100
+GLOS_Vertex 670
+Hlp_Main_Window 40
+Hlp_Level_Header 420
+Hlp_Surface_Mode 70
+Hlp_Introduction 570
+Hlp_The_Menus 140
+GLOS_Container 590
+Hlp_Operating_Mode 50
+Hlp_Whats_New 20
+GLOS_AI 740
+GLOS_JK 830
+GLOS_Code_Alliance 870
+Hlp_Map_Settings1 340
+Hlp_Map_Settings2 350
+Hlp_Map_Settings3 360
+Hlp_Map_Settings4 370
+GLOS_3DO 690
+GLOS_COG 620
+GLOS_DFU 820
+GLOS_GOB 600
+GLOS_GOO 610
+GLOS_JKU 810
+GLOS_KEY 760
+GLOS_MAT 840
+GLOS_PUP 750
+GLOS_WAV 850
+GLOSSARY 64000
+Hlp_Menu_Commands 200
+Hlp_Options_Dialog1 290
+Hlp_Options_Dialog2 300
+Hlp_Options_Dialog3 310
+Hlp_Options_Dialog4 320
+GLOS_Adjoin 780
+
