@@ -1,0 +1,36 @@
+# Lists can be nested,(these are not nested) ,lists start with SUB and end with SUBEND
+# Comment lines start with "#"
+# All lists can be customised for every  JLH (header file)
+# there should be a corresponding  JLL  (List file).
+# Just make sure the names you put in list file actualy exist in the template
+
+
+# Stealth [DL] mar/98  JK Mats custom list  file ver 1.0
+# Jed programed by Alexi Novikov 1997-1998
+# Jed homepage and message board located at  http://www.darkjedi.com/
+
+
+[Water]
+00fgwat01.mat
+00fgwat03.mat
+00fwater.mat
+00twater2.mat
+03wexrck.mat
+03wexter.mat
+
+13fwater.mat
+
+[Sky]
+00starry.mat
+00stars2.mat
+03sky01k.mat
+03sky09k.mat
+04sky01.mat
+06sky01.mat
+06sky02.mat
+09sky01.mat
+09skyb.mat
+10sky2.mat
+12sky3.mat
+13cnsky2.mat
+14sky.mat

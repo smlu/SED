@@ -1,0 +1,60 @@
+ghost		ghost
+PLAYER		walkplayer
+RIFLE		strifle		# ST Rifle
+AUTOGUN		repeatergun	# Imp. Repeater
+MORTAR		railgun		# Mortar->Railgun
+CANNON		railgun		# A. Cannon->Railgun
+FUSION		crossbow	# Fusion cutter->Crossbow
+DETONATOR	singledetonator	# TD
+MINE		sequencermine	# IM Mine
+MINES		sequencermine
+CONCUSSION	concrifle	# Concussion rifle
+PLASMA		railcharges	# Plasma ammo->Rail charges
+ENERGY		energycell	# Energy ammo->Uzi ammo
+POWER		powercell	# Power ammo->Chaingun ammo
+SHELL		railcharges	# Shells->RPG ammo
+SHELLS		railcharges
+MISSILE		railcharges
+MISSILES	railcharges
+DETONATORS	detonator	# Detonators
+MEDKIT		healthpack	# Medkit
+SHIELD		shieldrecharge	# Shield
+SUPERCHARGE	fullshield	# Supercharge
+# MASK	 			# Gas mask
+# INVINCIBLE			# Invincibility
+# GOGGLES			# IR Goggles
+BLUE		keyblue		# Key
+RED		keyred
+YELLOW		keyyellow
+# CLEATS
+REVIVE		revivepack	# Revive
+LIFE		revivepack	# Extralife
+BARREL		xtank1a
+BATTERY		battery
+G_GUARD		gammorean	# Gammorean Guard
+BOBA_FETT	maw
+REE_YEES	reeyees
+REE_YEES2	reeyeesfist
+I_OFFICER	iofficer
+I_OFFICERR	iofficer
+I_OFFICERB	iofficer
+I_OFFICERY	iofficer
+I_OFFICER1	iofficer
+I_OFFICER2	iofficer
+I_OFFICER3	iofficer
+I_OFFICER4	iofficer
+I_OFFICER5	iofficer
+STORM1		stormtroop
+TROOP		stormtroop
+COMMANDO	icommando
+PROBE_DROID	probedroid
+REMOTE		remote
+D_TROOP1	yun
+D_TROOP2	sariss
+D_TROOP3	jerec
+BOSSK		bossk
+KELL		kelldragon
+LAND_MINE	sequencermine
+INT_DROID	droidcam
+SEWER1		octopus
+TURRET		roundturret

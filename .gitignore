@@ -45,7 +45,6 @@ __recovery/
 modules/
 
 # SED
-data/
 plugins/
 
 # general

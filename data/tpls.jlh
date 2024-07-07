@@ -1,0 +1,31 @@
+# Lists can be nested,(these are not nested) ,lists start with SUB and end with SUBEND
+# Comment lines start with "#"
+# All lists can be customised for every  JLH (header file)
+# there should be a corresponding  JLL  (List file).
+# Just make sure the names you put in list file actualy exist in the template
+
+
+# Stealth [DL] mar/98  JK template custom list header file ver 1.0
+# Jed programed by Alexi Novikov 1997-1998
+# Jed homepage and message board located at  http://www.darkjedi.com/
+
+SUB People Things     # list start
+LIST Actors Actors    # points to "[Actors]" header in jll file. 
+LIST Civilians Civilians
+LIST Darkjedi Darkjedi
+LIST Droids Droids
+LIST Flyers Flyers
+LIST Player Player
+LIST Swimers Swimers
+SUBEND                #ends list
+
+SUB Doors/Elev etc
+LIST Structures Structures
+LIST Walkable Walkable
+SUBEND
+
+SUB Items
+LIST Pickups Pickups
+LIST Pickups_Respawn Pickups_Respawn
+LIST Throwable Throwable
+SUBEND
