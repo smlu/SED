@@ -37,6 +37,7 @@ backup/
 __history/
 __recovery/
 *.~*
+src/data
 
 # Castalia statistics file (since XE7 Castalia is distributed with Delphi)
 *.stat

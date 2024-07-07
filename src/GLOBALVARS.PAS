@@ -273,7 +273,7 @@ Function GetConfigFilePath: string;
 begin
   Result := 'sed.ini';
   if Length(BaseDir) > 0 then // In case base dir gets initialized later
-    Result := ChangeFilePath(Result, BaseDir); // This make sure config file is located in app dir
+      Result := ChangeFilePath(Result, BaseDir); // This make sure config file is located in app dir
 end;
 
 Function DefaultPixelPerUnit: double;
@@ -413,7 +413,7 @@ Initialization
 begin
   FormatSettings := TFormatSettings.Invariant;
   FormatSettings.DecimalSeparator := '.';
-  BaseDir := ExtractFilePath(Paramstr(0));
+  BaseDir := ExtractFilePath(ParamStr(0));
 end;
 
 end.

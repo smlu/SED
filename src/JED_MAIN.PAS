@@ -7626,7 +7626,7 @@ begin
           Templates.LoadFromFile(BaseDir + DataDir + '\' + tplname)
         else
            PanMessage(mt_warning,
-            Format('Cannot load %s. File not found!',[tplname]));
+            Format('Cannot load %s. File not found!', [tplname]));
       end
     else
         Templates.LoadFromFile(ProjectDir + tplname);
