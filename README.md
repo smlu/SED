@@ -5,7 +5,7 @@ The editor supports games: [Star Wars Jedi Knight: Dark Forces II](https://en.wi
 
 The codebase has been ported to better support modern Windows systems, as well as fixing many bugs and adding numerous new features. Most notably, the 3D Preview has been rewritten to mimic the original rendering system, added support for mouse control and cleaving from any angle. For a full list of changes, see [CHANGELOG.md](CHANGELOG.md).
 
-![banner](doc/banner.png)
+![banner](docs/banner.png)
 
 ## Special Thanks
 
