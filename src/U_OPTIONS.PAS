@@ -177,7 +177,7 @@ type
 const
   NoConfile: boolean = false;
 
-  regValues: array [0 .. 93] of TRegValue = (
+  regValues: array [0 .. 94] of TRegValue = (
     (d_type: dt_str; Section: 'JKDF2'; Name: 'Dir'; data: @JKDir; onExit: false),
     (d_type: dt_str; Section: 'MOTS'; Name: 'Dir'; data: @MOTSDir; onExit: false),
 
@@ -201,6 +201,7 @@ const
     (d_type: dt_double; Section: '3D Preview'; Name: 'Gamma'; data: @P3DGamma; onExit: true),
     (d_type: dt_bool; Section: '3D Preview'; Name: 'VisLayers'; data: @P3DVisLayers; onExit: false),
     (d_type: dt_bool; Section: '3D Preview'; Name: 'Things'; data: @P3DThings; onExit: false),
+    (d_type: dt_bool; Section: '3D Preview'; Name: 'NoClipSelectionOutline'; data: @P3DNoClipSelectionOutline; onExit: true),
 
     (d_type: dt_int; Section: 'Editor'; Name: 'WFAPI'; data: @WireframeAPI; onExit: false),
     (d_type: dt_int; Section: 'Editor'; Name: 'WFInvertCulling'; data: @WF_InvertCulling; onExit: false),
