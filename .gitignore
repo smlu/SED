@@ -47,6 +47,7 @@ modules/
 
 # SED
 plugins/
+res/SED.res
 
 # general
 *.bak
