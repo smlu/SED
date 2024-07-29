@@ -90,6 +90,7 @@ type
     ebZoomMax: TLabeledEdit;
     cbLockZoom: TCheckBox;
     cbPlaySecSnd: TCheckBox;
+    CBNoClipSelectionOutline: TCheckBox;
     procedure BNOKClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure SBHelpClick(Sender: TObject);
@@ -519,6 +520,7 @@ begin
   NewCtl(@P3DCOloredLights, dt_bool, CBColored);
   NewCtl(@P3DPlaySecSound, dt_bool, cbPlaySecSnd);
   NewCtl(@P3DFullLit, dt_bool, CBFullLight);
+  NewCtl(@P3DNoClipSelectionOutline, dt_bool, CBNoClipSelectionOutline);
   NewCtl(@P3DGamma, dt_double, viGamma);
   NewCtl(@P3DVisLayers, dt_bool, CB3DLayers);
   NewCtl(@P3DThings, dt_bool, CBShowThings);
