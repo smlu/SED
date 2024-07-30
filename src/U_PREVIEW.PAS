@@ -176,7 +176,7 @@ begin
   render3D.GetCamera.MoveTo(campos, camrot);
   render3D.SetGamma(P3DGamma);
   render3D.highlightSelection      := MenuHighlightSelection.Checked;
-  render3D.noClipSelectionOutline  := MenuNoClipSelectionOutline.Checked;
+  render3D.noClipSelectionOutline  := P3DNoClipSelectionOutline;
   render3D.highlightSolidSurface   := MenuHighlightSolidSurface.Checked;
   render3D.highlightSolidFloor     := MenuHighlightFloor.Checked;
   render3D.highlightSpecialSurface := MenuHighlightSpecialSurfaces.Checked;
@@ -1104,6 +1104,9 @@ begin
   scs := TStringList.Create;
   ths := TStringList.Create;
 
+  // init checkbox based on stored settings
+  MenuNoClipSelectionOutline.Checked := P3DNoClipSelectionOutline;
+
   AddKBItem(miControl, 'View mode'#9'Right Mouse Button + W/A/S/D', #0, []);
   AddKBItem(miControl, 'Rotate right', Char(VK_RIGHT), []);
   AddKBItem(miControl, 'Rotate right', Char(VK_RIGHT), []);
@@ -1262,7 +1265,8 @@ procedure TPreview3D.MenuNoClipSelectionOutlineClick(Sender: TObject);
 begin
   if Render3D <> nil then
     begin
-      Render3D.noClipSelectionOutline := MenuNoClipSelectionOutline.Checked;
+      P3DNoClipSelectionOutline := MenuNoClipSelectionOutline.Checked;
+      Render3D.noClipSelectionOutline := P3DNoClipSelectionOutline;
       Invalidate;
     end;
 end;

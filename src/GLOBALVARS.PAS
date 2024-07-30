@@ -159,6 +159,7 @@ var
   P3DGamma: double = 1;
   P3DVisLayers: Boolean = false;
   P3DThings: Boolean = true;
+  P3DNoClipSelectionOutline: Boolean = false;
 
   WireframeAPI: Integer = 1; // 1 - OpenGlL
   WF_InvertCulling: Boolean = false;
