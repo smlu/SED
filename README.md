@@ -17,7 +17,7 @@ To build the SED editor from source code, use the latest version of Delphi 11. Y
 
 ## Releases
 
-The binary release is currently distributed through the `SED` level for the Indiana Jones and the Infernal Machine game. You can find it at [https://github.com/Jones3D-The-Infernal-Engine/Mods/tree/main/levels/sed](https://github.com/Jones3D-The-Infernal-Engine/Mods/tree/main/levels/sed).
+To celebrate the 25th anniversary of Indiana Jones and the Infernal Machine, the editor binary release is currently distributed through a special `SED` level for the game. You can find it att [https://github.com/Jones3D-The-Infernal-Engine/Mods/tree/main/levels/sed](https://github.com/Jones3D-The-Infernal-Engine/Mods/tree/main/levels/sed).
 
 ## License
 
