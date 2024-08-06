@@ -6213,7 +6213,7 @@ var
   dist: double;
   sec: TJKSector;
   nv: integer;
-  sfd: PChar;
+  sfd: PByte;
   csd: PLCSurfData;
   gsfs: integer;
 
