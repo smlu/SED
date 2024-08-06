@@ -443,6 +443,8 @@ begin
 
       Ord('C'):
         if Shift = [ssCtrl] then  // Copy
+          JedMain.FormKeyDown(nil, Key, Shift)
+        else if Shift = [ssShift] then  // Cleave by Grid
           JedMain.FormKeyDown(nil, Key, Shift);
       Ord('D'):
         if viewMode then
@@ -526,7 +528,7 @@ begin
             end
           else if viewMode then
             self.MoveCameraBackward
-          else if Shift = [ssShift] then
+          else if (Shift = [ssShift]) and (JedMain.mapMode = MM_TH) then
             self.MoveThingBackward
           else // pass on to main window
             JedMain.FormKeyDown(nil, Key, Shift);
