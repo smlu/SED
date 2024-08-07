@@ -54,3 +54,4 @@ res/SED.res
 
 # vs
 *.vs
+/build
