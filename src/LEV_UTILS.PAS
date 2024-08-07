@@ -261,7 +261,7 @@ procedure GetLevelPal(l: TJKLevel; var pal: TCMPPal);
 procedure OffsetByNode(const lev: TJKLevel; nnode: integer; var x, y, z: double);
 procedure UnOffsetByNode(const lev: TJKLevel; nnode: integer; var x, y, z: double);
 
-// index bound checking functions
+// Index bound checking functions
 function CheckSectorIndex(const lev: TJKLevel; sc: integer): boolean;
 function CheckSectorSurfaceIndex(const sec: TJKSector; sf: integer): boolean;
 function CheckSectorVertexIndex(const sec: TJKSector; vx: integer): boolean;
@@ -274,6 +274,9 @@ function CheckThingIndex(const lev: TJKLevel; th: integer): boolean;
 function CheckFrameIndex(const lev: TJKLevel; th, fr: integer): boolean;
 function CheckCogIndex(const lev: TJKLevel; co: integer): boolean;
 function CheckLightIndex(const lev: TJKLevel; lt: integer): boolean;
+
+// pointer ref verifying functions
+function CheckSectorRef(const sec: TJKSector): Boolean;
 
 // Function snaprs point x,y to XY axis based on origin point ox,oy based on which coord is closest to the origin point.
 // Returns either x,oy if y is closest to oy or ox,y if x is closest to the ox.
@@ -6889,6 +6892,11 @@ end;
 Function CheckLightIndex(const lev: TJKLevel; lt: integer): boolean;
 begin
   Result := (lt >= 0) and (lt < lev.lights.Count);
+end;
+
+function CheckSectorRef(const sec: TJKSector): Boolean;
+begin
+  Result := (sec <> nil) and (level.sectors.IndexOf(sec) >= 0);
 end;
 
 procedure SnapPointToAxis(const x, y: Integer; ox, oy: Integer; var sx, sy: Integer);

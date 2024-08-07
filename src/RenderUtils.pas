@@ -140,7 +140,7 @@ begin
   with position do
     begin
       try
-        if (sector_ <> nil) and IsSectorVisible(sector_) then
+        if CheckSectorRef(sector_) and IsSectorVisible(sector_) then
           if IsInSector(sector_, x, y, z) then
             exit;
       except // skip exception in case  sector_ was deleted
