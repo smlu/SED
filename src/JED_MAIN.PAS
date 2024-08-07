@@ -1727,7 +1727,6 @@ begin
     AddKBItem(miMap, 'Rotate ...', Char(VK_PRIOR), [ssShift]);
 
     AddKBItem(miMap, 'Zoom at cursor'#9'Mouse Wheel', #0, []);
-    AddKBItem(miMap, 'Zoom at cursor', 'C', [ssShift]);
     AddKBItem(miMap, 'Zoom in', Char(VK_ADD), []);
     AddKBItem(miMap, 'Zoom out', Char(VK_SUBTRACT), []);
     AddKBItem(miMap, 'View To Grid', Char(VK_MULTIPLY), []);
