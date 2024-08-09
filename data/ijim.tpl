@@ -568,6 +568,7 @@ timsnow           snow              thingflags=0x1 light=(1.000000/1.000000/1.00
 stained_class     _particle         mass=0.500000 physflags=0x201 material=riv_4glass_stained_broken.mat range=0.020000 rate=18.000000 maxthrust=50.000000 elementsize=0.028000 count=40
 limpraftmove      _decor            model3d=riv_raft_inflt1.3do size=0.004810 movesize=0.004810 collwidth=0.004810 collheight=0.004810
 patchkitmove      _decor            model3d=riv_kit_ptch.3do size=0.007500 movesize=0.007500 collwidth=0.007500 collheight=0.007500
+patchkit          _itemex           model3d=riv_kit_ptch.3do size=0.007500 movesize=0.007500 collwidth=0.007500 collheight=0.007500 cog=item_patchkit.cog
 cndlamove         _decor            model3d=riv_cndl_awind.3do size=0.021265 movesize=0.021265 collwidth=0.021265 collheight=0.021265 soundclass=riv_candle.snd
 cndlbmove         _decor            model3d=riv_cndl_bwind.3do size=0.021265 movesize=0.021265 collwidth=0.021265 collheight=0.021265 soundclass=riv_candle.snd
 cndlcmove         _decor            model3d=riv_cndl_cwind.3do size=0.021265 movesize=0.021265 collwidth=0.021265 collheight=0.021265 soundclass=riv_candle.snd
