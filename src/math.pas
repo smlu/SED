@@ -37,12 +37,12 @@ end;
 
 function VectorCross2(const x1, y1: double; const x2, y2: double): double;
 begin
-   Result := x1 * y2 - x2 * y2;
+   Result := x1 * y2 - x2 * y1;
 end;
 
 function VectorDot2(const x1, y1: double; const x2, y2: double): double;
 begin
-  Result := x1 * x2 + y1 + y2;
+  Result := x1 * x2 + y1 * y2;
 end;
 
 function VectorDist2(const x1, y1: double; const x2, y2: double): double;
