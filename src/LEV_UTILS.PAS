@@ -2636,6 +2636,8 @@ begin
 
   d2 := un.Dot(v2.x - v1.x, v2.y - v1.y, v2.z - v1.z) * PixelPerUnit;
   //d2 := SMult(un.dx, un.dy, un.dz, v2.x - v1.x, v2.y - v1.y, v2.z - v1.z) * PixelPerUnit;
+
+  // TODO: Handle case where d2 is 0
   surf.uscale := Abs(d1 / d2);
   surf.uscale := IfThen(IsNan(surf.uscale) or IsInfinite(surf.uscale), 1, surf.uscale);
 
@@ -2652,6 +2654,8 @@ begin
 
   d2 := vn.Dot(v2.x - v1.x, v2.y - v1.y, v2.z - v1.z) * PixelPerUnit;
   // d2 := SMult(vn.dx, vn.dy, vn.dz, v2.x - v1.x, v2.y - v1.y, v2.z - v1.z) * PixelPerUnit;
+
+  // TODO: Handle case where d2 is 0
   surf.vscale := Abs(d1 / d2);
   surf.vscale := IfThen(IsNan(surf.vscale) or IsInfinite(surf.vscale), 1, surf.vscale);
 end;

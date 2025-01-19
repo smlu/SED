@@ -31,7 +31,7 @@ type
       frustum_: TClipFrustum;
       fov_: Double;
       aspect_: Double;
-      fovNearPlane_: Double;
+      focalLength_: Double;
       sector_: TJKSector;
       procedure BuildFrustum;
 
@@ -52,7 +52,7 @@ type
 
       property aspect: Double read aspect_;
       property fov: Double read fov_;
-      property fovNearPlane: Double read fovNearPlane_;
+      property focalLength: Double read focalLength_;
       property frustum: TClipFrustum read frustum_;
       property sector: TJKSector read sector_ ; // current sector camera is in. Can be null
 
@@ -90,16 +90,16 @@ begin
   // TODO: make HOR+
   fov := DegToRad(fov);
 
-  fovNearPlane_ := hwidth / Tan(fov * 0.5);
+  focalLength_ := hwidth / Tan(fov * 0.5);
   //self.fov_ := fov;
 
   frustum_ := TClipFrustum.Create;
   frustum_.nearPlane.distance   :=  nearPlane;
   frustum_.farPlane.distance    :=  farPlane;
-  frustum_.topPlane.distance    :=  hheight / fovNearPlane_ / aspect_;
-  frustum_.bottomPlane.distance := -hheight / fovNearPlane_ / aspect_;
-  frustum_.leftPlane.distance   := -hwidth  / fovNearPlane_;
-  frustum_.rightPlane.distance  :=  hwidth  / fovNearPlane_;
+  frustum_.topPlane.distance    :=  hheight / focalLength_ / aspect_;
+  frustum_.bottomPlane.distance := -hheight / focalLength_ / aspect_;
+  frustum_.leftPlane.distance   := -hwidth  / focalLength_;
+  frustum_.rightPlane.distance  :=  hwidth  / focalLength_;
   BuildFrustum;
 end;
 
@@ -112,14 +112,14 @@ end;
 procedure TCamera.BuildFrustum;
 begin
   frustum_.leftPlane.normal
-    .SetCoords(-fovNearPlane_, 0.0, -(canvasWidth * 0.5));
+    .SetCoords(-focalLength_, 0.0, -(canvasWidth * 0.5));
   frustum_.leftPlane.normal.Normalize;
 
   frustum_.rightPlane.normal
     .SetCoords(-frustum_.leftPlane.normal.x, frustum_.leftPlane.normal.y, frustum_.leftPlane.normal.z);
 
   frustum_.topPlane.normal
-    .SetCoords(0.0, -(canvasHeight * 0.5), fovNearPlane_);
+    .SetCoords(0.0, -(canvasHeight * 0.5), focalLength_);
   frustum_.topPlane.normal.Normalize;
 
   frustum_.bottomPlane.normal

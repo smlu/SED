@@ -1985,7 +1985,7 @@ begin
     horizonSkyPPR := 0.0083333338; // hardcoded; 0.0083333338 - 1 / 120
 
   horizonSkyDistance := level.header.horizonSky.distance / 256;
-  horizonSkyScale    := horizonSkyDistance / curCamera.fovNearPlane ;
+  horizonSkyScale    := horizonSkyDistance / curCamera.focalLength ;
 
   var rot := curCamera.orient.ExtractPYR; //curCamera.rotation; //curCamera.orient.ExtractPYR;
   SinCos(DegToRad(rot.roll), horizonSkyRollSin, horizonSkyRollCos);
@@ -2048,8 +2048,8 @@ begin
 
     // perspective project to clip space 2d plane
     var w := 1 / horizonSkyDistance;
-    skyvrt.x := (curCamera.fovNearPlane / skyvrt.y) * skyvrt.x;
-    skyvrt.z := skyvrt.z * (curCamera.fovNearPlane / skyvrt.y);
+    skyvrt.x := (curCamera.focalLength / skyvrt.y) * skyvrt.x;
+    skyvrt.z := skyvrt.z * (curCamera.focalLength / skyvrt.y);
     skyvrt.y := 256;// horizonSkyDistance;
 
     skyvrt :=  skyvrt * w;
