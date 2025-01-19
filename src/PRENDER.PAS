@@ -1998,6 +1998,9 @@ begin
   if surf.tx = nil then
     exit;
 
+  // Disable depth testing so surface is always at the back
+  BitSet(surf.faceflags, FF_ZWriteDisabled);
+
   var invMatWidth  := 1 / surf.tx.width;
   var invMatHeight := 1 / surf.tx.height;
 
