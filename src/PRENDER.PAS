@@ -295,6 +295,7 @@ TNewPRenderer = class(TPreviewRender)
   Function LoadTexture(const name: string; const pal: PTCMPPal; const cmp :PTCMPTable): T3DPTexture; virtual; abstract;
   //Procedure DrawMesh(m:T3DPMesh);virtual;abstract;
   Procedure GetWorldLine(X,Y:integer;var X1,Y1,Z1,X2,Y2,Z2:double);virtual;abstract;
+  Procedure ProjectPoint(x, y, z: double; Var ClipX, ClipY, ClipW: double); virtual; abstract;
   {Must also override Initialize;}
 
   { Optionally Destroy; redraw; and }
@@ -954,9 +955,9 @@ begin
           else if (poly.geo <> NotDrawn) or BitMaskTest(poly.faceflags, FF_RD_HorizonSky) then
             begin
               if BitMaskTest(poly.faceflags, FF_RD_CeilingSky) then
-                UpdateCeilingSkySurface(poly);
-//              else if BitMaskTest(poly.faceflags, FF_RD_HorizonSky) then
-//                poly := UpdateHorizonSkySurface(poly);
+                UpdateCeilingSkySurface(poly)
+              else if BitMaskTest(poly.faceflags, FF_RD_HorizonSky) then
+                poly := UpdateHorizonSkySurface(poly);
 
               rdCache.AddPoly(poly);
               if highlightSolidFloor and BitMaskTest(poly.faceflags, FF_RD_FloorWf) then
@@ -1677,6 +1678,7 @@ begin
                   begin
                       vd.u := u * invMatWidth;
                       vd.v := v * invMatHeight;
+                      vd.w := 1.0;
                   end;
               end;
           end;
@@ -1839,6 +1841,7 @@ begin
                        begin
                         vd.u:= u / ttx.width;
                         vd.v:= v / ttx.height;
+                        vd.w := 1.0;
                        end;
                     end;
                 end;
@@ -1935,6 +1938,7 @@ begin
                        begin
                         vd.u := u / ttx.width;
                         vd.v := v / ttx.height;
+                        vd.w := 1.0;
                        end;
                     end;
                 end;
@@ -1990,8 +1994,8 @@ begin
 
   var rot := curCamera.rotation;
   SinCos(DegToRad(rot.roll), horizonSkyRollSin, horizonSkyRollCos);
-  horizonSkyYaw   := (rot.yaw * horizonSkyPPR);
-  horizonSkyPitch := (rot.pitch * horizonSkyPPR);
+  horizonSkyYaw   := (DegToRad(rot.yaw) * horizonSkyPPR);
+  horizonSkyPitch := (DegToRad(rot.pitch) * horizonSkyPPR);
 end;
 
 Procedure TNewPRenderer.UpdateCeilingSkySurface(const surf: T3DPoly);
@@ -2029,10 +2033,6 @@ end;
 
 Function TNewPRenderer.UpdateHorizonSkySurface(const surf: T3DPoly) : T3DPoly;
 begin
-  // Note this code projects the horizon sky verts to horizontal 2D sky plane
-  // The code still doesn't work correct as the texture gets trached when rotating around
-  // + there are sometimes holes in the sky or sky disappears all together.
-
   Result := surf;
   if surf.tx = nil then
       exit;
@@ -2048,29 +2048,28 @@ begin
     with vxd do
       skyvrt.SetCoords(x, y, z);
 
-    skyvrt := curCamera.view.TransformPoint(skyvrt);    // Transfrom to camera space
+    // Project to clip space
+    var ClipX, ClipY, ClipW: double;
+    ProjectPoint(skyvrt.x, skyvrt.y, skyvrt.z, ClipX, ClipY, ClipW);
 
-    // perspective project to clip space 2d plane
-    var w := 1 / horizonSkyDistance;
-    skyvrt.x := (curCamera.focalLength / skyvrt.y) * skyvrt.x;
-    skyvrt.z := skyvrt.z * (curCamera.focalLength / skyvrt.y);
-    skyvrt.y := 256;// horizonSkyDistance;
+    // Projection divide
+    ClipX := ClipX / ClipW;
+    ClipY := ClipY / ClipW;
 
-    skyvrt :=  skyvrt * w;
-    skyvrt := curCamera.view.TransformPoint(skyvrt); // transform back to world space
+    // Scale to screen coordinates centered on half width/height
+    var sx := ClipX * 0.5 *  vwidth * horizonSkyScale;
+    var sy := ClipY * 0.5 * vheight * horizonSkyScale;
+
+    // Calculate UV with rotation and offsets
+    var skyvx := skypoly.AddVXD;
+    skyvx.u   := sx * horizonSkyRollCos - sy * horizonSkyRollSin + horizonSkyYaw   + level.header.horizonSky.offset.x;
+    skyvx.v   := sy * horizonSkyRollCos + sx * horizonSkyRollSin + horizonSkyPitch + level.header.horizonSky.offset.y;
+    skyvx.w   := ClipW; // Set W for projective divide
 
     // Assign vert
-    var skyvx := skypoly.AddVXD;
     skyvx.x := skyvrt.x;
     skyvx.y := skyvrt.y;
     skyvx.z := skyvrt.z;
-
-    var center_x := 1;// vwidth  * 0.5;
-    var center_y := 1; //vheight * 0.5;
-    var sx := (-skyvrt.x + center_x) * horizonSkyScale ;
-    var sy := (-skyvrt.z + center_y ) * horizonSkyScale ;
-    skyvx.u  := (sx * horizonSkyRollCos - sy * horizonSkyRollSin + horizonSkyYaw   + level.header.horizonSky.offset.x) ;
-    skyvx.v  := (sy * horizonSkyRollCos + sx * horizonSkyRollSin + horizonSkyPitch + level.header.horizonSky.offset.y) ;
   end;
 
   surf.geo := NotDrawn; // make it not to render
