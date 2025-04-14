@@ -303,7 +303,7 @@ begin { Check }
 
         if BitTest(surf.adjoinflags, SAF_Visible) = 0 then
           if (surf.geo = 0) or (BitTest(surf.faceflags, FF_Transluent) <> 0) then
-            AddWarning('Transluent adjoint not visible', surf);
+            AddWarning('Transluent adjoin not visible (Missing adjoin flag 0x01 - Visible)', surf);
       end;
 
       for v := 0 to surf.vertices.Count - 1 do
