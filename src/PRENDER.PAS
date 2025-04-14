@@ -1987,7 +1987,7 @@ begin
   horizonSkyDistance := level.header.horizonSky.distance / 256;
   horizonSkyScale    := horizonSkyDistance / curCamera.focalLength ;
 
-  var rot := curCamera.orient.ExtractPYR; //curCamera.rotation; //curCamera.orient.ExtractPYR;
+  var rot := curCamera.rotation;
   SinCos(DegToRad(rot.roll), horizonSkyRollSin, horizonSkyRollCos);
   horizonSkyYaw   := (rot.yaw * horizonSkyPPR);
   horizonSkyPitch := (rot.pitch * horizonSkyPPR);
