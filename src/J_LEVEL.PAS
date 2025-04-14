@@ -46,7 +46,7 @@ const
 
   // Surface Adjoin flags
   SAF_Visible        = $01;
-  SAF_Move           = $02;       // Allow movement trough the adjoint
+  SAF_Move           = $02;       // Allow movement trough the adjoin
   SAF_AllowSoundPass = $04;       // JKDF specific
   SAF_NoAiMove       = $08;       // Only player can move through adjoin
   SAF_NoPlayerMove   = $10;       // Don't allow player to move throug adjoin

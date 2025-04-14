@@ -4120,7 +4120,7 @@ var
   i: integer;
   surf: TJKSurface;
 
-  Function AdjointoSec1(surf: TJKSurface): boolean;
+  Function AdjoinToSec1(surf: TJKSurface): boolean;
   var
     i: integer;
     surf1: TJKSurface;
@@ -4152,7 +4152,7 @@ begin
   for i := 0 to sec.surfaces.count - 1 do
   begin
     surf := sec.surfaces[i];
-    Result := Result or AdjointoSec1(surf);
+    Result := Result or AdjoinToSec1(surf);
   end;
 
   if Result then
