@@ -40,7 +40,8 @@ type
     //Procedure DrawMesh(m: T3DPMesh); override;
     Procedure GetWorldLine(X, Y: integer;
       var X1, Y1, Z1, X2, Y2, Z2: double); override;
-   // Procedure ClearTXList; override;
+    Procedure ProjectPoint(x, y, Z: double; Var ClipX, ClipY, ClipW: double); override;
+    // Procedure ClearTXList; override;
 
     Procedure SetClearColor(color: TColorF); override;
     Procedure Redraw; override;
@@ -302,7 +303,7 @@ begin
     glColor3ub(L2B(vertexColor.r), L2B(vertexColor.g), L2B(vertexColor.b));
 
   if setUV then
-    glTexCoord2f(vertex.u, vertex.v);
+    glTexCoord4f(vertex.u * vertex.w, vertex.v * vertex.w, 0.0, vertex.w);
 
   // Draw vertices
   glVertex3f(vertex.X, vertex.Y, vertex.z);
@@ -412,6 +413,41 @@ begin
 
   gluUnProject(X, vp[3] - Y, 0, mmx, pmx, vp, X1, Y1, Z1);
   gluUnProject(X, vp[3] - Y, 1, mmx, pmx, vp, X2, Y2, Z2);
+end;
+
+Procedure TOGLPRenderer.ProjectPoint(x, y, z: double; Var ClipX, ClipY, ClipW: double);
+var
+  vp: TViewPortArray;
+  pmx, mmx: TMatrixDblArray;
+  WX, WY, WZ: double;
+  i:integer;
+  eyePos, objPos, clipPos: array[0..3] of Double;
+begin
+  SetMatrix;
+  glGetIntegerv(GL_VIEWPORT, @vp);
+  glGetDoublev(GL_MODELVIEW_MATRIX, @mmx);
+  glGetDoublev(GL_PROJECTION_MATRIX, @pmx);
+
+  objPos[0] := x;
+  objPos[1] := y;
+  objPos[2] := z;
+  objPos[3] := 1.0;
+
+  // Transform object to eye space
+  for i := 0 to 3 do
+  begin
+    eyePos[i] := mmx[0 + i] * objPos[0] + mmx[4 + i] * objPos[1] + mmx[8 + i] * objPos[2] + mmx[12 + i] * objPos[3];
+  end;
+
+  // Apply Projection Transformation (Eye space to Clip space)
+  for i := 0 to 3 do
+  begin
+    clipPos[i] := pmx[0 + i] * eyePos[0] + pmx[4 + i] * eyePos[1] + pmx[8 + i] * eyePos[2] + pmx[12 + i] * eyePos[3];
+  end;
+
+  ClipX :=  clipPos[0];
+  ClipY := -clipPos[1]; // Y is flipped in GL
+  ClipW :=  clipPos[3];
 end;
 
 Procedure TOGLPRenderer.SetMatrix;

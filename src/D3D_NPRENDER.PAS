@@ -50,6 +50,7 @@ TD3D5PRenderer = class(TNewPRenderer)
 
 
  Procedure GetWorldLine(X, Y: integer;var X1,Y1,Z1, X2,Y2,Z2:double);override;
+ Procedure ProjectPoint(x, y, Z: double; Var WinX, WinY, WinZ: double); override;
  Procedure SetClearColor(color: TColorF); override;
  Procedure Redraw;override;
 
@@ -846,6 +847,10 @@ begin
 end;
   //var mat: TD3DMaterial;
 
+
+Procedure TD3D5PRenderer.ProjectPoint(x,y,z:double; Var WinX,WinY,WinZ: double);
+begin
+end;
 
 Procedure TD3D5PRenderer.SetClearColor(color: TColorF);
   var mat: TD3DMaterial;
