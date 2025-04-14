@@ -892,43 +892,38 @@ begin
 end;
 
 function TMatrix43.ExtractPYR: TVector;
-var
-  yaw, roll, sqrLvecX, dotLvecXY, lenLvecXY, costh: Double;
+
 begin
   // Calculate angles
-  sqrLvecX  := lvec.x * lvec.x;
-  dotLvecXY := lvec.y * lvec.y + sqrLvecX;
-  lenLvecXY := Sqrt(dotLvecXY);
+  var sqrLvecX: double  := lvec.x * lvec.x;
+  var dotLvecXY: double := lvec.y * lvec.y + sqrLvecX;
+  var lenLvecXY: double := Sqrt(dotLvecXY);
 
   // Calc yaw
   if lenLvecXY >= 0.001 then
     begin
-      yaw := 90.0 - RadToDeg(ArcSin(lvec.y / lenLvecXY));
+      Result.yaw  := 90.0 - RadToDeg(ArcSin(lvec.y / lenLvecXY));
       if lvec.x > 0.0 then
-        costh := -costh;
-      Result.yaw := yaw
+        Result.yaw  := -Result.yaw;
     end
   else
     begin
-      roll := 90.0 - RadToDeg(ArcSin(-rvec.x));
+      Result.yaw := 0.0;
+      Result.roll := 90.0 - RadToDeg(ArcSin(rvec.x));
       if (-rvec.y > 0.0) and (lvec.z > 0.0) or (-rvec.y < 0.0) and (lvec.z < 0.0) then
-        roll := -roll;
-
-      Result.roll := roll;
-      Result.yaw  := 0.0;
+        Result.roll := -Result.roll;
     end;
 
   // Calc pitch
+  Result.pitch := 90.0;
   if lenLvecXY >= 0.001 then
     begin
-      costh := dotLvecXY / lenLvecXY;
+      var costh: double := dotLvecXY / lenLvecXY;
       if costh < 1.0 then
         Result.pitch := 90.0 - RadToDeg(ArcSin(costh))
       else
         Result.pitch := 0.0;
-    end
-  else
-    Result.pitch := 90.0;
+    end;
 
   if lvec.z < 0.0 then
     Result.pitch := -Result.pitch;
@@ -937,16 +932,16 @@ begin
   lenLvecXY := Sqrt(-lvec.y * -lvec.y + sqrLvecX);
   if lenLvecXY >= 0.001 then
   begin
-    costh := (-rvec.y * lvec.x + -lvec.y * -rvec.x) / lenLvecXY;
+    Result.roll  := 0.0;
+
+    var costh: double := (-rvec.y * lvec.x + -lvec.y * -rvec.x ) / lenLvecXY;
     if costh < 1.0 then
     begin
       if costh > -1.0 then
         Result.roll := 90.0 - RadToDeg(ArcSin(costh))
       else
         Result.roll := 180.0;
-    end
-    else
-      Result.roll := 0.0;
+    end;
 
     if -rvec.z < 0.0 then
       Result.roll := -Result.roll;
