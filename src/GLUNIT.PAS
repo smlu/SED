@@ -1046,6 +1046,7 @@ var
  glSelectBuffer:Procedure (size: GLsizei; buffer: PGLuint);stdcall;
  glShadeModel:Procedure (mode: GLenum);stdcall;
  glTexCoord2f:Procedure (s: GLfloat; t: GLfloat);stdcall;
+ glTexCoord4f:Procedure (s: GLfloat; t: GLfloat; r: GLfloat; q: GLfloat);stdcall;
  glTexEnvf:Procedure (target: GLenum; pname: GLenum; param: GLfloat);stdcall;
  glTexGeniv:Procedure (coord: GLenum; pname: GLenum; params: PGLint);stdcall;
  glTexImage2D:Procedure (target: GLenum; level: GLint; components: GLint; width: GLsizei; height: GLsizei; border: GLint; format: GLenum; atype: GLenum; const pixels);stdcall;
@@ -1193,6 +1194,7 @@ begin
  glSelectBuffer:=LoadGLProc('glSelectBuffer');
  glShadeModel:=LoadGLProc('glShadeModel');
  glTexCoord2f:=LoadGLProc('glTexCoord2f');
+ glTexCoord4f:=LoadGLProc('glTexCoord4f');
  glTexEnvf:=LoadGLProc('glTexEnvf');
  glTexGeniv:=LoadGLProc('glTexGeniv');
  glTexImage2D:=LoadGLProc('glTexImage2D');
