@@ -106,6 +106,7 @@ TVXdets = class
   {vx:^T3DPVertex;}
   x, y, z: single;
   u, v: single;
+  w: single;
   intensity: TColorF;
 end;
 
