@@ -2621,24 +2621,24 @@ begin
   if not FindTri(surf, 0, nv2, nv3) then
     exit;
 
-  v1 := surf.Vertices[0];
+  v1  := surf.Vertices[0];
   tv1 := surf.txvertices[0];
-  v2 := surf.Vertices[nv2];
+
+  v2  := surf.Vertices[nv2];
   tv2 := surf.txvertices[nv2];
 
   d1 := tv2.u - tv1.u;
   if IsZero(d1) or (CompareValue(d1,0) = LessThanValue) then
   begin
-    v2 := surf.Vertices[nv3];
+    v2  := surf.Vertices[nv3];
     tv2 := surf.txvertices[nv3];
-    d1 := tv2.u - tv1.u;
+    d1  := tv2.u - tv1.u;
   end;
 
   d2 := un.Dot(v2.x - v1.x, v2.y - v1.y, v2.z - v1.z) * PixelPerUnit;
   //d2 := SMult(un.dx, un.dy, un.dz, v2.x - v1.x, v2.y - v1.y, v2.z - v1.z) * PixelPerUnit;
 
-  // TODO: Handle case where d2 is 0
-  surf.uscale := Abs(d1 / d2);
+  surf.uscale := IfThen(IsZero(d2), 1, Abs(d1 / d2));
   surf.uscale := IfThen(IsNan(surf.uscale) or IsInfinite(surf.uscale), 1, surf.uscale);
 
   v2 := surf.Vertices[nv2];
@@ -2655,8 +2655,7 @@ begin
   d2 := vn.Dot(v2.x - v1.x, v2.y - v1.y, v2.z - v1.z) * PixelPerUnit;
   // d2 := SMult(vn.dx, vn.dy, vn.dz, v2.x - v1.x, v2.y - v1.y, v2.z - v1.z) * PixelPerUnit;
 
-  // TODO: Handle case where d2 is 0
-  surf.vscale := Abs(d1 / d2);
+  surf.vscale := IfThen(IsZero(d2), 1, Abs(d1 / d2));
   surf.vscale := IfThen(IsNan(surf.vscale) or IsInfinite(surf.vscale), 1, surf.vscale);
 end;
 
