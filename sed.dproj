@@ -128,7 +128,6 @@
         <DCC_PEOSVersion>10.0</DCC_PEOSVersion>
         <VerInfo_AutoIncVersion>true</VerInfo_AutoIncVersion>
         <VerInfo_Build>81</VerInfo_Build>
-        <Icon_MainIcon>res\sed_Icon1.ico</Icon_MainIcon>
     </PropertyGroup>
     <ItemGroup>
         <DelphiCompile Include="$(MainSource)">
@@ -198,7 +197,7 @@
         <DCCReference Include="src\U_tbar.pas">
             <Form>Toolbar</Form>
         </DCCReference>
-        <DCCReference Include="src\U_Preview.pas">
+        <DCCReference Include="src\U_PREVIEW.PAS">
             <Form>Preview3D</Form>
         </DCCReference>
         <DCCReference Include="src\U_msgForm.pas">
@@ -238,7 +237,7 @@
         <DCCReference Include="src\U_DFI.PAS">
             <Form>DFImport</Form>
         </DCCReference>
-        <DCCReference Include="src\OGL_PRender.pas"/>
+        <DCCReference Include="src\OGL_PRENDER.PAS"/>
         <DCCReference Include="src\sft_render.pas"/>
         <DCCReference Include="src\u_tpledit.pas">
             <Form>TplEdit</Form>
@@ -278,6 +277,7 @@
         <DCCReference Include="src\math.pas"/>
         <DCCReference Include="src\RenderUtils.pas"/>
         <DCCReference Include="src\IndyWV.pas"/>
+        <DCCReference Include="src\d3d\D3DUtils.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>

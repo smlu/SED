@@ -1,11 +1,11 @@
-program Sed;
+program sed;
 
 uses
   Forms,
   Classes,
   GlobalVars in 'src\GlobalVars.pas',
   U_OPTIONS in 'src\U_OPTIONS.pas' {Options},
-  Jed_Main in 'src\Jed_Main.pas' {JedMain},
+  Jed_Main in 'src\JED_MAIN.PAS' {JedMain},
   tmp_load3do in 'src\tmp_load3do.pas',
   RENDER in 'src\RENDER.PAS',
   J_level in 'src\J_level.pas',
@@ -22,7 +22,6 @@ uses
   values in 'src\values.pas',
   u_templates in 'src\u_templates.pas',
   ListRes in 'src\ListRes.pas',
-
   U_CogForm in 'src\U_CogForm.pas' {CogForm},
   D3D_PRender in 'src\D3D_PRender.pas',
   D3d in 'src\d3d\D3d.pas',
@@ -42,7 +41,7 @@ uses
   U_Tools in 'src\U_Tools.pas' {ToolForm},
   Jed_about1 in 'src\Jed_about1.pas' {Jed_about},
   U_tbar in 'src\U_tbar.pas' {Toolbar},
-  U_Preview in 'src\U_Preview.pas' {Preview3D},
+  U_Preview in 'src\U_PREVIEW.PAS' {Preview3D},
   U_msgForm in 'src\U_msgForm.pas' {MsgForm},
   U_SCFEdit in 'src\U_SCFEdit.pas' {SCFieldPicker},
   JDH_JDL in 'src\JDH_JDL.PAS',
@@ -65,7 +64,6 @@ uses
   u_undo in 'src\u_undo.pas',
   u_multisel in 'src\u_multisel.pas',
   GLunit in 'src\GLunit.pas',
-  //JED_OLE in 'src\JED_OLE.pas',
   u_copypaste in 'src\u_copypaste.pas',
   u_errorform in 'src\u_errorform.pas' {ErrForm},
   U_tplcreate in 'src\U_tplcreate.pas' {TPLCreator},
@@ -88,7 +86,8 @@ uses
   JED_PLUGINS in 'src\JED_PLUGINS.PAS',
   math in 'src\math.pas',
   RenderUtils in 'src\RenderUtils.pas',
-  IndyWV in 'src\IndyWV.pas';
+  IndyWV in 'src\IndyWV.pas',
+  D3DUtils in 'src\d3d\D3DUtils.pas';
 
 {$R *.RES}
 {$R SEDstatic.res}
