@@ -7,7 +7,7 @@ uses Ole2, Windows, glunit, Prender, Classes, J_Level, Forms,
      Messages, files, FileOperations, graph_files,
      lev_utils, sysUtils, misc_utils, GlobalVars, geometry,
      (*D3DRMObj, D3DrmWin, D3DRMDef,D3Drm,*) D3DTypes, DDraw, D3D, dxtools,
-     D3Dcaps, graphics, images, ExtCtrls, Generics.Collections;
+     D3Dcaps, graphics, images, ExtCtrls, Generics.Collections, D3DUtils;
 
 //const
 //  maxVerts = 4096;
@@ -48,9 +48,8 @@ TD3D5PRenderer = class(TNewPRenderer)
  Procedure EnableZTest(enable: Boolean); override;
  Procedure DrawPolys(const [Ref] polys: TArray<T3DPoly>; count: Integer = -1); override;
 
-
+ Function ProjectPoint(x, y, z: double; Var WinX, WinY, WinZ: double): Boolean; override;
  Procedure GetWorldLine(X, Y: integer;var X1,Y1,Z1, X2,Y2,Z2:double);override;
- Procedure ProjectPoint(x, y, Z: double; Var WinX, WinY, WinZ: double); override;
  Procedure SetClearColor(color: TColorF); override;
  Procedure Redraw;override;
 
@@ -786,6 +785,83 @@ begin
     startIndex := startIndex + poly.vxds.Count;
 end;
 
+Function TD3D5PRenderer.ProjectPoint(x, y, z: double; Var WinX, WinY, WinZ: double): Boolean;
+var
+  vp: TD3DViewport;
+  mWorld, mView, mProj, mWVP: TD3DMatrix;
+  pt, clipPt: TD3DVector;  // Assume TD3DVector = record X, Y, Z, W: Single end;
+  w: Single;
+  hr: HRESULT;
+begin
+  // Retrieve the viewport from the Direct3D ViewPort interface.
+  FillChar(vp, SizeOf(vp), 0);
+  vp.dwSize := SizeOf(TD3DViewport);
+  hr := iview.GetViewport(vp);
+  if Failed(hr) then
+  begin
+    Result := False;
+    Exit;
+  end;
+
+  // Retrieve transformation matrices from the device.
+  hr := id3ddev.GetTransform(D3DTRANSFORMSTATE_WORLD, mWorld);
+  if Failed(hr) then Exit(False);
+  hr := id3ddev.GetTransform(D3DTRANSFORMSTATE_VIEW, mView);
+  if Failed(hr) then Exit(False);
+  hr := id3ddev.GetTransform(D3DTRANSFORMSTATE_PROJECTION, mProj);
+  if Failed(hr) then Exit(False);
+
+
+//  Id3dDev.SetTransform(D3DTRANSFORMSTATE_WORLD, m_World);
+//  Id3dDev.SetTransform(D3DTRANSFORMSTATE_VIEW, m_View);
+//  Id3dDev.SetTransform(D3DTRANSFORMSTATE_PROJECTION, m_Proj);
+
+  // Compute the composite World-View-Projection matrix.
+  mWVP := D3DMath_MatrixMultiply(mWorld, mView);
+  mWVP := D3DMath_MatrixMultiply(mWVP, mProj);
+
+  // Set up the point in homogeneous coordinates.
+  pt.X := x;
+  pt.Y := y;
+  pt.Z := z;
+
+//  if Failed(D3DMath_VectorMatrixMultiply(clipPt, clipPt, mWVP)) then
+//    begin
+//    Result := False;
+//    Exit;
+//  end;
+
+
+  // Transform the point into clip space.
+  clipPt.X := mWVP._11 * pt.X + mWVP._21 * pt.Y + mWVP._31 * pt.Z + mWVP._41;
+  clipPt.Y := mWVP._12 * pt.X + mWVP._22 * pt.Y + mWVP._32 * pt.Z + mWVP._42;
+  clipPt.Z := mWVP._13 * pt.X + mWVP._23 * pt.Y + mWVP._33 * pt.Z + mWVP._43 ;
+  w        := mWVP._14 * pt.X + mWVP._24 * pt.Y + mWVP._34 * pt.Z + mWVP._44 ;
+
+  // Avoid division by zero.
+  if w = 0 then
+  begin
+    Result := False;
+    Exit;
+  end;
+//
+//  // Perform perspective division to obtain normalized device coordinates (NDC).
+//  clipPt.X := clipPt.X / w;
+//  clipPt.Y := clipPt.Y / w;
+//  clipPt.Z := clipPt.Z / w;
+
+  // Map NDC [-1,1] to window coordinates.
+  // In DirectX, NDC X and Y range from -1 to 1.
+//  WinX := vp.dwX + ((clipPt.X + 1) * 0.5 * vp.dwWidth);
+//  WinY := vp.dwY + ((1 - clipPt.Y) * 0.5 * vp.dwHeight);
+//  WinZ := clipPt.Z;  // Depth remains in NDC
+
+  WinX :=  clipPt.X;
+  WinY :=  clipPt.Y;
+  WinZ :=  w;
+
+  Result := True;
+end;
 
 Procedure TD3D5PRenderer.GetWorldLine(X,Y: integer; var x1,y1,z1, x2,y2,z2: double);
 var xv,yv,zv:TVector;
@@ -847,10 +923,6 @@ begin
 end;
   //var mat: TD3DMaterial;
 
-
-Procedure TD3D5PRenderer.ProjectPoint(x,y,z:double; Var WinX,WinY,WinZ: double);
-begin
-end;
 
 Procedure TD3D5PRenderer.SetClearColor(color: TColorF);
   var mat: TD3DMaterial;
