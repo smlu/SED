@@ -22,10 +22,22 @@ type
     Destructor Destroy; override;
   end;
 
+  TGLContext = class
+  private
+    refCounter: Cardinal;
+    whdc: HDC;
+    hrc: HGLRC;
+  public
+    constructor Create(hdc: HDC);
+    destructor Destroy; override;
+    procedure Acquire; // Acquire gl contex. Note can throw exception
+    procedure Release; // Release gl contex
+  end;
+
   // TODO: Implement fog rendering
   TOGLPRenderer = class(TNewPRenderer)
     hdc: HDC;
-    hglc: HGLRC;
+    //hglc: HGLRC;
     hpal: integer;
 
     Destructor Destroy; override;
@@ -49,7 +61,10 @@ type
     Procedure SetMatrix;
     Function CreateOGLPalette(const pd: TPIXELFORMATDESCRIPTOR): integer;
     Procedure SetRendererState(const faceflags: longint);
+
+    var glctx: TGLContext;
   end;
+
 
 implementation
 
@@ -81,6 +96,53 @@ var
     pfnColorTableEXT(GL_TEXTURE_2D, GL_RGB8, sizeof(YOUR_PALETTE),
     GL_RGBA, GL_UNSIGNED_BYTE, YOUR_PALETTE ); }
 
+constructor TGLContext.Create(hdc: HDC);
+begin
+  inherited Create;
+
+  refCounter := 0;
+  whdc       := hdc;
+
+  // Create a new OpenGL rendering context.
+  hrc := wglCreateContext(whdc);
+  if hrc = 0 then
+    RaiseLastOSError;
+
+end;
+
+destructor TGLContext.Destroy;
+begin
+  // If this context is still current, release it.
+  if wglGetCurrentContext = hrc then
+    wglMakeCurrent(0, 0);
+  // Delete the OpenGL rendering context.
+  if hrc <> 0 then
+    wglDeleteContext(hrc);
+  inherited;
+end;
+
+procedure TGLContext.Acquire;
+begin
+  // If no one has acquired the context yet, make it current.
+  if refCounter = 0 then
+  begin
+    if not wglMakeCurrent(whdc, hrc) then
+      RaiseLastOSError;
+  end;
+  Inc(refCounter);
+end;
+
+procedure TGLContext.Release;
+begin
+  if refCounter > 0 then
+  begin
+    Dec(refCounter);
+    if refCounter = 0 then
+      wglMakeCurrent(0, 0);
+  end;
+end;
+
+
 procedure DisableFPUExceptions;
 var
   FPUControlWord: WORD;
@@ -92,16 +154,26 @@ end;
 
 Destructor TOGLPRenderer.Destroy;
 begin
-  if (hdc <> 0) and (hglc <> 0) then
+  glctx.Free();
+
+  if (hdc <> 0) then// and (hglc <> 0) then
   begin
-    wglMakeCurrent(hdc, hglc);
-    wglDeleteContext(hglc);
+
+    //wglMakeCurrent(hdc, hglc);
+//
+//    try
+//      wglDeleteContext(hglc);
+//    finally
+//        ctxguard.Free;
+//    end;
+
     DeleteDC(hdc);
   end;
 
   if hpal <> 0 then
     DeleteObject(hpal);
-  wglMakeCurrent(0, 0);
+
+
   glFlush;
   inherited Destroy;
 end;
@@ -148,8 +220,12 @@ begin
   DescribePixelFormat(hdc, pixelFormat, sizeof(pfd), pfd);
 
   hpal := CreateOGLPalette(pfd);
-  hglc := wglCreateContext(hdc);
-  wglMakeCurrent(hdc, hglc);
+
+  glctx := TGLContext.Create(hdc);
+  glctx.Acquire();
+  //hglc := wglCreateContext(hdc);
+  //wglMakeCurrent(hdc, hglc);
+
   SwapBuffers(hdc);
   //wglMakeCurrent(0, 0);
 
@@ -189,6 +265,8 @@ begin
     glClearColor(1,1,1,1); }
 
     glClearColor(1, 1, 1, 1);
+
+    glctx.Release();
 end;
 
 Function TOGLPRenderer.CreateOGLPalette
@@ -404,13 +482,19 @@ var
     ax2,ay2,az2:double; }
   d: double;
 begin
-  SetMatrix;
-  glGetIntegerv(GL_VIEWPORT, @vp);
-  glGetDoublev(GL_MODELVIEW_MATRIX, @mmx);
-  glGetDoublev(GL_PROJECTION_MATRIX, @pmx);
+  try
+    glctx.Acquire();
 
-  gluUnProject(X, vp[3] - Y, 0, mmx, pmx, vp, X1, Y1, Z1);
-  gluUnProject(X, vp[3] - Y, 1, mmx, pmx, vp, X2, Y2, Z2);
+    SetMatrix;
+    glGetIntegerv(GL_VIEWPORT, @vp);
+    glGetDoublev(GL_MODELVIEW_MATRIX, @mmx);
+    glGetDoublev(GL_PROJECTION_MATRIX, @pmx);
+
+    gluUnProject(X, vp[3] - Y, 0, mmx, pmx, vp, X1, Y1, Z1);
+    gluUnProject(X, vp[3] - Y, 1, mmx, pmx, vp, X2, Y2, Z2);
+  finally
+      glctx.Release();
+  end;
 end;
 
 Function TOGLPRenderer.ProjectPoint(x, y, z: double; Var ClipX, ClipY, ClipW: double): Boolean;
@@ -452,29 +536,36 @@ end;
 
 Procedure TOGLPRenderer.SetMatrix;
 begin
-  //wglMakeCurrent(hdc, hglc);
-  glMatrixMode(GL_PROJECTION);
-  glLoadIdentity;
+  try
+    glctx.Acquire();
 
-  with curCamera do
-  begin
-    // TODO: Update fix code to use camera fov
-    var fova: double := 2 * arctan(vheight / vwidth) / pi * 180;
-    with frustum do
-      gluPerspective(fova, aspect, nearPlane.distance, farPlane.distance);
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity;
 
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity ;
-    glRotated(-90, 1, 0, 0);
-    glRotated(rotation.pitch, 1, 0, 0);
-    glRotated(rotation.yaw, 0, 0, 1);
-    glTranslated(-position.x, -position.y, -position.z);
+    with curCamera do
+    begin
+      // TODO: Update fix code to use camera fov
+      var fova: double := 2 * arctan(vheight / vwidth) / pi * 180;
+      with frustum do
+        gluPerspective(fova, aspect, nearPlane.distance, farPlane.distance);
+
+      glMatrixMode(GL_MODELVIEW);
+      glLoadIdentity ;
+      glRotated(-90, 1, 0, 0);
+      glRotated(rotation.pitch, 1, 0, 0);
+      glRotated(rotation.yaw, 0, 0, 1);
+      glTranslated(-position.x, -position.y, -position.z);
+    end;
+  finally
+    glctx.Release();
   end;
 end;
 
 Procedure TOGLPRenderer.SetClearColor(color: TColorF);
 begin
+  glctx.Acquire();
   glClearColor(color.r, color.g, color.b, color.a);
+  glctx.Release();
 end;
 
 Procedure TOGLPRenderer.Redraw;
@@ -483,29 +574,33 @@ var
   v1, v2, v3: Tvector;
 begin
   DisableFPUExceptions;
-  wglMakeCurrent(hdc, hglc);
-  glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
+  try
+    glctx.Acquire();
+    glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
 
-  // Update Fog
-  if fog.enabled then
-  begin
-    glFogfv(GL_FOG_COLOR, @fog.color);
-    glFogi(GL_FOG_MODE, GL_LINEAR);
+    // Update Fog
+    if fog.enabled then
+    begin
+      glFogfv(GL_FOG_COLOR, @fog.color);
+      glFogi(GL_FOG_MODE, GL_LINEAR);
 
-    var ff := 0.03459; // TODO: this is hack for world space fog depth
-    glFogf(GL_FOG_START, GLFloat(fog.fogStart * ff));
-    var ffogEnd: GLFloat := (2.0 - fogDensity) * fog.FogEnd * ff;
-    glFogf(GL_FOG_END, ffogEnd);
+      var ff := 0.03459; // TODO: this is hack for world space fog depth
+      glFogf(GL_FOG_START, GLFloat(fog.fogStart * ff));
+      var ffogEnd: GLFloat := (2.0 - fogDensity) * fog.FogEnd * ff;
+      glFogf(GL_FOG_END, ffogEnd);
+    end;
+
+    SetMatrix;
+    //alphaPass := False;
+    inherited Redraw;
+    //alphaPass := True;
+    //inherited Redraw;
+
+    SwapBuffers(hdc);
+
+  finally
+    glctx.Release();
   end;
-
-  SetMatrix;
-  //alphaPass := False;
-  inherited Redraw;
-  //alphaPass := True;
-  //inherited Redraw;
-
-  SwapBuffers(hdc);
-  wglMakeCurrent(0, 0);
 end;
 
 Function TOGLPRenderer.IsFogSupported(): Boolean;
@@ -519,16 +614,22 @@ begin
   if fogDensity = 0.0 then
     begin
       fogStart := 0;
-      fogEnd  := 0;
+      fogEnd   := 0;
     end;
 
-  glFogfv(GL_FOG_COLOR, @color);
-  glFogi(GL_FOG_MODE, GL_LINEAR);
+  try
+    glctx.Acquire();
+    glFogfv(GL_FOG_COLOR, @color);
+    glFogi(GL_FOG_MODE, GL_LINEAR);
 
-  var ff := 0.03459; // TODO: this is hack for world space fog depth
-  glFogf(GL_FOG_START, GLFloat(fogStart * ff));
-  var ffogEnd: GLFloat := (2.0 - fogDensity) * fog.FogEnd * ff;
-  glFogf(GL_FOG_END, ffogEnd);
+    var ff := 0.03459; // TODO: this is hack for world space fog depth
+    glFogf(GL_FOG_START, GLFloat(fogStart * ff));
+    var ffogEnd: GLFloat := (2.0 - fogDensity) * fog.FogEnd * ff;
+    glFogf(GL_FOG_END, ffogEnd);
+  finally
+    glctx.Release();
+  end;
+
 end;
 
 Function TOGLPRenderer.LoadTexture(const name: string; const ppal: PTCMPPal;
@@ -539,19 +640,23 @@ var
   pnew: TCMPPal;
   ppnew: PTCMPPal;
 begin
-  wglMakeCurrent(hdc, hglc);
-  ppnew := nil;
-  Result := nil;
+  try
+    ppnew := nil;
+    Result := nil;
 
-  if (ppal <> nil) and (pcmp <> nil) then
-    begin
-      pnew := ppal^;
-      ApplyCMPTable(pnew, pcmp^);
-      ppnew := @pnew;
-    end;
-  Ttx := TOGLTexture.CreateFromMat(name, ppnew, gamma);
-  Result := Ttx;
-  wglMakeCurrent(0, 0);
+    glctx.Acquire();
+    if (ppal <> nil) and (pcmp <> nil) then
+      begin
+        pnew := ppal^;
+        ApplyCMPTable(pnew, pcmp^);
+        ppnew := @pnew;
+      end;
+    Ttx := TOGLTexture.CreateFromMat(name, ppnew, gamma);
+    Result := Ttx;
+    //wglMakeCurrent(0, 0);
+  finally
+    glctx.Release();
+  end;
 end;
 
 //Procedure TOGLPRenderer.ClearTXList;
@@ -602,7 +707,7 @@ var
 
     // Read texture pixelmap
     mf.ReadImage(pb, cf, width * cf.PixelSize, ppal, gamma);
-end;
+  end;
 
 begin
 
