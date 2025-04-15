@@ -4,13 +4,13 @@ object Preview3D: TPreview3D
   BorderIcons = [biSystemMenu]
   BorderStyle = bsSingle
   Caption = '3D Preview'
-  ClientHeight = 194
-  ClientWidth = 257
+  ClientHeight = 291
+  ClientWidth = 401
   Color = clBtnFace
   DefaultMonitor = dmDesktop
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
-  Font.Height = -10
+  Font.Height = -15
   Font.Name = 'Segoe UI'
   Font.Style = []
   FormStyle = fsStayOnTop
@@ -30,7 +30,8 @@ object Preview3D: TPreview3D
   OnMouseWheel = FormMouseWheel
   OnPaint = FormPaint
   OnShow = FormShow
-  TextHeight = 12
+  PixelsPerInch = 144
+  TextHeight = 20
   object MainMenu1: TMainMenu
     Left = 80
     Top = 40
