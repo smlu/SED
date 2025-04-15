@@ -32,7 +32,7 @@ Const
   IJIMDefaultExe = 'Indy3D.exe';
   StaticResIdxMask = $8000;
   MaxMsgs = 500;
-  SedVerNum = '0.1.0';
+  SedVerNum = '0.2.0';
   SedVersion: string = SedVerNum;
   LECLogoJK: String = '................................'#13#10 +
     '................@...@...@...@...'#13#10 +
