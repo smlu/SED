@@ -32,15 +32,14 @@ type
     Procedure Initialize; override;
     Function IsFogSupported(): Boolean;override;
     Procedure SetFog(color: TColorF; fogStart, fogEnd: double; density: Double = 1.0);override;
-    Function LoadTexture(const name: string; const ppal: PTCMPPal;
-      const pcmp: PTCMPTable): T3DPTexture; override;
+    Function LoadTexture(const name: string; const ppal: PTCMPPal; const pcmp: PTCMPTable): T3DPTexture; override;
 
     Procedure EnableZTest(enable: Boolean); override;
     Procedure DrawPolys(const [Ref] polys: TArray<T3DPoly>; count: Integer = -1); override;
     //Procedure DrawMesh(m: T3DPMesh); override;
-    Procedure GetWorldLine(X, Y: integer;
-      var X1, Y1, Z1, X2, Y2, Z2: double); override;
-    Procedure ProjectPoint(x, y, Z: double; Var ClipX, ClipY, ClipW: double); override;
+
+    Procedure GetWorldLine(X, Y: integer; var X1, Y1, Z1, X2, Y2, Z2: double); override;
+    Function ProjectPoint(x, y, z: double; Var ClipX, ClipY, ClipW: double): Boolean; override;
     // Procedure ClearTXList; override;
 
     Procedure SetClearColor(color: TColorF); override;
@@ -294,7 +293,6 @@ begin
     glDisable(GL_DEPTH_TEST);
 end;
 
-
 Procedure DrawVertex(vertex: TVXDets; vertexColor: TColorF; setUV, hasAlpha: Boolean);
 begin
   if hasAlpha then
@@ -304,11 +302,11 @@ begin
 
   if setUV then
     glTexCoord4f(vertex.u * vertex.w, vertex.v * vertex.w, 0.0, vertex.w);
+    //glTexCoord2f(vertex.u, vertex.v);
 
   // Draw vertices
   glVertex3f(vertex.X, vertex.Y, vertex.z);
 end;
-
 
 Procedure TOGLPRenderer.DrawPolys(const [Ref] polys: TArray<T3DPoly>; count: Integer);
 var
@@ -415,7 +413,7 @@ begin
   gluUnProject(X, vp[3] - Y, 1, mmx, pmx, vp, X2, Y2, Z2);
 end;
 
-Procedure TOGLPRenderer.ProjectPoint(x, y, z: double; Var ClipX, ClipY, ClipW: double);
+Function TOGLPRenderer.ProjectPoint(x, y, z: double; Var ClipX, ClipY, ClipW: double): Boolean;
 var
   vp: TViewPortArray;
   pmx, mmx: TMatrixDblArray;
@@ -448,6 +446,8 @@ begin
   ClipX :=  clipPos[0];
   ClipY := -clipPos[1]; // Y is flipped in GL
   ClipW :=  clipPos[3];
+
+  Result := True;
 end;
 
 Procedure TOGLPRenderer.SetMatrix;
