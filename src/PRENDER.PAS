@@ -1982,17 +1982,23 @@ Procedure TNewPRenderer.UpdateSky();
 begin
   ceilingSkyZ.SetCoords(0, 0, level.header.ceilingSky.height);
 
-  horizonSkyPPR := level.header.horizonSky.pixelsPerRev * 0.0027777778; // OpenJKDF2, 0.0027777778 = 1/ 360
-  if level.kind = IJIM then
-    horizonSkyPPR := 0.0083333338; // hardcoded; 0.0083333338 - 1 / 120
+  // TODO: [FIXME] The values of the following two variables were modified to approximate the original rendering.
+  //       They should be adjusted with the correct scaling factors to achieve accurate rendering.
+  horizonSkyPPR      := 0.0027777778; // JJDF2: level.header.horizonSky.pixelsPerRev * 0.0027777778;  0.0027777778 = 1/ 360
+  horizonSkyDistance := level.header.horizonSky.distance / level.header.horizonSky.pixelsPerRev; // JKDF2: uses only distance
 
-  horizonSkyDistance := level.header.horizonSky.distance / 256;
-  horizonSkyScale    := horizonSkyDistance / curCamera.focalLength ;
+  if level.kind = IJIM then
+    begin
+      horizonSkyPPR      := 0.0083333338 ; // hardcoded; 0.0083333338 - 1 / 120
+      horizonSkyDistance := level.header.horizonSky.distance / 256 ;
+    end;
+
+  horizonSkyScale := horizonSkyDistance / curCamera.focalLength ;
 
   var rot := curCamera.rotation;
   SinCos(DegToRad(rot.roll), horizonSkyRollSin, horizonSkyRollCos);
-  horizonSkyYaw   := (DegToRad(rot.yaw) * horizonSkyPPR);
-  horizonSkyPitch := (DegToRad(rot.pitch) * horizonSkyPPR);
+  horizonSkyYaw   := (rot.yaw * horizonSkyPPR);
+  horizonSkyPitch := (rot.pitch * horizonSkyPPR);
 end;
 
 Procedure TNewPRenderer.UpdateCeilingSkySurface(const surf: T3DPoly);
