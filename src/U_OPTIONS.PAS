@@ -603,6 +603,9 @@ begin
       LBDevices.Items.Add(DeviceName);
   LBDevices.ItemIndex := GetDeviceNum(D3DDevice);
 
+  // Fill D3D device description text edit
+  LBDevicesClick(nil);
+
   For i := 0 to ctls.Count - 1 do
     With TCtrlData(ctls[i]) do
     begin
@@ -789,6 +792,7 @@ var
 begin
   ctls := TList.Create;
   InitControls;
+
   if NoConfile then
   begin
     try { Extract data from registry }

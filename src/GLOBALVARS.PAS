@@ -149,7 +149,7 @@ var
 
   D3DDevice: String = 'Direct3D HAL';
 
-  P3DAPI: Integer = 0;
+  P3DAPI: Integer = 1;  // 1 - OpenGL
   P3DOnTop: Boolean;
   P3DFullLit: Boolean = false;
   P3DColoredLights: Boolean = true;
@@ -161,7 +161,7 @@ var
   P3DThings: Boolean = true;
   P3DNoClipSelectionOutline: Boolean = false;
 
-  WireframeAPI: Integer = 1; // 1 - OpenGlL
+  WireframeAPI: Integer = 1; // 1 - OpenGL
   WF_InvertCulling: Boolean = false;
   WF_DoubleBuf: Boolean = true;
   WF_GeoVertSize: Integer = 5;
