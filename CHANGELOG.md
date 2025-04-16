@@ -10,7 +10,8 @@
   * Fixed thing/surface selection in 3D preview when OpenGL is used.
   * Fixed 'Snap Grid to Item' and 'Cleave by Grid' hotkeys [PR #31](https://github.com/smlu/SED/pull/31)
   * Fixed ceiling sky depth to fall behind the level geometry and thing objects.
-  * Deprecate DirectX GAPI
+  * Deprecate DirectX GAPI: The DirectX Graphics API is being deprecated in favor of OpenGL.  
+    The DirectX GAPI will be removed in the next major release.
 
 ## Version 0.1.0
 - Added support for game Indiana Jones and the Infernal Machine (IJIM)
