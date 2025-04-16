@@ -367,12 +367,12 @@ uses math;
 
 Constructor TPreviewRender.Create(aForm: TForm; geoMode: TGeoMode; lightMode: TLightMode);
 begin
-  init(aForm.Handle, aForm.ClientWidth, aForm.ClientHeight, geoMode, lightMode);
+  Init(aForm.Handle, aForm.ClientWidth, aForm.ClientHeight, geoMode, lightMode);
 end;
 
 Constructor TPreviewRender.CreateFromPanel(aPanel:TPanel; geoMode: TGeoMode; lightMode: TLightMode);
 begin
-  init(aPanel.Handle, aPanel.ClientWidth, aPanel.ClientHeight, geoMode, lightMode);
+  Init(aPanel.Handle, aPanel.ClientWidth, aPanel.ClientHeight, geoMode, lightMode);
 end;
 
 Destructor TPreviewRender.Destroy;

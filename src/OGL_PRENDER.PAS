@@ -67,6 +67,7 @@ type
 
 
 implementation
+uses System.Math;
 
 var
   ntex: integer = 0;
@@ -186,6 +187,7 @@ var
 begin
   if not InitOpenGL then
     Raise Exception.Create('Couldn''t initialize OpenGL');
+
   hdc := GetDC(WHandle);
   pfd.nsize := 40;
   pfd.nVersion := 1;
@@ -265,7 +267,6 @@ begin
     glClearColor(1,1,1,1); }
 
     glClearColor(1, 1, 1, 1);
-
     glctx.Release();
 end;
 
@@ -544,10 +545,10 @@ begin
 
     with curCamera do
     begin
-      // TODO: Update fix code to use camera fov
-      var fova: double := 2 * arctan(vheight / vwidth) / pi * 180;
+      //var fova: double := 2 * arctan(vheight / vwidth) / pi * 180;
+      var fovY := 2 * RadToDeg(ArcTan(Tan(DegToRad(fov) / 2) / aspect)); // Convert camera fovX to fovY
       with frustum do
-        gluPerspective(fova, aspect, nearPlane.distance, farPlane.distance);
+        gluPerspective(fovY, aspect, nearPlane.distance, farPlane.distance);
 
       glMatrixMode(GL_MODELVIEW);
       glLoadIdentity ;

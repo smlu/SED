@@ -1,4 +1,17 @@
 # Change Log
+## Version 0.2.0
+- Fixed division by zero in `FindUVScales` function.
+- Fixed calculating yaw & roll angles in `TMatrix43.ExtractPYR` function.
+
+- 3D Preview:
+  * Implemented horizon sky rendering in 3D preview (OpenGL only) [PR #35](https://github.com/smlu/SED/pull/35)
+  * Added selection no-clip option to 3D preview settings. [PR #28](https://github.com/smlu/SED/pull/28)
+  * Fixed acquisition/release of OpenGL context in `TOGLPRenderer` class.  
+  * Fixed thing/surface selection in 3D preview when OpenGL is used.
+  * Fixed 'Snap Grid to Item' and 'Cleave by Grid' hotkeys [PR #31](https://github.com/smlu/SED/pull/31)
+  * Fixed ceiling sky depth to fall behind the level geometry and thing objects.
+  * Deprecate DirectX GAPI
+
 ## Version 0.1.0
 - Added support for game Indiana Jones and the Infernal Machine (IJIM)
 - Ported to latest Delphi version (unicode support)

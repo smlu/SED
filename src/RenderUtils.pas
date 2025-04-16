@@ -84,14 +84,10 @@ begin
   canvasWidth   := width;
   canvasHeight  := height;
 
-  var hheight := height * 0.5;
-  var hwidth  := width * 0.5;
+  var hheight := height / 2;
+  var hwidth  := width  / 2;
 
-  // TODO: make HOR+
-  fov := DegToRad(fov);
-
-  focalLength_ := hwidth / Tan(fov * 0.5);
-  //self.fov_ := fov;
+  focalLength_ := (hwidth / Tan(DegToRad(fov) / 2)); // Using original code to calculate fl from HFOV
 
   frustum_ := TClipFrustum.Create;
   frustum_.nearPlane.distance   :=  nearPlane;
