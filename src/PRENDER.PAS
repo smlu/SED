@@ -157,10 +157,7 @@ TMeshes = class(TList)
 end;
 
 
-
-
 TPickType = (pk_nothing, pk_surface, pk_thing);
-
 
 
 TPreviewRender = class
@@ -513,7 +510,7 @@ Procedure TRDPolyCache.Flush;
 begin
   if numUsed > 0 then
   begin
-    if sort then TArray.Sort<T3DPoly>(polys, sfunc, 0, numUsed - 1);
+    if sort then TArray.Sort<T3DPoly>(polys, sfunc, 0, numUsed);
     renderer.DrawPolys(polys, numUsed);
     numUsed := 0;
   end;
@@ -945,7 +942,6 @@ begin
       for var j := 0 to m.polys.Count - 1 do
         begin
           var poly := m.GetPoly(j);
-          //if poly.geo = NotDrawn then continue;
           if poly.geo > geoMode then poly.geo := geoMode;
           if poly.light > lightMode then poly.light := lightMode;
           if BitMaskTest(poly.faceflags, alphaAdjoinMask) then//(poly.faceflags and alphaAdjoinMask) = alphaAdjoinMask then
@@ -954,12 +950,14 @@ begin
             end
           else if (poly.geo <> NotDrawn) then
             begin
+              // Update sky surfaces
               if BitMaskTest(poly.faceflags, FF_RD_CeilingSky) then
                 UpdateCeilingSkySurface(poly)
               else if BitMaskTest(poly.faceflags, FF_RD_HorizonSky) then
                 UpdateHorizonSkySurface(poly);
 
               rdCache.AddPoly(poly);
+
               if highlightSolidFloor and BitMaskTest(poly.faceflags, FF_RD_FloorWf) then
                 rdFloorPolys.Add(poly)
             end;
@@ -1158,11 +1156,13 @@ Procedure TNewPRenderer.RenderSelection(const [Ref] frustrum: TClipFrustum);
 
 begin
   var curWfColor := wfColor;
-  var curGeo := geoMode;
-  geoMode := Wireframe;
+  var curGeo     := geoMode;
+  geoMode        := Wireframe; // Has to change render geomode to wire
+
   EnableZTest(noClipSelectionOutline = false);
   try
     begin
+
       case JedMain.mapMode of
         MM_SC:
           begin
@@ -1235,8 +1235,10 @@ begin
   UpdateSky();
 
   var frustum := GetCameraFrustum;
+
   RenderWorldGeometry(frustum);
   RenderThings(frustum);
+
 
   if highlightSolidSurface then
     RenderSolidSurfaceWireframe;
