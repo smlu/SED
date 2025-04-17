@@ -353,7 +353,7 @@ object Options: TOptions
         Margins.Top = 5
         Margins.Right = 5
         Margins.Bottom = 5
-        Enabled = False
+        ReadOnly = True
         TabOrder = 2
       end
       object CBP3DOnTop: TCheckBox

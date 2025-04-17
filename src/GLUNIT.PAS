@@ -933,38 +933,49 @@ const
 
 // EXT_vertex_array
 const
-  GL_VERTEX_ARRAY_EXT               = $8074;
-  GL_NORMAL_ARRAY_EXT               = $8075;
-  GL_COLOR_ARRAY_EXT                = $8076;
-  GL_INDEX_ARRAY_EXT                = $8077;
-  GL_TEXTURE_COORD_ARRAY_EXT        = $8078;
-  GL_EDGE_FLAG_ARRAY_EXT            = $8079;
-  GL_VERTEX_ARRAY_SIZE_EXT          = $807A;
-  GL_VERTEX_ARRAY_TYPE_EXT          = $807B;
-  GL_VERTEX_ARRAY_STRIDE_EXT        = $807C;
-  GL_VERTEX_ARRAY_COUNT_EXT         = $807D;
-  GL_NORMAL_ARRAY_TYPE_EXT          = $807E;
-  GL_NORMAL_ARRAY_STRIDE_EXT        = $807;
-  GL_NORMAL_ARRAY_COUNT_EXT         = $8080;
-  GL_COLOR_ARRAY_SIZE_EXT           = $8081;
-  GL_COLOR_ARRAY_TYPE_EXT           = $8082;
-  GL_COLOR_ARRAY_STRIDE_EXT         = $8083;
-  GL_COLOR_ARRAY_COUNT_EXT          = $8084;
-  GL_INDEX_ARRAY_TYPE_EXT           = $8085;
-  GL_INDEX_ARRAY_STRIDE_EXT         = $8086;
-  GL_INDEX_ARRAY_COUNT_EXT          = $8087;
-  GL_TEXTURE_COORD_ARRAY_SIZE_EXT   = $8088;
-  GL_TEXTURE_COORD_ARRAY_TYPE_EXT   = $8089;
-  GL_TEXTURE_COORD_ARRAY_STRIDE_EXT = $808A;
-  GL_TEXTURE_COORD_ARRAY_COUNT_EXT  = $808B;
-  GL_EDGE_FLAG_ARRAY_STRIDE_EXT     = $808C;
-  GL_EDGE_FLAG_ARRAY_COUNT_EXT      = $808D;
-  GL_VERTEX_ARRAY_POINTER_EXT       = $808E;
-  GL_NORMAL_ARRAY_POINTER_EXT       = $808;
-  GL_COLOR_ARRAY_POINTER_EXT        = $8090;
-  GL_INDEX_ARRAY_POINTER_EXT        = $8091;
-  GL_TEXTURE_COORD_ARRAY_POINTER_EXT= $8092;
-  GL_EDGE_FLAG_ARRAY_POINTER_EXT    = $8093;
+  GL_VERTEX_ARRAY_EXT                = $8074;
+  GL_NORMAL_ARRAY_EXT                = $8075;
+  GL_COLOR_ARRAY_EXT                 = $8076;
+  GL_INDEX_ARRAY_EXT                 = $8077;
+  GL_TEXTURE_COORD_ARRAY_EXT         = $8078;
+  GL_EDGE_FLAG_ARRAY_EXT             = $8079;
+  GL_VERTEX_ARRAY_SIZE_EXT           = $807A;
+  GL_VERTEX_ARRAY_TYPE_EXT           = $807B;
+  GL_VERTEX_ARRAY_STRIDE_EXT         = $807C;
+  GL_VERTEX_ARRAY_COUNT_EXT          = $807D;
+  GL_NORMAL_ARRAY_TYPE_EXT           = $807E;
+  GL_NORMAL_ARRAY_STRIDE_EXT         = $807;
+  GL_NORMAL_ARRAY_COUNT_EXT          = $8080;
+  GL_COLOR_ARRAY_SIZE_EXT            = $8081;
+  GL_COLOR_ARRAY_TYPE_EXT            = $8082;
+  GL_COLOR_ARRAY_STRIDE_EXT          = $8083;
+  GL_COLOR_ARRAY_COUNT_EXT           = $8084;
+  GL_INDEX_ARRAY_TYPE_EXT            = $8085;
+  GL_INDEX_ARRAY_STRIDE_EXT          = $8086;
+  GL_INDEX_ARRAY_COUNT_EXT           = $8087;
+  GL_TEXTURE_COORD_ARRAY_SIZE_EXT    = $8088;
+  GL_TEXTURE_COORD_ARRAY_TYPE_EXT    = $8089;
+  GL_TEXTURE_COORD_ARRAY_STRIDE_EXT  = $808A;
+  GL_TEXTURE_COORD_ARRAY_COUNT_EXT   = $808B;
+  GL_EDGE_FLAG_ARRAY_STRIDE_EXT      = $808C;
+  GL_EDGE_FLAG_ARRAY_COUNT_EXT       = $808D;
+  GL_VERTEX_ARRAY_POINTER_EXT        = $808E;
+  GL_NORMAL_ARRAY_POINTER_EXT        = $808;
+  GL_COLOR_ARRAY_POINTER_EXT         = $8090;
+  GL_INDEX_ARRAY_POINTER_EXT         = $8091;
+  GL_TEXTURE_COORD_ARRAY_POINTER_EXT = $8092;
+  GL_EDGE_FLAG_ARRAY_POINTER_EXT     = $8093;
+
+// glPolygonOffset
+const
+  GL_POLYGON_OFFSET_UNITS      = $2A00;
+  GL_POLYGON_OFFSET_POINT      = $2A01;
+  GL_POLYGON_OFFSET_LINE       = $2A02;
+  GL_POLYGON_OFFSET_FILL       = $8037;
+  GL_POLYGON_OFFSET_FACTOR     = $8038;
+
+const
+   GL_MULTISAMPLE = $809D;
 
 
 //*************************************************************
@@ -1035,6 +1046,7 @@ var
  glPixelStorei:Procedure (pname: GLenum; param: GLint);stdcall;
  glPointSize:Procedure (size: GLfloat);stdcall;
  glPolygonMode:Procedure (face: GLenum; mode: GLenum);stdcall;
+ glPolygonOffset: procedure(factor, units: GLfloat); stdcall;
  glPopAttrib:Procedure;stdcall;
  glPushAttrib:Procedure (mask: GLbitfield);stdcall;
  glPushName:Procedure (name: GLuint);stdcall;
@@ -1045,6 +1057,9 @@ var
  glScalef:Procedure (x: GLfloat; y: GLfloat; z: GLfloat);stdcall;
  glSelectBuffer:Procedure (size: GLsizei; buffer: PGLuint);stdcall;
  glShadeModel:Procedure (mode: GLenum);stdcall;
+ glStencilFunc: Procedure(func: GLenum; ref: GLint; mask: GLuint); stdcall;
+ glStencilMask: Procedure (mask: GLuint); stdcall;
+ glStencilOp: Procedure (fail, zfail, zpass: GLenum); stdcall;
  glTexCoord2f:Procedure (s: GLfloat; t: GLfloat);stdcall;
  glTexCoord4f:Procedure (s: GLfloat; t: GLfloat; r: GLfloat; q: GLfloat);stdcall;
  glTexEnvf:Procedure (target: GLenum; pname: GLenum; param: GLfloat);stdcall;
@@ -1183,6 +1198,7 @@ begin
  glPixelStorei:=LoadGLProc('glPixelStorei');
  glPointSize:=LoadGLProc('glPointSize');
  glPolygonMode:=LoadGLProc('glPolygonMode');
+ glPolygonOffset:=LoadGLProc('glPolygonOffset');
  glPopAttrib:=LoadGLProc('glPopAttrib');
  glPushAttrib:=LoadGLProc('glPushAttrib');
  glPushName:=LoadGLProc('glPushName');
@@ -1193,6 +1209,9 @@ begin
  glScalef:=LoadGLProc('glScalef');
  glSelectBuffer:=LoadGLProc('glSelectBuffer');
  glShadeModel:=LoadGLProc('glShadeModel');
+ glStencilFunc:=LoadGLProc('glStencilFunc');
+ glStencilMask:=LoadGLProc('glStencilMask');
+ glStencilOp:=LoadGLProc('glStencilOp');
  glTexCoord2f:=LoadGLProc('glTexCoord2f');
  glTexCoord4f:=LoadGLProc('glTexCoord4f');
  glTexEnvf:=LoadGLProc('glTexEnvf');

@@ -149,7 +149,7 @@ var
 
   D3DDevice: String = 'Direct3D HAL';
 
-  P3DAPI: Integer = 1;  // 1 - OpenGL
+  P3DAPI: Integer = 1; // 1 - OpenGL
   P3DOnTop: Boolean;
   P3DFullLit: Boolean = false;
   P3DColoredLights: Boolean = true;

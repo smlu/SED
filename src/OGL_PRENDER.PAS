@@ -65,7 +65,6 @@ type
     var glctx: TGLContext;
   end;
 
-
 implementation
 uses System.Math;
 
@@ -174,7 +173,6 @@ begin
   if hpal <> 0 then
     DeleteObject(hpal);
 
-
   glFlush;
   inherited Destroy;
 end;
@@ -239,9 +237,17 @@ begin
   glEnable(GL_DEPTH_TEST);
   glEnable(GL_BLEND);
   glShadeModel(GL_SMOOTH);
+
+  // Wire line
   glEnable(GL_LINE_SMOOTH);
   glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
   glLineWidth(2.3);
+
+  // Enable line offset to fix z fighting
+  // between wireframe frawn over solid geometry
+  glEnable(GL_POLYGON_OFFSET_FILL);
+  glPolygonOffset(1.0, 1.0);
+  glEnable(GL_MULTISAMPLE);
 
   @pPalProc := wglGetProcAddress('glColorTableEXT');
   if (@pPalProc = nil) then
@@ -398,8 +404,8 @@ begin
   if polys = nil then
     exit;
 
+  var drawMode   := GL_LINE_LOOP;
   const solidDraw = self.geoMode > Wireframe;
-  var drawMode := GL_LINE_LOOP;
   if solidDraw then drawMode := GL_TRIANGLES;
 
   for var i := 0 to count - 1 do
@@ -419,7 +425,7 @@ begin
     TOGLTexture(tex).SetCurrent;
     SetRendererState(fflags);
 
-    var setUV := solidDraw and (tex <> nil);
+    var setUV    := solidDraw and (tex <> nil);
     var hasAlpha := solidDraw and BitMaskTest(poly.faceflags, FF_Transluent);
 
     glBegin(drawMode);
@@ -458,7 +464,7 @@ begin
                 vcolor := poly.GetLitColor(vxd.intensity);
               DrawVertex(vxd, vcolor, setUV, hasAlpha);
 
-              if (idx and 1) = 0 then //((not idx) and 1) <> 0 then  //if even
+              if (idx and 1) = 0 then //((not idx) and 1) <> 0 then  i.e.: if even
                 begin
                   vertIdx0 := vertIdx1;
                   vertIdx1 := vertIdx1 + 1;
