@@ -243,10 +243,6 @@ begin
   glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
   glLineWidth(2.3);
 
-  // Enable line offset to fix z fighting
-  // between wireframe frawn over solid geometry
-  glEnable(GL_POLYGON_OFFSET_FILL);
-  glPolygonOffset(1.0, 1.0);
   glEnable(GL_MULTISAMPLE);
 
   @pPalProc := wglGetProcAddress('glColorTableEXT');
@@ -598,10 +594,18 @@ begin
     end;
 
     SetMatrix;
+
+    // Enable line offset to fix z fighting
+    // between wireframe frawn over solid geometry
+    glEnable(GL_POLYGON_OFFSET_FILL);
+    glPolygonOffset(1.0, 1.0);
+
+    // Now do the drawing
     //alphaPass := False;
     inherited Redraw;
     //alphaPass := True;
     //inherited Redraw;
+     glDisable(GL_POLYGON_OFFSET_FILL);
 
     SwapBuffers(hdc);
 
