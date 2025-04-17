@@ -129,7 +129,7 @@ T3DPoly = class
   Destructor Destroy; override;
   Function AddVXD:TVXDets;
   Function GetVXD(n:integer): TVXDets;
-  Procedure RecalcDistance;
+  Procedure RecalcDistance(const refPos: TVector);
 
   Function GetLitColor(color: TColorF): TColorF;
 end;
@@ -1015,7 +1015,7 @@ begin
               BitSet(poly.faceflags, FF_Transluent);
               if rdAlphaCache.Count = rdAlphaCache.Capacity - 1 then
                 FlushCaches;
-              poly.RecalcDistance;
+              poly.RecalcDistance(curCamera.position);
               rdAlphaCache.AddPoly(poly);
             end
           else
@@ -1032,7 +1032,7 @@ begin
     begin
       if rdAlphaCache.Count = rdAlphaCache.Capacity - 1 then
         FlushCaches;
-      p.RecalcDistance;
+      p.RecalcDistance(curCamera.position);
       rdAlphaCache.AddPoly(p);
     end;
 
@@ -2116,14 +2116,16 @@ begin
  Result := TVXDets(vxds.List[n]);
 end;
 
-Procedure T3DPoly.RecalcDistance;
+Procedure T3DPoly.RecalcDistance(const refPos: TVector);
 begin
   var dist: single := 3.4028235e38; // constant from IJIM, aka max float
   For var i := 0 to vxds.Count - 1 do
   begin
-    var fwd := GetVXD(i).y;  // original directx screen coordinate sz is used
-    if fwd < dist then
-      dist := fwd;
+  var vx := GetVXD(i);  // original directx screen coordinate sz is used
+   //var curDist := Sqr(vx.x - refPos.x) + Sqr(vx.y - refPos.y) +  Sqr(vx.z - refPos.z);
+   var curDist := refPos.DistanceSqr(vx.x, vx.y, vx.z);
+    if curDist < dist then
+      dist := curDist;
   end;
   self.distance := dist;
 end;
