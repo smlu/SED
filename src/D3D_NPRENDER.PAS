@@ -3,7 +3,7 @@ unit d3d_NPRender;
 {$O-}
 
 interface
-uses Ole2, Windows, glunit, Prender, Classes, J_Level, Forms,
+uses Ole2, Windows, Prender, Classes, J_Level, Forms,
      Messages, files, FileOperations, graph_files,
      lev_utils, sysUtils, misc_utils, GlobalVars, geometry,
      (*D3DRMObj, D3DrmWin, D3DRMDef,D3Drm,*) D3DTypes, DDraw, D3D, dxtools,

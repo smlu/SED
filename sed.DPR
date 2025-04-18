@@ -5,11 +5,10 @@ uses
   Classes,
   GlobalVars in 'src\GlobalVars.pas',
   U_OPTIONS in 'src\U_OPTIONS.pas' {Options},
-  Jed_Main in 'src\JED_MAIN.PAS' {JedMain},
+  JED_MAIN in 'src\JED_MAIN.PAS' {JedMain},
   tmp_load3do in 'src\tmp_load3do.pas',
   RENDER in 'src\RENDER.PAS',
   J_level in 'src\J_level.pas',
-  OGL_render in 'src\OGL_render.pas',
   Files in 'src\Files.pas',
   Tools in 'src\Tools.pas',
   GEOMETRY in 'src\GEOMETRY.PAS',
@@ -41,7 +40,7 @@ uses
   U_Tools in 'src\U_Tools.pas' {ToolForm},
   Jed_about1 in 'src\Jed_about1.pas' {Jed_about},
   U_tbar in 'src\U_tbar.pas' {Toolbar},
-  U_Preview in 'src\U_PREVIEW.PAS' {Preview3D},
+  U_PREVIEW in 'src\U_PREVIEW.PAS' {Preview3D},
   U_msgForm in 'src\U_msgForm.pas' {MsgForm},
   U_SCFEdit in 'src\U_SCFEdit.pas' {SCFieldPicker},
   JDH_JDL in 'src\JDH_JDL.PAS',
@@ -63,7 +62,6 @@ uses
   sft_persp_render in 'src\sft_persp_render.pas',
   u_undo in 'src\u_undo.pas',
   u_multisel in 'src\u_multisel.pas',
-  GLunit in 'src\GLunit.pas',
   u_copypaste in 'src\u_copypaste.pas',
   u_errorform in 'src\u_errorform.pas' {ErrForm},
   U_tplcreate in 'src\U_tplcreate.pas' {TPLCreator},
@@ -87,7 +85,9 @@ uses
   math in 'src\math.pas',
   RenderUtils in 'src\RenderUtils.pas',
   IndyWV in 'src\IndyWV.pas',
-  D3DUtils in 'src\d3d\D3DUtils.pas';
+  D3DUtils in 'src\d3d\D3DUtils.pas',
+  dglOpenGL in 'src\dglOpenGL.pas',
+  GLContext in 'src\GLContext.pas';
 
 {$R *.RES}
 {$R SEDstatic.res}

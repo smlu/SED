@@ -7,7 +7,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
-  glunit, GlobalVars, Geometry, Render, StdCtrls, misc_utils, Math;
+  GLContext, dglOpenGL, GlobalVars, Geometry, Render, StdCtrls, misc_utils, Math;
 
 type
   TOGL_config = class(TForm)
@@ -25,7 +25,7 @@ var
 
 Type
   TOGLRenderer = class(TRenderer)
-    hdc :HDC;
+    hdc : HDC;
     hglc: HGLRC;
     glx1, glx2, glz1, glz2: double;
 
@@ -86,6 +86,8 @@ Type
 
   private
     Function SetDCPixelFormat: TPixelFormatDescriptor;
+    Function GetDCPixelFormat(hdc: HDC): TPixelFormatDescriptor;
+
     Procedure SetCamera;
     Procedure SetProjection;
     Procedure SetRenderMatrix;
@@ -95,6 +97,8 @@ Type
     Procedure RenderLineAt(x1, y1, z1, x2, y2, z2: double);
     Function CreateOGLPalette(const pd: TPIXELFORMATDESCRIPTOR): Integer;
     Function IsWirePolygonInView(p: TPolygon): boolean;
+
+    var glctx: TGLContext;
   end;
 
 implementation
@@ -114,7 +118,8 @@ end;
 
 Procedure TOGLRenderer.BeginScene;
 begin
-  wglMakeCurrent(hdc, hglc);
+  glctx.Acquire; // Should be released in EndScene
+
   DisableFPUExceptions;
   SetRenderMatrix;
   //crad := 0;
@@ -138,20 +143,25 @@ end;
 
 Procedure TOGLRenderer.EndScene;
 begin
-  wglMakeCurrent(hdc, hglc);
-  glFlush;
-  SwapBuffers(hdc);
-  //wglMakeCurrent(0, 0);
-//  if crad <> 0 then // Draw circle
-//  begin
-//    SelectObject(hdc, GetStockObject(NULL_BRUSH));
-//    var pen := CreatePen(PS_SOLID, 50, ccolor);
-//    var oldpen := SelectObject(hdc, pen);
-//     Ellipse(hdc, ccenterx - crad, ccentery - crad, ccenterx + crad,
-//      ccentery + crad);
-//    SelectObject(hdc, oldpen);
-//    DeleteObject(pen);
-//  end;
+  //wglMakeCurrent(hdc, hglc);
+  //glctx.Acquire;
+  try
+    glFlush;
+    SwapBuffers(hdc);
+    //wglMakeCurrent(0, 0);
+    //  if crad <> 0 then // Draw circle
+    //  begin
+    //    SelectObject(hdc, GetStockObject(NULL_BRUSH));
+    //    var pen := CreatePen(PS_SOLID, 50, ccolor);
+    //    var oldpen := SelectObject(hdc, pen);
+    //     Ellipse(hdc, ccenterx - crad, ccentery - crad, ccenterx + crad,
+    //      ccentery + crad);
+    //    SelectObject(hdc, oldpen);
+    //    DeleteObject(pen);
+    //  end;
+  finally
+    glctx.Release; // Should be acquired in BeginScene
+  end;
 end;
 
 Procedure TOGLRenderer.SetCamera;
@@ -162,32 +172,38 @@ begin
   { glRotated(0,0,0,1);
     glRotated(0,0,1,0); }
 
-  glMatrixMode(GL_MODELVIEW);
-  glLoadIdentity;
+  try
+    glctx.Acquire;
 
-  gluLookAt(0, 0, 0, -zv.dx, -zv.dy, -zv.dz, yv.dx, yv.dy, yv.dz);
-  glTranslated(CamX, CamY, CamZ);
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity;
 
-//  var rPch, rYaw, rRol: double;
-//  Jed_Main.sysGetPYR(xv, yv, zv, rPch, rYaw, rRol);
-//  glRotateD(rPch, xv.x, xv.y, xv.z);
-//  glRotateD(rYaw, yv.x, yv.y, yv.z);
-  //glRotateD(rRol, zv.x, zv.y, zv.z);
+    gluLookAt(0, 0, 0, -zv.dx, -zv.dy, -zv.dz, yv.dx, yv.dy, yv.dz);
+    glTranslated(CamX, CamY, CamZ);
+
+  //  var rPch, rYaw, rRol: double;
+  //  Jed_Main.sysGetPYR(xv, yv, zv, rPch, rYaw, rRol);
+  //  glRotateD(rPch, xv.x, xv.y, xv.z);
+  //  glRotateD(rYaw, yv.x, yv.y, yv.z);
+    //glRotateD(rRol, zv.x, zv.y, zv.z);
 
 
 
-   { mx[0,0]:=xv.dx; mx[1,0]:=xv.dy; mx[0,2]:=xv.dz;
-    mx[0,1]:=yv.dx; mx[1,1]:=yv.dy; mx[1,2]:=yv.dz;
-    mx[0,2]:=zv.dx; mx[1,2]:=zv.dy; mx[2,2]:=zv.dz;
+     { mx[0,0]:=xv.dx; mx[1,0]:=xv.dy; mx[0,2]:=xv.dz;
+      mx[0,1]:=yv.dx; mx[1,1]:=yv.dy; mx[1,2]:=yv.dz;
+      mx[0,2]:=zv.dx; mx[1,2]:=zv.dy; mx[2,2]:=zv.dz;
 
-    glMultMatrixd(@mx); }
-  { glScaled(1,1,-1); }
-  { glTranslated(CamX,CamY,CamZ); }
-  {
-    xscale:=xrange/((vpw/ppunit)*scale);
-    yscale:=yrange/((vph/ppunit)*scale);
-    zscale:=xscale;
-    glScaled(xscale,yscale,zscale); }
+      glMultMatrixd(@mx); }
+    { glScaled(1,1,-1); }
+    { glTranslated(CamX,CamY,CamZ); }
+    {
+      xscale:=xrange/((vpw/ppunit)*scale);
+      yscale:=yrange/((vph/ppunit)*scale);
+      zscale:=xscale;
+      glScaled(xscale,yscale,zscale); }
+  finally
+    glctx.Release;
+  end;
 end;
 
 Procedure TOGLRenderer.SetProjection;
@@ -204,26 +220,40 @@ end;
 
 Procedure TOGLRenderer.SetRenderMatrix;
 begin
-  wglMakeCurrent(hdc, hglc);
-  glMatrixMode(GL_PROJECTION);
-  glLoadIdentity;
+  //wglMakeCurrent(hdc, hglc);
 
-  SetProjection;
-  SetCamera;
+  try
+    glctx.Acquire;
+
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity;
+
+    SetProjection;
+    SetCamera;
+  finally
+    glctx.Release;
+  end;
 end;
 
 Procedure TOGLRenderer.SetPickMatrix(x, y, size: Integer);
 var
-  vpa: TViewPortArray;
+  vpa: TVector4i;
 begin
-  wglMakeCurrent(hdc, hglc);
-  glGetIntegerv(GL_VIEWPORT, @vpa);
-  glMatrixMode(GL_PROJECTION);
-  glLoadIdentity();
-  gluPickMatrix(x, vpa[3] - y, size, size, vpa);
+ // wglMakeCurrent(hdc, hglc);
 
-  SetProjection;
-  SetCamera;
+  try
+    glctx.Acquire;
+
+    glGetIntegerv(GL_VIEWPORT, @vpa);
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    gluPickMatrix(x, vpa[3] - y, size, size, vpa);
+
+    SetProjection;
+    SetCamera;
+  finally
+    glctx.Release;
+  end;
 end;
 
 Function TOGLRenderer.CreateOGLPalette
@@ -270,17 +300,30 @@ end;
 
 Procedure TOGLRenderer.Initialize;
 begin
-  if not InitOpenGL then
-    Raise Exception.Create('Couldn''t initialize OpenGL');
+//  if not InitOpenGL then
+//    Raise Exception.Create('Couldn''t initialize OpenGL');
 
   hdc := GetDC(hViewer);
-  var pfd := SetDCPixelFormat;
-  hpal := CreateOGLPalette(pfd);
-  hglc := wglCreateContext(hdc);
-  wglMakeCurrent(hdc, hglc);
+//  var pfd := SetDCPixelFormat;
+
+//  hglc := wglCreateContext(hdc);
+//  wglMakeCurrent(hdc, hglc);
+
+ // Initialize and create OpenGL context
+ // Note, can thrwo exception if OpenGL cannot be initialized
+ glctx := TGLContext.Create(hdc);
+ glctx.Acquire;
+
+ // Create pal
+ // Note, pfd was created by TGLContext.Create
+ var pfd := GetDCPixelFormat(hdc);
+ hpal := CreateOGLPalette(pfd);
+
+
   SwapBuffers(hdc);
 
   glFrontFace(GL_CCW);
+  glctx.Release;
   // Uncomment to enable zbuffer.
   // Note, can cause lines z fighting
 //  glEnable(GL_DEPTH_TEST);
@@ -345,10 +388,29 @@ begin
   DescribePixelFormat(hdc, pixfmt, sizeof(Result), Result);
 end;
 
+Function TOGLRenderer.GetDCPixelFormat(hdc: HDC): TPixelFormatDescriptor;
+begin
+ var PixelFormat := GetPixelFormat(hdc);
+  if PixelFormat = 0 then
+    raise Exception.Create('Failed to get pixel format');
+
+  // Describe the pixel format
+  FillChar(Result, SizeOf(Result), 0);
+  Result.nSize := SizeOf(Result);
+  Result.nVersion := 1;
+  if not DescribePixelFormat(hdc, PixelFormat, SizeOf(Result), Result) then
+    raise Exception.Create('Failed to describe pixel format');
+end;
+
 Procedure TOGLRenderer.SetViewPort(x, y, w, h: Integer);
 begin
   Inherited SetViewPort(x, y, w, h);
-  glViewPort(x, y, w, h);
+  try
+    glctx.Acquire;
+    glViewPort(x, y, w, h);
+  finally
+    glctx.Release;
+  end;
 end;
 
 Procedure TOGLRenderer.DrawPolygon(p: TPolygon);
@@ -358,8 +420,8 @@ end;
 
 Function TOGLRenderer.IsWirePolygonInView(p: TPolygon): Boolean;
   var cullmode: integer;
-    vp: TViewPortArray;
-  pmx, mmx: TMatrixDblArray;
+    vp: TVector4i;
+  pmx, mmx: TGLMatrixd4;
   campos, vdir: TVector;
 
 begin
@@ -370,6 +432,7 @@ begin
     if cullmode = GL_FRONT_AND_BACK then
       exit;
 
+    // Note, the glctx should be already acquired at this point
     if perspective then
       begin
         //SetRenderMatrix;
@@ -377,7 +440,7 @@ begin
         glGetDoublev(GL_MODELVIEW_MATRIX, @mmx);
         glGetDoublev(GL_PROJECTION_MATRIX, @pmx);
 
-        gluUnProject(0, vp[3] - 0, 0, mmx, pmx, vp, campos.x, campos.y, campos.z);
+        gluUnProject(0, vp[3] - 0, 0, mmx, pmx, vp, @campos.x, @campos.y, @campos.z);
         with p.vertices[0] do
           vdir := -campos.Sub(x, y, z);
       end
@@ -580,22 +643,24 @@ end;
 
 Destructor TOGLRenderer.Destroy;
 begin
-  if (hdc <> 0) and (hglc <> 0) then
+  glctx.Free;
+
+  if (hdc <> 0) then
   begin
-    wglMakeCurrent(hdc, hglc);
-    wglDeleteContext(hglc);
     DeleteDC(hdc);
   end;
 
   if Hpal <> 0 then
     DeleteObject(Hpal);
-  wglMakeCurrent(0, 0);
+
   glFlush;
   inherited Destroy;
 end;
 
 Procedure TOGLRenderer.BeginPick(x, y: Integer);
 begin
+  glctx.Acquire;  // Should be released in EndPick
+
   glSelectBuffer(sizeof(selectBuf), @selectBuf);
   glRenderMode(GL_SELECT);
 
@@ -634,27 +699,38 @@ var
   end;
 
 begin
-  glFlush;
-  hits := glRenderMode(GL_SELECT);
-  Selected.Clear;
-  zs := TIntList.Create;
-  pi := @selectBuf;
-  for i := 0 to hits - 1 do
-  begin
-    names := pi^;
-    inc(pi);
-    Z := pi^;
-    inc(pi);
-    inc(pi);
-    for j := 0 to names - 1 do
+  try
+    glFlush;
+
+    hits := glRenderMode(GL_SELECT);
+    Selected.Clear;
+
+    zs := TIntList.Create;
+    pi := @selectBuf;
+
+    for i := 0 to hits - 1 do
     begin
-      AddID(pi^, Z);
+      names := pi^;
       inc(pi);
+      Z := pi^;
+      inc(pi);
+      inc(pi);
+      for j := 0 to names - 1 do
+      begin
+        AddID(pi^, Z);
+        inc(pi);
+      end;
     end;
+
+    zs.Free;
+
+    glRenderMode(GL_RENDER);
+    glDisable(GL_CULL_FACE);
+
+  finally
+    glctx.Release; // Should be acquired in BeginPick
   end;
-  zs.free;
-  glRenderMode(GL_RENDER);
-  glDisable(GL_CULL_FACE);
+
 end;
 
 Procedure TOGLRenderer.PickPolygon(p: TPolygon; id: Integer);
@@ -691,65 +767,77 @@ end;
 
 Function TOGLRenderer.GetCameraAt(scX, scY: integer; var x, y, z: double): boolean;
 var
-  vp: TViewPortArray;
-  pmx, mmx: TMatrixDblArray;
+  vp: TVector4i;
+  pmx, mmx: TGLMatrixd4;
   ax1, ay1, az1, ax2, ay2, az2: double;
   d: double;
   cx, cy,cz: double;
 begin
-  SetRenderMatrix;
-  glGetIntegerv(GL_VIEWPORT, @vp);
-  glGetDoublev(GL_MODELVIEW_MATRIX, @mmx);
-  glGetDoublev(GL_PROJECTION_MATRIX, @pmx);
+  try
+    glctx.Acquire;
+    SetRenderMatrix;
 
-  gluUnProject(scX, vp[3] - scY, 0, mmx, pmx, vp, x, y, z);
-  gluUnProject(scX, vp[3] - scY, 1, mmx, pmx, vp, ax2, ay2, az2);
-  //VectorSub3(ax2, ay2, az2, ax1, ay1, az1, x, y, z);
-  Result := True;
-  Result := GetXYZonPlaneAt(scX, scY, zv, -CamX, -CamY, -CamZ, x, y, z);
-  if Result then
-    begin
-      x := JKRound(x);
-      y := JKRound(y);
-      Z := JKRound(Z);
-    end;
+    glGetIntegerv(GL_VIEWPORT, @vp);
+    glGetDoublev(GL_MODELVIEW_MATRIX, @mmx);
+    glGetDoublev(GL_PROJECTION_MATRIX, @pmx);
+
+    gluUnProject(scX, vp[3] - scY, 0, mmx, pmx, vp, @x, @y, @z);
+    gluUnProject(scX, vp[3] - scY, 1, mmx, pmx, vp, @ax2, @ay2, @az2);
+    //VectorSub3(ax2, ay2, az2, ax1, ay1, az1, x, y, z);
+    Result := True;
+    Result := GetXYZonPlaneAt(scX, scY, zv, -CamX, -CamY, -CamZ, x, y, z);
+    if Result then
+      begin
+        x := JKRound(x);
+        y := JKRound(y);
+        Z := JKRound(Z);
+      end;
+  finally
+    glctx.Release;
+  end;
 end;
 
 Function TOGLRenderer.GetXYZonPlaneAt(scX, scY: Integer; pnormal: TVector;
   pX, pY, pZ: double; var x, y, Z: double): boolean;
 var
-  vp: TViewPortArray;
-  pmx, mmx: TMatrixDblArray;
+  vp: TVector4i;
+  pmx, mmx: TGLMatrixd4;
   ax1, ay1, az1, ax2, ay2, az2: double;
   d: double;
   cx, cy,cz: double;
 begin
-  SetRenderMatrix;
-  glGetIntegerv(GL_VIEWPORT, @vp);
-  glGetDoublev(GL_MODELVIEW_MATRIX, @mmx);
-  glGetDoublev(GL_PROJECTION_MATRIX, @pmx);
+  try
+    glctx.Acquire;
+    SetRenderMatrix;
 
-  gluUnProject(scX, vp[3] - scY, 0, mmx, pmx, vp, ax1, ay1, az1);
-  gluUnProject(scX, vp[3] - scY, 1, mmx, pmx, vp, ax2, ay2, az2);
+    glGetIntegerv(GL_VIEWPORT, @vp);
+    glGetDoublev(GL_MODELVIEW_MATRIX, @mmx);
+    glGetDoublev(GL_PROJECTION_MATRIX, @pmx);
 
-  { ay1:=-ay1;
-    ay2:=-ay2; }
+    gluUnProject(scX, vp[3] - scY, 0, mmx, pmx, vp, @ax1, @ay1, @az1);
+    gluUnProject(scX, vp[3] - scY, 1, mmx, pmx, vp, @ax2, @ay2, @az2);
 
-  With pnormal do
-    d := dx * pX + dy * pY + dz * pZ;
+    { ay1:=-ay1;
+      ay2:=-ay2; }
 
-  Result := PlaneLineXn(pnormal, d, ax1, ay1, az1, ax2, ay2, az2, x, y, Z);
-  //Result := PlaneLineXnNew(pnormal, pX, pY, pZ, ax1, ay1, az1, ax2, ay2, az2, x, y, Z);
-  Result := Result and (abs(x) < xrange) and (abs(y) < Yrange) and
-    (abs(Z) < ZRange);
-  if not Result then
-    exit;
+    With pnormal do
+      d := dx * pX + dy * pY + dz * pZ;
 
-  // note, this rounding makes flickering when
-  // moving viewport with mouse at  super zoom-in level.
-  x := JKRound(x);
-  y := JKRound(y);
-  Z := JKRound(Z);
+    Result := PlaneLineXn(pnormal, d, ax1, ay1, az1, ax2, ay2, az2, x, y, Z);
+    //Result := PlaneLineXnNew(pnormal, pX, pY, pZ, ax1, ay1, az1, ax2, ay2, az2, x, y, Z);
+    Result := Result and (abs(x) < xrange) and (abs(y) < Yrange) and
+      (abs(Z) < ZRange);
+    if not Result then
+      exit;
+
+    // note, this rounding makes flickering when
+    // moving viewport with mouse at  super zoom-in level.
+    x := JKRound(x);
+    y := JKRound(y);
+    Z := JKRound(Z);
+  finally
+    glctx.Release;
+  end;
 end;
 
 Function TOGLRenderer.GetGridAt(scX, scY: Integer; var x, y, Z: double)
@@ -765,23 +853,29 @@ begin
 end;
 
 Function TOGLRenderer.GetCameraForward: TVector;
-  var vp: TViewPortArray;
-      pmx, mmx: TMatrixDblArray;
+  var vp: TVector4i;
+      pmx, mmx: TGLMatrixd4;
       ax1, ay1, az1, ax2, ay2, az2: double;
 begin
   if not perspective then // ortho
     Result := -zv
   else
     begin
+      try
+        glctx.Acquire;
         SetRenderMatrix;
+
         glGetIntegerv(GL_VIEWPORT, @vp);
         glGetDoublev(GL_MODELVIEW_MATRIX, @mmx);
         glGetDoublev(GL_PROJECTION_MATRIX, @pmx);
 
-        gluUnProject(0, vp[3] - 0, 0, mmx, pmx, vp, ax1, ay1, az1);
-        gluUnProject(0, vp[3] - 0, 1, mmx, pmx, vp, ax2, ay2, az2);
+        gluUnProject(0, vp[3] - 0, 0, mmx, pmx, vp, @ax1, @ay1, @az1);
+        gluUnProject(0, vp[3] - 0, 1, mmx, pmx, vp, @ax2, @ay2, @az2);
         VectorSub3(ax2, ay2, az2, ax1, ay1, az1, Result.x, Result.y, Result.z);
         Result.Normalize;
+      finally
+        glctx.Release
+      end;
     end;
 end;
 
@@ -797,40 +891,57 @@ end;
 
 Procedure TOGLRenderer.UnProjectPoint(WinX, WinY: double; WinZ: double; var x, y, z: double);
 var
-  vp: TViewPortArray;
-  pmx, mmx: TMatrixDblArray;
+  vp: TVector4i;
+  pmx, mmx: TGLMatrixd4;
 begin
-  SetRenderMatrix;
-  glGetIntegerv(GL_VIEWPORT, @vp);
-  glGetDoublev(GL_MODELVIEW_MATRIX, @mmx);
-  glGetDoublev(GL_PROJECTION_MATRIX, @pmx);
-  gluUnProject(WinX, vp[3] - WinY, WinZ, mmx, pmx, vp, x, y, z);
-  { y:=-y; }
+  try
+    glctx.Acquire;
+    SetRenderMatrix;
+
+    glGetIntegerv(GL_VIEWPORT, @vp);
+    glGetDoublev(GL_MODELVIEW_MATRIX, @mmx);
+    glGetDoublev(GL_PROJECTION_MATRIX, @pmx);
+    gluUnProject(WinX, vp[3] - WinY, WinZ, mmx, pmx, vp, @x, @y, @z);
+    { y:=-y; }
+  finally
+     glctx.Release;
+  end;
 end;
 
 Procedure TOGLRenderer.ProjectPoint(x, y, z: double; Var WinX, WinY: Integer);
 var
-  vp: TViewPortArray;
-  pmx, mmx: TMatrixDblArray;
+  vp: TVector4i;
+  pmx, mmx: TGLMatrixd4;
   WX, WY, WZ: double;
 begin
-  SetRenderMatrix;
-  glGetIntegerv(GL_VIEWPORT, @vp);
-  glGetDoublev(GL_MODELVIEW_MATRIX, @mmx);
-  glGetDoublev(GL_PROJECTION_MATRIX, @pmx);
-  gluProject(x, y, z, mmx, pmx, vp, WX, WY, WZ);
-  WinX := Round(WX);
-  WinY := vp[3] - Round(WY);
+  try
+    glctx.Acquire;
+    SetRenderMatrix;
+
+    glGetIntegerv(GL_VIEWPORT, @vp);
+    glGetDoublev(GL_MODELVIEW_MATRIX, @mmx);
+    glGetDoublev(GL_PROJECTION_MATRIX, @pmx);
+    gluProject(x, y, z, mmx, pmx, vp, @WX, @WY, @WZ);
+
+    WinX := Round(WX);
+    WinY := vp[3] - Round(WY);
+  finally
+    glctx.Release;
+  end;
 end;
 
 Function TOGLRenderer.GetPointSize: double;
 begin
+   glctx.Acquire;
    glGetDoublev(GL_POINT_SIZE, @Result);
+   glctx.Release;
 end;
 
 Procedure TOGLRenderer.SetPointSize(size: double);
 begin
+  glctx.Acquire;
   glPointSize(size);
+  glctx.Release;
 end;
 
 Function TOGLRenderer.HandleWMQueryPal: Integer;
@@ -858,21 +969,26 @@ end;
 Procedure TOGLRenderer.SetColor(what, r, g, b: byte);
 begin
   Inherited SetColor(what, r, g, b);
-  case what of
-    CL_BACKGROUND:
-      begin
-        glColor3ub(r, g, b);
-        bgnd_clr.r := r;
-        bgnd_clr.g := g;
-        bgnd_clr.b := b;
-      end;
-    else // front or back
-      begin
-        glColor3ub(r, g, b);
-        Front_clr.r := r;
-        Front_clr.g := g;
-        Front_clr.b := b;
-      end;
+  glctx.Acquire;
+  try
+    case what of
+      CL_BACKGROUND:
+        begin
+          glColor3ub(r, g, b);
+          bgnd_clr.r := r;
+          bgnd_clr.g := g;
+          bgnd_clr.b := b;
+        end;
+      else // front or back
+        begin
+          glColor3ub(r, g, b);
+          Front_clr.r := r;
+          Front_clr.g := g;
+          Front_clr.b := b;
+        end;
+    end;
+  finally
+    glctx.Release;
   end;
 end;
 

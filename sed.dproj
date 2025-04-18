@@ -100,11 +100,11 @@
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_1_Win32)'!=''">
         <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
-        <VerInfo_Keys>CompanyName=;FileDescription=SED - Jedi Knight, MOTS and Infernal Machine Editor;FileVersion=0.1.0.24;OriginalFilename=sed.exe;ProductName=SED;ProductVersion=0.1.0.0;Comments=;ProgramID=com.embarcadero.$(MSBuildProjectName);HomePage=https://github.com/smlu/sed</VerInfo_Keys>
+        <VerInfo_Keys>CompanyName=;FileDescription=SED - Jedi Knight, MOTS and Infernal Machine Editor;FileVersion=0.1.0.37;OriginalFilename=sed.exe;ProductName=SED;ProductVersion=0.1.0.0;Comments=;ProgramID=com.embarcadero.$(MSBuildProjectName);HomePage=https://github.com/smlu/sed</VerInfo_Keys>
         <Icon_MainIcon>sed.ico</Icon_MainIcon>
         <VerInfo_AutoIncVersion>true</VerInfo_AutoIncVersion>
         <DCC_PEOSVersion>10.0</DCC_PEOSVersion>
-        <VerInfo_Build>24</VerInfo_Build>
+        <VerInfo_Build>37</VerInfo_Build>
         <VerInfo_MajorVer>0</VerInfo_MajorVer>
         <VerInfo_MinorVer>1</VerInfo_MinorVer>
         <Debugger_LoadAllSymbols>false</Debugger_LoadAllSymbols>
@@ -118,7 +118,7 @@
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_2_Win32)'!=''">
         <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
-        <VerInfo_Keys>CompanyName=;FileDescription=SED - Jedi Knight, MOTS and Infernal Machine Editor;FileVersion=0.1.0.81;OriginalFilename=sed.exe;ProductName=SED;ProductVersion=0.1.0.0;Comments=https://github.com/smlu/sed;ProgramID=com.embarcadero.$(MSBuildProjectName);HomePage=https://github.com/smlu/sed</VerInfo_Keys>
+        <VerInfo_Keys>CompanyName=;FileDescription=SED - Jedi Knight, MOTS and Infernal Machine Editor;FileVersion=0.1.0.87;OriginalFilename=sed.exe;ProductName=SED;ProductVersion=0.1.0.0;Comments=https://github.com/smlu/sed;ProgramID=com.embarcadero.$(MSBuildProjectName);HomePage=https://github.com/smlu/sed</VerInfo_Keys>
         <VerInfo_MajorVer>0</VerInfo_MajorVer>
         <VerInfo_MinorVer>1</VerInfo_MinorVer>
         <DCC_DebugInfoInExe>true</DCC_DebugInfoInExe>
@@ -127,7 +127,7 @@
         <VerInfo_Debug>true</VerInfo_Debug>
         <DCC_PEOSVersion>10.0</DCC_PEOSVersion>
         <VerInfo_AutoIncVersion>true</VerInfo_AutoIncVersion>
-        <VerInfo_Build>81</VerInfo_Build>
+        <VerInfo_Build>87</VerInfo_Build>
     </PropertyGroup>
     <ItemGroup>
         <DelphiCompile Include="$(MainSource)">
@@ -143,7 +143,6 @@
         <DCCReference Include="src\tmp_load3do.pas"/>
         <DCCReference Include="src\RENDER.PAS"/>
         <DCCReference Include="src\J_level.pas"/>
-        <DCCReference Include="src\OGL_render.pas"/>
         <DCCReference Include="src\Files.pas"/>
         <DCCReference Include="src\Tools.pas"/>
         <DCCReference Include="src\GEOMETRY.PAS"/>
@@ -237,7 +236,7 @@
         <DCCReference Include="src\U_DFI.PAS">
             <Form>DFImport</Form>
         </DCCReference>
-        <DCCReference Include="src\OGL_PRENDER.PAS"/>
+        <DCCReference Include="src\OGL_PRender.pas"/>
         <DCCReference Include="src\sft_render.pas"/>
         <DCCReference Include="src\u_tpledit.pas">
             <Form>TplEdit</Form>
@@ -245,7 +244,6 @@
         <DCCReference Include="src\sft_persp_render.pas"/>
         <DCCReference Include="src\u_undo.pas"/>
         <DCCReference Include="src\u_multisel.pas"/>
-        <DCCReference Include="src\GLunit.pas"/>
         <DCCReference Include="src\u_copypaste.pas"/>
         <DCCReference Include="src\u_errorform.pas">
             <Form>ErrForm</Form>
@@ -278,6 +276,8 @@
         <DCCReference Include="src\RenderUtils.pas"/>
         <DCCReference Include="src\IndyWV.pas"/>
         <DCCReference Include="src\d3d\D3DUtils.pas"/>
+        <DCCReference Include="src\dglOpenGL.pas"/>
+        <DCCReference Include="src\GLContext.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>

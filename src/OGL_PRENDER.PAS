@@ -2,7 +2,7 @@ unit ogl_PRender;
 
 interface
 
-uses Windows, glunit, Prender, Classes, J_Level, Forms,
+uses Windows, GLContext, dglOpenGL, Prender, Classes, J_Level, Forms,
   Messages, files, FileOperations, graph_files,
   lev_utils, sysUtils, misc_utils, GlobalVars, geometry,
   Math, images, ExtCtrls;
@@ -20,18 +20,6 @@ type
       gamma: double);
     Procedure SetCurrent; { override; }
     Destructor Destroy; override;
-  end;
-
-  TGLContext = class
-  private
-    refCounter: Cardinal;
-    whdc: HDC;
-    hrc: HGLRC;
-  public
-    constructor Create(hdc: HDC);
-    destructor Destroy; override;
-    procedure Acquire; // Acquire gl contex. Note can throw exception
-    procedure Release; // Release gl contex
   end;
 
   // TODO: Implement fog rendering
@@ -97,53 +85,6 @@ var
     pfnColorTableEXT(GL_TEXTURE_2D, GL_RGB8, sizeof(YOUR_PALETTE),
     GL_RGBA, GL_UNSIGNED_BYTE, YOUR_PALETTE ); }
 
-constructor TGLContext.Create(hdc: HDC);
-begin
-  inherited Create;
-
-  refCounter := 0;
-  whdc       := hdc;
-
-  // Create a new OpenGL rendering context.
-  hrc := wglCreateContext(whdc);
-  if hrc = 0 then
-    RaiseLastOSError;
-
-end;
-
-destructor TGLContext.Destroy;
-begin
-  // If this context is still current, release it.
-  if wglGetCurrentContext = hrc then
-    wglMakeCurrent(0, 0);
-  // Delete the OpenGL rendering context.
-  if hrc <> 0 then
-    wglDeleteContext(hrc);
-  inherited;
-end;
-
-procedure TGLContext.Acquire;
-begin
-  // If no one has acquired the context yet, make it current.
-  if refCounter = 0 then
-  begin
-    if not wglMakeCurrent(whdc, hrc) then
-      RaiseLastOSError;
-  end;
-  Inc(refCounter);
-end;
-
-procedure TGLContext.Release;
-begin
-  if refCounter > 0 then
-  begin
-    Dec(refCounter);
-    if refCounter = 0 then
-      wglMakeCurrent(0, 0);
-  end;
-end;
-
-
 procedure DisableFPUExceptions;
 var
   FPUControlWord: WORD;
@@ -157,19 +98,8 @@ Destructor TOGLPRenderer.Destroy;
 begin
   glctx.Free();
 
-  if (hdc <> 0) then// and (hglc <> 0) then
-  begin
-
-    //wglMakeCurrent(hdc, hglc);
-//
-//    try
-//      wglDeleteContext(hglc);
-//    finally
-//        ctxguard.Free;
-//    end;
-
+  if (hdc <> 0) then
     DeleteDC(hdc);
-  end;
 
   if hpal <> 0 then
     DeleteObject(hpal);
@@ -184,93 +114,94 @@ var
   pixelFormat: integer;
   hgl: integer;
 begin
-  if not InitOpenGL then
-    Raise Exception.Create('Couldn''t initialize OpenGL');
+//  if not InitOpenGL then
+//    Raise Exception.Create('Couldn''t initialize OpenGL');
 
   hdc := GetDC(WHandle);
-  pfd.nsize := 40;
-  pfd.nVersion := 1;
-  pfd.dwFlags := PFD_DRAW_TO_WINDOW + PFD_SUPPORT_OPENGL + PFD_DOUBLEBUFFER;
-  pfd.iPixelType := PFD_TYPE_RGBA;
-  pfd.cColorBits := 8;
-  pfd.cRedBits := 0;
-  pfd.cRedShift := 0;
-  pfd.cGreenBits := 0;
-  pfd.cGreenShift := 0;
-  pfd.cBlueBits := 0;
-  pfd.cBlueShift := 0;
-  pfd.cAlphaBits := 0;
-  pfd.cAlphaShift := 0;
-  pfd.cAccumBits := 0;
-  pfd.cAccumRedBits := 0;
-  pfd.cAccumGreenBits := 0;
-  pfd.cAccumBlueBits := 0;
-  pfd.cAccumAlphaBits := 0;
-  pfd.cDepthBits := 32;
-  pfd.cStencilBits := 0;
-  pfd.cAuxBuffers := 0;
-  pfd.iLayerType := PFD_MAIN_PLANE;
-  pfd.iLayerType := 0;
-  pfd.bReserved := 0;
-  pfd.dwLayerMask := 0;
-  pfd.dwVisiblemask := 0;
-  pfd.dwDamageMask := 0;
+//  pfd.nsize := 40;
+//  pfd.nVersion := 1;
+//  pfd.dwFlags := PFD_DRAW_TO_WINDOW + PFD_SUPPORT_OPENGL + PFD_DOUBLEBUFFER;
+//  pfd.iPixelType := PFD_TYPE_RGBA;
+//  pfd.cColorBits := 8;
+//  pfd.cRedBits := 0;
+//  pfd.cRedShift := 0;
+//  pfd.cGreenBits := 0;
+//  pfd.cGreenShift := 0;
+//  pfd.cBlueBits := 0;
+//  pfd.cBlueShift := 0;
+//  pfd.cAlphaBits := 0;
+//  pfd.cAlphaShift := 0;
+//  pfd.cAccumBits := 0;
+//  pfd.cAccumRedBits := 0;
+//  pfd.cAccumGreenBits := 0;
+//  pfd.cAccumBlueBits := 0;
+//  pfd.cAccumAlphaBits := 0;
+//  pfd.cDepthBits := 32;
+//  pfd.cStencilBits := 0;
+//  pfd.cAuxBuffers := 0;
+//  pfd.iLayerType := PFD_MAIN_PLANE;
+//  pfd.iLayerType := 0;
+//  pfd.bReserved := 0;
+//  pfd.dwLayerMask := 0;
+//  pfd.dwVisiblemask := 0;
+//  pfd.dwDamageMask := 0;
+//
+//  pixelFormat := ChoosePixelFormat(hdc, @pfd);
+//  SetPixelFormat(hdc, pixelFormat, @pfd);
+//  DescribePixelFormat(hdc, pixelFormat, sizeof(pfd), pfd);
+//
+//  hpal := CreateOGLPalette(pfd);
+//
 
-  pixelFormat := ChoosePixelFormat(hdc, @pfd);
-  SetPixelFormat(hdc, pixelFormat, @pfd);
-  DescribePixelFormat(hdc, pixelFormat, sizeof(pfd), pfd);
 
-  hpal := CreateOGLPalette(pfd);
-
+  // Initialize and create OpenGL context
   glctx := TGLContext.Create(hdc);
-  glctx.Acquire();
-  //hglc := wglCreateContext(hdc);
-  //wglMakeCurrent(hdc, hglc);
+  try
+    glctx.Acquire();
 
-  SwapBuffers(hdc);
-  //wglMakeCurrent(0, 0);
+    SwapBuffers(hdc);
 
-  glEnable(GL_CULL_FACE);
-  glCullFace(GL_BACK);
-  glFrontFace(GL_CCW);
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_BACK);
+    glFrontFace(GL_CCW);
 
-  glEnable(GL_TEXTURE_2D);
-  glEnable(GL_DEPTH_TEST);
-  glEnable(GL_BLEND);
-  glShadeModel(GL_SMOOTH);
+    glEnable(GL_TEXTURE_2D);
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_BLEND);
+    glShadeModel(GL_SMOOTH);
 
-  // Wire line
-  glEnable(GL_LINE_SMOOTH);
-  glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
-  glLineWidth(2.3);
+    // Wire line
+    glEnable(GL_LINE_SMOOTH);
+    glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
+    glLineWidth(2.3);
 
-  glEnable(GL_MULTISAMPLE);
+    // Enable MSAA  for GL_SAMPLE_ALPHA_TO_COVERAGE
+    glEnable(GL_MULTISAMPLE);
 
-  @pPalProc := wglGetProcAddress('glColorTableEXT');
-  if (@pPalProc = nil) then
-  begin
-    PanMessage(mt_info,
-      'Your OpenGL implemetation doesn''t support palettized textures!');
-  end;
-
-  if CurrentProject = TProjectType.IJIM then
+    @pPalProc := wglGetProcAddress('glColorTableEXT');
+    if (@pPalProc = nil) then
     begin
-      glDepthMask(GL_TRUE);
-      glDepthFunc(GL_LEQUAL);
-      glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+      PanMessage(mt_info,
+        'Your OpenGL implemetation doesn''t support palettized textures!');
     end;
 
-  if not IsFogSupported() then
-    fog.Enabled := false;
-  glDisable(GL_FOG);
-  { glDepthRange(0,1000);
-    glCullFace(GL_BACK);
-    glEnable(GL_CULL_FACE);
-    glFrontFace(GL_CCW);
-    glClearColor(1,1,1,1); }
+    if CurrentProject = TProjectType.IJIM then
+      begin
+        glDepthMask(GL_TRUE);
+        glDepthFunc(GL_LEQUAL);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+      end;
 
+    // Fog
+    if not IsFogSupported() then
+      fog.Enabled := false;
+    glDisable(GL_FOG);
+
+    // Set clear color
     glClearColor(1, 1, 1, 1);
+  finally
     glctx.Release();
+  end;
 end;
 
 Function TOGLPRenderer.CreateOGLPalette
@@ -495,8 +426,8 @@ end;
 Procedure TOGLPRenderer.GetWorldLine(X, Y: integer;
   var X1, Y1, Z1, X2, Y2, Z2: double);
 var
-  vp: TViewPortArray;
-  pmx, mmx: TMatrixDblArray;
+  vp: TVector4i;
+  pmx, mmx: TGLMatrixd4;
   { ax1,ay1,az1,
     ax2,ay2,az2:double; }
   d: double;
@@ -509,8 +440,8 @@ begin
     glGetDoublev(GL_MODELVIEW_MATRIX, @mmx);
     glGetDoublev(GL_PROJECTION_MATRIX, @pmx);
 
-    gluUnProject(X, vp[3] - Y, 0, mmx, pmx, vp, X1, Y1, Z1);
-    gluUnProject(X, vp[3] - Y, 1, mmx, pmx, vp, X2, Y2, Z2);
+    gluUnProject(X, vp[3] - Y, 0, mmx, pmx, vp, @X1, @Y1, @Z1);
+    gluUnProject(X, vp[3] - Y, 1, mmx, pmx, vp, @X2, @Y2, @Z2);
   finally
       glctx.Release();
   end;
@@ -518,11 +449,11 @@ end;
 
 Function TOGLPRenderer.ProjectPoint(x, y, z: double; Var ClipX, ClipY, ClipW: double): Boolean;
 var
-  vp: TViewPortArray;
-  pmx, mmx: TMatrixDblArray;
+  vp: TGLVectori4;
+  pmx, mmx: TGLMatrixd4;
   WX, WY, WZ: double;
   i:integer;
-  eyePos, objPos, clipPos: array[0..3] of Double;
+  eyePos, objPos, clipPos: TGLVectord4;
 begin
   SetMatrix;
   glGetIntegerv(GL_VIEWPORT, @vp);
@@ -537,13 +468,13 @@ begin
   // Transform object to eye space
   for i := 0 to 3 do
   begin
-    eyePos[i] := mmx[0 + i] * objPos[0] + mmx[4 + i] * objPos[1] + mmx[8 + i] * objPos[2] + mmx[12 + i] * objPos[3];
+    eyePos[i] := mmx[0][i] * objPos[0] + mmx[1][i] * objPos[1] + mmx[2][i] * objPos[2] + mmx[3][i] * objPos[3];
   end;
 
   // Apply Projection Transformation (Eye space to Clip space)
   for i := 0 to 3 do
   begin
-    clipPos[i] := pmx[0 + i] * eyePos[0] + pmx[4 + i] * eyePos[1] + pmx[8 + i] * eyePos[2] + pmx[12 + i] * eyePos[3];
+    clipPos[i] := pmx[0][i] * eyePos[0] + pmx[1][i] * eyePos[1] + pmx[2][i] * eyePos[2] + pmx[3][i] * eyePos[3];
   end;
 
   ClipX :=  clipPos[0];
@@ -569,10 +500,14 @@ begin
         gluPerspective(fovY, aspect, nearPlane.distance, farPlane.distance);
 
       glMatrixMode(GL_MODELVIEW);
-      glLoadIdentity ;
+      glLoadIdentity;
+
+      // Rotate
       glRotated(-90, 1, 0, 0);
       glRotated(rotation.pitch, 1, 0, 0);
       glRotated(rotation.yaw, 0, 0, 1);
+
+      // Move
       glTranslated(-position.x, -position.y, -position.z);
     end;
   finally
@@ -708,14 +643,14 @@ end;
 Constructor TOGLTexture.CreateFromMat(const Mat: string; const ppal: PTCMPPal; gamma: double);
 var
   i, j: integer;
-  pb: PAnsiChar;
+  pb: PByte;
   mf: TMat;
   f: TFile;
   //pl, pline: PAnsiChar;
   n: integer;
-  bits: PAnsiChar;
-  c: AnsiChar;
-  pw: ^WORD;
+  bits: PByte;
+  //c: AnsiChar;
+  pw: PWord;
   cf: TColorInfo;
   var opal: array [0 .. 255] of record r, g, b, a: byte; end;
 
@@ -836,12 +771,12 @@ begin
 
           pPalProc(GL_TEXTURE_2D, GL_RGB8, 256, GL_RGBA, GL_UNSIGNED_BYTE, opal);
           glTexImage2D(GL_TEXTURE_2D, 0, components, width, height, 0,
-            format, GL_UNSIGNED_BYTE, bits^);
+            format, GL_UNSIGNED_BYTE, bits);
         end
       else
         begin
           glTexImage2D(GL_TEXTURE_2D, 0, components, width, height, 0, format,
-            GL_UNSIGNED_BYTE, bits^);
+            GL_UNSIGNED_BYTE, bits);
 
           if Addr(glGenerateMipmap) <> nil then
             glGenerateMipmap(GL_TEXTURE_2D);
