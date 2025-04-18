@@ -2,6 +2,10 @@
 ## Version 0.2.0
 - Fixed division by zero in `FindUVScales` function.
 - Fixed calculating yaw & roll angles in `TMatrix43.ExtractPYR` function.
+- Fixed scaling color component when recoding MAT texture pixel to destination format.  
+  This fixes the issue with the color component being scaled to 0xFF when recoding from 16-bit to 24-bit or 32-bit format and vice versa.  
+  In essence, it affects the texture color, especially the alpha channel where solid textures with alpha channel were not fully opaque due to now fixed scaling issue.
+- Replaced unit `GLunit` with `dglOpenGL` to support OpenGL up to version 4.6.
 
 - 3D Preview:
   * Implemented horizon sky rendering in 3D preview (OpenGL only) [PR #35](https://github.com/smlu/SED/pull/35)
@@ -12,6 +16,12 @@
   * Fixed ceiling sky depth to fall behind the level geometry and thing objects.
   * Deprecate DirectX GAPI: The DirectX Graphics API is being deprecated in favor of OpenGL.  
     The DirectX GAPI will be removed in the next major release.
+  * Fixed incorrect sort range when flushing cached polygon
+  * Fixed transparency rendering issues by improving distance calculation for sorting transparent polygons.  
+    Now using full 3D world space distance from vertex to camera position instead of comparing vertices forward (y-axis) values,  
+    which ensures correct rendering of overlapping transparent objects, especially in OpenGL.
+  * Fixed rendering of translucent polygons in OpenGL by enabling alpha testing.
+
 
 ## Version 0.1.0
 - Added support for game Indiana Jones and the Infernal Machine (IJIM)
