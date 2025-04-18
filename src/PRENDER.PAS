@@ -205,6 +205,7 @@ TPreviewRender = class
   Procedure UpdateThing(th:TJKThing);virtual;abstract;
   Procedure SyncThing(th:TJKThing);virtual;abstract; // updates or adds thing
   Procedure SetViewPort(x,y,w,h:integer);virtual;abstract;
+  Procedure EnableAlphaTest(bEnable: Boolean);virtual;abstract;
   Procedure EnableZTest(enable: Boolean);virtual; abstract;
   Procedure DrawPolys(const [Ref] polys: TArray<T3DPoly>; count: Integer = -1); virtual;abstract;
   Procedure Redraw;virtual;abstract;
@@ -510,7 +511,9 @@ Procedure TRDPolyCache.Flush;
 begin
   if numUsed > 0 then
   begin
-    if sort then TArray.Sort<T3DPoly>(polys, sfunc, 0, numUsed);
+    if sort then
+      TArray.Sort<T3DPoly>(polys, sfunc, 0, numUsed);
+
     renderer.DrawPolys(polys, numUsed);
     numUsed := 0;
   end;
@@ -1236,10 +1239,15 @@ begin
 
   var frustum := GetCameraFrustum;
 
+  // Render level opaque gemotry
   RenderWorldGeometry(frustum);
+
+  // Render thing game object
+  EnableAlphaTest(True);
   RenderThings(frustum);
+  EnableAlphaTest(False);
 
-
+  // Render highlight wireframe
   if highlightSolidSurface then
     RenderSolidSurfaceWireframe;
   if highlightSolidFloor then
@@ -1249,9 +1257,13 @@ begin
   if bDebug then
     RenderDebugPolys;
 
+  // Render transparent level geometry
+  EnableAlphaTest(True);
   RenderAlphaAdjoins;
   FlushCaches;
+  EnableAlphaTest(False);
 
+  // Render selection wireframe
   if highlightSelection then
     RenderSelection(frustum);
 end;

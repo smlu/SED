@@ -46,6 +46,7 @@ type
     Procedure SetFog(color: TColorF; fogStart, fogEnd: double; density: Double = 1.0);override;
     Function LoadTexture(const name: string; const ppal: PTCMPPal; const pcmp: PTCMPTable): T3DPTexture; override;
 
+    Procedure EnableAlphaTest(bEnable: Boolean); override;
     Procedure EnableZTest(enable: Boolean); override;
     Procedure DrawPolys(const [Ref] polys: TArray<T3DPoly>; count: Integer = -1); override;
     //Procedure DrawMesh(m: T3DPMesh); override;
@@ -365,6 +366,21 @@ end;
 { Procedure TOGLPRenderer.SetViewPort(x,y,w,h:integer);
   begin
   end; }
+
+Procedure TOGLPRenderer.EnableAlphaTest(bEnable: Boolean);
+begin
+  if bEnable then
+    begin
+      glEnable(GL_ALPHA_TEST);
+      glAlphaFunc(GL_GEQUAL, 0.01);
+      glEnable(GL_SAMPLE_ALPHA_TO_COVERAGE);
+    end
+  else
+    begin
+      glDisable(GL_SAMPLE_ALPHA_TO_COVERAGE);
+      glDisable(GL_ALPHA_TEST);
+    end;
+end;
 
 Procedure TOGLPRenderer.EnableZTest(enable: Boolean);
 begin

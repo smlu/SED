@@ -45,6 +45,7 @@ TD3D5PRenderer = class(TNewPRenderer)
  Function IsFogSupported(): Boolean;override;
  Procedure SetFog(color: TColorF; fogStart, fogEnd: double; density: Double = 1.0); override;
  Function LoadTexture(const name: string; const ppal: PTCMPPal; const pcmp: PTCMPTable): T3DPTexture; override;
+ Procedure EnableAlphaTest(bEnable: Boolean); override;
  Procedure EnableZTest(enable: Boolean); override;
  Procedure DrawPolys(const [Ref] polys: TArray<T3DPoly>; count: Integer = -1); override;
 
@@ -546,6 +547,11 @@ begin
   else if (tex1 <> nil) and (tex2 <> nil) then
     Result := (tex1.name = tex2.name);
 end;
+
+ Procedure TD3D5PRenderer.EnableAlphaTest(bEnable: Boolean);
+ begin
+
+ end;
 
 Procedure TD3D5PRenderer.EnableZTest(enable: Boolean);
 begin
