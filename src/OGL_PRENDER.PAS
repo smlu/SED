@@ -14,6 +14,13 @@ type
   pColorSubTableExt = Procedure(target: GLenum; start: GLsizei; count: GLsizei;
     format: GLenum; ttype: GLenum; const table); stdcall;
 
+  TOGLVertex = packed record
+    x, y, z: Single;       // Position
+    //color: Cardinal;       // Color
+    color: TColorF;
+     tu, tv, tw, tq: Single; // Texture coordinates with W component
+  end;
+
   TOGLTexture = class(T3DPTexture)
     ObjIdx: GLuint;
     Constructor CreateFromMat(const Mat: string; const ppal: PTCMPPal;
@@ -22,10 +29,8 @@ type
     Destructor Destroy; override;
   end;
 
-  // TODO: Implement fog rendering
   TOGLPRenderer = class(TNewPRenderer)
     hdc: HDC;
-    //hglc: HGLRC;
     hpal: integer;
 
     Destructor Destroy; override;
@@ -37,21 +42,25 @@ type
     Procedure EnableAlphaTest(bEnable: Boolean); override;
     Procedure EnableZTest(enable: Boolean); override;
     Procedure DrawPolys(const [Ref] polys: TArray<T3DPoly>; count: Integer = -1); override;
-    //Procedure DrawMesh(m: T3DPMesh); override;
 
     Procedure GetWorldLine(X, Y: integer; var X1, Y1, Z1, X2, Y2, Z2: double); override;
     Function ProjectPoint(x, y, z: double; Var ClipX, ClipY, ClipW: double): Boolean; override;
-    // Procedure ClearTXList; override;
 
     Procedure SetClearColor(color: TColorF); override;
     Procedure Redraw; override;
   Private
-    //alphaPass: boolean;
+    procedure DrawWiredPolys(const [Ref] polys: TArray<T3DPoly>; count: Integer);
+    procedure DrawSolidPolys(const [Ref] polys: TArray<T3DPoly>; count: Integer);
+
     Procedure SetMatrix;
     Function CreateOGLPalette(const pd: TPIXELFORMATDESCRIPTOR): integer;
-    Procedure SetRendererState(const faceflags: longint);
+    Procedure SetRendererState(const faceflags: longint; bTexture: Boolean);
 
     var glctx: TGLContext;
+    vboId: GLuint;         // Vertex buffer object
+    iboId: GLuint;         // Index buffer object
+    vertices: TArray<TOGLVertex>;
+    indices: TArray<GLushort>;
   end;
 
 implementation
@@ -60,30 +69,8 @@ uses System.Math;
 var
   ntex: integer = 0;
 
-Const
-  GL_COLOR_INDEX8_EXT = $80E5;
-  GL_RGB8 = $8051;
-  GL_RGB5 = $8050;
-
 var
   pPalProc: pCOlorTableExt;
-
-  { pfnColorTableEXT = (PFNGLCOLORTABLEEXTPROC)
-    wglGetProcAddress("glColorTableEXT");
-    if (pfnColorTableEXT == NULL)
-    return FALSE;
-    pfnColorSubTableEXT = (PFNGLCOLORSUBTABLEEXTPROC)
-    wglGetProcAddress("glColorSubTableEXT");
-    if (pfnColorSubTableEXT == NULL)
-    return FALSE;
-
-    glTexImage2D( GL_TEXTURE_2D, 0, GL_COLOR_INDEX8_EXT,
-    sizeX, sizeY, 0,
-    GL_COLOR_INDEX, GL_UNSIGNED_BYTE,
-    _data );
-
-    pfnColorTableEXT(GL_TEXTURE_2D, GL_RGB8, sizeof(YOUR_PALETTE),
-    GL_RGBA, GL_UNSIGNED_BYTE, YOUR_PALETTE ); }
 
 procedure DisableFPUExceptions;
 var
@@ -96,6 +83,11 @@ end;
 
 Destructor TOGLPRenderer.Destroy;
 begin
+  // Delete VBO and IBO
+  glDeleteBuffers(1, @vboId);
+  glDeleteBuffers(1, @iboId);
+
+  // Delete GL context
   glctx.Free();
 
   if (hdc <> 0) then
@@ -114,45 +106,8 @@ var
   pixelFormat: integer;
   hgl: integer;
 begin
-//  if not InitOpenGL then
-//    Raise Exception.Create('Couldn''t initialize OpenGL');
 
   hdc := GetDC(WHandle);
-//  pfd.nsize := 40;
-//  pfd.nVersion := 1;
-//  pfd.dwFlags := PFD_DRAW_TO_WINDOW + PFD_SUPPORT_OPENGL + PFD_DOUBLEBUFFER;
-//  pfd.iPixelType := PFD_TYPE_RGBA;
-//  pfd.cColorBits := 8;
-//  pfd.cRedBits := 0;
-//  pfd.cRedShift := 0;
-//  pfd.cGreenBits := 0;
-//  pfd.cGreenShift := 0;
-//  pfd.cBlueBits := 0;
-//  pfd.cBlueShift := 0;
-//  pfd.cAlphaBits := 0;
-//  pfd.cAlphaShift := 0;
-//  pfd.cAccumBits := 0;
-//  pfd.cAccumRedBits := 0;
-//  pfd.cAccumGreenBits := 0;
-//  pfd.cAccumBlueBits := 0;
-//  pfd.cAccumAlphaBits := 0;
-//  pfd.cDepthBits := 32;
-//  pfd.cStencilBits := 0;
-//  pfd.cAuxBuffers := 0;
-//  pfd.iLayerType := PFD_MAIN_PLANE;
-//  pfd.iLayerType := 0;
-//  pfd.bReserved := 0;
-//  pfd.dwLayerMask := 0;
-//  pfd.dwVisiblemask := 0;
-//  pfd.dwDamageMask := 0;
-//
-//  pixelFormat := ChoosePixelFormat(hdc, @pfd);
-//  SetPixelFormat(hdc, pixelFormat, @pfd);
-//  DescribePixelFormat(hdc, pixelFormat, sizeof(pfd), pfd);
-//
-//  hpal := CreateOGLPalette(pfd);
-//
-
 
   // Initialize and create OpenGL context
   glctx := TGLContext.Create(hdc);
@@ -181,8 +136,9 @@ begin
     @pPalProc := wglGetProcAddress('glColorTableEXT');
     if (@pPalProc = nil) then
     begin
-      PanMessage(mt_info,
-        'Your OpenGL implemetation doesn''t support palettized textures!');
+        // Hide message at this time as HW pal tex is not used atm
+//      PanMessage(mt_info,
+//        'Your OpenGL implemetation doesn''t support palettized textures!');
     end;
 
     if CurrentProject = TProjectType.IJIM then
@@ -199,6 +155,29 @@ begin
 
     // Set clear color
     glClearColor(1, 1, 1, 1);
+
+    // Create VBO and IBO
+    glGenBuffers(1, @vboId);
+    glGenBuffers(1, @iboId);
+
+    // Initialize vertex and index arrays
+    var maxVertices: GLint;
+    glGetIntegerv(GL_MAX_ELEMENTS_VERTICES, @maxVertices);
+
+    SetLength(vertices, maxVertices);
+    SetLength(indices, maxVertices * 3); // For triangles
+
+    // Allocate the maximum size for VBO and IBO once
+    glBindBuffer(GL_ARRAY_BUFFER, vboId);
+    glBufferData(GL_ARRAY_BUFFER, Length(vertices) * SizeOf(TOGLVertex), nil, GL_STREAM_DRAW );
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, iboId);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, Length(indices) * SizeOf(GLushort), nil, GL_STREAM_DRAW );
+
+    // Unbind buffers
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
   finally
     glctx.Release();
   end;
@@ -246,34 +225,60 @@ begin
   FreeMem(lp);
 end;
 
-Procedure TOGLPRenderer.SetRendererState(const faceflags: longint);
+Procedure TOGLPRenderer.SetRendererState(const faceflags: longint; bTexture: Boolean);
 begin
   if BitMaskTest(faceflags, FF_DoubleSided) then
     glDisable(GL_CULL_FACE)
   else
     glEnable(GL_CULL_FACE);
 
-  // Set tex wrap mode
-  var texWrapX := GL_REPEAT;
-  var texWrapY := GL_REPEAT;
-  if BitMaskTest(faceflags, FF_TexClampX) then texWrapX := GL_CLAMP_TO_EDGE;
-  if BitMaskTest(faceflags, FF_TexClampY) then texWrapY := GL_CLAMP_TO_EDGE;
-  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, texWrapX);
-  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, texWrapY);
-
-  // Set tex filtering
-  var magFilter := GL_LINEAR; // Bilinear
-  var minFilter := GL_LINEAR_MIPMAP_LINEAR; // trilinear
-  if Addr(glGenerateMipmap) = nil then
-     minFilter := GL_LINEAR;  // Bilinear
-
-  if BitMaskTest(faceflags, FF_TexNoFiltering) then
+  // Only set texture parameters if a texture is actually bound
+  if bTexture then
   begin
-    magFilter := GL_NEAREST; // Bilinear
-    minFilter := GL_NEAREST; // trilinear
+    // Set tex wrap mode
+    var texWrapX := GL_REPEAT;
+    var texWrapY := GL_REPEAT;
+    if BitMaskTest(faceflags, FF_TexClampX) then texWrapX := GL_CLAMP_TO_EDGE;
+    if BitMaskTest(faceflags, FF_TexClampY) then texWrapY := GL_CLAMP_TO_EDGE;
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, texWrapX);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, texWrapY);
+
+    // Set tex filtering
+    var magFilter := GL_LINEAR; // Bilinear
+    var minFilter := GL_LINEAR_MIPMAP_LINEAR; // trilinear
+    if Addr(glGenerateMipmap) = nil then
+       minFilter := GL_LINEAR;  // Bilinear
+
+    if BitMaskTest(faceflags, FF_TexNoFiltering) then
+    begin
+      magFilter := GL_NEAREST; // Bilinear
+      minFilter := GL_NEAREST; // trilinear
+    end;
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, minFilter);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, magFilter);
   end;
-  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, minFilter);
-  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, magFilter);
+
+//  // Set tex wrap mode
+//  var texWrapX := GL_REPEAT;
+//  var texWrapY := GL_REPEAT;
+//  if BitMaskTest(faceflags, FF_TexClampX) then texWrapX := GL_CLAMP_TO_EDGE;
+//  if BitMaskTest(faceflags, FF_TexClampY) then texWrapY := GL_CLAMP_TO_EDGE;
+//  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, texWrapX);
+//  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, texWrapY);
+//
+//  // Set tex filtering
+//  var magFilter := GL_LINEAR; // Bilinear
+//  var minFilter := GL_LINEAR_MIPMAP_LINEAR; // trilinear
+//  if Addr(glGenerateMipmap) = nil then
+//     minFilter := GL_LINEAR;  // Bilinear
+//
+//  if BitMaskTest(faceflags, FF_TexNoFiltering) then
+//  begin
+//    magFilter := GL_NEAREST; // Bilinear
+//    minFilter := GL_NEAREST; // trilinear
+//  end;
+//  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, minFilter);
+//  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, magFilter);
 
   // Set Z-write mode
   var zwriteEnabled := GL_TRUE;
@@ -293,10 +298,6 @@ begin
   else
     Result := i2;
 end;
-
-{ Procedure TOGLPRenderer.SetViewPort(x,y,w,h:integer);
-  begin
-  end; }
 
 Procedure TOGLPRenderer.EnableAlphaTest(bEnable: Boolean);
 begin
@@ -321,105 +322,359 @@ begin
     glDisable(GL_DEPTH_TEST);
 end;
 
-Procedure DrawVertex(vertex: TVXDets; vertexColor: TColorF; setUV, hasAlpha: Boolean);
+//Procedure DrawVertex(vertex: TVXDets; vertexColor: TColorF; setUV, hasAlpha: Boolean);
+//begin
+//  if hasAlpha then
+//    glColor4ub(L2B(vertexColor.r), L2B(vertexColor.g), L2B(vertexColor.b), L2B(vertexColor.a))
+//  else
+//    glColor3ub(L2B(vertexColor.r), L2B(vertexColor.g), L2B(vertexColor.b));
+//
+//  if setUV then
+//    glTexCoord4f(vertex.u * vertex.w, vertex.v * vertex.w, 0.0, vertex.w);
+//
+//  // Draw vertices
+//  glVertex3f(vertex.X, vertex.Y, vertex.z);
+//end;
+
+// Old immidiate mode
+//Procedure TOGLPRenderer.DrawPolys(const [Ref] polys: TArray<T3DPoly>; count: Integer);
+//var
+//  poly: T3DPoly;
+//  vxd: TVXdets;
+//begin
+//  if (count < 0) or (count > Length(polys)) then
+//    count := Length(polys);
+//
+//  if polys = nil then
+//    exit;
+//
+//  var drawMode   := GL_LINE_LOOP;
+//  const solidDraw = self.geoMode > Wireframe;
+//  if solidDraw then drawMode := GL_TRIANGLES;
+//
+//  for var i := 0 to count - 1 do
+//  begin
+//    poly := polys[i];
+//    if poly = nil then continue;
+//
+//    var tex: T3DPTexture := nil;
+//    var fflags := 0;
+//    if solidDraw then
+//      begin
+//        fflags := poly.faceflags;
+//        if poly.geo = Texture then
+//          tex := poly.tx;
+//      end;
+//
+//    TOGLTexture(tex).SetCurrent;
+//    SetRendererState(fflags);
+//
+//    var setUV    := solidDraw and (tex <> nil);
+//    var hasAlpha := solidDraw and BitMaskTest(poly.faceflags, FF_Transluent);
+//
+//    glBegin(drawMode);
+//      if (poly.vxds.count <= 3) or not solidDraw then
+//        begin
+//            for var j := 0 to poly.vxds.count - 1 do
+//              begin
+//                vxd := poly.getVXD(j);
+//                var vcolor := wfColor;
+//                if solidDraw then
+//                  vcolor := poly.GetLitColor(vxd.intensity);
+//                DrawVertex(vxd, vcolor, setUV, hasAlpha);
+//              end;
+//        end
+//      else
+//        begin
+//          const totalTris = poly.vxds.count - 2;
+//          var vertIdx0 := 0;
+//          var vertIdx1 := 1;
+//          var vertIdx2 := poly.vxds.count - 1;
+//          for var idx := 0 to totalTris do
+//            begin
+//              vxd := poly.getVXD(vertIdx0);
+//              var vcolor := wfColor;
+//              if solidDraw then
+//                vcolor := poly.GetLitColor(vxd.intensity);
+//              DrawVertex(vxd, vcolor, setUV, hasAlpha);
+//
+//              vxd := poly.getVXD(vertIdx1);
+//              if solidDraw then
+//                vcolor := poly.GetLitColor(vxd.intensity);
+//              DrawVertex(vxd, vcolor, setUV, hasAlpha);
+//
+//              vxd := poly.getVXD(vertIdx2);
+//              if solidDraw then
+//                vcolor := poly.GetLitColor(vxd.intensity);
+//              DrawVertex(vxd, vcolor, setUV, hasAlpha);
+//
+//              if (idx and 1) = 0 then //((not idx) and 1) <> 0 then  i.e.: if even
+//                begin
+//                  vertIdx0 := vertIdx1;
+//                  vertIdx1 := vertIdx1 + 1;
+//                end
+//              else // if idx is odd
+//                begin
+//                  vertIdx0 := vertIdx2;
+//                  vertIdx2 := vertIdx2 - 1;
+//                end;
+//            end;
+//        end;
+//    glEnd;
+//  end;
+//end;
+
+
+procedure TOGLPRenderer.DrawPolys(const [Ref] polys: TArray<T3DPoly>; count: Integer);
 begin
-  if hasAlpha then
-    glColor4ub(L2B(vertexColor.r), L2B(vertexColor.g), L2B(vertexColor.b), L2B(vertexColor.a))
-  else
-    glColor3ub(L2B(vertexColor.r), L2B(vertexColor.g), L2B(vertexColor.b));
+  if polys = nil then exit;
 
-  if setUV then
-    glTexCoord4f(vertex.u * vertex.w, vertex.v * vertex.w, 0.0, vertex.w);
-    //glTexCoord2f(vertex.u, vertex.v);
-
-  // Draw vertices
-  glVertex3f(vertex.X, vertex.Y, vertex.z);
-end;
-
-Procedure TOGLPRenderer.DrawPolys(const [Ref] polys: TArray<T3DPoly>; count: Integer);
-var
-  poly: T3DPoly;
-  vxd: TVXdets;
-begin
   if (count < 0) or (count > Length(polys)) then
     count := Length(polys);
 
-  if polys = nil then
-    exit;
+  if geoMode <= Wireframe then
+    DrawWiredPolys(polys, count)
+  else
+    DrawSolidPolys(polys, count);
+end;
 
-  var drawMode   := GL_LINE_LOOP;
-  const solidDraw = self.geoMode > Wireframe;
-  if solidDraw then drawMode := GL_TRIANGLES;
+procedure TOGLPRenderer.DrawWiredPolys(const [Ref] polys: TArray<T3DPoly>; count: Integer);
+var
+  maxVerts: Integer;
+  numVerts: Integer;
+  tempIndices: array[0..1] of GLushort;
+begin
+  maxVerts := Length(vertices);
 
-  for var i := 0 to count - 1 do
+  // Note, don't change the order
+  TOGLTexture(nil).SetCurrent;
+  SetRendererState(0, False);
+
+  for var i := 0 to count-1 do
   begin
-    poly := polys[i];
-    if poly = nil then continue;
+    numVerts := polys[i].vxds.count;
+    if numVerts > maxVerts then
+    begin
+      PanMessageFmt(mt_warning, 'TOGLPRenderer.RenderWiredPolys: Polygon has more vertices [%d] than max vertices [%d]!', [numVerts, maxVerts]);
+      numVerts := maxVerts;
+    end;
 
-    var tex: T3DPTexture := nil;
-    var fflags := 0;
-    if solidDraw then
+    // Fill vertex data
+    for var j := 0 to numVerts-1 do
+    begin
+      var vxd := polys[i].getVXD(j);
+      with vertices[j] do
       begin
-        fflags := poly.faceflags;
-        if poly.geo = Texture then
-          tex := poly.tx;
+        x := vxd.x;
+        y := vxd.y;
+        z := vxd.z;
+        color := wfColor;//EncodeARGB(wfColor);
+        tu := 0;
+        tv := 0;
+      end;
+    end;
+
+    // Bind vertex buffer and upload data
+    glBindBuffer(GL_ARRAY_BUFFER, vboId);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, numVerts * SizeOf(TOGLVertex), @vertices[0]);
+
+    // Set up vertex arrays
+    glEnableClientState(GL_VERTEX_ARRAY);
+    glEnableClientState(GL_COLOR_ARRAY);
+
+    // Specify vertex data layout
+    glVertexPointer(3, GL_FLOAT, SizeOf(TOGLVertex), Pointer(0));
+    glColorPointer(4,  GL_FLOAT, SizeOf(TOGLVertex), Pointer(SizeOf(Single)*3));
+
+    if geoMode = Vertex then
+    begin
+      // Draw points
+      glDrawArrays(GL_POINTS, 0, numVerts);
+    end
+    else
+    begin
+      // Draw lines
+      glDrawArrays(GL_LINE_STRIP, 0, numVerts);
+
+      // Draw closing line
+      tempIndices[0] := numVerts - 1;
+      tempIndices[1] := 0;
+
+      glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, iboId);
+      glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, 2 * SizeOf(GLushort), @tempIndices[0]);
+      glDrawElements(GL_LINES, 2, GL_UNSIGNED_SHORT, nil);
+    end;
+
+    // Clean up
+    glDisableClientState(GL_VERTEX_ARRAY);
+    glDisableClientState(GL_COLOR_ARRAY);
+  end;
+
+  // Unbind buffers
+  glBindBuffer(GL_ARRAY_BUFFER, 0);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+end;
+
+Function IsEqualTex(const tex1, tex2: T3DPTexture): Boolean;
+begin
+  Result := False;
+  if (tex1 = tex2) then
+    Result := True
+  else if (tex1 <> nil) and (tex2 <> nil) then
+    Result := (tex1.name = tex2.name);
+end;
+
+procedure TOGLPRenderer.DrawSolidPolys(const [Ref] polys: TArray<T3DPoly>; count: Integer);
+
+begin
+  const maxVerts = Length(vertices);
+
+  // Enable client states
+  glEnableClientState(GL_VERTEX_ARRAY);
+  glEnableClientState(GL_COLOR_ARRAY);
+  glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+
+  // Bind buffers
+  glBindBuffer(GL_ARRAY_BUFFER, vboId);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, iboId);
+
+  try
+    var i := 0;
+    while i < count do
+    begin
+      var poly := polys[i];
+      if (poly = nil) or (poly.geo = NotDrawn) then
+      begin
+        i := i + 1;
+        continue;
       end;
 
-    TOGLTexture(tex).SetCurrent;
-    SetRendererState(fflags);
+      var curFaceFlags := poly.faceflags;
+      var curGeo       := poly.geo;
+      var curTex       := poly.tx;
+      if curGeo <> Texture then
+        curTex := nil;
 
-    var setUV    := solidDraw and (tex <> nil);
-    var hasAlpha := solidDraw and BitMaskTest(poly.faceflags, FF_Transluent);
+      // Set texture and render state
+      // Note, don't switch the order as state is bind to texture
+      TOGLTexture(curTex).SetCurrent;
+      SetRendererState(curFaceFlags, curTex <> nil);
 
-    glBegin(drawMode);
-      if (poly.vxds.count <= 3) or not solidDraw then
+      var totalVerts := 0;
+      var totalIdxs  := 0;
+
+      // Batch as many polygons as possible
+      while i < count do
+      begin
+
+        poly := polys[i];
+        var numVerts := poly.vxds.Count;
+        if numVerts > maxVerts then
         begin
-            for var j := 0 to poly.vxds.count - 1 do
-              begin
-                vxd := poly.getVXD(j);
-                var vcolor := wfColor;
-                if solidDraw then
-                  vcolor := poly.GetLitColor(vxd.intensity);
-                DrawVertex(vxd, vcolor, setUV, hasAlpha);
-              end;
-        end
-      else
-        begin
-          const totalTris = poly.vxds.count - 2;
-          var vertIdx0 := 0;
-          var vertIdx1 := 1;
-          var vertIdx2 := poly.vxds.count - 1;
-          for var idx := 0 to totalTris do
-            begin
-              vxd := poly.getVXD(vertIdx0);
-              var vcolor := wfColor;
-              if solidDraw then
-                vcolor := poly.GetLitColor(vxd.intensity);
-              DrawVertex(vxd, vcolor, setUV, hasAlpha);
-
-              vxd := poly.getVXD(vertIdx1);
-              if solidDraw then
-                vcolor := poly.GetLitColor(vxd.intensity);
-              DrawVertex(vxd, vcolor, setUV, hasAlpha);
-
-              vxd := poly.getVXD(vertIdx2);
-              if solidDraw then
-                vcolor := poly.GetLitColor(vxd.intensity);
-              DrawVertex(vxd, vcolor, setUV, hasAlpha);
-
-              if (idx and 1) = 0 then //((not idx) and 1) <> 0 then  i.e.: if even
-                begin
-                  vertIdx0 := vertIdx1;
-                  vertIdx1 := vertIdx1 + 1;
-                end
-              else // if idx is odd
-                begin
-                  vertIdx0 := vertIdx2;
-                  vertIdx2 := vertIdx2 - 1;
-                end;
-            end;
+          PanMessageFmt(mt_warning, 'TOGLPRenderer.RenderSolidPolys: Polygon has more vertices [%d] than max vertices [%d]!', [numVerts, maxVerts]);
+          numVerts := maxVerts;
         end;
-    glEnd;
+
+        // Fill vertex data
+        for var j := 0 to numVerts-1 do
+        begin
+          var vxd := poly.getVXD(j);
+          with vertices[totalVerts + j] do
+          begin
+            x := vxd.x;
+            y := vxd.y;
+            z := vxd.z;
+
+            tu := vxd.u * vxd.w;
+            tv := vxd.v * vxd.w;
+            tw := 0;
+            tq := vxd.w;
+
+            var lcolor := poly.GetLitColor(vxd.intensity);
+            if BitMaskTest(poly.faceflags, FF_Transluent) then
+              color := lcolor//EncodeRGB(lcolor) // TODO should encode RGB
+            else
+              color := lcolor;//EncodeRGB(lcolor);
+          end;
+        end;
+
+        // Triangulation
+        if numVerts <= 3 then
+        begin
+          indices[totalIdxs]     := totalVerts;
+          indices[totalIdxs + 1] := totalVerts + 1;
+          indices[totalIdxs + 2] := totalVerts + 2;
+          totalIdxs := totalIdxs + 3;
+        end
+        else
+        begin
+          const totalTris = numVerts - 2;
+          var ofsTriVert0 := 0;
+          var ofsTriVert1 := 1;
+          var ofsTriVert2 := numVerts - 1;
+          for var idx := 0 to totalTris do
+          begin
+            indices[totalIdxs]     := totalVerts + ofsTriVert0;
+            indices[totalIdxs + 1] := totalVerts + ofsTriVert1;
+            indices[totalIdxs + 2] := totalVerts + ofsTriVert2;
+            totalIdxs := totalIdxs + 3;
+            if (idx and 1) = 0 then
+            begin
+              ofsTriVert0 := ofsTriVert1;
+              ofsTriVert1 := ofsTriVert1 + 1;
+            end
+            else
+            begin
+              ofsTriVert0 := ofsTriVert2;
+              ofsTriVert2 := ofsTriVert2 - 1;
+            end;
+          end;
+        end;
+
+        totalVerts := totalVerts + numVerts;
+
+        // Check if we can add the next polygon to the batch
+        if (i + 1) < count then
+        begin
+          var nextPoly := polys[i + 1];
+          if ((3 * (numVerts - 2) + totalIdxs) >= maxVerts) // i.e. totalIndices + num required triangle indices for next poly >= maxVerts
+          or (nextPoly.faceflags <> curFaceFlags)
+          or ((nextPoly.vxds.Count + totalVerts) >= maxVerts)
+          or (nextPoly.geo <> curGeo)
+          or (not IsEqualTex(nextPoly.tx, curTex)) then
+            break;
+        end;
+
+        i := i + 1;
+      end;
+
+      // Upload vertex data
+      glBufferSubData(GL_ARRAY_BUFFER, 0, totalVerts * SizeOf(TOGLVertex), @vertices[0]);
+
+      // Upload indicesdata
+      glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, totalIdxs * SizeOf(GLushort), @indices[0]);
+
+      // Specify vertex data layout
+      glVertexPointer(3, GL_FLOAT, SizeOf(TOGLVertex), Pointer(0));
+      // glColorPointer(4, GL_UNSIGNED_BYTE, SizeOf(TOGLVertex), Pointer(12));
+      glColorPointer(4,  GL_FLOAT, SizeOf(TOGLVertex), Pointer(SizeOf(Single)*3));
+      glTexCoordPointer(4, GL_FLOAT, SizeOf(TOGLVertex), Pointer(SizeOf(Single)*3 + SizeOf(TColorF)));
+
+      // Draw triangles
+      glDrawElements(GL_TRIANGLES, totalIdxs, GL_UNSIGNED_SHORT, nil);
+
+      i := i + 1;
+    end;
+
+  finally
+    // Unbind buffers
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
+    // Cleanup client states
+    glDisableClientState(GL_VERTEX_ARRAY);
+    glDisableClientState(GL_COLOR_ARRAY);
+    glDisableClientState(GL_TEXTURE_COORD_ARRAY);
   end;
 end;
 
@@ -552,12 +807,9 @@ begin
     glPolygonOffset(1.0, 1.0);
 
     // Now do the drawing
-    //alphaPass := False;
     inherited Redraw;
-    //alphaPass := True;
-    //inherited Redraw;
-     glDisable(GL_POLYGON_OFFSET_FILL);
 
+    glDisable(GL_POLYGON_OFFSET_FILL);
     SwapBuffers(hdc);
 
   finally
@@ -615,30 +867,10 @@ begin
       end;
     Ttx := TOGLTexture.CreateFromMat(name, ppnew, gamma);
     Result := Ttx;
-    //wglMakeCurrent(0, 0);
   finally
     glctx.Release();
   end;
 end;
-
-//Procedure TOGLPRenderer.ClearTXList;
-//var
-//  i: integer;
-//  var DayHour : array[0..1] of GLuint;
-//begin
-//  wglMakeCurrent(hdc, hglc);
-//  glBindTexture(GL_TEXTURE_2D, 0);
-//  //glFlush;
-//  for i := txlist.count - 1 downto 0 do
-//  begin
-//  var pp: PGLuint := @TOGLTexture(txlist.Objects[i]).ObjIdx;
-//  var p:=  TOGLTexture(txlist.Objects[i]).ObjIdx;
-//  var uu := GLuint(@p);
-//    if @glDeleteTextures <> nil then
-//      glDeleteTextures(1, @pp);
-//  end;
-//  inherited ClearTXList;
-//end;
 
 Constructor TOGLTexture.CreateFromMat(const Mat: string; const ppal: PTCMPPal; gamma: double);
 var
@@ -646,10 +878,8 @@ var
   pb: PByte;
   mf: TMat;
   f: TFile;
-  //pl, pline: PAnsiChar;
   n: integer;
   bits: PByte;
-  //c: AnsiChar;
   pw: PWord;
   cf: TColorInfo;
   var opal: array [0 .. 255] of record r, g, b, a: byte; end;
@@ -704,38 +934,10 @@ begin
         GetMem(pb, width * height * components);
       bits := pb;
 
-      //GetMem(pl, width * 2);
-
       if usepalette then
         mf.LoadBits(pb^)
       else
         LoadRGB;
-
-      { for i:=0 to height-1 do
-        begin
-        mf.GetLine(pb^);
-        inc(pb,width);
-        end; }
-
-      { for i:=0 to height-1 do
-        begin
-        pline:=pl;
-        mf.GetLine(pline^);
-        for j:=0 to width-1 do
-        begin
-        n:=ord(pline^);
-        With Pal[n] do
-        begin
-        pb^:=chr(r);
-        (pb+1)^:=chr(g);
-        (pb+2)^:=chr(b);
-        end;
-        inc(pb,3);
-        inc(pline);
-        end;
-
-        end; }
-      //FreeMem(pl);
 
       glGenTextures(1, @ObjIdx);
       glBindTexture(GL_TEXTURE_2D, ObjIdx);
@@ -750,22 +952,13 @@ begin
       glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, minFilter);
       glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, magFilter);
 
-      { a:=GL_SPHERE_MAP;
-        glTexGeniv(GL_S,GL_TEXTURE_GEN_MODE,@a);
-        glTexGeniv(GL_T,GL_TEXTURE_GEN_MODE,@a);
-        glTexGeniv(GL_R,GL_TEXTURE_GEN_MODE,@a);
-        glTexGeniv(GL_Q,GL_TEXTURE_GEN_MODE,@a); }
-
-      { glTexImage2D(GL_TEXTURE_2D, 0,3,width, height, 0,
-        GL_RGB, GL_UNSIGNED_BYTE, bits^); }
-
       if usepalette then
         begin
             for i := 0 to 255 do
             begin
               opal[i].r := ppal[i].r;
               opal[i].g := ppal[i].g;
-              opal[i].b := 0;//ppal[i].b;
+              opal[i].b := ppal[i].b;
               opal[i].a := 0;
             end;
 
@@ -782,19 +975,10 @@ begin
             glGenerateMipmap(GL_TEXTURE_2D);
         end;
 
-      { pPalProc(GL_TEXTURE_2D, GL_RGB8, 256,
-        GL_RGBA, GL_UNSIGNED_BYTE, opal );
-
-
-        glTexImage2D( GL_TEXTURE_2D, 0, GL_COLOR_INDEX8_EXT,
-        width, height, 0,
-        GL_COLOR_INDEX, GL_UNSIGNED_BYTE,
-        bits^ ); }
-
       i := glGetError;
-      if i <> 0 then;
+      if i <> 0 then;  // TODO: log error?
 
-      glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST); { GL_NICEST); }
+      glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
       { glBindTexture(GL_TEXTURE_2D,0); }
 
       FreeMem(bits);
@@ -809,11 +993,16 @@ end;
 Procedure TOGLTexture.SetCurrent;
 begin
   if self <> nil then
-  begin
-    glBindTexture(GL_TEXTURE_2D, ObjIdx);
-  end
+    begin
+      glEnable(GL_TEXTURE_2D);
+      glBindTexture(GL_TEXTURE_2D, ObjIdx);
+    end
   else
-    glBindTexture(GL_TEXTURE_2D, 0);
+    begin
+      // No texture for this polygon
+      glDisable(GL_TEXTURE_2D);
+      //glBindTexture(GL_TEXTURE_2D, 0);
+    end;
 end;
 
 Destructor TOGLTexture.Destroy;
