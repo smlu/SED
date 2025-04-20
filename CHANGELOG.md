@@ -7,6 +7,9 @@
   In essence, it affects the texture color, especially the alpha channel where solid textures with alpha channel were not fully opaque due to now fixed scaling issue.
 - Replaced unit `GLunit` with `dglOpenGL` to support OpenGL up to version 4.6.
 
+- Map Editor
+  * Deprecated software renderer in favor of OpenGL renderer.
+
 - 3D Preview:
   * Implemented horizon sky rendering in 3D preview (OpenGL only) [PR #35](https://github.com/smlu/SED/pull/35)
   * Added selection no-clip option to 3D preview settings. [PR #28](https://github.com/smlu/SED/pull/28)
@@ -14,13 +17,15 @@
   * Fixed thing/surface selection in 3D preview when OpenGL is used.
   * Fixed 'Snap Grid to Item' and 'Cleave by Grid' hotkeys [PR #31](https://github.com/smlu/SED/pull/31)
   * Fixed ceiling sky depth to fall behind the level geometry and thing objects.
-  * Deprecate DirectX GAPI: The DirectX Graphics API is being deprecated in favor of OpenGL.  
+  * Deprecated DirectX GAPI: The DirectX Graphics API is being deprecated in favor of OpenGL.  
     The DirectX GAPI will be removed in the next major release.
   * Fixed incorrect sort range when flushing cached polygon
   * Fixed transparency rendering issues by improving distance calculation for sorting transparent polygons.  
     Now using full 3D world space distance from vertex to camera position instead of comparing vertices forward (y-axis) values,  
     which ensures correct rendering of overlapping transparent objects, especially in OpenGL.
   * Fixed rendering of translucent polygons in OpenGL by enabling alpha testing.
+  * Updated OpenGL preview renderer to use curCamera FOV.
+  * Refactored OpenGL renderer to replace all immediate‑mode (glBegin/glEnd) draws with batched dynamic VBO/IBO updates and single glDrawElements.
 
 
 ## Version 0.1.0
