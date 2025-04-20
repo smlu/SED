@@ -72,7 +72,7 @@ object Options: TOptions
     Margins.Top = 5
     Margins.Right = 5
     Margins.Bottom = 5
-    ActivePage = PPreview
+    ActivePage = PGEnv
     Align = alClient
     TabOrder = 0
     ExplicitWidth = 806
@@ -589,7 +589,7 @@ object Options: TOptions
         Left = 290
         Top = 537
         Width = 25
-        Height = 38
+        Height = 36
         Margins.Left = 5
         Margins.Top = 5
         Margins.Right = 5
@@ -640,7 +640,7 @@ object Options: TOptions
         Left = 288
         Top = 584
         Width = 26
-        Height = 37
+        Height = 36
         Hint = 'Number of undo steps available'
         Margins.Left = 5
         Margins.Top = 5
@@ -765,7 +765,7 @@ object Options: TOptions
         object RGWireframe: TRadioGroup
           Left = 17
           Top = 35
-          Width = 139
+          Width = 240
           Height = 109
           Margins.Left = 5
           Margins.Top = 5
@@ -774,7 +774,7 @@ object Options: TOptions
           Caption = 'Graphics API'
           ItemIndex = 0
           Items.Strings = (
-            'Software'
+            'Software (deprecated)'
             'OpenGL')
           TabOrder = 4
         end
@@ -782,7 +782,7 @@ object Options: TOptions
           Left = 324
           Top = 216
           Width = 26
-          Height = 38
+          Height = 36
           Margins.Left = 5
           Margins.Top = 5
           Margins.Right = 5
