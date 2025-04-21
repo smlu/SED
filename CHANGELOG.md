@@ -6,9 +6,11 @@
   This fixes the issue with the color component being scaled to 0xFF when recoding from 16-bit to 24-bit or 32-bit format and vice versa.  
   In essence, it affects the texture color, especially the alpha channel where solid textures with alpha channel were not fully opaque due to now fixed scaling issue.
 - Replaced unit `GLunit` with `dglOpenGL` to support OpenGL up to version 4.6.
+- Removed obsolete and unused code & units.
 
 - Map Editor
   * Deprecated software renderer in favor of OpenGL renderer.
+  * Renamed renderer units
 
 - 3D Preview:
   * Implemented horizon sky rendering in 3D preview (OpenGL only) [PR #35](https://github.com/smlu/SED/pull/35)
@@ -26,6 +28,7 @@
   * Fixed rendering of translucent polygons in OpenGL by enabling alpha testing.
   * Updated OpenGL preview renderer to use curCamera FOV.
   * Refactored OpenGL renderer to replace all immediate‑mode (glBegin/glEnd) draws with batched dynamic VBO/IBO updates and single glDrawElements.
+  * Renamed renderer units
 
 
 ## Version 0.1.0
