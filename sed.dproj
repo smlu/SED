@@ -100,13 +100,13 @@
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_1_Win32)'!=''">
         <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
-        <VerInfo_Keys>CompanyName=;FileDescription=SED - Jedi Knight, MOTS and Infernal Machine Editor;FileVersion=0.1.0.70;OriginalFilename=sed.exe;ProductName=SED;ProductVersion=0.1.0.0;Comments=;ProgramID=com.embarcadero.$(MSBuildProjectName);HomePage=https://github.com/smlu/sed</VerInfo_Keys>
-        <Icon_MainIcon>sed.ico</Icon_MainIcon>
+        <VerInfo_Keys>CompanyName=;FileDescription=SED - Jedi Knight, MOTS and Infernal Machine Editor;FileVersion=0.2.0.74;OriginalFilename=sed.exe;ProductName=SED;ProductVersion=0.2.0;Comments=;ProgramID=com.embarcadero.$(MSBuildProjectName);HomePage=https://github.com/smlu/sed</VerInfo_Keys>
+        <Icon_MainIcon>res\sed.ico</Icon_MainIcon>
         <VerInfo_AutoIncVersion>true</VerInfo_AutoIncVersion>
         <DCC_PEOSVersion>10.0</DCC_PEOSVersion>
-        <VerInfo_Build>70</VerInfo_Build>
+        <VerInfo_Build>74</VerInfo_Build>
         <VerInfo_MajorVer>0</VerInfo_MajorVer>
-        <VerInfo_MinorVer>1</VerInfo_MinorVer>
+        <VerInfo_MinorVer>2</VerInfo_MinorVer>
         <Debugger_LoadAllSymbols>false</Debugger_LoadAllSymbols>
         <DCC_ImportedDataReferences>false</DCC_ImportedDataReferences>
         <DCC_MapFile>0</DCC_MapFile>
