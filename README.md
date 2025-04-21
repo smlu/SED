@@ -13,11 +13,11 @@ Special thanks go to Alexei Novikov and the Code Alliance for creating the origi
 
 ## Building
 
-To build the SED editor from source code, use the latest version of Delphi 11. You can download it from [https://www.embarcadero.com/products/delphi](https://www.embarcadero.com/products/delphi).
+To build the SED editor from source code, use Delphi version 11 or later. You can download it from [https://www.embarcadero.com/products/delphi](https://www.embarcadero.com/products/delphi).
 
 ## Releases
 
-To celebrate the 25th anniversary of Indiana Jones and the Infernal Machine, the editor binary release is currently distributed through a special `SED` level for the game. You can find it att [https://github.com/Jones3D-The-Infernal-Engine/Mods/tree/main/levels/sed](https://github.com/Jones3D-The-Infernal-Engine/Mods/tree/main/levels/sed).
+See the [Releases](https://github.com/smlu/SED/releases) page for the latest version of SED. 
 
 ## License
 
