@@ -2,7 +2,7 @@ unit SED_COM;
 
 interface
 uses Windows, J_Level, ResourcePicker, sed_plugins, misc_utils, GlobalVars,
-     u_undo, Forms, SysUtils, classes, Render, ogl_render, sft_render, Geometry,
+     u_undo, Forms, SysUtils, classes, Render, RenderGL, RenderSW, Geometry,
      values, u_multisel, menus;
 
 type

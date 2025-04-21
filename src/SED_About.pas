@@ -1,4 +1,4 @@
-unit Jed_about1;
+unit SED_About;
 
 interface
 
@@ -6,7 +6,7 @@ uses Windows, SysUtils, Classes, Graphics, Forms, Controls, StdCtrls,
   Buttons, ExtCtrls, SHellAPI, GlobalVars;
 
 type
-  TJed_about = class(TForm)
+  TSedAbout = class(TForm)
     Panel1: TPanel;
     ProgramIcon: TImage;
     LBVersion: TLabel;
@@ -37,31 +37,31 @@ type
   end;
 
 var
-  Jed_about: TJed_about;
+  sedAbout: TSedAbout;
 
 implementation
  uses Clipbrd;
 
 {$R *.DFM}
 
-procedure TJed_about.OKButtonClick(Sender: TObject);
+procedure TSedAbout.OKButtonClick(Sender: TObject);
 begin
-  Jed_about.Hide;
+  sedAbout.Hide;
 end;
 
-procedure TJed_about.LBHomePageUrlMouseEnter(Sender: TObject);
+procedure TSedAbout.LBHomePageUrlMouseEnter(Sender: TObject);
 begin
   LBHomePageUrl.Font.Color := $00FF0080;
   Screen.Cursor := crHandPoint;
 end;
 
-procedure TJed_about.LBHomePageUrlMouseLeave(Sender: TObject);
+procedure TSedAbout.LBHomePageUrlMouseLeave(Sender: TObject);
 begin
   LBHomePageUrl.Font.Color := clBlue;
   Screen.Cursor := crDefault;
 end;
 
-procedure TJed_about.LBHomePageUrlMouseUp(Sender: TObject; Button: TMouseButton;
+procedure TSedAbout.LBHomePageUrlMouseUp(Sender: TObject; Button: TMouseButton;
   Shift: TShiftState; X, Y: Integer);
 begin
   case Button of
@@ -72,19 +72,19 @@ begin
 
 end;
 
-Procedure TJed_about.ScrollStep;
+Procedure TSedAbout.ScrollStep;
 begin
   ScrollBox.ScrollBy(0, -1);
   Dec(scrollPos);
 end;
 
-Procedure TJed_about.ScrollTo(pos: integer);
+Procedure TSedAbout.ScrollTo(pos: integer);
 begin
   ScrollBox.ScrollBy(0, pos - scrollPos);
   scrollPos := pos;
 end;
 
-procedure TJed_about.TimerTimer(Sender: TObject);
+procedure TSedAbout.TimerTimer(Sender: TObject);
 begin
   { if cnt=0 then ScrollBy(-10,0) else ScrollBy(10,0);
     cnt:=cnt xor 1; }
@@ -93,7 +93,7 @@ begin
     ScrollTo(ScrollBox.Height);
 end;
 
-procedure TJed_about.FormShow(Sender: TObject);
+procedure TSedAbout.FormShow(Sender: TObject);
 begin
   //Timer.Enabled := true;
   //Label1.Caption := Memo.Lines.Text;
@@ -104,7 +104,7 @@ begin
   LBVersion.Caption := 'Sith Editor v' + SedVersion;
 end;
 
-procedure TJed_about.FormHide(Sender: TObject);
+procedure TSedAbout.FormHide(Sender: TObject);
 begin
   Timer.Enabled := false;
 end;

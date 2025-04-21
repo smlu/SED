@@ -1,4 +1,4 @@
-unit ogl_PRender;
+unit PRenderGL;
 
 interface
 

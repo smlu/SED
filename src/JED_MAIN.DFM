@@ -2,15 +2,15 @@ object JedMain: TJedMain
   Left = 531
   Top = 73
   Caption = 'SED'
-  ClientHeight = 548
-  ClientWidth = 645
+  ClientHeight = 822
+  ClientWidth = 968
   Color = clBtnFace
-  Constraints.MinHeight = 509
-  Constraints.MinWidth = 551
+  Constraints.MinHeight = 764
+  Constraints.MinWidth = 827
   DefaultMonitor = dmDesktop
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
-  Font.Height = -14
+  Font.Height = -21
   Font.Name = 'Segoe UI'
   Font.Style = []
   KeyPreview = True
@@ -28,12 +28,17 @@ object JedMain: TJedMain
   OnPaint = FormPaint
   OnResize = FormResize
   OnShow = FormShow
-  TextHeight = 19
+  PixelsPerInch = 144
+  TextHeight = 30
   object Tbar: TPanel
     Left = 0
     Top = 0
-    Width = 645
-    Height = 57
+    Width = 968
+    Height = 86
+    Margins.Left = 5
+    Margins.Top = 5
+    Margins.Right = 5
+    Margins.Bottom = 5
     ParentCustomHint = False
     Align = alTop
     BevelOuter = bvNone
@@ -42,7 +47,7 @@ object JedMain: TJedMain
     DoubleBuffered = False
     Font.Charset = DEFAULT_CHARSET
     Font.Color = clWindowText
-    Font.Height = -15
+    Font.Height = -23
     Font.Name = 'Segoe UI'
     Font.Style = []
     ParentBiDiMode = False
@@ -53,19 +58,23 @@ object JedMain: TJedMain
     ParentShowHint = False
     ShowHint = False
     TabOrder = 0
-    ExplicitWidth = 639
+    ExplicitWidth = 958
     object BNSC: TSpeedButton
-      Left = 4
-      Top = 4
-      Width = 48
-      Height = 48
+      Left = 6
+      Top = 6
+      Width = 72
+      Height = 72
       Hint = 'Sector Mode'
+      Margins.Left = 5
+      Margins.Top = 5
+      Margins.Right = 5
+      Margins.Bottom = 5
       GroupIndex = 1
       Down = True
       Caption = 'Sector'
       Font.Charset = DEFAULT_CHARSET
       Font.Color = clWindowText
-      Font.Height = -12
+      Font.Height = -18
       Font.Name = 'Segoe UI'
       Font.Style = []
       Glyph.Data = {
@@ -90,16 +99,20 @@ object JedMain: TJedMain
       OnClick = BNSCClick
     end
     object BNSF: TSpeedButton
-      Left = 56
-      Top = 4
-      Width = 48
-      Height = 48
+      Left = 84
+      Top = 6
+      Width = 72
+      Height = 72
       Hint = 'Surface Mode'
+      Margins.Left = 5
+      Margins.Top = 5
+      Margins.Right = 5
+      Margins.Bottom = 5
       GroupIndex = 1
       Caption = 'Surface'
       Font.Charset = DEFAULT_CHARSET
       Font.Color = clWindowText
-      Font.Height = -12
+      Font.Height = -18
       Font.Name = 'Segoe UI'
       Font.Style = []
       Glyph.Data = {
@@ -124,16 +137,20 @@ object JedMain: TJedMain
       OnClick = BNSCClick
     end
     object BNVX: TSpeedButton
-      Left = 108
-      Top = 4
-      Width = 48
-      Height = 48
+      Left = 162
+      Top = 6
+      Width = 72
+      Height = 72
       Hint = 'Vertex Mode'
+      Margins.Left = 5
+      Margins.Top = 5
+      Margins.Right = 5
+      Margins.Bottom = 5
       GroupIndex = 1
       Caption = 'Vertex'
       Font.Charset = DEFAULT_CHARSET
       Font.Color = clWindowText
-      Font.Height = -12
+      Font.Height = -18
       Font.Name = 'Segoe UI'
       Font.Style = []
       Glyph.Data = {
@@ -158,16 +175,20 @@ object JedMain: TJedMain
       OnClick = BNSCClick
     end
     object BNTH: TSpeedButton
-      Left = 260
-      Top = 4
-      Width = 48
-      Height = 48
+      Left = 390
+      Top = 6
+      Width = 72
+      Height = 72
       Hint = 'Thing Mode'
+      Margins.Left = 5
+      Margins.Top = 5
+      Margins.Right = 5
+      Margins.Bottom = 5
       GroupIndex = 1
       Caption = 'Thing'
       Font.Charset = DEFAULT_CHARSET
       Font.Color = clWindowText
-      Font.Height = -12
+      Font.Height = -18
       Font.Name = 'Segoe UI'
       Font.Style = []
       Glyph.Data = {
@@ -192,16 +213,20 @@ object JedMain: TJedMain
       OnClick = BNSCClick
     end
     object BNLT: TSpeedButton
-      Left = 312
-      Top = 4
-      Width = 48
-      Height = 48
+      Left = 468
+      Top = 6
+      Width = 72
+      Height = 72
       Hint = 'Light Mode'
+      Margins.Left = 5
+      Margins.Top = 5
+      Margins.Right = 5
+      Margins.Bottom = 5
       GroupIndex = 1
       Caption = 'Light'
       Font.Charset = DEFAULT_CHARSET
       Font.Color = clWindowText
-      Font.Height = -12
+      Font.Height = -18
       Font.Name = 'Segoe UI'
       Font.Style = []
       Glyph.Data = {
@@ -226,16 +251,20 @@ object JedMain: TJedMain
       OnClick = BNSCClick
     end
     object BNED: TSpeedButton
-      Left = 160
-      Top = 4
-      Width = 48
-      Height = 48
+      Left = 240
+      Top = 6
+      Width = 72
+      Height = 72
       Hint = 'Edge Mode'
+      Margins.Left = 5
+      Margins.Top = 5
+      Margins.Right = 5
+      Margins.Bottom = 5
       GroupIndex = 1
       Caption = 'Edge'
       Font.Charset = DEFAULT_CHARSET
       Font.Color = clWindowText
-      Font.Height = -12
+      Font.Height = -18
       Font.Name = 'Segoe UI'
       Font.Style = []
       Glyph.Data = {
@@ -260,30 +289,38 @@ object JedMain: TJedMain
       OnClick = BNSCClick
     end
     object LBXYZ: TLabel
-      Left = 468
-      Top = 19
-      Width = 42
-      Height = 20
+      Left = 702
+      Top = 29
+      Width = 64
+      Height = 31
+      Margins.Left = 5
+      Margins.Top = 5
+      Margins.Right = 5
+      Margins.Bottom = 5
       Caption = 'LBXYZ'
       Font.Charset = DEFAULT_CHARSET
       Font.Color = clWindowText
-      Font.Height = -15
+      Font.Height = -23
       Font.Name = 'Segoe UI'
       Font.Style = []
       ParentFont = False
       Visible = False
     end
     object BNFR: TSpeedButton
-      Left = 364
-      Top = 4
-      Width = 48
-      Height = 48
+      Left = 546
+      Top = 6
+      Width = 72
+      Height = 72
       Hint = 'Frame Mode'
+      Margins.Left = 5
+      Margins.Top = 5
+      Margins.Right = 5
+      Margins.Bottom = 5
       GroupIndex = 1
       Caption = 'Frame'
       Font.Charset = DEFAULT_CHARSET
       Font.Color = clWindowText
-      Font.Height = -12
+      Font.Height = -18
       Font.Name = 'Segoe UI'
       Font.Style = []
       Glyph.Data = {
@@ -303,16 +340,20 @@ object JedMain: TJedMain
       OnClick = BNSCClick
     end
     object BNEX: TSpeedButton
-      Left = 416
-      Top = 4
-      Width = 48
-      Height = 48
+      Left = 624
+      Top = 6
+      Width = 72
+      Height = 72
       Hint = 'Extra Mode'
+      Margins.Left = 5
+      Margins.Top = 5
+      Margins.Right = 5
+      Margins.Bottom = 5
       GroupIndex = 1
       Caption = 'Extra'
       Font.Charset = DEFAULT_CHARSET
       Font.Color = clWindowText
-      Font.Height = -12
+      Font.Height = -18
       Font.Name = 'Segoe UI'
       Font.Style = []
       Glyph.Data = {
@@ -333,19 +374,22 @@ object JedMain: TJedMain
     end
     object PNProjType: TPanel
       AlignWithMargins = True
-      Left = 590
-      Top = 3
-      Width = 48
-      Height = 51
+      Left = 885
+      Top = 5
+      Width = 72
+      Height = 76
       Hint = 'Change project game type'
-      Margins.Right = 7
+      Margins.Left = 5
+      Margins.Top = 5
+      Margins.Right = 11
+      Margins.Bottom = 5
       Align = alRight
       Caption = 'JK'
-      Constraints.MaxHeight = 51
-      Constraints.MaxWidth = 48
+      Constraints.MaxHeight = 77
+      Constraints.MaxWidth = 72
       Font.Charset = DEFAULT_CHARSET
       Font.Color = clWindowText
-      Font.Height = -15
+      Font.Height = -23
       Font.Name = 'Segoe UI'
       Font.Style = []
       ParentFont = False
@@ -353,25 +397,33 @@ object JedMain: TJedMain
       ShowHint = True
       TabOrder = 0
       OnDblClick = PNProjTypeDblClick
-      ExplicitLeft = 584
+      ExplicitLeft = 875
     end
   end
   object Panel1: TPanel
     Left = 0
-    Top = 527
-    Width = 645
-    Height = 21
+    Top = 791
+    Width = 968
+    Height = 31
+    Margins.Left = 5
+    Margins.Top = 5
+    Margins.Right = 5
+    Margins.Bottom = 5
     Align = alBottom
     BevelOuter = bvLowered
     TabOrder = 1
-    ExplicitTop = 518
-    ExplicitWidth = 639
+    ExplicitTop = 789
+    ExplicitWidth = 958
     object PXYZ: TPanel
       Left = 1
       Top = 1
-      Width = 224
-      Height = 19
+      Width = 336
+      Height = 29
       Hint = 'Shows current mouse position'
+      Margins.Left = 5
+      Margins.Top = 5
+      Margins.Right = 5
+      Margins.Bottom = 5
       ParentCustomHint = False
       Align = alLeft
       Alignment = taLeftJustify
@@ -380,7 +432,7 @@ object JedMain: TJedMain
       DoubleBuffered = False
       Font.Charset = DEFAULT_CHARSET
       Font.Color = clWindowText
-      Font.Height = -13
+      Font.Height = -20
       Font.Name = 'Segoe UI'
       Font.Style = []
       ParentBackground = False
@@ -392,16 +444,20 @@ object JedMain: TJedMain
       TabOrder = 0
     end
     object PMsg: TPanel
-      Left = 249
+      Left = 373
       Top = 1
-      Width = 395
-      Height = 19
+      Width = 594
+      Height = 29
       Hint = 'Shows messages and warnings'
+      Margins.Left = 5
+      Margins.Top = 5
+      Margins.Right = 5
+      Margins.Bottom = 5
       Align = alClient
       BevelOuter = bvLowered
       Font.Charset = DEFAULT_CHARSET
       Font.Color = clWindowText
-      Font.Height = -13
+      Font.Height = -20
       Font.Name = 'Segoe UI'
       Font.Style = []
       ParentBackground = False
@@ -410,20 +466,24 @@ object JedMain: TJedMain
       ShowHint = True
       TabOrder = 1
       OnDblClick = PMsgDblClick
-      ExplicitWidth = 389
+      ExplicitWidth = 584
     end
     object PMsel: TPanel
-      Left = 225
+      Left = 337
       Top = 1
-      Width = 24
-      Height = 19
+      Width = 36
+      Height = 29
       Hint = 'Current <ultislection mode is Toggle. Click to change'
+      Margins.Left = 5
+      Margins.Top = 5
+      Margins.Right = 5
+      Margins.Bottom = 5
       Align = alLeft
       BevelOuter = bvLowered
       Caption = '*'
       Font.Charset = DEFAULT_CHARSET
       Font.Color = clWindowText
-      Font.Height = -13
+      Font.Height = -20
       Font.Name = 'Segoe UI'
       Font.Style = []
       ParentBackground = False

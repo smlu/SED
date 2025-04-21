@@ -1,4 +1,4 @@
-unit sft_render;
+unit RenderSW;
 
 interface
 

@@ -4,8 +4,8 @@ interface
 
 uses
   Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
-  J_level, Prender, D3D_Prender, GlobalVars, ogl_PRender, misc_utils, Geometry,
-  d3d_NPRender, U_Options;
+  J_level, Prender, PRenderGL, PRenderDX, GlobalVars, misc_utils, Geometry,
+  U_Options;
 
 Procedure Set3DOPrevActive(isit: boolean);
 Procedure Set3DOCMP(const cmp: string);

@@ -5,8 +5,8 @@ interface
 uses
     Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
     ComCtrls, StdCtrls, Menus, GlobalVars, J_Level, misc_utils, ExtCtrls,
-    Render, OGL_render, FileOperations, lev_utils, Geometry, Buttons, System.Math,
-    Containers, Files, U_templates, Prefab, ListRes, sft_render, u_multisel,
+    Render, RenderGL, RenderSW, FileOperations, lev_utils, Geometry, Buttons, System.Math,
+    Containers, Files, U_templates, Prefab, ListRes, u_multisel,
     jed_plugins, sed_plugins, values, shellApi, U_copypaste, FileCtrl, u_undo,
     SED_COM, JED_COM, tbar_tools, u_3dos, System.ImageList, Vcl.ImgList, Types;
 
@@ -617,7 +617,7 @@ Procedure LoadDLLPlugin(const dll: string);
 implementation
 
 uses Item_edit, U_CogForm, Cons_checker, FileDialogs, U_Tools,
-    U_Options, Jed_about1, math, ProgressDialog, U_tbar, U_Preview, U_msgForm,
+    U_Options, SED_About, math, ProgressDialog, U_tbar, U_Preview, U_msgForm,
     Q_Sectors, Q_surfs, Q_things, U_lheader, U_Medit, u_DFI,
     u_errorform, U_tplcreate, ResourcePicker, u_cscene, u_3doform,
     graph_files;
@@ -5297,7 +5297,7 @@ end;
 
 procedure TJedMain.About1Click(sender: TObject);
 begin
-    Jed_About.ShowModal;
+    sedAbout.ShowModal;
 end;
 
 procedure TJedMain.BNSCClick(sender: TObject);

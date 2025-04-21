@@ -3,8 +3,8 @@ object Options: TOptions
   Top = 160
   BorderStyle = bsDialog
   Caption = 'Options'
-  ClientHeight = 750
-  ClientWidth = 816
+  ClientHeight = 748
+  ClientWidth = 806
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -66,8 +66,8 @@ object Options: TOptions
   object Pages: TPageControl
     Left = 0
     Top = 0
-    Width = 816
-    Height = 677
+    Width = 806
+    Height = 675
     Margins.Left = 5
     Margins.Top = 5
     Margins.Right = 5
@@ -75,8 +75,6 @@ object Options: TOptions
     ActivePage = PGEnv
     Align = alClient
     TabOrder = 0
-    ExplicitWidth = 806
-    ExplicitHeight = 675
     object JK: TTabSheet
       HelpContext = 290
       Margins.Left = 5
@@ -1108,8 +1106,8 @@ object Options: TOptions
   end
   object Panel1: TPanel
     Left = 0
-    Top = 677
-    Width = 816
+    Top = 675
+    Width = 806
     Height = 73
     Margins.Left = 5
     Margins.Top = 5
@@ -1117,8 +1115,6 @@ object Options: TOptions
     Margins.Bottom = 5
     Align = alBottom
     TabOrder = 1
-    ExplicitTop = 675
-    ExplicitWidth = 806
     object SBHelp: TSpeedButton
       Left = 749
       Top = 23

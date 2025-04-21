@@ -1,4 +1,4 @@
-unit OGL_render;
+unit RenderGL;
 
 interface
 

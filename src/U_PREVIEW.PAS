@@ -4,9 +4,9 @@ interface
 
 uses
   Windows, Messages, SysUtils, Classes, Graphics, Controls,
-  Forms, Dialogs, D3D_Prender, J_Level, Geometry, StdCtrls,
-  GlobalVars, Menus, OGL_Prender, Prender, Clipbrd,
-  d3d_NPrender, u_pj3dos, u_templates;
+  Forms, Dialogs, PRenderGL, PRenderDX, J_Level, Geometry, StdCtrls,
+  GlobalVars, Menus, Prender, Clipbrd,
+  u_pj3dos, u_templates;
 
 type
   TCamPos = record

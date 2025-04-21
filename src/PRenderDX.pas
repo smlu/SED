@@ -1,4 +1,4 @@
-unit d3d_NPRender;
+unit PRenderDX;
 
 {$O-}
 
@@ -12,8 +12,38 @@ uses Ole2, Windows, Prender, Classes, J_Level, Forms,
 //const
 //  maxVerts = 4096;
 
-type
 
+const
+  MAXDRIVERS = 16;
+
+Const
+  directx5: boolean = false;
+
+
+type
+TD3DDriverInfo = record
+  id: TGUID;
+  DeviceDescription: string;
+  DeviceName: string;
+  HWDeviceDesc: TD3DDeviceDesc;
+  HELDeviceDesc: TD3DDeviceDesc;
+end;
+
+var
+  { a few global variables storing driver info }
+  _D3Ddrivers: array [0 .. MAXDRIVERS - 1] of TD3DDriverInfo;
+  _D3DdriverCount: Integer;
+  _bDriversInitialized: boolean;
+
+Procedure EnumDevices;
+Function GetDeviceNum(const name: string): Integer;
+Procedure DXFailCheck(r: HResult; const msg: string);
+Procedure DDFailCheck(r: HResult; const msg: string);
+procedure DXCheck(r: HResult; const msg: string);
+procedure DDCheck(r: HResult; const msg: string);
+
+
+type
 TTexFormat = class
   ddpfPixelFormat: TDDPixelFormat;
   ci: TColorInfo;
@@ -78,9 +108,166 @@ end;
 
 
 implementation
-uses D3D_PRender, math;
+uses math;
 
 var curdxr: TD3D5PRenderer;
+
+
+
+Procedure DXFailCheck(r: HResult; const msg: string);
+var
+  s: string;
+begin
+  if r = DD_OK then
+    exit;
+  raise EDirectX.CreateFmt('%s %s', [D3DErrorString(r), msg]);
+end;
+
+Procedure DDFailCheck(r: HResult; const msg: string);
+var
+  s: string;
+begin
+  if r = DD_OK then
+    exit;
+  raise EDirectX.CreateFmt('%s %s', [DDRAWErrorString(r), msg]);
+end;
+
+Procedure COMRelease(iu: IUnknown);
+begin
+  if iu <> nil then
+    iu.Release;
+end;
+
+procedure DXCheck(r: HResult; const msg: string);
+begin
+  if r = DD_OK then
+    exit;
+  PanMessage(mt_warning, D3DErrorString(r) + ' ' + msg);
+end;
+
+procedure DDCheck(r: HResult; const msg: string);
+begin
+  if r = DD_OK then
+    exit;
+  PanMessage(mt_warning, DDRAWErrorString(r) + ' ' + msg);
+end;
+
+Function Min(i1, i2: Integer): Integer;
+begin
+  if i1 < i2 then
+    result := i1
+  else
+    result := i2;
+end;
+
+function _EnumCallBack(const lpGuid: TGUID; lpDeviceDescription: LPSTR;
+  lpDeviceName: LPSTR; const lpD3DHWDeviceDesc: TD3DDeviceDesc;
+  const lpD3DHELDeviceDesc: TD3DDeviceDesc; lpUserArg: pointer)
+  : HResult; stdcall;
+var
+  dev: ^TD3DDeviceDesc;
+  DDBD: dword;
+begin
+  dev := @lpD3DHWDeviceDesc;
+  DDBD := dword(lpUserArg);
+  result := D3DENUMRET_OK;
+  if Integer(lpD3DHWDeviceDesc.dcmColorModel) = 0 then
+    dev := @lpD3DHELDeviceDesc;
+
+//   if ( memcmp(lpGuid, &IID_IDirect3DNullDevice, 0x10u) = 0 )
+//      return 1;
+
+   if CompareMem(@lpGuid, @IID_IDirect3DRGBDevice, 16) then// emulated device - HEL
+      exit;
+   if CompareMem(@lpGuid, @IID_IDirect3DRampDevice, 16) then
+      exit;
+   if CompareMem(@lpGuid, @IID_IDirect3DMMXDevice, 16) then
+      exit;
+    // TODO
+//    if ( !memcmp(lpGuid, &IID_IDirect3DRefDevice, 0x10u) )
+//      return 1;
+
+  if (dev^.dwDeviceRenderBitDepth and DDBD) <> 0 then
+  begin
+    { current bit depth is supported by this driver }
+    with _D3Ddrivers[_D3DdriverCount] do
+    begin
+      Move(lpGuid, id, sizeof(TGUID));
+      Move(lpD3DHWDeviceDesc, HWDeviceDesc, sizeof(TD3DDeviceDesc));
+      Move(lpD3DHELDeviceDesc, HELDeviceDesc, sizeof(TD3DDeviceDesc));
+      DeviceDescription := StrPas(lpDeviceDescription);
+      DeviceName := StrPas(lpDeviceName);
+    end;
+    inc(_D3DdriverCount)
+  end;
+
+  if _D3DdriverCount >= MAXDRIVERS then
+    result := D3DENUMRET_CANCEL;
+end;
+
+procedure _InitializeDrivers(Bdepth: dword);
+var
+  D3D: IDirect3D;
+  d3d2: IDirect3D2;
+  dd: IDirectDraw;
+begin
+  D3D := nil;
+  if not _bDriversInitialized then
+  begin
+    DDFailCheck(DirectDrawCreate(nil, dd, nil), 'in _InitializeDrivers');
+    try
+      directx5 := true;
+      if dd.QueryInterface(IID_IDirect3D2, d3d2) <> DD_OK then
+      begin
+        DXFailCheck(dd.QueryInterface(IID_IDirect3D, D3D),
+          'in _InitializeDrivers');
+        directx5 := false;
+      end;
+
+      try
+        _bDriversInitialized := true;
+        if d3d2 = nil then
+          DXFailCheck(D3D.EnumDevices(_EnumCallBack, pointer(Bdepth)),
+            'in _InitializeDrivers')
+        else
+          DXFailCheck(d3d2.EnumDevices(_EnumCallBack, pointer(Bdepth)),
+            'in _InitializeDrivers');
+
+      finally
+        if D3D <> nil then
+          COMRelease(D3D);
+        if d3d2 <> nil then
+          COMRelease(d3d2);
+      end;
+    finally
+      dd.Release;
+    end;
+  end;
+end;
+
+Procedure EnumDevices;
+begin
+  if _D3DdriverCount = 0 then
+    _InitializeDrivers(DDBD_24 or DDBD_32);
+    //_InitializeDrivers(DDBD_8 + DDBD_16 + DDBD_24);
+end;
+
+Function GetDeviceNum(const name: string): Integer;
+var
+  i: Integer;
+begin
+  result := 0;
+  for i := 0 to _D3DdriverCount - 1 do
+    With _D3Ddrivers[i] do
+    begin
+      if CompareText(DeviceName, name) = 0 then
+      begin
+        result := i;
+        exit;
+      end;
+    end;
+end;
+
 
 Function D3DVECTOR(dx,dy,dz:single): TD3DVector;
 begin
@@ -1045,11 +1232,6 @@ begin
 end;
 
 {Texture}
-
-Function Min(i1,i2:integer):integer;
-begin
- if i1<i2 then result:=i1 else result:=i2;
-end;
 
 Constructor TD3DTexture.CreateFromMat(const Mat: string;const ppal: PTCMPPal; const pcmp: PTCMPTable; adxr: TD3D5PRenderer; gamma: double);
 var

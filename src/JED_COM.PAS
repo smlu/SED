@@ -1,8 +1,8 @@
 unit JED_COM;
 interface
 uses Windows, OLE2, J_Level, Geometry, ResourcePicker, jed_plugins, misc_utils,
-     globalVars, u_undo, Forms, sysUtils, classes, Render, ogl_render,
-     sft_render, values, u_multisel, menus;
+     globalVars, u_undo, Forms, sysUtils, classes, Render, RenderGL, RenderSW,
+     values, u_multisel, menus;
 type
 THandles=class(TList)
  oname:string;

@@ -3,7 +3,7 @@
         <ProjectGuid>{7940D652-8D55-48C7-BEE3-07394A5F7CA8}</ProjectGuid>
         <MainSource>sed.DPR</MainSource>
         <Base>True</Base>
-        <Config Condition="'$(Config)'==''">Debug</Config>
+        <Config Condition="'$(Config)'==''">Release</Config>
         <TargetedPlatforms>1</TargetedPlatforms>
         <AppType>Application</AppType>
         <FrameworkType>VCL</FrameworkType>
@@ -100,11 +100,11 @@
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_1_Win32)'!=''">
         <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
-        <VerInfo_Keys>CompanyName=;FileDescription=SED - Jedi Knight, MOTS and Infernal Machine Editor;FileVersion=0.1.0.37;OriginalFilename=sed.exe;ProductName=SED;ProductVersion=0.1.0.0;Comments=;ProgramID=com.embarcadero.$(MSBuildProjectName);HomePage=https://github.com/smlu/sed</VerInfo_Keys>
+        <VerInfo_Keys>CompanyName=;FileDescription=SED - Jedi Knight, MOTS and Infernal Machine Editor;FileVersion=0.1.0.70;OriginalFilename=sed.exe;ProductName=SED;ProductVersion=0.1.0.0;Comments=;ProgramID=com.embarcadero.$(MSBuildProjectName);HomePage=https://github.com/smlu/sed</VerInfo_Keys>
         <Icon_MainIcon>sed.ico</Icon_MainIcon>
         <VerInfo_AutoIncVersion>true</VerInfo_AutoIncVersion>
         <DCC_PEOSVersion>10.0</DCC_PEOSVersion>
-        <VerInfo_Build>37</VerInfo_Build>
+        <VerInfo_Build>70</VerInfo_Build>
         <VerInfo_MajorVer>0</VerInfo_MajorVer>
         <VerInfo_MinorVer>1</VerInfo_MinorVer>
         <Debugger_LoadAllSymbols>false</Debugger_LoadAllSymbols>
@@ -118,7 +118,7 @@
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_2_Win32)'!=''">
         <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
-        <VerInfo_Keys>CompanyName=;FileDescription=SED - Jedi Knight, MOTS and Infernal Machine Editor;FileVersion=0.1.0.87;OriginalFilename=sed.exe;ProductName=SED;ProductVersion=0.1.0.0;Comments=https://github.com/smlu/sed;ProgramID=com.embarcadero.$(MSBuildProjectName);HomePage=https://github.com/smlu/sed</VerInfo_Keys>
+        <VerInfo_Keys>CompanyName=;FileDescription=SED - Jedi Knight, MOTS and Infernal Machine Editor;FileVersion=0.1.0.89;OriginalFilename=sed.exe;ProductName=SED;ProductVersion=0.1.0.0;Comments=https://github.com/smlu/sed;ProgramID=com.embarcadero.$(MSBuildProjectName);HomePage=https://github.com/smlu/sed</VerInfo_Keys>
         <VerInfo_MajorVer>0</VerInfo_MajorVer>
         <VerInfo_MinorVer>1</VerInfo_MinorVer>
         <DCC_DebugInfoInExe>true</DCC_DebugInfoInExe>
@@ -127,7 +127,7 @@
         <VerInfo_Debug>true</VerInfo_Debug>
         <DCC_PEOSVersion>10.0</DCC_PEOSVersion>
         <VerInfo_AutoIncVersion>true</VerInfo_AutoIncVersion>
-        <VerInfo_Build>87</VerInfo_Build>
+        <VerInfo_Build>89</VerInfo_Build>
     </PropertyGroup>
     <ItemGroup>
         <DelphiCompile Include="$(MainSource)">
@@ -140,31 +140,26 @@
         <DCCReference Include="src\JED_MAIN.PAS">
             <Form>JedMain</Form>
         </DCCReference>
-        <DCCReference Include="src\tmp_load3do.pas"/>
-        <DCCReference Include="src\RENDER.PAS"/>
+        <DCCReference Include="src\Render.pas"/>
         <DCCReference Include="src\J_level.pas"/>
         <DCCReference Include="src\Files.pas"/>
-        <DCCReference Include="src\Tools.pas"/>
+        <DCCReference Include="src\TOOLS.PAS"/>
         <DCCReference Include="src\GEOMETRY.PAS"/>
         <DCCReference Include="src\ProgressDialog.pas">
             <Form>Progress</Form>
         </DCCReference>
         <DCCReference Include="src\lev_utils.pas"/>
-        <DCCReference Include="src\Containers.pas"/>
-        <DCCReference Include="src\FileOperations.pas"/>
-        <DCCReference Include="src\FileDialogs.pas">
+        <DCCReference Include="src\CONTAINERS.PAS"/>
+        <DCCReference Include="src\FILEOPERATIONS.PAS"/>
+        <DCCReference Include="src\FILEDIALOGS.PAS">
             <Form>GetFileOpen</Form>
         </DCCReference>
-        <DCCReference Include="src\UNIT1.PAS">
-            <Form>Form1</Form>
-        </DCCReference>
         <DCCReference Include="src\values.pas"/>
-        <DCCReference Include="src\u_templates.pas"/>
+        <DCCReference Include="src\U_TEMPLATES.PAS"/>
         <DCCReference Include="src\ListRes.pas"/>
-        <DCCReference Include="src\U_CogForm.pas">
+        <DCCReference Include="src\U_COGFORM.PAS">
             <Form>CogForm</Form>
         </DCCReference>
-        <DCCReference Include="src\D3D_PRender.pas"/>
         <DCCReference Include="src\d3d\D3d.pas"/>
         <DCCReference Include="src\d3d\D3dcaps.pas"/>
         <DCCReference Include="src\d3d\D3dtypes.pas"/>
@@ -172,26 +167,25 @@
         <DCCReference Include="src\Item_edit.pas">
             <Form>ItemEdit</Form>
         </DCCReference>
-        <DCCReference Include="src\FieldEdit.pas"/>
+        <DCCReference Include="src\FIELDEDIT.PAS"/>
         <DCCReference Include="src\misc_utils.pas"/>
-        <DCCReference Include="src\Cog_utils.pas"/>
         <DCCReference Include="src\ResourcePicker.pas">
             <Form>ResPicker</Form>
         </DCCReference>
-        <DCCReference Include="src\Preview.pas"/>
+        <DCCReference Include="src\PREVIEW.PAS"/>
         <DCCReference Include="src\graph_files.pas"/>
-        <DCCReference Include="src\Images.pas"/>
+        <DCCReference Include="src\IMAGES.PAS"/>
         <DCCReference Include="src\Cons_checker.pas">
             <Form>Consistency</Form>
         </DCCReference>
         <DCCReference Include="src\FlagEditor.pas">
             <Form>FlagEdit</Form>
         </DCCReference>
-        <DCCReference Include="src\U_Tools.pas">
+        <DCCReference Include="src\U_TOOLS.PAS">
             <Form>ToolForm</Form>
         </DCCReference>
-        <DCCReference Include="src\Jed_about1.pas">
-            <Form>Jed_about</Form>
+        <DCCReference Include="src\SED_About.PAS">
+            <Form>SedAbout</Form>
         </DCCReference>
         <DCCReference Include="src\U_tbar.pas">
             <Form>Toolbar</Form>
@@ -199,10 +193,10 @@
         <DCCReference Include="src\U_PREVIEW.PAS">
             <Form>Preview3D</Form>
         </DCCReference>
-        <DCCReference Include="src\U_msgForm.pas">
+        <DCCReference Include="src\U_MSGFORM.PAS">
             <Form>MsgForm</Form>
         </DCCReference>
-        <DCCReference Include="src\U_SCFEdit.pas">
+        <DCCReference Include="src\U_SCFEDIT.PAS">
             <Form>SCFieldPicker</Form>
         </DCCReference>
         <DCCReference Include="src\JDH_JDL.PAS"/>
@@ -216,43 +210,39 @@
         <DCCReference Include="src\Q_things.pas">
             <Form>FindThings</Form>
         </DCCReference>
-        <DCCReference Include="src\Prefab.pas"/>
-        <DCCReference Include="src\U_Medit.pas">
+        <DCCReference Include="src\PREFAB.PAS"/>
+        <DCCReference Include="src\U_MEDIT.PAS">
             <Form>EpisodeEdit</Form>
         </DCCReference>
-        <DCCReference Include="src\u_3dos.pas"/>
-        <DCCReference Include="src\U_lheader.pas">
+        <DCCReference Include="src\U_3DOS.PAS"/>
+        <DCCReference Include="src\U_LHEADER.PAS">
             <Form>LHEdit</Form>
         </DCCReference>
         <DCCReference Include="src\U_3doprev.pas">
             <Form>Preview3DO</Form>
         </DCCReference>
-        <DCCReference Include="src\u_StrEdit.pas">
+        <DCCReference Include="src\U_STREDIT.PAS">
             <Form>StrEdit</Form>
         </DCCReference>
-        <DCCReference Include="src\u_coggen.pas">
+        <DCCReference Include="src\U_COGGEN.PAS">
             <Form>CogGen</Form>
         </DCCReference>
         <DCCReference Include="src\U_DFI.PAS">
             <Form>DFImport</Form>
         </DCCReference>
-        <DCCReference Include="src\OGL_PRender.pas"/>
-        <DCCReference Include="src\sft_render.pas"/>
-        <DCCReference Include="src\u_tpledit.pas">
-            <Form>TplEdit</Form>
-        </DCCReference>
-        <DCCReference Include="src\sft_persp_render.pas"/>
+        <DCCReference Include="src\PRenderGL.pas"/>
+        <DCCReference Include="src\RenderSW.pas"/>
         <DCCReference Include="src\u_undo.pas"/>
         <DCCReference Include="src\u_multisel.pas"/>
         <DCCReference Include="src\u_copypaste.pas"/>
         <DCCReference Include="src\u_errorform.pas">
             <Form>ErrForm</Form>
         </DCCReference>
-        <DCCReference Include="src\U_tplcreate.pas">
+        <DCCReference Include="src\U_TPLCREATE.PAS">
             <Form>TPLCreator</Form>
         </DCCReference>
         <DCCReference Include="src\PRender.pas"/>
-        <DCCReference Include="src\d3d_NPRender.pas"/>
+        <DCCReference Include="src\PRenderDX.pas"/>
         <DCCReference Include="src\d3d\DXTools.pas"/>
         <DCCReference Include="src\d3d\DPlay.pas"/>
         <DCCReference Include="src\d3d\DInput.pas"/>
@@ -260,14 +250,13 @@
         <DCCReference Include="src\d3d\DSound.pas"/>
         <DCCReference Include="src\SED_COM.pas"/>
         <DCCReference Include="src\sed_plugins.pas"/>
-        <DCCReference Include="src\tbar_tools.pas"/>
-        <DCCReference Include="src\u_cscene.pas">
+        <DCCReference Include="src\TBAR_TOOLS.PAS"/>
+        <DCCReference Include="src\U_CSCENE.PAS">
             <Form>KeyForm</Form>
         </DCCReference>
-        <DCCReference Include="src\u_pjkey.pas"/>
-        <DCCReference Include="src\u_pj3dos.pas"/>
-        <DCCReference Include="src\pjgeometry.pas"/>
-        <DCCReference Include="src\u_3doform.pas">
+        <DCCReference Include="src\U_PJKEY.PAS"/>
+        <DCCReference Include="src\U_PJ3DOS.PAS"/>
+        <DCCReference Include="src\U_3DOFORM.PAS">
             <Form>UrqForm</Form>
         </DCCReference>
         <DCCReference Include="src\JED_COM.PAS"/>
@@ -278,6 +267,9 @@
         <DCCReference Include="src\d3d\D3DUtils.pas"/>
         <DCCReference Include="src\dglOpenGL.pas"/>
         <DCCReference Include="src\GLContext.pas"/>
+        <DCCReference Include="src\RenderGL.pas">
+            <FormType>dfm</FormType>
+        </DCCReference>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>

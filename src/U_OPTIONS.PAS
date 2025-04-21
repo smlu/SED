@@ -4,7 +4,7 @@ interface
 
 uses
   GlobalVars, Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
-  StdCtrls, FileCtrl, ComCtrls, misc_utils, ExtCtrls, Buttons, D3D_PRender,
+  StdCtrls, FileCtrl, ComCtrls, misc_utils, ExtCtrls, Buttons, PRenderDX,
   FieldEdit, J_Level, tbar_tools, IniFiles, Vcl.Mask;
 
 type

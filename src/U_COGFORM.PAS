@@ -52,7 +52,7 @@ var
 
 implementation
 
-uses ResourcePicker, Cog_utils, ListRes, Jed_Main;
+uses ResourcePicker, ListRes, Jed_Main;
 
 {$R *.DFM}
 

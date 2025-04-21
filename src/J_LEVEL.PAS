@@ -360,7 +360,7 @@ Function GetfrFR(thfr: integer): integer;
 
 implementation
 
-uses ProgressDialog, lev_utils, cog_utils, ListRes, U_CogForm,
+uses ProgressDialog, lev_utils, ListRes, U_CogForm,
   U_options, graph_files, System.Math;
 
 { Lights }
