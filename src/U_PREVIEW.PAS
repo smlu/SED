@@ -435,8 +435,8 @@ begin
           self.MoveThingLeft
         else if (Shift = [ssAlt]) then // Un-adjoin
           JedMain.FormKeyDown(nil, Key, Shift)
-        else
-          self.MoveCameraUp;
+        else // Adjoin
+          JedMain.FormKeyDown(nil, Key, Shift);
       Ord('B'):
         if Shift = [] then  // Bring Thing to surface
           JedMain.FormKeyDown(nil, Key, Shift);
@@ -455,7 +455,9 @@ begin
         if viewMode then
           self.MoveCameraUp
         else if Shift = [ssShift] then
-          self.MoveThingUp;
+          self.MoveThingUp
+        else
+          self.MoveCameraUp;
       Ord('I'):
         if Shift = [] then
           JedMain.AddThingOnCurSurf
@@ -513,7 +515,9 @@ begin
         if viewMode then
           self.MoveCameraDown
         else if Shift = [ssShift] then
-          self.MoveThingDown;
+          self.MoveThingDown
+        else
+          self.MoveCameraDown;
 
       Ord('S'):
         begin
@@ -1110,18 +1114,17 @@ begin
   MenuNoClipSelectionOutline.Checked := P3DNoClipSelectionOutline;
 
   AddKBItem(miControl, 'View mode'#9'Right Mouse Button + W/A/S/D', #0, []);
-  AddKBItem(miControl, 'Rotate right', Char(VK_RIGHT), []);
-  AddKBItem(miControl, 'Rotate right', Char(VK_RIGHT), []);
   AddKBItem(miControl, 'Rotate left', Char(VK_LEFT), []);
+  AddKBItem(miControl, 'Rotate right', Char(VK_RIGHT), []);
   AddKBItem(miControl, 'Move forth', Char(VK_UP), []);
   AddKBItem(miControl, 'Move back', Char(VK_DOWN), []);
   AddKBItem(miControl, 'Sidestep left', Char(VK_LEFT), [ssAlt]);
   AddKBItem(miControl, 'Sidestep right', Char(VK_RIGHT), [ssAlt]);
 
-  AddKBItem(miControl, 'Look up', Char(VK_NEXT), []);
-  AddKBItem(miControl, 'Look down', Char(VK_PRIOR), []);
-  AddKBItem(miControl, 'Move up', 'A', []);
-  AddKBItem(miControl, 'Move down', 'Z', []);
+  AddKBItem(miControl, 'Look up', Char(VK_PRIOR), []);
+  AddKBItem(miControl, 'Look down', Char(VK_NEXT), []);
+  AddKBItem(miControl, 'Move up', 'Q', []);
+  AddKBItem(miControl, 'Move down', 'E', []);
 
   AddKBItem(miControl, 'Select surface/thing'#9'Click', #0, []);
   AddKBItem(miControl, 'Clear multiselection', Char(VK_BACK), []);
@@ -1165,7 +1168,7 @@ begin
   AddKBItem(miEdit, 'Fix solid surface(s)', 'R', [ssCtrl], JedMain.OnFixSolidSurfaces);
 
   AddKBItem(miEdit, 'Unadjoin', 'A', [ssAlt]);
-  AddKBItem(miEdit, 'Adjoin', 'A', [ssCtrl]);
+  AddKBItem(miEdit, 'Adjoin', 'A', []);
   AddKBItem(miEdit, 'Join sectors/surfaces', 'J', []);
   AddKBItem(miEdit, 'Merge', 'M', []);
 
