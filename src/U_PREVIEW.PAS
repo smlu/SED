@@ -382,46 +382,22 @@ begin
         if Shift = [ssShift] then
           JedMain.ShiftTexture(st_left)
         else if Shift = [ssCtrl] then
-          JedMain.RotateTexture(st_left)
-        else if ssAlt in Shift then
-          begin
-            self.MoveCameraLeft;
-          end
-        else
-          GetCamera().RotateYaw(-10);
+          JedMain.RotateTexture(st_left);
       VK_RIGHT:
         if Shift = [ssShift] then
           JedMain.ShiftTexture(st_right)
         else if Shift = [ssCtrl] then
-          JedMain.RotateTexture(st_right)
-        else if ssAlt in Shift then
-          begin
-            self.MoveCameraRight;
-          end
-        else
-          GetCamera().RotateYaw(10);
+          JedMain.RotateTexture(st_right);
       VK_UP:
         if Shift = [ssShift] then
           JedMain.ShiftTexture(st_up)
         else if Shift = [ssCtrl] then
-          JedMain.RaiseObject(ro_up)
-        else
-        begin
-          self.MoveCameraForward;
-        end;
+          JedMain.RaiseObject(ro_up);
       VK_DOWN:
         if Shift = [ssShift] then
           JedMain.ShiftTexture(st_down)
         else if Shift = [ssCtrl] then
-          JedMain.RaiseObject(ro_down)
-        else
-          self.MoveCameraBackward;
-      VK_NEXT:
-          GetCamera().RotatePitch(10);
-      VK_PRIOR:
-        begin
-          GetCamera().RotatePitch(-10);
-        end;
+          JedMain.RaiseObject(ro_down);
       VK_HOME:
         if Shift = [] then
           GetCamera().rotation.pitch := 0
@@ -435,8 +411,8 @@ begin
           self.MoveThingLeft
         else if (Shift = [ssAlt]) then // Un-adjoin
           JedMain.FormKeyDown(nil, Key, Shift)
-        else
-          self.MoveCameraUp;
+        else // Adjoin
+          JedMain.FormKeyDown(nil, Key, Shift);
       Ord('B'):
         if Shift = [] then  // Bring Thing to surface
           JedMain.FormKeyDown(nil, Key, Shift);
@@ -1110,18 +1086,8 @@ begin
   MenuNoClipSelectionOutline.Checked := P3DNoClipSelectionOutline;
 
   AddKBItem(miControl, 'View mode'#9'Right Mouse Button + W/A/S/D', #0, []);
-  AddKBItem(miControl, 'Rotate right', Char(VK_RIGHT), []);
-  AddKBItem(miControl, 'Rotate right', Char(VK_RIGHT), []);
-  AddKBItem(miControl, 'Rotate left', Char(VK_LEFT), []);
-  AddKBItem(miControl, 'Move forth', Char(VK_UP), []);
-  AddKBItem(miControl, 'Move back', Char(VK_DOWN), []);
-  AddKBItem(miControl, 'Sidestep left', Char(VK_LEFT), [ssAlt]);
-  AddKBItem(miControl, 'Sidestep right', Char(VK_RIGHT), [ssAlt]);
-
-  AddKBItem(miControl, 'Look up', Char(VK_NEXT), []);
-  AddKBItem(miControl, 'Look down', Char(VK_PRIOR), []);
-  AddKBItem(miControl, 'Move up', 'A', []);
-  AddKBItem(miControl, 'Move down', 'Z', []);
+  AddKBItem(miControl, 'Move up'#9'Right Mouse Button + Q', #0, []);
+  AddKBItem(miControl, 'Move down'#9'Right Mouse Button + E', #0, []);
 
   AddKBItem(miControl, 'Select surface/thing'#9'Click', #0, []);
   AddKBItem(miControl, 'Clear multiselection', Char(VK_BACK), []);
@@ -1165,7 +1131,7 @@ begin
   AddKBItem(miEdit, 'Fix solid surface(s)', 'R', [ssCtrl], JedMain.OnFixSolidSurfaces);
 
   AddKBItem(miEdit, 'Unadjoin', 'A', [ssAlt]);
-  AddKBItem(miEdit, 'Adjoin', 'A', [ssCtrl]);
+  AddKBItem(miEdit, 'Adjoin', 'A', []);
   AddKBItem(miEdit, 'Join sectors/surfaces', 'J', []);
   AddKBItem(miEdit, 'Merge', 'M', []);
 
