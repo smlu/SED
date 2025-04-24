@@ -563,7 +563,6 @@ object JedMain: TJedMain
       end
       object SaveJKLGob1: TMenuItem
         Caption = 'Save JKL And GOB'
-        ShortCut = 113
         OnClick = SaveJKLGob1Click
       end
       object SaveJKLGOBandTest1: TMenuItem
@@ -701,7 +700,7 @@ object JedMain: TJedMain
       end
       object Viewtogrid1: TMenuItem
         Caption = '&View to grid'
-        ShortCut = 106
+        ShortCut = 113
         OnClick = Viewtogrid1Click
       end
       object GridtoView1: TMenuItem

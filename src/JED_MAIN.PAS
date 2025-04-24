@@ -1729,7 +1729,6 @@ begin
     AddKBItem(miMap, 'Zoom at cursor'#9'Mouse Wheel', #0, []);
     AddKBItem(miMap, 'Zoom in', Char(VK_ADD), []);
     AddKBItem(miMap, 'Zoom out', Char(VK_SUBTRACT), []);
-    AddKBItem(miMap, 'View To Grid', Char(VK_MULTIPLY), []);
 
     AddKBItem(miGrid, 'Top view&&grid', '1', [ssShift]);
     AddKBItem(miGrid, 'Front view&&grid', '2', [ssShift]);
@@ -2618,8 +2617,6 @@ begin
                 MM_LT:
                     BringLightToSurf(Cur_LT, Cur_SC, Cur_SF);
             end;
-        VK_MULTIPLY:
-            SetViewToGrid;
         Ord('E'):
             SetMapMode(MM_ED);
         Ord('X'):
