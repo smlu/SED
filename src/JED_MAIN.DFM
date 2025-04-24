@@ -563,7 +563,6 @@ object JedMain: TJedMain
       end
       object SaveJKLGob1: TMenuItem
         Caption = 'Save JKL And GOB'
-        ShortCut = 113
         OnClick = SaveJKLGob1Click
       end
       object SaveJKLGOBandTest1: TMenuItem
@@ -688,11 +687,11 @@ object JedMain: TJedMain
         OnClick = JumptoObject1Click
       end
       object MUSnapGridTo: TMenuItem
-        Caption = '&Snap  Grid to Object'
+        Caption = '&Snap Grid to Object'
         OnClick = MUSnapGridToClick
       end
       object SnapViewToObject: TMenuItem
-        Caption = 'Snap View &To Object'
+        Caption = '&Snap View to Object'
         OnClick = SnapViewToObjectClick
       end
       object SetMapGeoBackfaceCulling: TMenuItem
@@ -701,6 +700,7 @@ object JedMain: TJedMain
       end
       object Viewtogrid1: TMenuItem
         Caption = '&View to grid'
+        ShortCut = 113
         OnClick = Viewtogrid1Click
       end
       object GridtoView1: TMenuItem
