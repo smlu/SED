@@ -382,46 +382,22 @@ begin
         if Shift = [ssShift] then
           JedMain.ShiftTexture(st_left)
         else if Shift = [ssCtrl] then
-          JedMain.RotateTexture(st_left)
-        else if ssAlt in Shift then
-          begin
-            self.MoveCameraLeft;
-          end
-        else
-          GetCamera().RotateYaw(-10);
+          JedMain.RotateTexture(st_left);
       VK_RIGHT:
         if Shift = [ssShift] then
           JedMain.ShiftTexture(st_right)
         else if Shift = [ssCtrl] then
-          JedMain.RotateTexture(st_right)
-        else if ssAlt in Shift then
-          begin
-            self.MoveCameraRight;
-          end
-        else
-          GetCamera().RotateYaw(10);
+          JedMain.RotateTexture(st_right);
       VK_UP:
         if Shift = [ssShift] then
           JedMain.ShiftTexture(st_up)
         else if Shift = [ssCtrl] then
-          JedMain.RaiseObject(ro_up)
-        else
-        begin
-          self.MoveCameraForward;
-        end;
+          JedMain.RaiseObject(ro_up);
       VK_DOWN:
         if Shift = [ssShift] then
           JedMain.ShiftTexture(st_down)
         else if Shift = [ssCtrl] then
-          JedMain.RaiseObject(ro_down)
-        else
-          self.MoveCameraBackward;
-      VK_NEXT:
-          GetCamera().RotatePitch(10);
-      VK_PRIOR:
-        begin
-          GetCamera().RotatePitch(-10);
-        end;
+          JedMain.RaiseObject(ro_down);
       VK_HOME:
         if Shift = [] then
           GetCamera().rotation.pitch := 0
@@ -1114,15 +1090,6 @@ begin
   MenuNoClipSelectionOutline.Checked := P3DNoClipSelectionOutline;
 
   AddKBItem(miControl, 'View mode'#9'Right Mouse Button + W/A/S/D', #0, []);
-  AddKBItem(miControl, 'Rotate left', Char(VK_LEFT), []);
-  AddKBItem(miControl, 'Rotate right', Char(VK_RIGHT), []);
-  AddKBItem(miControl, 'Move forth', Char(VK_UP), []);
-  AddKBItem(miControl, 'Move back', Char(VK_DOWN), []);
-  AddKBItem(miControl, 'Sidestep left', Char(VK_LEFT), [ssAlt]);
-  AddKBItem(miControl, 'Sidestep right', Char(VK_RIGHT), [ssAlt]);
-
-  AddKBItem(miControl, 'Look up', Char(VK_PRIOR), []);
-  AddKBItem(miControl, 'Look down', Char(VK_NEXT), []);
   AddKBItem(miControl, 'Move up', 'Q', []);
   AddKBItem(miControl, 'Move down', 'E', []);
 
