@@ -336,9 +336,11 @@ Function TFlagEdit.EditSurfaceFlags(flags: Longint): Longint;
         if CurrentProject = IJIM then
         begin
           Bit7.Checked := False;
-          Bit17.Checked := False;
+          if n <> 21 then // Lava
+            Bit17.Checked := False;
           Bit20.Checked := False;
-          Bit21.Checked := False;
+          if n <> 17 then // water
+            Bit21.Checked := False;
           Bit22.Checked := False;
           Bit23.Checked := False;
           Bit29.Checked := False;
@@ -358,37 +360,36 @@ begin
   SetNameDesc(1,  '0x02 - COG Linked', 'Surface is linked to COG(s).');
   SetNameDesc(2,  '0x04 - Collision', 'Solid surface with face collision.');
   SetNameDesc(3,  '0x08 - No AI move', 'AI actor can''t move onto the surface.');
-  SetNameDesc(4,  '0x10 - 2x scrolling size', 'Double scrolling surface size. Affects the speed of SlideWall COG function.');
-  SetNameDesc(5,  '0x20 - 1/2 scrolling size', 'Half scrolling surface size. Affects the speed of SlideWall COG function.');
-  SetNameDesc(6,  '0x40 - 1/8 scrolling size', 'Eight scrolling surface size. Affects the speed of SlideWall COG function.');
+  SetNameDesc(4,  '0x10 - 2x scrolling size', Format('Double scrolling surface size.%sAffects the speed of SlideWall COG function.', [sLineBreak]));
+  SetNameDesc(5,  '0x20 - 1/2 scrolling size', Format('Half scrolling surface size.%sAffects the speed of SlideWall COG function.', [sLineBreak]));
+  SetNameDesc(6,  '0x40 - 1/8 scrolling size', Format('Eight scrolling surface size.%sAffects the speed of SlideWall COG function.', [sLineBreak]));
   SetNameDesc(9,  '0x200 - Horizon sky', 'Surface is part of skybox.');
   SetNameDesc(10, '0x400 - Ceiling sky', 'Surface is part of ceiling sky.');
-  SetNameDesc(11, '0x800 - Scrolling', 'Surface is scrolling/sliding. Set by SlideWall COG function.');
-  SetNameDesc(16, '0x10000 - Metal', 'Metal surface. Makes metal sound fx when surface is hit or walked on');
+  SetNameDesc(11, '0x800 - Scrolling', Format('Surface is scrolling/sliding.%sSet by SlideWall COG function.', [sLineBreak]));
+  SetNameDesc(16, '0x10000 - Metal', Format('Metal surface.%sMakes metal sound fx when surface is hit or walked on', [sLineBreak]));
   SetNameDesc(18, '0x40000 - Shallow water', 'Makes water sound fx when surface is touched or walked on.');
-  SetNameDesc(19, '0x80000 - Dirt', 'Dirt surface. Makes dirt sound fx when surface is hit or walked on');
+  SetNameDesc(19, '0x80000 - Dirt', Format('Dirt surface.%sMakes dirt sound fx when surface is hit or walked on', [sLineBreak]));
 
   if CurrentProject = IJIM then
     begin
-      SetNameDesc(7,  '0x80 - Aetherium', 'Aetherium surface. Makes "aetherium" sound fx when surface is hit or walked on.');
-      SetNameDesc(12, '0x1000 - Kill floor', 'Actor, player or weapon object is instantly destroyed if surface is touched.');
+      SetNameDesc(7,  '0x80 - Aetherium', Format('Aetherium surface.%sMakes "aetherium" sound fx when surface is hit or walked on.', [sLineBreak]));
+      SetNameDesc(12, '0x1000 - Kill floor', 'Actor, player, or weapon object is instantly destroyed upon contact.');
       SetNameDesc(13, '0x2000 - Climbable', 'Player can climb on the surface. e.g.: ladder.');
       SetNameDesc(14, '0x4000 - Track', 'Surface is a railroad track, e.g.: mine cart track.');
       SetNameDesc(15, '0x8000 - Changed', 'Set by engine to mark surface has changed.');
-      SetNameDesc(17, '0x20000 - Water', 'Surface is part of underwater sector.');
+      SetNameDesc(17, '0x20000 - Water', Format('Surface is part of underwater sector or water adjoin.%sWhen combined with the ''0x20000 - Lava'' flag, this surface becomes cold water where thing object is destroyed upon contact.', [sLineBreak]));
       SetNameDesc(20, '0x100000 - Web', 'Spider web surface.');
-      SetNameDesc(21, '0x200000 - Lava', 'Lava surface. Actor or player is instantly killed if surface is touched. ');
-      SetNameDesc(22, '0x400000 - Snow', 'Snow surface. Makes snow sound fx when surface is hit or walked on.');
-      SetNameDesc(23, '0x800000 - Wood', 'Wood surface. Makes wood sound fx when surface is hit or walked on.');
+      SetNameDesc(21, '0x200000 - Lava', Format('Lava surface.%sThe thing object is destroyed upon contact.%sWhen combined with the ''0x20000 - Water'' flag, this surface becomes cold water.', [sLineBreak, sLineBreak]));
+      SetNameDesc(22, '0x400000 - Snow', Format('Snow surface.%sMakes snow sound fx when surface is hit or walked on.', [sLineBreak]));
+      SetNameDesc(23, '0x800000 - Wood', Format('Wood surface.%sMakes wood sound fx when surface is hit or walked on.', [sLineBreak]));
       SetNameDesc(24, '0x1000000 - Ledge', 'Surface is a ledge that player can grab onto and hang from.');
       SetNameDesc(25, '0x2000000 - Water ledge', 'Climb out of water ledge.');
-      SetNameDesc(26, '0x4000000 - 1/4 scrolling size', 'Quarter scrolling surface size. Affects the speed of SlideWall COG function.');
-      SetNameDesc(27, '0x8000000 - 4x scrolling size' , 'Quadruple scrolling surface size. Affects the speed of SlideWall COG function.');
+      SetNameDesc(26, '0x4000000 - 1/4 scrolling size', Format('Quarter scrolling surface size.%sAffects the speed of SlideWall COG function.', [sLineBreak]));
+      SetNameDesc(27, '0x8000000 - 4x scrolling size' , Format('Quadruple scrolling surface size.%sAffects the speed of SlideWall COG function.', [sLineBreak]));
       SetNameDesc(28, '0x10000000 - Whip aim', 'Triggers whip aim system for the player when they move onto the surface.');
       SetNameDesc(29, '0x20000000 - Echo', 'Makes indoor/echo sound fx when surface is hit or walked on.');
-      SetNameDesc(30, '0x40000000 - Wood echo', 'Wood surface. Makes wood indoor/hollow sound fx when surface is hit or walked on.');
-      SetNameDesc(31, '0x80000000 - Dirt echo', 'Dirt surface. Makes dirt indoor/hollow sound fx when surface is hit or walked on.');
-
+      SetNameDesc(30, '0x40000000 - Wood echo', Format('Wood surface.%sMakes wood indoor/hollow sound fx when surface is hit or walked on.', [sLineBreak]));
+      SetNameDesc(31, '0x80000000 - Dirt echo', Format('Dirt surface.%sMakes dirt indoor/hollow sound fx when surface is hit or walked on.', [sLineBreak]));
       Bits[15].Enabled := False; // disable setting flag 0x8000 - Changed
     end
   else
