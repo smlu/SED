@@ -1,4 +1,9 @@
 # Change Log
+## Version 0.2.1
+- Fixed the flag editor to allow simultaneous selection of water and lava surface flags, enabling the creation of 'cold water' surface types.
+- Changed keyboard shortcut for View-To-Grid command in the Map Editor [PR #36](https://github.com/smlu/SED/pull/36) 
+- Updated keyboard key commands in 3D Preview [PR #36](https://github.com/smlu/SED/pull/36) 
+
 ## Version 0.2.0
 - Fixed division by zero in `FindUVScales` function.
 - Fixed calculating yaw & roll angles in `TMatrix43.ExtractPYR` function.
@@ -126,30 +131,30 @@
   * Fixed selecting corresponding linked COG symbol in Placed COG editor
   * Sector:
     - Added fields:
-        + ambient light
-        + avg. light intensity (IJIM)
-        + avg. light position (IJIM)
-        + avg. light falloff (IJIM)
-        + thrust (IJIM)
+      + ambient light
+      + avg. light intensity (IJIM)
+      + avg. light position (IJIM)
+      + avg. light falloff (IJIM)
+      + thrust (IJIM)
   * Surface:
-   - Select the mirror adjoin surface when double-clicking the adjoin field
-   - Fixed saving sector geometry undo on UV scale change or flip faceflags set/clear
+    - Select the mirror adjoin surface when double-clicking the adjoin field
+    - Fixed saving sector geometry undo on UV scale change or flip faceflags set/clear
   * Vertex:
-   - Added vertex coords copy/past button
+    - Added vertex coords copy/past button
   * Thing:
-   - Added color pick option for `light` & `lightintensity` param (IJIM)
-   - Added sector selection on double click sector field
+    - Added color pick option for `light` & `lightintensity` param (IJIM)
+    - Added sector selection on double click sector field
   * Light:
-   - Added button for setting light to sector point light to selected sector(s) (IJIM)
+    - Added button for setting light to sector point light to selected sector(s) (IJIM)
 
 - Flags Editor:
   * Sector:
     - Auto set/clear surface flags 0x80 - aetherium and 0x20000 - water for all sector surfaces when sector flags 0x2 - underwater and 0x100 - aetherium is set/cleared.
   * Surface:
-   - Added IJIM surface flags and rename existing JKDF2 flags
-   - Auto set collision surface flag when floor surface flag is set, and unset floor surfflag when collision flag is unset.
+    - Added IJIM surface flags and rename existing JKDF2 flags
+    - Auto set collision surface flag when floor surface flag is set, and unset floor surfflag when collision flag is unset.
   * Thing:
-   - Added IJIM thingflags and rename existing JKDF flags
+    - Added IJIM thingflags and rename existing JKDF flags
 
 - Map Editor
   * Added experimental perspective camera projection to map editor (shortcut: Num 5)
