@@ -58,7 +58,6 @@ object JedMain: TJedMain
     ParentShowHint = False
     ShowHint = False
     TabOrder = 0
-    ExplicitWidth = 958
     object BNSC: TSpeedButton
       Left = 6
       Top = 6
@@ -397,7 +396,6 @@ object JedMain: TJedMain
       ShowHint = True
       TabOrder = 0
       OnDblClick = PNProjTypeDblClick
-      ExplicitLeft = 875
     end
   end
   object Panel1: TPanel
@@ -412,8 +410,6 @@ object JedMain: TJedMain
     Align = alBottom
     BevelOuter = bvLowered
     TabOrder = 1
-    ExplicitTop = 789
-    ExplicitWidth = 958
     object PXYZ: TPanel
       Left = 1
       Top = 1
@@ -466,7 +462,6 @@ object JedMain: TJedMain
       ShowHint = True
       TabOrder = 1
       OnDblClick = PMsgDblClick
-      ExplicitWidth = 584
     end
     object PMsel: TPanel
       Left = 337

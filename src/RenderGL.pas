@@ -98,12 +98,19 @@ Type
     Function CreateOGLPalette(const pd: TPIXELFORMATDESCRIPTOR): Integer;
     Function IsWirePolygonInView(p: TPolygon): boolean;
 
+
     var glctx: TGLContext;
   end;
 
 implementation
 
-uses Jed_Main, Lev_utils;
+uses Jed_Main, Lev_utils,  Prender, PRenderGL, files, graph_files, Images, J_Level;
+
+ // TODO: Vars should be part of render cass
+var
+ txList, cmpList: TStringList;
+  masterPalSet: boolean;
+  MasterPal: TCMPPal;
 
 {$R *.DFM}
 
@@ -114,6 +121,135 @@ var
     FSTCW   FPUControlWord ;
     OR      FPUControlWord, $4 + $1 ; { Divide by zero + invalid operation }
     FLDCW   FPUControlWord ;
+end;
+
+Procedure LoadMasterPal(l:TJKLevel);
+var
+ i:integer;
+ pal:array[0..255] of
+ record
+  r,g,b,a:byte;
+ end;
+
+begin
+ if MasterPalSet then exit;
+ GetLevelPal(l, MasterPal);
+
+ for i:=0 to 255 do
+   With Pal[i] do
+     begin
+      r := MasterPal[i].r;
+      g := MasterPal[i].g;
+      b := MasterPal[i].b;
+      a := 0;
+     end;
+
+{ glEnable(GL_COLOR_INDEX8_EXT);
+
+ pPalProc(GL_TEXTURE_2D, GL_RGB8, sizeof(Pal),
+	  GL_RGBA, GL_UNSIGNED_BYTE, pal );}
+
+ MasterPalSet:=true;
+end;
+
+Function Min(i1,i2:integer):integer;
+begin
+ if i1 < i2 then result := i1 else result := i2;
+end;
+
+Procedure AdjustPalGamma(var pal:TCMPPal;gamma:double);
+var i:integer;
+begin
+ for i := 0 to 255 do
+   With Pal[i] do
+     begin
+      r := Min(Round(r * gamma), 255);
+      g := Min(Round(g * gamma), 255);
+      b := Min(Round(b * gamma), 255);
+     end;
+end;
+
+Function LoadTexture(const name: string; const ppal: PTCMPPal;
+  const pcmp: PTCMPTable): T3DPTexture;
+var
+  i: integer;
+  Ttx: TOGLTexture;
+  pnew: TCMPPal;
+  ppnew: PTCMPPal;
+begin
+
+    ppnew := nil;
+    Result := nil;
+
+    if (ppal <> nil) and (pcmp <> nil) then
+      begin
+        pnew := ppal^;
+        ApplyCMPTable(pnew, pcmp^);
+        ppnew := @pnew;
+      end;
+    Ttx := TOGLTexture.CreateFromMat(name, ppnew, (*gamma=*)1.0);
+    Result := Ttx;
+end;
+
+Function GetTexture(const name,cmp: string):T3DPTexture;
+var i:integer;
+    Ttx:T3DPTexture;
+    pcmp:PTCMPTable;
+    tpal:TCMPPal;
+    ptpal:PTCMPPal;
+    f:TFile;
+begin
+  pcmp:= nil;
+  ptpal:= nil;
+  Result:=nil;
+
+  i := TXlist.IndexOf(name + cmp);
+  if i <> -1 then
+    begin
+      Result := T3DPTexture(TXList.Objects[i]);
+      exit;
+    end;
+
+  // Load palette
+  if CurrentProject <> IJIM then
+    begin
+      i := CmpList.IndexOf(cmp);
+      if i <> -1 then pcmp := Pointer(CmpList.Objects[i]) else
+        begin
+          GetMem(pcmp, sizeof(pcmp^));
+          if not LoadCmpTable(cmp, pcmp^) then PanMessage(mt_warning, Format('Cannot load %s', [cmp]));
+          CmpList.AddObject(cmp, TObject(pcmp));
+        end;
+
+      LoadMasterPal(level);
+      tpal:=MasterPal;
+      //AdjustPalGamma(tpal,gamma);
+      ptpal := @tpal;
+    end;
+
+ ttx := nil;
+
+ try
+  ttx := LoadTexture(name, ptpal, pcmp);
+{  TGlideTexture.CreateFromMat(name,tpal,GenTexture);}
+  if (ttx <> nil) and (CurrentProject <> IJIM ) then
+    ttx.cmpname := cmp;
+ finally
+  TXList.AddObject(name + cmp, ttx);
+  Result := ttx;
+ end;
+end;
+
+Procedure ClearTXList;
+var i: Integer;
+begin
+  for i := 0 to txList.Count - 1 do
+    txList.Objects[i].Free;
+  txList.Clear;
+
+  for i := 0 to cmpList.Count - 1 do
+    FreeMem(Pointer(cmpList.Objects[i]));
+  cmpList.Clear;
 end;
 
 Procedure TOGLRenderer.BeginScene;
@@ -322,7 +458,17 @@ begin
 
   SwapBuffers(hdc);
 
-  glFrontFace(GL_CCW);
+
+
+   glEnable(GL_CULL_FACE);
+    glCullFace(GL_BACK);
+    glFrontFace(GL_CCW);
+
+    glEnable(GL_TEXTURE_2D);
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_BLEND);
+    glShadeModel(GL_SMOOTH);
+
   glctx.Release;
   // Uncomment to enable zbuffer.
   // Note, can cause lines z fighting
@@ -474,6 +620,19 @@ begin
       if not IsWirePolygonInView(ps[i]) then continue;
       with ps[i] do
       begin
+
+        var drawMode :=  GL_LINE_LOOP;
+        var bSolid := False;
+        if (geo = 4) and (Length(material) > 0) then
+        begin
+          drawMode :=  GL_TRIANGLES;
+          TOGLTexture(GetTexture(material, '')).SetCurrent;
+          bSolid := True;
+        end
+        else
+          TOGLTexture(nil).SetCurrent;
+
+
         n := vertices.count;
 //        case n of
 //          3:
@@ -483,7 +642,7 @@ begin
 //        else
 //          glBegin(GL_Polygon);
 //        end;
-        glBegin(GL_LINE_LOOP);
+        glBegin(drawMode);
         for j := 0 to vertices.count - 1 do
           with vertices[j] do
           begin
@@ -492,6 +651,9 @@ begin
             az := z;
             MultVM3(mx, ax, ay, az);
             glVertex3d(ax + dx, ay + dy, az + dz);
+            if bSolid then
+              with txVertices[j] do
+                glTexCoord2f(u, v);
           end;
         glEnd;
       end;
@@ -526,13 +688,38 @@ begin
   if not IsWirePolygonInView(p) then
     exit;
 
+
+  var drawMode :=  GL_LINE_LOOP;
+  var bSolid := False;
+  var invMatWidth := 1 / 1;
+  var invMatHeight := 1 / 1;
+
+  if (p.geo = 4) and (Length(p.material) > 0) then
+  begin
+    drawMode :=  GL_TRIANGLE_FAN;
+    var tx:= GetTexture(p.material, '') ;
+    invMatWidth := 1 / tx.width;
+    invMatHeight := 1 / tx.height;
+
+    TOGLTexture(tx).SetCurrent;
+    bSolid := True;
+
+  end
+  else
+    TOGLTexture(nil).SetCurrent;
+
+
   n := p.vertices.Count;
-  glBegin(GL_LINE_LOOP);
+  glBegin(drawMode);
     for i := 0 to p.vertices.Count - 1 do
       with p.vertices[i] do
       begin
+         if bSolid then
+              with p.txVertices[i] do
+                glTexCoord2f(u*invMatWidth , v *invMatHeight );
         glVertex3d(x, y, z);
         // glNormal3d(p.Normal.dx,p.normal.dz, p.normal.dy);
+
       end;
   glEnd;
 end;
@@ -1024,4 +1211,13 @@ begin
    end;
 end;
 
+Initialization
+begin
+  TxList := TStringList.Create;
+  TXList.Sorted := true;
+
+  CmpList := TStringList.Create;
+  CmpList.Sorted := true;
+
+end;
 end.

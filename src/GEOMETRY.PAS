@@ -206,6 +206,7 @@ type
     vertices: TVertices;
     txVertices: TTXVertices;
     num: integer;
+    material: String;
     { d:double; }
     Constructor Create;
     Function AddVertex(v: TVertex): integer;

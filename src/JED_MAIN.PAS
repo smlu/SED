@@ -1159,9 +1159,9 @@ var
     procedure SetCullingAndDrawColor(cull: integer; color: TJedColor);
     begin
       var cullmode := IfThen(WF_InvertCulling, IfThen(cull = R_CULLFRONT, R_CULLBACK, R_CULLFRONT), cull);
-      var what := IfThen(cullmode = R_CULLFRONT, CL_BACK, CL_FRONT);
+      var what := IfThen(cullmode = R_CULLFRONT, CL_FRONT, CL_BACK);
       renderer.SetColor(what, color.r, color.g, color.b);
-      renderer.SetCulling(cullmode);
+      renderer.SetCulling(R_CULLBACK);      // TODO: was passing cullmode
     end;
 
     procedure RenderWorldGeometry(mode: TRenderMode);
@@ -1214,11 +1214,11 @@ begin
         // Draw level geometry
 
         // Render backfaces of level geometry
-        if not bMapGeoBackfaceCull then
-          begin
-            SetCullingAndDrawColor(R_CULLFRONT, clMapGeoBack);
-            RenderWorldGeometry(RM_POLYGON);
-          end;
+//        if not bMapGeoBackfaceCull then
+//          begin
+//            SetCullingAndDrawColor(R_CULLFRONT, clMapGeoBack);
+//            RenderWorldGeometry(RM_POLYGON);
+//          end;
 
         // Render frontfaces of level geometry
         SetCullingAndDrawColor(R_CULLBACK, clMapGeo);

@@ -165,7 +165,7 @@ type
     surfflags: longint;
     adjoin: TJKSurface;
     adjoinflags: longint;
-    material: String;
+    //material: String;
     sector: TJKSector;
 //    geo, light, tex: integer;
 //    ExtraLight: TColorF;
