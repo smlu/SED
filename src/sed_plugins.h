@@ -227,41 +227,52 @@
 #define cr_OpenGL   1
 #define cr_Software 2
 
-typedef struct {
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+typedef struct
+{
     double x;
     double y;
 } TSedVector2;
 
-typedef union {
+typedef union 
+{
     struct { double dx, dy, dz; };
     struct { double x, y, z; };
     struct { double pitch, yaw, roll; };
 } TSedVector3;
 
-typedef struct {
+typedef struct 
+{
     float r, g, b, a;  // a - alpha or light intensity
 } TSedColor;
 
-typedef struct {
+typedef struct
+{
     TSedVector3 p1;
     TSedVector3 p2;
 } TSedBox;
 
-typedef struct {
+typedef struct 
+{
     TSedColor color;
     TSedVector3 position;
     double minRange;  // minimum light range at which light will still illuminate objects
     double maxRange;  // maximum light intensity range before it starts to falloff
 } TSedPointLight;
 
-typedef struct {
+typedef struct 
+{
     bool enabled;
     TSedColor color;
     double fogStart;
     double fogEnd;
 } TSedFog;
 
-typedef struct {
+typedef struct
+{
     int32_t version;
     double gravity;
     double ceilingSkyHeight;
@@ -278,7 +289,8 @@ typedef struct {
     TSedFog fog;
 } TSedLevelHeader;
 
-typedef struct {
+typedef struct
+{
     int32_t flags;
     TSedColor ambient;
     TSedColor extraLight;
@@ -291,7 +303,8 @@ typedef struct {
     int32_t layer;
 } TSedSectorRec;
 
-typedef struct {
+typedef struct 
+{
     int32_t adjoinSec;
     int32_t adjoinSurf;
     int32_t adjoinflags;
@@ -314,7 +327,8 @@ typedef struct {
     int32_t layer;
 } TSedThingRec;
 
-typedef struct {
+typedef struct 
+{
     int32_t flags;
     int32_t layer;
     TSedColor color;
@@ -323,14 +337,23 @@ typedef struct {
     TSedVector3 position;
 } TSedLightRec;
 
+typedef interface ISed ISed;
+typedef interface ISedLevel ISedLevel;
+typedef interface ISedWFRenderer ISedWFRenderer;
+
 /* Wireframe renderer interface */
 /* JED 0.93 */
+#undef INTERFACE
+#define INTERFACE ISedWFRenderer
 DECLARE_INTERFACE_(ISedWFRenderer, IUnknown)
 {
-    /* OLE2 crap. ignore */
-    STDMETHOD(QueryInterface)(THIS_ void* iid, void** obj) PURE;
+    BEGIN_INTERFACE
+
+    /* IUnknown methods */
+    STDMETHOD(QueryInterface)(THIS_ REFIID riid, void **ppvObject) PURE;
     STDMETHOD_(ULONG, AddRef)(THIS) PURE;
     STDMETHOD_(ULONG, Release)(THIS) PURE;
+
     /* Renderer attributes */
     STDMETHOD_(double, GetRendererDouble)(THIS_ int what) PURE;
     STDMETHOD_(void, SetRendererDouble)(THIS_ int what, double val) PURE;
@@ -370,12 +393,18 @@ DECLARE_INTERFACE_(ISedWFRenderer, IUnknown)
     STDMETHOD_(int, IsSurfaceFacing)(THIS_ int sc, int sf) PURE;
     STDMETHOD_(int, HandleWMQueryPal)(THIS) PURE;
     STDMETHOD_(int, HandleWMChangePal)(THIS) PURE;
+
+    END_INTERFACE
 };
 
+#undef INTERFACE
+#define INTERFACE ISedLevel
 DECLARE_INTERFACE_(ISedLevel, IUnknown)
 {
-    /* OLE2 crap. ignore */
-    STDMETHOD(QueryInterface)(THIS_ void* iid, void** obj) PURE;
+    BEGIN_INTERFACE
+
+    /* IUnknown methods */
+    STDMETHOD(QueryInterface)(THIS_ REFIID riid, void **ppvObject) PURE;
     STDMETHOD_(ULONG, AddRef)(THIS) PURE;
     STDMETHOD_(ULONG, Release)(THIS) PURE;
 
@@ -460,16 +489,23 @@ DECLARE_INTERFACE_(ISedLevel, IUnknown)
     STDMETHOD_(int, CogValueAdd)(THIS_ int cg, const wchar_t* name, const wchar_t* val, int vtype) PURE;
     STDMETHOD_(void, CogValueInsert)(THIS_ int cg, int n, const wchar_t* name, const wchar_t* val, int vtype) PURE;
     STDMETHOD_(void, CogValueDelete)(THIS_ int cg, int n) PURE;
+
+    END_INTERFACE
 };
 
+#undef INTERFACE
+#define INTERFACE ISed
 DECLARE_INTERFACE_(ISed, IUnknown)
 {
-    STDMETHOD(QueryInterface)(THIS_ REFIID iid, void** ppvObject) PURE;
+    BEGIN_INTERFACE
+
+    /* IUnknown methods */
+    STDMETHOD(QueryInterface)(THIS_ REFIID riid, void **ppvObject) PURE;
     STDMETHOD_(ULONG, AddRef)(THIS) PURE;
     STDMETHOD_(ULONG, Release)(THIS) PURE;
 
     STDMETHOD_(double, GetVersion)(THIS) PURE;
-    STDMETHOD(GetLevel)(THIS_ ISedLevel** ppLevel) PURE;
+    STDMETHOD_(ISedLevel*, GetLevel)(THIS) PURE;
 
     STDMETHOD_(int, GetMapMode)(THIS) PURE;
     STDMETHOD(SetMapMode)(THIS_ int mode) PURE;
@@ -639,5 +675,12 @@ DECLARE_INTERFACE_(ISed, IUnknown)
     STDMETHOD(GobClose)(THIS_ int handle) PURE;
 
     STDMETHOD(CreateWFRenderer)(THIS_ int wnd, int whichOne, ISedWFRenderer** ppRenderer) PURE;
+
+    END_INTERFACE
 };
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif //SED_PLUGINS_H
