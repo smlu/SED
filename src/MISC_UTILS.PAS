@@ -360,7 +360,7 @@ end;
 
 Function TColorF.RgbaIntensity: single;
 begin
-  Result := (r + g + b + a) / 4;
+  Result := (r + g + b) / 3;
 end;
 
 Function TIntList.GetInt(n: Integer): Integer;
