@@ -775,7 +775,7 @@ begin
  tv.color.a:=white;
  tv.color.r:=r;
  tv.color.g:=g;
- tv.color.b:=g;
+ tv.color.b:=b; // Fixed in SED 0.3, OG b = g;
 end;
 {things}
 Function TCOMLevel.AddThing:Integer;
