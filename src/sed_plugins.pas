@@ -676,8 +676,8 @@ Warning! Names are case-sensitive }
 // function TSedPluginLoad(sed:ISed): Boolean;
 // is still supported, but not recommended
 
-TSedPluginLoad = Function(sed: ISed): Boolean;
-TSedPluginLoadStdCall = Function(sed: ISed): Boolean; stdcall;
+TSedPluginLoad = function(sed: ISed): Boolean; cdecl;
+TSedPluginLoadStdCall = function(sed: ISed): Boolean; stdcall;
 
 
 { General purpose functions. Local }
