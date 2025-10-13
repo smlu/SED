@@ -1613,7 +1613,7 @@ begin
           BitMaskTest(surfflags, SF_SkyCeiling) then
           poly.light := TLightMode.None;
 
-        if sec.level.kind = JKDF2 then // JKDF2 doesn't support tex clamping?
+        if sec.level.kind <> IJIM then // JKDF2 & MOTS don't support tex clamping
           BitClear(poly.faceflags, FF_TexClampX or FF_TexClampY);
 
         // Mark poly to render fog (IJIM)
