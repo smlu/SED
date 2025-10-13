@@ -556,8 +556,8 @@ begin
       lh.ceilingSkyOffset.Y := ceilingSky.offset.Y;
     end;
 
-    if (rflags and lh_HorDist)  <> 0 then lh.horizonSkyDistance := horizonSky.distance;
-    if (rflags and lh_HorPPR)   <> 0 then lh.horizonSkyPixelsPerRev :=horizonSky.pixelsPerRev;
+    if (rflags and lh_HorDist)  <> 0 then lh.horizonSkyDistance     := horizonSky.distance;
+    if (rflags and lh_HorPPR)   <> 0 then lh.horizonSkyPixelsPerRev := horizonSky.pixelsPerRev;
     if (rflags and lh_HSkyOffs) <> 0 then
     begin
       lh.horizonSkyOffset.X := horizonSky.offset.X;
@@ -583,7 +583,12 @@ begin
     if (rflags and lh_PerspDist)   <> 0 then lh.perspectiveDistance := perspectiveDistance;
     if (rflags and lh_GouraudDist) <> 0 then lh.gouraudDistance := gouraudDistance;
     if (rflags and lh_ppu)         <> 0 then lh.ppunit := level.ppunit;
-    if (rflags and lh_MasterCMP)   <> 0 then lh.aMasterCmp := PChar(level.masterCMP);
+    if (rflags and lh_MasterCMP)   <> 0 then
+      begin
+        lh.aMasterCmp := nil;
+        if (level.kind <> IJIM) and (not level.masterCMP.IsEmpty)
+          then lh.aMasterCmp := PChar(level.masterCMP);
+      end;
     if (rflags and lh_Fog)         <> 0 then lh.fog := TSedFog(Fog);
   end;
 end;
