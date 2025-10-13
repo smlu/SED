@@ -1,7 +1,9 @@
 unit sed_plugins;
 
 interface
-    uses System.Win.ComObj;
+
+{$ALIGN 8} // Make sure 8 byte alignment is in place
+
 const
 sedCloseEnough = 10e-5;
 
@@ -319,6 +321,8 @@ TSedLightRec = record
   range: Double;
   position: TSedVector3;
 end;
+
+{$ALIGN ON} // restore default alignment
 
 {endtype}
 

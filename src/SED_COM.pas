@@ -589,7 +589,17 @@ begin
         if (level.kind <> IJIM) and (not level.masterCMP.IsEmpty)
           then lh.aMasterCmp := PChar(level.masterCMP);
       end;
-    if (rflags and lh_Fog)         <> 0 then lh.fog := TSedFog(Fog);
+
+    if (rflags and lh_Fog) <> 0 then
+    begin
+      lh.fog.enabled  := fog.enabled;
+      lh.fog.color.r  := fog.color.r;
+      lh.fog.color.g  := fog.color.g;
+      lh.fog.color.b  := fog.color.b;
+      lh.fog.color.a  := fog.color.a;
+      lh.fog.fogStart := fog.fogStart;
+      lh.fog.fogEnd   := fog.fogEnd;
+    end;
   end;
 end;
 
@@ -634,7 +644,17 @@ begin
   if (rflags and lh_GouraudDist) <> 0 then gouraudDistance := lh.gouraudDistance;
   if (rflags and lh_ppu)         <> 0 then level.ppunit := lh.ppunit;
   if (rflags and lh_MasterCMP)   <> 0 then level.masterCMP := lh.aMasterCmp;
-  if (rflags and lh_Fog)         <> 0 then fog := TFog(lh.fog);
+
+  if (rflags and lh_Fog) <> 0 then
+    begin
+      fog.enabled  := lh.fog.enabled;
+      fog.color.r  := lh.fog.color.r;
+      fog.color.g  := lh.fog.color.g;
+      fog.color.b  := lh.fog.color.b;
+      fog.color.a  := lh.fog.color.a;
+      fog.fogStart := lh.fog.fogStart;
+      fog.fogEnd   := lh.fog.fogEnd;
+    end;
  end;
 end;
 

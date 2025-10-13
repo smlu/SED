@@ -231,6 +231,8 @@
 extern "C" {
 #endif
 
+#pragma pack(push, 8)
+
 typedef struct
 {
     double x;
@@ -336,6 +338,8 @@ typedef struct
     double range;
     TSedVector3 position;
 } TSedLightRec;
+
+#pragma pack(pop)
 
 typedef interface ISed ISed;
 typedef interface ISedLevel ISedLevel;
