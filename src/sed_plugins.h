@@ -1,8 +1,9 @@
-#ifndef SED_PLUGINS_H
-#define SED_PLUGINS_H
-#include <stdint.h>
-#include <stdbool.h>
+#ifndef Sed_PLUGINS_H
+#define Sed_PLUGINS_H
+#include <math.h>
 #include <objbase.h>
+#include <stdbool.h>
+#include <stdint.h>
 
 /* Constants */
 #define sedCloseEnough 10e-5
@@ -227,6 +228,10 @@
 #define cr_OpenGL   1
 #define cr_Software 2
 
+/* Special SED editor Sector flags */
+#define SED_SECTOR_NORGBAMBINETLIGHT 0x20000000
+#define SED_SECTOR_NOAMBINETLIGHT    0x40000000
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -341,6 +346,19 @@ typedef struct
 
 #pragma pack(pop)
 
+/**
+ * Defines a SED plugin entry point
+ * @param funcName - Name of the plugin initialization function
+ * @param varName  - Name of the ISed* parameter (type is ISed*)
+ * 
+ * Signature: bool funcName(ISed* varName)
+ * Returns: true on success, false on failure
+ */
+#define SED_PLUGIN_ENTRY(funcName, varName) \
+    __pragma(comment(linker, "/EXPORT:SEDPluginLoadStdCall=_" #funcName "@4")) \
+    extern "C" __declspec(dllexport) bool __stdcall funcName(ISed* varName)
+
+
 typedef interface ISed ISed;
 typedef interface ISedLevel ISedLevel;
 typedef interface ISedWFRenderer ISedWFRenderer;
@@ -400,6 +418,51 @@ DECLARE_INTERFACE_(ISedWFRenderer, IUnknown)
 
     END_INTERFACE
 };
+
+#if !defined(__cplusplus) || defined(CINTERFACE)
+#define ISedWFRenderer_QueryInterface(This, riid, ppvObject) (This)->lpVtbl->QueryInterface(This, riid, ppvObject)
+#define ISedWFRenderer_AddRef(This) (This)->lpVtbl->AddRef(This)
+#define ISedWFRenderer_Release(This) (This)->lpVtbl->Release(This)
+#define ISedWFRenderer_GetRendererDouble(This, what) (This)->lpVtbl->GetRendererDouble(This, what)
+#define ISedWFRenderer_SetRendererDouble(This, what, val) (This)->lpVtbl->SetRendererDouble(This, what, val)
+#define ISedWFRenderer_GetRendererVector(This, what, x, y, z) (This)->lpVtbl->GetRendererVector(This, what, x, y, z)
+#define ISedWFRenderer_SetRendererVector(This, what, x, y, z) (This)->lpVtbl->SetRendererVector(This, what, x, y, z)
+#define ISedWFRenderer_NSelected(This) (This)->lpVtbl->NSelected(This)
+#define ISedWFRenderer_GetNSelected(This, n) (This)->lpVtbl->GetNSelected(This, n)
+#define ISedWFRenderer_SetViewPort(This, x, y, w, h) (This)->lpVtbl->SetViewPort(This, x, y, w, h)
+#define ISedWFRenderer_SetColor(This, what, r, g, b) (This)->lpVtbl->SetColor(This, what, r, g, b)
+#define ISedWFRenderer_SetPointSize(This, size) (This)->lpVtbl->SetPointSize(This, size)
+#define ISedWFRenderer_BeginScene(This) (This)->lpVtbl->BeginScene(This)
+#define ISedWFRenderer_EndScene(This) (This)->lpVtbl->EndScene(This)
+#define ISedWFRenderer_SetCulling(This, how) (This)->lpVtbl->SetCulling(This, how)
+#define ISedWFRenderer_DrawSector(This, sc) (This)->lpVtbl->DrawSector(This, sc)
+#define ISedWFRenderer_DrawSurface(This, sc, sf) (This)->lpVtbl->DrawSurface(This, sc, sf)
+#define ISedWFRenderer_DrawThing(This, th) (This)->lpVtbl->DrawThing(This, th)
+#define ISedWFRenderer_DrawLine(This, x1, y1, z1, x2, y2, z2) (This)->lpVtbl->DrawLine(This, x1, y1, z1, x2, y2, z2)
+#define ISedWFRenderer_DrawVertex(This, X, Y, Z) (This)->lpVtbl->DrawVertex(This, X, Y, Z)
+#define ISedWFRenderer_DrawGrid(This) (This)->lpVtbl->DrawGrid(This)
+#define ISedWFRenderer_BeginPick(This, x, y) (This)->lpVtbl->BeginPick(This, x, y)
+#define ISedWFRenderer_EndPick(This) (This)->lpVtbl->EndPick(This)
+#define ISedWFRenderer_PickSector(This, sc, id) (This)->lpVtbl->PickSector(This, sc, id)
+#define ISedWFRenderer_PickSurface(This, sc, sf, id) (This)->lpVtbl->PickSurface(This, sc, sf, id)
+#define ISedWFRenderer_PickLine(This, x1, y1, z1, x2, y2, z2, id) (This)->lpVtbl->PickLine(This, x1, y1, z1, x2, y2, z2, id)
+#define ISedWFRenderer_PickVertex(This, X, Y, Z, id) (This)->lpVtbl->PickVertex(This, X, Y, Z, id)
+#define ISedWFRenderer_BeginRectPick(This, x1, y1, x2, y2) (This)->lpVtbl->BeginRectPick(This, x1, y1, x2, y2)
+#define ISedWFRenderer_EndRectPick(This) (This)->lpVtbl->EndRectPick(This)
+#define ISedWFRenderer_IsSectorInRect(This, sc) (This)->lpVtbl->IsSectorInRect(This, sc)
+#define ISedWFRenderer_IsSurfaceInRect(This, sc, sf) (This)->lpVtbl->IsSurfaceInRect(This, sc, sf)
+#define ISedWFRenderer_IsLineInRect(This, x1, y1, z1, x2, y2, z2) (This)->lpVtbl->IsLineInRect(This, x1, y1, z1, x2, y2, z2)
+#define ISedWFRenderer_IsVertexInRect(This, X, Y, Z) (This)->lpVtbl->IsVertexInRect(This, X, Y, Z)
+#define ISedWFRenderer_GetXYZonPlaneAt(This, scX, scY, pnormal, pX, pY, pZ, X, Y, Z) (This)->lpVtbl->GetXYZonPlaneAt(This, scX, scY, pnormal, pX, pY, pZ, X, Y, Z)
+#define ISedWFRenderer_GetGridAt(This, scX, scY, X, Y, Z) (This)->lpVtbl->GetGridAt(This, scX, scY, X, Y, Z)
+#define ISedWFRenderer_GetNearestGridNode(This, iX, iY, iZ, X, Y, Z) (This)->lpVtbl->GetNearestGridNode(This, iX, iY, iZ, X, Y, Z)
+#define ISedWFRenderer_ProjectPoint(This, x, y, z, WinX, WinY) (This)->lpVtbl->ProjectPoint(This, x, y, z, WinX, WinY)
+#define ISedWFRenderer_UnProjectPoint(This, WinX, WinY, WinZ, x, y, z) (This)->lpVtbl->UnProjectPoint(This, WinX, WinY, WinZ, x, y, z)
+#define ISedWFRenderer_IsSurfaceFacing(This, sc, sf) (This)->lpVtbl->IsSurfaceFacing(This, sc, sf)
+#define ISedWFRenderer_HandleWMQueryPal(This) (This)->lpVtbl->HandleWMQueryPal(This)
+#define ISedWFRenderer_HandleWMChangePal(This) (This)->lpVtbl->HandleWMChangePal(This)
+#else
+#endif
 
 #undef INTERFACE
 #define INTERFACE ISedLevel
@@ -497,6 +560,81 @@ DECLARE_INTERFACE_(ISedLevel, IUnknown)
     END_INTERFACE
 };
 
+#if !defined(__cplusplus) || defined(CINTERFACE) 
+#define ISedLevel_QueryInterface(This, riid, ppvObject) (This)->lpVtbl->QueryInterface(This, riid, ppvObject)
+#define ISedLevel_AddRef(This) (This)->lpVtbl->AddRef(This)
+#define ISedLevel_Release(This) (This)->lpVtbl->Release(This)
+#define ISedLevel_GetLevelHeader(This, lh, flags) (This)->lpVtbl->GetLevelHeader(This, lh, flags)
+#define ISedLevel_SetLevelHeader(This, lh, flags) (This)->lpVtbl->SetLevelHeader(This, lh, flags)
+#define ISedLevel_NumSectors(This) (This)->lpVtbl->NumSectors(This)
+#define ISedLevel_NumThings(This) (This)->lpVtbl->NumThings(This)
+#define ISedLevel_NumLights(This) (This)->lpVtbl->NumLights(This)
+#define ISedLevel_NumCogs(This) (This)->lpVtbl->NumCogs(This)
+#define ISedLevel_SectorAdd(This) (This)->lpVtbl->SectorAdd(This)
+#define ISedLevel_SectorDelete(This, n) (This)->lpVtbl->SectorDelete(This, n)
+#define ISedLevel_SectorGet(This, sec, rec, flags) (This)->lpVtbl->SectorGet(This, sec, rec, flags)
+#define ISedLevel_SectorSet(This, sec, rec, flags) (This)->lpVtbl->SectorSet(This, sec, rec, flags)
+#define ISedLevel_SectorNumVertices(This, sec) (This)->lpVtbl->SectorNumVertices(This, sec)
+#define ISedLevel_SectorNumSurfaces(This, sec) (This)->lpVtbl->SectorNumSurfaces(This, sec)
+#define ISedLevel_SectorGetVertex(This, sec, vn, vert) (This)->lpVtbl->SectorGetVertex(This, sec, vn, vert)
+#define ISedLevel_SectorSetVertex(This, sec, vn, vert) (This)->lpVtbl->SectorSetVertex(This, sec, vn, vert)
+#define ISedLevel_SectorAddVertex(This, sec, vert) (This)->lpVtbl->SectorAddVertex(This, sec, vert)
+#define ISedLevel_SectorFindVertex(This, sec, vert) (This)->lpVtbl->SectorFindVertex(This, sec, vert)
+#define ISedLevel_SectorDeleteVertex(This, sec, vn) (This)->lpVtbl->SectorDeleteVertex(This, sec, vn)
+#define ISedLevel_SectorAddSurface(This, sec) (This)->lpVtbl->SectorAddSurface(This, sec)
+#define ISedLevel_SectorDeleteSurface(This, sec, surf) (This)->lpVtbl->SectorDeleteSurface(This, sec, surf)
+#define ISedLevel_SectorUpdate(This, sec) (This)->lpVtbl->SectorUpdate(This, sec)
+#define ISedLevel_SurfaceGet(This, sec, surf, rec, flags) (This)->lpVtbl->SurfaceGet(This, sec, surf, rec, flags)
+#define ISedLevel_SurfaceSet(This, sec, surf, rec, flags) (This)->lpVtbl->SurfaceSet(This, sec, surf, rec, flags)
+#define ISedLevel_SurfaceGetNormal(This, sec, surf, normal) (This)->lpVtbl->SurfaceGetNormal(This, sec, surf, normal)
+#define ISedLevel_SurfaceUpdate(This, sec, surf, how) (This)->lpVtbl->SurfaceUpdate(This, sec, surf, how)
+#define ISedLevel_SurfaceNumVertices(This, sec, surf) (This)->lpVtbl->SurfaceNumVertices(This, sec, surf)
+#define ISedLevel_SurfaceGetVertexNum(This, sec, surf, vn) (This)->lpVtbl->SurfaceGetVertexNum(This, sec, surf, vn)
+#define ISedLevel_SurfaceSetVertexNum(This, sec, surf, vn, secvx) (This)->lpVtbl->SurfaceSetVertexNum(This, sec, surf, vn, secvx)
+#define ISedLevel_SurfaceAddVertex(This, sec, surf, secvn) (This)->lpVtbl->SurfaceAddVertex(This, sec, surf, secvn)
+#define ISedLevel_SurfaceInsertVertex(This, sec, surf, at, secvn) (This)->lpVtbl->SurfaceInsertVertex(This, sec, surf, at, secvn)
+#define ISedLevel_SurfaceDeleteVertex(This, sec, surf, n) (This)->lpVtbl->SurfaceDeleteVertex(This, sec, surf, n)
+#define ISedLevel_SurfaceGetVertexUV(This, sec, surf, vn, u, v) (This)->lpVtbl->SurfaceGetVertexUV(This, sec, surf, vn, u, v)
+#define ISedLevel_SurfaceSetVertexUV(This, sec, surf, vn, u, v) (This)->lpVtbl->SurfaceSetVertexUV(This, sec, surf, vn, u, v)
+#define ISedLevel_SurfaceGetVertexLight(This, sec, surf, vn, color) (This)->lpVtbl->SurfaceGetVertexLight(This, sec, surf, vn, color)
+#define ISedLevel_SurfaceSetVertexLight(This, sec, surf, vn, color) (This)->lpVtbl->SurfaceSetVertexLight(This, sec, surf, vn, color)
+#define ISedLevel_ThingAdd(This) (This)->lpVtbl->ThingAdd(This)
+#define ISedLevel_ThingDelete(This, th) (This)->lpVtbl->ThingDelete(This, th)
+#define ISedLevel_ThingGet(This, th, rec, flags) (This)->lpVtbl->ThingGet(This, th, rec, flags)
+#define ISedLevel_ThingSet(This, th, rec, flags) (This)->lpVtbl->ThingSet(This, th, rec, flags)
+#define ISedLevel_ThingUpdate(This, th) (This)->lpVtbl->ThingUpdate(This, th)
+#define ISedLevel_ThingNumValues(This, th) (This)->lpVtbl->ThingNumValues(This, th)
+#define ISedLevel_ThingValueGetName(This, th, n) (This)->lpVtbl->ThingValueGetName(This, th, n)
+#define ISedLevel_ThingValueGetData(This, th, n) (This)->lpVtbl->ThingValueGetData(This, th, n)
+#define ISedLevel_ThingValueSetData(This, th, n, val) (This)->lpVtbl->ThingValueSetData(This, th, n, val)
+#define ISedLevel_ThingValueAdd(This, th, name, val) (This)->lpVtbl->ThingValueAdd(This, th, name, val)
+#define ISedLevel_ThingValueInsert(This, th, n, name, val) (This)->lpVtbl->ThingValueInsert(This, th, n, name, val)
+#define ISedLevel_ThingValueDelete(This, th, n) (This)->lpVtbl->ThingValueDelete(This, th, n)
+#define ISedLevel_ThingFrameGet(This, th, n, pos, pyr) (This)->lpVtbl->ThingFrameGet(This, th, n, pos, pyr)
+#define ISedLevel_ThingFrameSet(This, th, n, pos, pyr) (This)->lpVtbl->ThingFrameSet(This, th, n, pos, pyr)
+#define ISedLevel_LightAdd(This) (This)->lpVtbl->LightAdd(This)
+#define ISedLevel_LightDelete(This, lt) (This)->lpVtbl->LightDelete(This, lt)
+#define ISedLevel_LightGet(This, lt, rec, flags) (This)->lpVtbl->LightGet(This, lt, rec, flags)
+#define ISedLevel_LightSet(This, lt, rec, flags) (This)->lpVtbl->LightSet(This, lt, rec, flags)
+#define ISedLevel_LightUpdate(This, lt) (This)->lpVtbl->LightUpdate(This, lt)
+#define ISedLevel_NumLayers(This) (This)->lpVtbl->NumLayers(This)
+#define ISedLevel_LayerGetName(This, n) (This)->lpVtbl->LayerGetName(This, n)
+#define ISedLevel_LayerAdd(This, name) (This)->lpVtbl->LayerAdd(This, name)
+#define ISedLevel_CogAdd(This, name) (This)->lpVtbl->CogAdd(This, name)
+#define ISedLevel_CogDelete(This, n) (This)->lpVtbl->CogDelete(This, n)
+#define ISedLevel_CogUpdate(This, cg) (This)->lpVtbl->CogUpdate(This, cg)
+#define ISedLevel_CogGetFilename(This, cg) (This)->lpVtbl->CogGetFilename(This, cg)
+#define ISedLevel_CogNumValues(This, cg) (This)->lpVtbl->CogNumValues(This, cg)
+#define ISedLevel_CogValueGetName(This, cg, n) (This)->lpVtbl->CogValueGetName(This, cg, n)
+#define ISedLevel_CogValueGetType(This, cg, n) (This)->lpVtbl->CogValueGetType(This, cg, n)
+#define ISedLevel_CogValueGet(This, cg, n) (This)->lpVtbl->CogValueGet(This, cg, n)
+#define ISedLevel_CogValueSet(This, cg, n, val) (This)->lpVtbl->CogValueSet(This, cg, n, val)
+#define ISedLevel_CogValueAdd(This, cg, name, val, vtype) (This)->lpVtbl->CogValueAdd(This, cg, name, val, vtype)
+#define ISedLevel_CogValueInsert(This, cg, n, name, val, vtype) (This)->lpVtbl->CogValueInsert(This, cg, n, name, val, vtype)
+#define ISedLevel_CogValueDelete(This, cg, n) (This)->lpVtbl->CogValueDelete(This, cg, n)
+#else
+#endif
+
 #undef INTERFACE
 #define INTERFACE ISed
 DECLARE_INTERFACE_(ISed, IUnknown)
@@ -532,14 +670,14 @@ DECLARE_INTERFACE_(ISed, IUnknown)
     STDMETHOD(LoadLevel)(THIS_ const wchar_t* name) PURE;
 
     STDMETHOD(RotateVector)(THIS_ TSedVector3* vec, const TSedVector3* pyr) PURE;
-    STDMETHOD(RotatePoint)(THIS_ const TSedVector3* p, const TSedVector3* pivot, double angle, TSedVector3* p2) PURE;
+    STDMETHOD(RotatePoint)(THIS_ const TSedVector3* point, const TSedVector3* pivot, double angle, TSedVector3* point2) PURE;
     STDMETHOD(GetPYR)(THIS_ const TSedVector3* x, const TSedVector3* y, const TSedVector3* z, TSedVector3* pyr) PURE;
 
     STDMETHOD_(int, MergeSectors)(THIS_ int sec1, int sec2) PURE;
     STDMETHOD_(int, CleaveSector)(THIS_ int sec, const TSedVector3* cnormal, const TSedVector3* cp) PURE;
     STDMETHOD_(int, CreateCubicSector)(THIS_ const TSedVector3* pos, const TSedVector3* pnormal, const TSedVector3* edge) PURE;
     STDMETHOD_(BOOL, IsSectorConvex)(THIS_ int sec) PURE;
-    STDMETHOD_(BOOL, IsInSector)(THIS_ int sec, const TSedVector3* p) PURE;
+    STDMETHOD_(BOOL, IsInSector)(THIS_ int sec, const TSedVector3* point) PURE;
     STDMETHOD_(BOOL, DoSectorsOverlap)(THIS_ int sec1, int sec2) PURE;
     STDMETHOD(FindBoundingBox)(THIS_ int sec, TSedBox* box) PURE;
     STDMETHOD(FindBoundingSphere)(THIS_ int sec, TSedVector3* center, double* radius) PURE;
@@ -550,7 +688,7 @@ DECLARE_INTERFACE_(ISed, IUnknown)
     STDMETHOD(FindSurfaceCenter)(THIS_ int sec, int surf, TSedVector3* center) PURE;
     STDMETHOD_(BOOL, IsSurfaceConvex)(THIS_ int sec, int surf) PURE;
     STDMETHOD_(BOOL, IsSurfacePlanar)(THIS_ int sec, int surf) PURE;
-    STDMETHOD_(BOOL, IsPointOnSurface)(THIS_ int sec, int surf, const TSedVector3* p) PURE;
+    STDMETHOD_(BOOL, IsPointOnSurface)(THIS_ int sec, int surf, const TSedVector3* point) PURE;
 
     STDMETHOD_(int, CleaveSurface)(THIS_ int sec, int surf, const TSedVector3* cnormal, const TSedVector3* cp) PURE;
     STDMETHOD_(BOOL, CleaveEdge)(THIS_ int sec, int surf, int ed, const TSedVector3* cnormal, const TSedVector3* cp) PURE;
@@ -683,8 +821,209 @@ DECLARE_INTERFACE_(ISed, IUnknown)
     END_INTERFACE
 };
 
+#if !defined(__cplusplus) || defined(CINTERFACE)
+#define ISed_QueryInterface(This, riid, ppvObject) (This)->lpVtbl->QueryInterface(This, riid, ppvObject)
+#define ISed_AddRef(This) (This)->lpVtbl->AddRef(This)
+#define ISed_Release(This) (This)->lpVtbl->Release(This)
+#define ISed_GetVersion(This) (This)->lpVtbl->GetVersion(This)
+#define ISed_GetLevel(This) (This)->lpVtbl->GetLevel(This)
+#define ISed_GetMapMode(This) (This)->lpVtbl->GetMapMode(This)
+#define ISed_SetMapMode(This, mode) (This)->lpVtbl->SetMapMode(This, mode)
+#define ISed_GetCurrentSector(This) (This)->lpVtbl->GetCurrentSector(This)
+#define ISed_SetCurrentSector(This, sc) (This)->lpVtbl->SetCurrentSector(This, sc)
+#define ISed_GetCurrentThing(This) (This)->lpVtbl->GetCurrentThing(This)
+#define ISed_SetCurrentThing(This, th) (This)->lpVtbl->SetCurrentThing(This, th)
+#define ISed_GetCurrentLight(This) (This)->lpVtbl->GetCurrentLight(This)
+#define ISed_SetCurrentLight(This, lt) (This)->lpVtbl->SetCurrentLight(This, lt)
+#define ISed_GetCurrentVertex(This, sec, vn) (This)->lpVtbl->GetCurrentVertex(This, sec, vn)
+#define ISed_SetCurrentVertex(This, sec, vn) (This)->lpVtbl->SetCurrentVertex(This, sec, vn)
+#define ISed_GetCurrentSurface(This, sec, surf) (This)->lpVtbl->GetCurrentSurface(This, sec, surf)
+#define ISed_SetCurrentSurface(This, sec, surf) (This)->lpVtbl->SetCurrentSurface(This, sec, surf)
+#define ISed_GetCurrentEdge(This, sec, surf, ed) (This)->lpVtbl->GetCurrentEdge(This, sec, surf, ed)
+#define ISed_SetCurrentEdge(This, sec, surf, ed) (This)->lpVtbl->SetCurrentEdge(This, sec, surf, ed)
+#define ISed_GetCurrentFrame(This, th, fr) (This)->lpVtbl->GetCurrentFrame(This, th, fr)
+#define ISed_SetCurrentFrame(This, th, fr) (This)->lpVtbl->SetCurrentFrame(This, th, fr)
+#define ISed_NewLevel(This, kind) (This)->lpVtbl->NewLevel(This, kind)
+#define ISed_LoadLevel(This, name) (This)->lpVtbl->LoadLevel(This, name)
+#define ISed_RotateVector(This, vec, pyr) (This)->lpVtbl->RotateVector(This, vec, pyr)
+#define ISed_RotatePoint(This, point, pivot, angle, point2) (This)->lpVtbl->RotatePoint(This, point, pivot, angle, point2)
+#define ISed_GetPYR(This, x, y, z, pyr) (This)->lpVtbl->GetPYR(This, x, y, z, pyr)
+#define ISed_MergeSectors(This, sec1, sec2) (This)->lpVtbl->MergeSectors(This, sec1, sec2)
+#define ISed_CleaveSector(This, sec, cnormal, cp) (This)->lpVtbl->CleaveSector(This, sec, cnormal, cp)
+#define ISed_CreateCubicSector(This, pos, pnormal, edge) (This)->lpVtbl->CreateCubicSector(This, pos, pnormal, edge)
+#define ISed_IsSectorConvex(This, sec) (This)->lpVtbl->IsSectorConvex(This, sec)
+#define ISed_IsInSector(This, sec, point) (This)->lpVtbl->IsInSector(This, sec, point)
+#define ISed_DoSectorsOverlap(This, sec1, sec2) (This)->lpVtbl->DoSectorsOverlap(This, sec1, sec2)
+#define ISed_FindBoundingBox(This, sec, box) (This)->lpVtbl->FindBoundingBox(This, sec, box)
+#define ISed_FindBoundingSphere(This, sec, center, radius) (This)->lpVtbl->FindBoundingSphere(This, sec, center, radius)
+#define ISed_FindCollideBox(This, sec, bbox, center, cbox) (This)->lpVtbl->FindCollideBox(This, sec, bbox, center, cbox)
+#define ISed_FindSectorForThing(This, th) (This)->lpVtbl->FindSectorForThing(This, th)
+#define ISed_FindSectorForXYZ(This, X, Y, Z) (This)->lpVtbl->FindSectorForXYZ(This, X, Y, Z)
+#define ISed_FindSurfaceCenter(This, sec, surf, center) (This)->lpVtbl->FindSurfaceCenter(This, sec, surf, center)
+#define ISed_IsSurfaceConvex(This, sec, surf) (This)->lpVtbl->IsSurfaceConvex(This, sec, surf)
+#define ISed_IsSurfacePlanar(This, sec, surf) (This)->lpVtbl->IsSurfacePlanar(This, sec, surf)
+#define ISed_IsPointOnSurface(This, sec, surf, point) (This)->lpVtbl->IsPointOnSurface(This, sec, surf, point)
+#define ISed_CleaveSurface(This, sec, surf, cnormal, cp) (This)->lpVtbl->CleaveSurface(This, sec, surf, cnormal, cp)
+#define ISed_CleaveEdge(This, sec, surf, ed, cnormal, cp) (This)->lpVtbl->CleaveEdge(This, sec, surf, ed, cnormal, cp)
+#define ISed_ExtrudeSurface(This, sec, surf, by) (This)->lpVtbl->ExtrudeSurface(This, sec, surf, by)
+#define ISed_JoinSurfaces(This, sec1, surf1, sec2, surf2) (This)->lpVtbl->JoinSurfaces(This, sec1, surf1, sec2, surf2)
+#define ISed_MergeSurfaces(This, sec, surf1, surf2) (This)->lpVtbl->MergeSurfaces(This, sec, surf1, surf2)
+#define ISed_PlanarizeSurface(This, sec, surf) (This)->lpVtbl->PlanarizeSurface(This, sec, surf)
+#define ISed_CalculateDefaultUVNormals(This, sec, surf, orgvx, un, vn) (This)->lpVtbl->CalculateDefaultUVNormals(This, sec, surf, orgvx, un, vn)
+#define ISed_CalculateUVNormals(This, sec, surf, un, vn) (This)->lpVtbl->CalculateUVNormals(This, sec, surf, un, vn)
+#define ISed_ArrangeTexture(This, sec, surf, orgvx, un, vn) (This)->lpVtbl->ArrangeTexture(This, sec, surf, orgvx, un, vn)
+#define ISed_ArrangeTextureBy(This, sec, surf, un, vn, refp, refu, refv) (This)->lpVtbl->ArrangeTextureBy(This, sec, surf, un, vn, refp, refu, refv)
+#define ISed_IsTextureFlipped(This, sec, surf) (This)->lpVtbl->IsTextureFlipped(This, sec, surf)
+#define ISed_StitchSurfaces(This, sc1, sf1, sc2, sf2) (This)->lpVtbl->StitchSurfaces(This, sc1, sf1, sc2, sf2)
+#define ISed_RemoveSurfaceReferences(This, sec, surf) (This)->lpVtbl->RemoveSurfaceReferences(This, sec, surf)
+#define ISed_RemoveSectorReferences(This, sec, surfs) (This)->lpVtbl->RemoveSectorReferences(This, sec, surfs)
+#define ISed_FindCommonEdges(This, sc1, sf1, sc2, sf2, v11, v12, v21, v22) (This)->lpVtbl->FindCommonEdges(This, sc1, sf1, sc2, sf2, v11, v12, v21, v22)
+#define ISed_DoSurfacesOverlap(This, sc1, sf1, sc2, sf2) (This)->lpVtbl->DoSurfacesOverlap(This, sc1, sf1, sc2, sf2)
+#define ISed_MakeAdjoin(This, sec, surf) (This)->lpVtbl->MakeAdjoin(This, sec, surf)
+#define ISed_MakeAdjoinFromSectorUp(This, sec, surf, firstSec) (This)->lpVtbl->MakeAdjoinFromSectorUp(This, sec, surf, firstSec)
+#define ISed_UnAdjoin(This, sec, surf) (This)->lpVtbl->UnAdjoin(This, sec, surf)
+#define ISed_StartUndo(This, name) (This)->lpVtbl->StartUndo(This, name)
+#define ISed_SaveUndoForThing(This, n, change) (This)->lpVtbl->SaveUndoForThing(This, n, change)
+#define ISed_SaveUndoForLight(This, n, change) (This)->lpVtbl->SaveUndoForLight(This, n, change)
+#define ISed_SaveUndoForSector(This, n, change, whatPart) (This)->lpVtbl->SaveUndoForSector(This, n, change, whatPart)
+#define ISed_ClearUndoBuffer(This) (This)->lpVtbl->ClearUndoBuffer(This)
+#define ISed_ApplyUndo(This) (This)->lpVtbl->ApplyUndo(This)
+#define ISed_GetApplicationHandle(This) (This)->lpVtbl->GetApplicationHandle(This)
+#define ISed_JoinSectors(This, sec1, sec2) (This)->lpVtbl->JoinSectors(This, sec1, sec2)
+#define ISed_GetNumMultiselected(This, what) (This)->lpVtbl->GetNumMultiselected(This, what)
+#define ISed_ClearMultiselection(This, what) (This)->lpVtbl->ClearMultiselection(This, what)
+#define ISed_RemoveFromMultiselection(This, what, n) (This)->lpVtbl->RemoveFromMultiselection(This, what, n)
+#define ISed_GetSelectedSector(This, n) (This)->lpVtbl->GetSelectedSector(This, n)
+#define ISed_GetSelectedSurface(This, n, sec, surf) (This)->lpVtbl->GetSelectedSurface(This, n, sec, surf)
+#define ISed_GetSelectedEdge(This, n, sec, surf, ed) (This)->lpVtbl->GetSelectedEdge(This, n, sec, surf, ed)
+#define ISed_GetSelectedVertex(This, n, sec, vn) (This)->lpVtbl->GetSelectedVertex(This, n, sec, vn)
+#define ISed_GetSelectedThing(This, n) (This)->lpVtbl->GetSelectedThing(This, n)
+#define ISed_GetSelectedFrame(This, n, th, fr) (This)->lpVtbl->GetSelectedFrame(This, n, th, fr)
+#define ISed_GetSelectedLight(This, n) (This)->lpVtbl->GetSelectedLight(This, n)
+#define ISed_SelectSector(This, sec) (This)->lpVtbl->SelectSector(This, sec)
+#define ISed_SelectSurface(This, sec, surf) (This)->lpVtbl->SelectSurface(This, sec, surf)
+#define ISed_SelectEdge(This, sec, surf, ed) (This)->lpVtbl->SelectEdge(This, sec, surf, ed)
+#define ISed_SelectVertex(This, sec, vn) (This)->lpVtbl->SelectVertex(This, sec, vn)
+#define ISed_SelectThing(This, th) (This)->lpVtbl->SelectThing(This, th)
+#define ISed_SelectFrame(This, th, fr) (This)->lpVtbl->SelectFrame(This, th, fr)
+#define ISed_SelectLight(This, lt) (This)->lpVtbl->SelectLight(This, lt)
+#define ISed_FindSelectedSector(This, sec) (This)->lpVtbl->FindSelectedSector(This, sec)
+#define ISed_FindSelectedSurface(This, sec, surf) (This)->lpVtbl->FindSelectedSurface(This, sec, surf)
+#define ISed_FindSelectedEdge(This, sec, surf, ed) (This)->lpVtbl->FindSelectedEdge(This, sec, surf, ed)
+#define ISed_FindSelectedVertex(This, sec, vn) (This)->lpVtbl->FindSelectedVertex(This, sec, vn)
+#define ISed_FindSelectedThing(This, th) (This)->lpVtbl->Fin
+#else
+#endif
+
+/* Sets vector components */
+inline void Sed_SetVector(TSedVector3* vec, double x, double y, double z)
+{
+    vec->x = x;
+    vec->y = y;
+    vec->z = z;
+}
+
+/* Calculates dot product of two vectors */
+inline double Sed_VectorDot(const TSedVector3* vec1, const TSedVector3* vec2)
+{
+    return vec1->x * vec2->x + vec1->y * vec2->y + vec1->z * vec2->z;
+}
+
+/* Calculates cross product of two vectors */
+inline void Sed_VectorCross(const TSedVector3* vec1, const TSedVector3* vec2, TSedVector3* vec)
+{
+    vec->x = vec1->y * vec2->z - vec2->y * vec1->z;
+    vec->y = vec2->x * vec1->z - vec1->x * vec2->z;
+    vec->z = vec1->x * vec2->y - vec2->x * vec1->y;
+}
+
+/* Calculates the length (magnitude) of a vector */
+inline double Sed_VectorLen(const TSedVector3* vec)
+{
+    return sqrt(vec->x * vec->x + vec->y * vec->y + vec->z * vec->z);
+}
+
+/* Normalizes a vector to unit length
+   Returns true if successful, false if vector length is zero */
+inline bool Sed_VectorNormalize(TSedVector3* vec)
+{
+    double len = Sed_VectorLen(vec);
+    if ( len == 0.0 )
+    {
+        return false;
+    }
+    
+    vec->dx /= len;
+    vec->dy /= len;
+    vec->dz /= len;
+    return true;
+}
+
+/* Tests if two bounding boxes intersect */
+static bool Sed_CheckBoxIntersect(const TSedBox* box1, const TSedBox* box2)
+{
+    if (box1->p2.x < box2->p1.x) return false;
+    if (box1->p1.x > box2->p2.x) return false;
+    if (box1->p2.y < box2->p1.y) return false;
+    if (box1->p1.y > box2->p2.y) return false;
+    if (box1->p2.z < box2->p1.z) return false;
+    if (box1->p1.z > box2->p2.z) return false;
+    return true;
+}
+
+/* Sets up a bounding box with proper min/max coordinates */
+inline void Sed_SetBox(TSedBox* box, double x1, double x2, double y1, double y2, double z1, double z2)
+{
+    box->p1.x = fmin(x1, x2);
+    box->p2.x = fmax(x1, x2);
+    box->p1.y = fmin(y1, y2);
+    box->p2.y = fmax(y1, y2);
+    box->p1.z = fmin(z1, z2);
+    box->p2.z = fmax(z1, z2);
+}
+
+/* Tests if a point lies within a bounding box (with tolerance) */
+inline bool Sed_IsPointInBox(const TSedBox* box, double x, double y, double z)
+{
+    return (x - box->p1.x >= -sedCloseEnough) && (x - box->p2.x <= sedCloseEnough) &&
+           (y - box->p1.y >= -sedCloseEnough) && (y - box->p2.y <= sedCloseEnough) &&
+           (z - box->p1.z >= -sedCloseEnough) && (z - box->p2.z <= sedCloseEnough);
+}
+
+/* Calculates intersection of line segment with plane
+   Returns true if intersection found, false otherwise
+   Plane defined by: normal vector and point (pX, pY, pZ)
+   Line segment defined by: two points (x1,y1,z1) to (x2,y2,z2)
+   Intersection point returned in (x, y, z) */
+static bool Sed_CheckLinePlaneIntersect(const TSedVector3* normal, double pX, double pY, double pZ,
+                                        double x1, double y1, double z1, double x2, double y2, double z2,
+                                        double* x, double* y, double* z)
+{
+    TSedVector3 v1;
+    Sed_SetVector(&v1, x1 - pX, y1 - pY, z1 - pZ);
+
+    TSedVector3 v2;
+    Sed_SetVector(&v2, x2 - pX, y2 - pY, z2 - pZ);
+
+    double dist1 = Sed_VectorDot(&v1, normal);
+    double dist2 = Sed_VectorDot(&v2, normal);
+
+    if ( dist1 == dist2 )
+    {
+        return false;
+    }
+
+    double k = dist1 / (dist1 - dist2);
+    *x = x1 + k * (x2 - x1);
+    *y = y1 + k * (y2 - y1);
+    *z = z1 + k * (z2 - z1);
+
+    return true;
+}
+
 #ifdef __cplusplus
 }
 #endif
 
-#endif //SED_PLUGINS_H
+#endif //Sed_PLUGINS_H
+
