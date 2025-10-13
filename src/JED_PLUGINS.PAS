@@ -1,6 +1,7 @@
 unit jed_plugins;
 
 interface
+{$ALIGN 1} // Make sure 1 byte alignment is in place as OG JED had no padding set
 
 const
    CloseEnough=10e-5;
