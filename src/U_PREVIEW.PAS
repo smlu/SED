@@ -140,6 +140,7 @@ type
     Procedure EnableFogRendering(enable: boolean);
     Procedure UpdateFog;
     Procedure ShowPreview;
+    Procedure Refresh; // reloads renderer, i.e.: hides & shows preview
     Function IsActive: boolean;
     Procedure SetCam(x, y, z, pch, yaw: double);
     Procedure GoToPlayer(wPlayer: Integer; step: Integer);
@@ -328,6 +329,15 @@ begin
       ReloadLevel;
       GoToPlayer(0, 1);
     end;
+end;
+
+Procedure TPreview3D.Refresh;
+begin
+    var cpos: TCamPos;
+    SaveCamPos(cpos);
+    self.Hide;
+    ShowPreview;
+    RestoreCamPos(cpos);
 end;
 
 procedure TPreview3D.FormShow(Sender: TObject);
@@ -921,18 +931,8 @@ begin
 end;
 
 procedure TPreview3D.Settings1Click(Sender: TObject);
-var
-  cpos: TCamPos;
 begin
-  With Options do
-  begin
-    if not SetOptions(PPreview) then
-      exit;
-    SaveCamPos(cpos);
-    self.Hide;
-    ShowPreview;
-    RestoreCamPos(cpos);
-  end;
+  JedMain.ShowOptions(Options.PPreview);
 end;
 
 procedure TPreview3D.FormMouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);

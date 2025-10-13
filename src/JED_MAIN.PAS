@@ -532,6 +532,9 @@ type
         Procedure RotateTexture(how: Integer);
         Procedure ScaleTexture(how: Integer);
 
+        { Dialogs }
+        function ShowOptions(page: TTabSheet): Boolean;
+
         { Notification procedures }
         Procedure SectorChanged(s: TJKSector);
         Procedure SectorAdded(s: TJKSector);
@@ -5925,16 +5928,7 @@ end;
 
 procedure TJedMain.Options1Click(sender: TObject);
 begin
-    With Options do
-    begin
-        SetOptions(nil);
-        if IsVarChanged(WireframeAPI) or IsVarChanged(WF_DoubleBuf)  then
-            CreateRenderer;
-    end;
-
-    if MapRot = MR_old then
-        GetPYR;
-    Invalidate;
+    ShowOptions(nil);
 end;
 
 procedure TJedMain.CancelMouseMode;
@@ -6596,6 +6590,30 @@ end;
 procedure TJedMain.Messages1Click(sender: TObject);
 begin
     MsgForm.Show;
+end;
+
+function TJedMain.ShowOptions(page: TTabSheet): Boolean;
+begin
+    Result := False;
+
+    with Options do
+    begin
+        if not SetOptions(page) then
+          exit;
+        Result := True;
+
+        // Map Renderer changed
+        if IsVarChanged(WireframeAPI) or IsVarChanged(WF_DoubleBuf)  then
+            CreateRenderer;
+
+        // Refresh 3D preview
+        Preview3D.Refresh;
+    end;
+
+    if MapRot = MR_old then
+        GetPYR;
+
+    Invalidate;
 end;
 
 Procedure TJedMain.SectorChanged(s: TJKSector);
