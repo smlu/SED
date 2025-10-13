@@ -1,8 +1,26 @@
 # Change Log
-## Version 0.2.1
+## Version 0.3
 - Fixed the flag editor to allow simultaneous selection of water and lava surface flags, enabling the creation of 'cold water' surface types.
 - Changed keyboard shortcut for View-To-Grid command in the Map Editor [PR #36](https://github.com/smlu/SED/pull/36) 
 - Updated keyboard key commands in 3D Preview [PR #36](https://github.com/smlu/SED/pull/36) 
+- Fixed calculating intensity from RGBA color
+- Fixed assigning blue channel in ``SurfaceSetVertexLight` JED plugin API function
+- Updated C/C++ SED plugin SDK
+- Fixed plugin code
+- Added missing definition for `TCOMWFRenderer.DrawThing`
+- Changed `TSedPluginLoad` calling convention to `cdecl`
+- Fixed 
+
+- Map Editor:
+  * Fixed DPI scaling
+    This fix also resolves map movement with keys when zoomed in
+
+- 3D Preview:
+  * Fixed rendering MOTS level without UV clamping
+  * Added option to render in solid geometry mode
+
+- Flags Editor:
+  * Removed Clamp X/Y flags for JKDF2 & MOTS projects
 
 ## Version 0.2.0
 - Fixed division by zero in `FindUVScales` function.
