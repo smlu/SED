@@ -36,6 +36,7 @@ type
     MenuHighlightSelection: TMenuItem;
     MenuNoClipSelectionOutline: TMenuItem;
     MenuSetThingToCamera: TMenuItem;
+    MenuRenderSolid: TMenuItem;
 
     procedure FormShow(Sender: TObject);
     procedure FormHide(Sender: TObject);
@@ -70,6 +71,7 @@ type
       NewDPI: Integer);
     procedure FormAfterMonitorDpiChanged(Sender: TObject; OldDPI,
       NewDPI: Integer);
+    procedure MenuRenderSolidClick(Sender: TObject);
 
   private
     { Private declarations }
@@ -180,6 +182,12 @@ begin
   render3D.highlightSolidSurface   := MenuHighlightSolidSurface.Checked;
   render3D.highlightSolidFloor     := MenuHighlightFloor.Checked;
   render3D.highlightSpecialSurface := MenuHighlightSpecialSurfaces.Checked;
+
+  if MenuRenderSolid.Checked then
+    render3D.geoMode := Solid
+  else
+    render3D.geoMode := Texture;
+
   UpdateFog;
 end;
 
@@ -224,6 +232,19 @@ begin
 
   Progress.Hide;
   Invalidate;
+end;
+
+procedure TPreview3D.MenuRenderSolidClick(Sender: TObject);
+begin
+  if render3D = nil then
+    exit;
+
+  if MenuRenderSolid.Checked then
+    render3D.geoMode := Solid
+  else
+    render3D.geoMode := Texture;
+
+   Invalidate;
 end;
 
 Procedure TPreview3D.EnableFogRendering(enable: boolean);

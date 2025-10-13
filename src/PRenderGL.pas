@@ -551,7 +551,10 @@ begin
 
       var curFaceFlags := poly.faceflags;
       var curGeo       := poly.geo;
-      var curTex       := poly.tx;
+      if curGeo > self.geoMode then
+        curGeo := self.geoMode;
+
+      var curTex := poly.tx;
       if curGeo <> Texture then
         curTex := nil;
 
@@ -571,7 +574,7 @@ begin
         var numVerts := poly.vxds.Count;
         if numVerts > maxVerts then
         begin
-          PanMessageFmt(mt_warning, 'TOGLPRenderer.RenderSolidPolys: Polygon has more vertices [%d] than max vertices [%d]!', [numVerts, maxVerts]);
+          PanMessageFmt(mt_warning, 'TOGLPRenderer.DrawSolidPolys: Polygon has more vertices [%d] than max vertices [%d]!', [numVerts, maxVerts]);
           numVerts := maxVerts;
         end;
 
@@ -590,7 +593,7 @@ begin
             tw := 0;
             tq := vxd.w;
 
-            var lcolor := poly.GetLitColor(vxd.intensity);
+            var lcolor := poly.GetLitColor(vxd.intensity, lightMode);
             if BitMaskTest(poly.faceflags, FF_Transluent) then
               color := lcolor//EncodeRGB(lcolor) // TODO should encode RGB
             else

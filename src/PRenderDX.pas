@@ -714,7 +714,9 @@ begin
         DXCheck(Id3dDev.SetRenderState(D3DRENDERSTATE_FOGENABLE, Integer(TRUE)), 'Setting render state: Enable fog')
        else
         DXCheck(Id3dDev.SetRenderState(D3DRENDERSTATE_FOGENABLE, Integer(FALSE)), 'Setting render state: Disable fog');
-    end;
+    end
+  else
+    DXCheck(Id3dDev.SetRenderState(D3DRENDERSTATE_FOGENABLE, Integer(FALSE)), 'Setting render state: Disable fog');
 end;
 
 Function TD3D5PRenderer.LoadTexture(const name: string;const ppal: PTCMPPal; const pcmp: PTCMPTable): T3DPTexture;
@@ -826,6 +828,9 @@ begin
 
       curFaceFlags := poly.faceflags;
       curGeo := poly.geo;
+      if curGeo > self.geoMode then
+        curGeo := self.geoMode;
+
       curTex := poly.tx;
       if curGeo <> Texture then
         curTex := nil;
@@ -838,7 +843,7 @@ begin
           var numVerts := poly.vxds.Count;
           if numVerts > maxDxVerts then
             begin
-              PanMessageFmt(mt_warning, 'TD3D5PRenderer.RenderSolidPolys: Polygon has more vertices [%d] than D3Device max vertices [%d]!', [numVerts, maxDxVerts]);
+              PanMessageFmt(mt_warning, 'TD3D5PRenderer.DrawSolidPolys: Polygon has more vertices [%d] than D3Device max vertices [%d]!', [numVerts, maxDxVerts]);
               numVerts := maxDxVerts;
             end;
 
@@ -854,7 +859,7 @@ begin
 
               dcSpecular := 0;
 
-              var lcolor := poly.GetLitColor(vxd.intensity);
+              var lcolor := poly.GetLitColor(vxd.intensity, lightMode);
               if BitMaskTest(poly.faceflags, FF_Transluent) then
                 color := D3DRGBA(lcolor.r, lcolor.g, lcolor.b, lcolor.a)
               else
@@ -919,63 +924,6 @@ begin
       numIdxs    := 0;
       i := i + 1;
     end;
-end;
-
-procedure RenderSolidPoly(const [Ref] poly: T3DPoly; var vertices: TArray<TD3DLVERTEX>; var startIndex: Integer; var indices: TArray<WORD>; var curIdx: Integer); overload;
-begin
-  var numVerts := poly.vxds.Count;
-  for var j := 0 to numVerts - 1 do
-  With vertices[startIndex + j] do
-    begin
-      var vxd := poly.getVXD(j);
-      x := vxd.x;
-      y := vxd.y;
-      z := vxd.z;
-      tu := vxd.u;
-      tv := vxd.v;
-
-      dcSpecular := 0;
-
-      var lcolor := poly.GetLitColor(vxd.intensity);
-      if BitMaskTest(poly.faceflags, FF_Transluent) then
-        color := D3DRGBA(lcolor.r, lcolor.g, lcolor.b, lcolor.a)
-      else
-        color := D3DRGB(lcolor.r, lcolor.g, lcolor.b);
-    end;
-
-  // Triangulaton
-  if numVerts <= 3 then
-    begin
-      indices[curIdx]     := startIndex;
-      indices[curIdx + 1] := startIndex + 1;
-      indices[curIdx + 2] := startIndex + 2;
-      curIdx := curIdx + 3;
-    end
-  else
-    begin
-      const totalTris = numVerts - 2;
-      var ofsTriVert0 := 0;
-      var ofsTriVert1 := 1;
-      var ofsTriVert2 := numVerts - 1;
-      for var idx := 0 to totalTris do
-        begin
-          indices[curIdx]     := startIndex + ofsTriVert0;
-          indices[curIdx + 1] := startIndex + ofsTriVert1;
-          indices[curIdx + 2] := startIndex + ofsTriVert2;
-          curIdx := curIdx + 3;
-          if (idx and 1) = 0 then //((not idx) and 1) <> 0 then  //if even
-            begin
-              ofsTriVert0 := ofsTriVert1;
-              ofsTriVert1 := ofsTriVert1 + 1;
-            end
-          else // if idx is odd
-            begin
-              ofsTriVert0 := ofsTriVert2;
-              ofsTriVert2 := ofsTriVert2 - 1;
-            end;
-        end;
-    end;
-    startIndex := startIndex + poly.vxds.Count;
 end;
 
 Function TD3D5PRenderer.ProjectPoint(x, y, z: double; Var WinX, WinY, WinZ: double): Boolean;

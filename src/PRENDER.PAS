@@ -131,7 +131,7 @@ T3DPoly = class
   Function GetVXD(n:integer): TVXDets;
   Procedure RecalcDistance(const refPos: TVector);
 
-  Function GetLitColor(color: TColorF): TColorF;
+  Function GetLitColor(color: TColorF; maxLightMode: TLightMode): TColorF;
 end;
 
 T3DPMesh = class
@@ -945,8 +945,6 @@ begin
       for var j := 0 to m.polys.Count - 1 do
         begin
           var poly := m.GetPoly(j);
-          if poly.geo > geoMode then poly.geo := geoMode;
-          if poly.light > lightMode then poly.light := lightMode;
           if BitMaskTest(poly.faceflags, alphaAdjoinMask) then//(poly.faceflags and alphaAdjoinMask) = alphaAdjoinMask then
             begin
               rdAlphaAdjoinsPolys.Add(poly);
@@ -1000,8 +998,6 @@ begin
         begin
           var poly := m.GetPoly(j);
           if poly.geo = NotDrawn then continue;
-          if poly.geo > geoMode then poly.geo := geoMode;
-          if poly.light > lightMode then poly.light := lightMode;
 
           poly.ambientLight := ambientLight;
           poly.tint := tint;
@@ -2142,21 +2138,25 @@ begin
   self.distance := dist;
 end;
 
-Function T3DPoly.GetLitColor(color: TColorF): TColorF;
+Function T3DPoly.GetLitColor(color: TColorF; maxLightMode: TLightMode): TColorF;
 begin
     Result := ColorWhite;
     Result.a := color.a;  // IJIM sets alpha also in cases when lmode is fully lit or none
 
-    if light = VertexDiffuseOnly then
+    var lm := light;
+    if lm > maxLightMode then
+      lm := maxLightMode;
+
+    if lm = VertexDiffuseOnly then
       Result := color
-    else if (light >= TLightMode.Diffuse) and (not P3DFullLit) then
+    else if (lm >= TLightMode.Diffuse) and (not P3DFullLit) then
       begin
         if CurrentProject = IJIM then
           Result := ambientLight + extraLight
         else
           Result := extraLight;
 
-        if light = Gouraud then
+        if lm = Gouraud then
           begin
             var a := Result.a;
             Result := Result + color;

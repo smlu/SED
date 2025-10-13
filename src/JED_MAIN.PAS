@@ -4199,7 +4199,7 @@ begin
                 With surf do
                 begin
                     adjoin         := nil;
-                    Material       := a3DO.GetMat(face.imat);
+                    material       := a3DO.GetMat(face.imat);
                     geo            := face.geo;
                     light          := face.light;
                     tex            := face.tex;
@@ -4209,7 +4209,7 @@ begin
                 end;
 
                 var matSize := TSize.Create(1,1);
-                if fixUVs and (not surf.Material.IsEmpty) then
+                if fixUVs and (not surf.material.IsEmpty) then
                   try
                     matSize := surf.GetMaterialSize;
                   except on E:Exception do PanMessage(mt_warning,

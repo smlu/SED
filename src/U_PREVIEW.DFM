@@ -87,6 +87,11 @@ object Preview3D: TPreview3D
         Caption = 'Render Fully &Lit'
         OnClick = MenuRenderFullyLitClick
       end
+      object MenuRenderSolid: TMenuItem
+        AutoCheck = True
+        Caption = 'Render Untextured'
+        OnClick = MenuRenderSolidClick
+      end
       object N1: TMenuItem
         Caption = '-'
       end
