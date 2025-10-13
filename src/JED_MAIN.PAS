@@ -4835,7 +4835,7 @@ begin
         rPch := 0;
         rYaw := 0;
         rRol := 0;
-        scale := 4;
+        scale := 0.25 * DpiFactor;
 
         SetRendFromPYR;
       end;
@@ -8212,7 +8212,7 @@ begin
           z.SetCoords(0, 0, 1);
           gX.SetCoords(1, 0, 0);
           gZ.SetCoords(0, 0, 1);
-          scale  := 4;
+          scale  := 1;
           cmx    := 0;
           cmy    := 0;
           cmz    := 0;
@@ -9820,9 +9820,9 @@ begin
   if (renderer = nil) or renderer.perspective then
     exit;
 
-  renderer.scale := renderer.scale * 1.5;
+  renderer.scale := renderer.scale / 1.5;
   if ZoomLocked then
-    renderer.scale := Min(renderer.scale, ZoomMax);
+    renderer.scale := Max(renderer.scale, (1 / ZoomMax) * renderer.DpiFactor);
   Result := true;
 end;
 
@@ -9832,9 +9832,9 @@ begin
   if (renderer = nil) or renderer.perspective then
     exit;
 
-  renderer.scale := renderer.scale / 1.5;
+  renderer.scale := renderer.scale * 1.5;
   if ZoomLocked then
-    renderer.scale := Max(renderer.scale, ZoomMin);
+    renderer.scale := Min(renderer.scale, (1 / ZoomMin) * renderer.DpiFactor);
   Result := true;
 end;
 

@@ -200,7 +200,7 @@ begin
     dpy:=vph/vpw*dpx; }
 
 //  dpx := ppunit /  1/(3* dpiScale) ;
-    dpx :=  ppunit * dpiScale;
+    dpx :=  ppunit / dpiScale;
   //dpy := vph / vpw * dpx;
 
   ScaleMatrixs(mx, dpx, dpx, dpx);

@@ -212,7 +212,7 @@ begin
     gluPerspective(60, vpw / vph, 0.01, zrange)
   else
     begin
-      var dpx := vpw / ppunit / DpiScale;
+      var dpx := vpw / ppunit * DpiScale;
       var dpy := vph / vpw * dpx;
       glOrtho(-dpx / 2, dpx / 2, -dpy / 2, dpy / 2, -zrange / 2, zrange / 2);
     end;
