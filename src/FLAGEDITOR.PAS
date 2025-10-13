@@ -626,8 +626,11 @@ Function TFlagEdit.EditFaceFlags(flags: Longint): Longint;
 begin
   SetNameDesc(0, '0x01 - Double-sided', 'Disable backface culling. Not available for world geometry surface.');
   SetNameDesc(1, '0x02 - Translucent', 'Enable texture transparency. (Adjoin surface only)');
-  SetNameDesc(2, '0x04 - Clamp U', 'Clamp texture in U coordinate. (Default wrap)');
-  SetNameDesc(3, '0x08 - Clamp V', 'Clamp texture in V coordinate. (Default wrap)');
+  if CurrentProject = IJIM then
+  begin
+    SetNameDesc(2, '0x04 - Clamp U', 'Clamp texture in U coordinate. (Default wrap)');
+    SetNameDesc(3, '0x08 - Clamp V', 'Clamp texture in V coordinate. (Default wrap)');
+  end;
   SetNameDesc(4, '0x10 - No texture filtering', 'Set texture min/max texture filtering to nearest.');
   SetNameDesc(5, '0x20 - ZWrite disabled', 'Disable write to the depth buffer.');
   if CurrentProject = IJIM then
