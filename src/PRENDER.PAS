@@ -232,6 +232,8 @@ TPreviewRender = class
     Procedure Init(handle: HWND; width, height:integer; geoMode: TGeoMode; lightMode: TLightMode);
     Function IsSpecialSurface(surf: TJKSurface): Boolean;
     Function IsSpecial3doPoly(face: TPolygon): Boolean;
+
+    Function ClampGeoMode(geoMode: TGeoMode): TGeoMode;
 end;
 
 
@@ -447,6 +449,13 @@ begin
     begin
     end;
   Result := (face.FaceFlags and faceMask) <> 0;
+end;
+
+Function TPreviewRender.ClampGeoMode(geoMode: TGeoMode): TGeoMode;
+begin
+  Result := geoMode;
+  if Result > self.geoMode then
+    Result := self.geoMode;
 end;
 
 

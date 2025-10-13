@@ -827,9 +827,7 @@ begin
         end;
 
       curFaceFlags := poly.faceflags;
-      curGeo := poly.geo;
-      if curGeo > self.geoMode then
-        curGeo := self.geoMode;
+      curGeo := ClampGeoMode(poly.geo);
 
       curTex := poly.tx;
       if curGeo <> Texture then
@@ -905,8 +903,8 @@ begin
               poly := polys[i + 1];
               if (poly.faceflags <> curFaceFlags)
               or ((poly.vxds.Count + numDxVerts) >= maxDxVerts)
-              or (poly.geo <> curGeo)
-              or (not IsEqualTex(poly.tx, curTex)) then
+              or (ClampGeoMode(poly.geo) <> curGeo)
+              or (self.geoMode = Texture) and (not IsEqualTex(poly.tx, curTex)) then
                 break;
              end;
           i := i + 1;

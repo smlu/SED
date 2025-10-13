@@ -550,9 +550,7 @@ begin
       end;
 
       var curFaceFlags := poly.faceflags;
-      var curGeo       := poly.geo;
-      if curGeo > self.geoMode then
-        curGeo := self.geoMode;
+      var curGeo       := ClampGeoMode(poly.geo);
 
       var curTex := poly.tx;
       if curGeo <> Texture then
@@ -643,8 +641,8 @@ begin
           if ((3 * (numVerts - 2) + totalIdxs) >= maxVerts) // i.e. totalIndices + num required triangle indices for next poly >= maxVerts
           or (nextPoly.faceflags <> curFaceFlags)
           or ((nextPoly.vxds.Count + totalVerts) >= maxVerts)
-          or (nextPoly.geo <> curGeo)
-          or (not IsEqualTex(nextPoly.tx, curTex)) then
+          or (ClampGeoMode(nextPoly.geo) <> curGeo)
+          or (self.geoMode = Texture) and (not IsEqualTex(nextPoly.tx, curTex)) then
             break;
         end;
 
