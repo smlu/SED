@@ -91,6 +91,7 @@ type
     cbLockZoom: TCheckBox;
     cbPlaySecSnd: TCheckBox;
     CBNoClipSelectionOutline: TCheckBox;
+    CBPluginDevMode: TCheckBox;
     procedure BNOKClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure SBHelpClick(Sender: TObject);
@@ -178,7 +179,7 @@ type
 const
   NoConfile: boolean = false;
 
-  regValues: array [0 .. 94] of TRegValue = (
+  regValues: array [0 .. 95] of TRegValue = (
     (d_type: dt_str; Section: 'JKDF2'; Name: 'Dir'; data: @JKDir; onExit: false),
     (d_type: dt_str; Section: 'MOTS'; Name: 'Dir'; data: @MOTSDir; onExit: false),
 
@@ -230,6 +231,7 @@ const
 
     (d_type: dt_bool; Section: 'Editor'; Name: 'SaveEditorLights'; data: @SaveEditorLights; onExit: false),
     (d_type: dt_bool; Section: 'Editor'; Name: 'SaveEditorLayers'; data: @SaveEditorLayers; onExit: false),
+    (d_type: dt_bool; Section: 'Editor'; Name: 'PluginDevMode'; data: @PluginDevMode; onExit: false),
 
     (d_type: dt_double; Section: 'Editor'; Name: 'DefTxStep'; data: @DefTxStep; onExit: true),
     (d_type: dt_double; Section: 'Editor'; Name: 'DefTXRotStep'; data: @DefTXRotStep; onExit: true),
@@ -563,6 +565,7 @@ begin
 
   NewCtl(@SaveEditorLights, dt_bool, CBSaveEditorLights);
   NewCtl(@SaveEditorLayers, dt_bool, CBSaveEditorLayers);
+  NewCtl(@PluginDevMode, dt_bool, CBPluginDevMode);
 
   AddColor('3D preview background', clP3DBack);
   AddColor('3D preview selection', clP3DSel);

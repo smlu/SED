@@ -408,6 +408,7 @@ type
         Function GobProj(const name: string): boolean;
         procedure PluginClick(sender: TObject);
         Procedure LoadPlugins;
+        procedure UnloadPlugins(sender: TObject);
         Procedure Import3DO(const name: string; const clearCurrentLevel: Boolean);
 
         procedure ExceptHandler(sender: TObject; E: Exception);
@@ -6606,6 +6607,9 @@ begin
         if IsVarChanged(WireframeAPI) or IsVarChanged(WF_DoubleBuf)  then
             CreateRenderer;
 
+        if IsVarChanged(PluginDevMode) then
+            LoadPlugins;
+
         // Refresh 3D preview
         Preview3D.Refresh;
     end;
@@ -8467,7 +8471,7 @@ var
                     s := ChangeFileExt(s, '');
 
                 ni.Caption := s;
-                ni.hint := dir + sr.name;
+                ni.hint    := dir + sr.name;
                 ni.OnClick := PluginClick;
 
                 s := sr.name;
@@ -8487,8 +8491,40 @@ begin
     for i := Plugins.Count - 1 downto 0 do
         Plugins.Delete(i);
 
-    LoadDir(BaseDir + 'plugins\', Plugins);
+    if PluginDevMode then
+    begin
+      var mi := TMenuItem.Create(Plugins);
+      mi.Caption := 'Unload All Plugins';
+      mi.hint    := 'Unloads all currently loaded DLL plugins';
+      mi.OnClick := UnloadPlugins;
+      Plugins.Add(mi);
+    end;
 
+    LoadDir(BaseDir + 'plugins\', Plugins);
+end;
+
+procedure TJedMain.UnloadPlugins(sender: TObject);
+begin
+  for var i := Plugins.Count - 1 downto 0 do
+  begin
+    var mi := Plugins[i];
+    if mi <> (sender as TMenuItem) then
+    begin
+      var fn := mi.Hint;
+      if CompareText(ExtractFileExt(fn), '.dll') = 0 then
+      begin
+        var hlib := GetModuleHandle(PChar(fn));
+        if hlib <> 0 then
+        begin
+          if not FreeLibrary(hlib) then
+          begin
+              PanMessage(mt_error, 'Couldn''t unload plugin ' + fn);
+              exit;
+          end;
+        end;
+      end
+    end;
+  end;
 end;
 
 procedure TJedMain.DeleteFrame(Cur_TH, Cur_FR: Integer);

@@ -225,6 +225,7 @@ var
   ConfirmRevert: boolean = True;
   SaveEditorLights: boolean = true;
   SaveEditorLayers: boolean = true;
+  PluginDevMode: boolean = false;
 
   Recent1, Recent2, Recent3, Recent4: string;
 

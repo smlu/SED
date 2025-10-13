@@ -1006,7 +1006,7 @@ object Options: TOptions
         end
         object CBGobSmart: TCheckBox
           Left = 24
-          Top = 71
+          Top = 70
           Width = 734
           Height = 30
           Hint = 'Put only used files in a GOB'
@@ -1100,6 +1100,22 @@ object Options: TOptions
           ParentShowHint = False
           ShowHint = True
           TabOrder = 7
+        end
+        object CBPluginDevMode: TCheckBox
+          Left = 24
+          Top = 245
+          Width = 734
+          Height = 30
+          Hint = 'Enables advanced features for plugin developers.'
+          Margins.Left = 5
+          Margins.Top = 5
+          Margins.Right = 5
+          Margins.Bottom = 5
+          Alignment = taLeftJustify
+          Caption = 'Plugin Developer Mode'
+          ParentShowHint = False
+          ShowHint = True
+          TabOrder = 8
         end
       end
     end
