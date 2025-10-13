@@ -73,14 +73,14 @@
         <DCC_Namespace>Data.Win;Datasnap.Win;Web.Win;Soap.Win;Xml.Win;Bde;$(DCC_Namespace)</DCC_Namespace>
         <BT_BuildType>Debug</BT_BuildType>
         <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
-        <VerInfo_Keys>CompanyName=;FileDescription=SED - Jedi Knight, MOTS and Infernal Machine Editor;FileVersion=0.1.0.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProductName=SED;ProductVersion=1.0.0.0;Comments=;ProgramID=com.embarcadero.$(MSBuildProjectName);HomePage=ttps://github.com/smlu/sed</VerInfo_Keys>
+        <VerInfo_Keys>CompanyName=;FileDescription=SED - Jedi Knight, MOTS and Infernal Machine Editor;FileVersion=0.3.0.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProductName=SED;ProductVersion=0.3.0.0;Comments=;ProgramID=com.embarcadero.$(MSBuildProjectName);HomePage=ttps://github.com/smlu/sed</VerInfo_Keys>
         <Manifest_File>$(BDS)\bin\default_app.manifest</Manifest_File>
         <Icon_MainIcon>res\sed_Icon1.ico</Icon_MainIcon>
         <UWP_DelphiLogo44>$(BDS)\bin\Artwork\Windows\UWP\delphi_UwpDefault_44.png</UWP_DelphiLogo44>
         <UWP_DelphiLogo150>$(BDS)\bin\Artwork\Windows\UWP\delphi_UwpDefault_150.png</UWP_DelphiLogo150>
         <VerInfo_MajorVer>0</VerInfo_MajorVer>
         <AppDPIAwarenessMode>PerMonitorV2</AppDPIAwarenessMode>
-        <VerInfo_MinorVer>1</VerInfo_MinorVer>
+        <VerInfo_MinorVer>3</VerInfo_MinorVer>
         <DCC_PEOSVersion>10.0</DCC_PEOSVersion>
         <DCC_DcuOutput>.\build\$(Config)</DCC_DcuOutput>
         <DCC_ExeOutput>.\build\$(Config)</DCC_ExeOutput>
@@ -102,16 +102,16 @@
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_1_Win32)'!=''">
         <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
-        <VerInfo_Keys>CompanyName=;FileDescription=SED - Jedi Knight, MOTS and Infernal Machine Editor;FileVersion=0.2.0.74;OriginalFilename=sed.exe;ProductName=SED;ProductVersion=0.2.0;Comments=;ProgramID=com.embarcadero.$(MSBuildProjectName);HomePage=https://github.com/smlu/sed</VerInfo_Keys>
+        <VerInfo_Keys>CompanyName=;FileDescription=SED - Jedi Knight, MOTS and Infernal Machine Editor;FileVersion=0.3.0.1;OriginalFilename=sed.exe;ProductName=SED;ProductVersion=0.3.0;Comments=;ProgramID=com.embarcadero.$(MSBuildProjectName);HomePage=https://github.com/smlu/sed</VerInfo_Keys>
         <Icon_MainIcon>res\sed.ico</Icon_MainIcon>
         <VerInfo_AutoIncVersion>true</VerInfo_AutoIncVersion>
         <DCC_PEOSVersion>10.0</DCC_PEOSVersion>
-        <VerInfo_Build>74</VerInfo_Build>
         <VerInfo_MajorVer>0</VerInfo_MajorVer>
-        <VerInfo_MinorVer>2</VerInfo_MinorVer>
+        <VerInfo_MinorVer>3</VerInfo_MinorVer>
         <Debugger_LoadAllSymbols>false</Debugger_LoadAllSymbols>
         <DCC_ImportedDataReferences>false</DCC_ImportedDataReferences>
         <DCC_MapFile>0</DCC_MapFile>
+        <VerInfo_Build>1</VerInfo_Build>
         <DCC_Alignment>8</DCC_Alignment>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_2)'!=''">
@@ -121,16 +121,15 @@
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_2_Win32)'!=''">
         <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
-        <VerInfo_Keys>CompanyName=;FileDescription=SED - Jedi Knight, MOTS and Infernal Machine Editor;FileVersion=0.1.0.89;OriginalFilename=sed.exe;ProductName=SED;ProductVersion=0.1.0.0;Comments=https://github.com/smlu/sed;ProgramID=com.embarcadero.$(MSBuildProjectName);HomePage=https://github.com/smlu/sed</VerInfo_Keys>
+        <VerInfo_Keys>CompanyName=;FileDescription=SED - Jedi Knight, MOTS and Infernal Machine Editor;FileVersion=0.3.0.0;OriginalFilename=sed.exe;ProductName=SED;ProductVersion=0.3.0.0;Comments=https://github.com/smlu/sed;ProgramID=com.embarcadero.$(MSBuildProjectName);HomePage=https://github.com/smlu/sed</VerInfo_Keys>
         <VerInfo_MajorVer>0</VerInfo_MajorVer>
-        <VerInfo_MinorVer>1</VerInfo_MinorVer>
+        <VerInfo_MinorVer>3</VerInfo_MinorVer>
         <DCC_DebugInfoInExe>true</DCC_DebugInfoInExe>
         <DCC_DebugInformation>2</DCC_DebugInformation>
         <DCC_DebugDCUs>true</DCC_DebugDCUs>
         <VerInfo_Debug>true</VerInfo_Debug>
         <DCC_PEOSVersion>10.0</DCC_PEOSVersion>
         <VerInfo_AutoIncVersion>true</VerInfo_AutoIncVersion>
-        <VerInfo_Build>89</VerInfo_Build>
         <DCC_Alignment>8</DCC_Alignment>
     </PropertyGroup>
     <ItemGroup>
@@ -295,8 +294,8 @@
                     <Source Name="MainSource">sed.DPR</Source>
                 </Source>
                 <Excluded_Packages>
-                    <Excluded_Packages Name="$(BDSBIN)\dcloffice2k280.bpl">Microsoft Office 2000 Sample Automation Server Wrapper Components</Excluded_Packages>
-                    <Excluded_Packages Name="$(BDSBIN)\dclofficexp280.bpl">Microsoft Office XP Sample Automation Server Wrapper Components</Excluded_Packages>
+                    <Excluded_Packages Name="$(BDSBIN)\dcloffice2k290.bpl">Microsoft Office 2000 Sample Automation Server Wrapper Components</Excluded_Packages>
+                    <Excluded_Packages Name="$(BDSBIN)\dclofficexp290.bpl">Microsoft Office XP Sample Automation Server Wrapper Components</Excluded_Packages>
                 </Excluded_Packages>
             </Delphi.Personality>
             <Platforms>
