@@ -7,8 +7,9 @@
         <TargetedPlatforms>1</TargetedPlatforms>
         <AppType>Application</AppType>
         <FrameworkType>VCL</FrameworkType>
-        <ProjectVersion>19.5</ProjectVersion>
+        <ProjectVersion>20.1</ProjectVersion>
         <Platform Condition="'$(Platform)'==''">Win32</Platform>
+        <ProjectName Condition="'$(ProjectName)'==''">sed</ProjectName>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Config)'=='Base' or '$(Base)'!=''">
         <Base>true</Base>
@@ -86,6 +87,7 @@
         <DCC_UnitSearchPath>.\src;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
         <BRCC_OutputDir>.\res</BRCC_OutputDir>
         <BRCC_IncludePath>.\res;$(BRCC_IncludePath)</BRCC_IncludePath>
+        <DCC_Alignment>8</DCC_Alignment>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Base_Win64)'!=''">
         <Icon_MainIcon>JED_Icon.ico</Icon_MainIcon>
@@ -110,6 +112,7 @@
         <Debugger_LoadAllSymbols>false</Debugger_LoadAllSymbols>
         <DCC_ImportedDataReferences>false</DCC_ImportedDataReferences>
         <DCC_MapFile>0</DCC_MapFile>
+        <DCC_Alignment>8</DCC_Alignment>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_2)'!=''">
         <DCC_Define>DEBUG;$(DCC_Define)</DCC_Define>
@@ -128,6 +131,7 @@
         <DCC_PEOSVersion>10.0</DCC_PEOSVersion>
         <VerInfo_AutoIncVersion>true</VerInfo_AutoIncVersion>
         <VerInfo_Build>89</VerInfo_Build>
+        <DCC_Alignment>8</DCC_Alignment>
     </PropertyGroup>
     <ItemGroup>
         <DelphiCompile Include="$(MainSource)">
