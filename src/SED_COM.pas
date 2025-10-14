@@ -57,9 +57,11 @@ TSedCOM = class(ISed)
   procedure FindBoundingSphere(sec: Integer; var center: TSedVector3; radius: Double); override; stdcall;
   function FindCollideBox(sec: Integer; const bbox:TSedBox; const center: TSedVector3; var cbox:TSedBox): Boolean; override; stdcall;
   procedure FindSurfaceCenter(sc,sf: Integer; var center:TSedVector3); override; stdcall;
+
   procedure RotateVector(var vec: TSedVector3; const pyr: TSedVector3); override; stdcall;
   procedure RotatePoint(const point, pivot: TSedVector3; angle: Double; var point2: TSedVector3); override; stdcall;
   procedure GetPYR(const x,y,z:TSedVector3; var pyr:TSedVector3); override; stdcall;
+
   function IsSurfaceConvex(sc,sf: Integer): Boolean; override; stdcall;
   function IsSurfacePlanar(sc,sf: Integer): Boolean; override; stdcall;
   function IsSectorConvex(sec: Integer): Boolean; override; stdcall;
@@ -68,6 +70,7 @@ TSedCOM = class(ISed)
   function IsPointOnSurface(sec, surf: Integer; const point: TSedVector3): Boolean; override; stdcall;
   function FindSectorForThing(th: Integer): Integer; override; stdcall;
   function FindSectorForXYZ(x, y, z: Double): Integer; override; stdcall;
+
   function ExtrudeSurface(sc,sf: Integer; by: Double): Integer; override; stdcall;
   function CleaveSurface(sec, surf: Integer; const cnormal: TSedVector3; cp: TSedVector3): Integer; override; stdcall;
   function CleaveSector(sec: Integer; const cnormal: TSedVector3; const cp: TSedVector3): Integer; override; stdcall;
@@ -76,13 +79,16 @@ TSedCOM = class(ISed)
   function PlanarizeSurface(sc,sf: Integer): Boolean; override; stdcall;
   function MergeSurfaces(sc,sf1,sf2: Integer): Integer; override; stdcall;
   function MergeSectors(sec1,sec2: Integer): Integer; override; stdcall;
+
   procedure CalculateDefaultUVNormals(sc,sf: Integer; orgvx: Integer; var un,vn:TSedVector3); override; stdcall;
   procedure CalculateUVNormals(sc,sf: Integer; var un,vn:TSedVector3); override; stdcall;
   procedure ArrangeTexture(sc,sf: Integer; orgvx: Integer; const un,vn:TSedVector3); override; stdcall;
   procedure ArrangeTextureBy(sec, surf: Integer; const un, vn: TSedVector3; const refp: TSedVector3; refu, refv: Double); override; stdcall;
   function IsTextureFlipped(sc,sf: Integer): Boolean; override; stdcall;
+
   procedure RemoveSurfaceReferences(sc,sf: Integer); override; stdcall;
   procedure RemoveSectorReferences(sec: Integer;surfs: Boolean); override; stdcall;
+
   function StitchSurfaces(sc1,sf1, sc2,sf2: Integer): Boolean; override; stdcall;
   function FindCommonEdges(sc1,sf1, sc2,sf2: Integer; var v11,v12, v21,v22: Integer): Boolean; override; stdcall;
   function DoSurfacesOverlap(sc1,sf1, sc2,sf2: Integer): Boolean; override; stdcall;
@@ -263,18 +269,6 @@ TSedCOMLevel = class (ISedLevel)
   procedure ThingSet(th: Integer; const rec: TSedThingRec; rflags: Integer); override; stdcall;
   procedure ThingUpdate(th: Integer); override; stdcall;
 
-  {Lights}
-  function LightAdd: Integer; override; stdcall;
-  procedure LightDelete(lt: Integer); override; stdcall;
-  procedure LightGet(lt: Integer; var rec: TSedLightRec; rflags: Integer); override; stdcall;
-  procedure LightSet(lt: Integer; const rec: TSedLightRec; rflags: Integer); override; stdcall;
-  procedure LightUpdate(lt: Integer); override; stdcall;
-
-  {Layers}
-  function NumLayers: Integer; override; stdcall;
-  function LayerGetName(n: Integer): PChar; override; stdcall;
-  function LayerAdd(const name: PChar): Integer; override; stdcall;
-
   {JED 0.92}
   function ThingNumValues(th: Integer): Integer; override; stdcall;
   function ThingValueGetName(th,n: Integer):PChar; override; stdcall;
@@ -287,6 +281,18 @@ TSedCOMLevel = class (ISedLevel)
   function ThingValueAdd(th: Integer; const name,val: PChar): Integer; override; stdcall;
   procedure ThingValueInsert(th,n: Integer; const name,val: PChar); override; stdcall;
   procedure ThingValueDelete(th,n: Integer); override; stdcall;
+
+  {Lights}
+  function LightAdd: Integer; override; stdcall;
+  procedure LightDelete(lt: Integer); override; stdcall;
+  procedure LightGet(lt: Integer; var rec: TSedLightRec; rflags: Integer); override; stdcall;
+  procedure LightSet(lt: Integer; const rec: TSedLightRec; rflags: Integer); override; stdcall;
+  procedure LightUpdate(lt: Integer); override; stdcall;
+
+  {Layers}
+  function NumLayers: Integer; override; stdcall;
+  function LayerGetName(n: Integer): PChar; override; stdcall;
+  function LayerAdd(const name: PChar): Integer; override; stdcall;
 
   {COGs}
   function CogAdd(const name:PChar): Integer; override; stdcall;
@@ -318,8 +324,8 @@ TCOMWFRenderer = class(ISedWFRenderer)
   procedure GetRendererVector(what: Integer; var x,y,z: Double); override; stdcall;
   procedure SetRendererVector(what: Integer;x,y,z: Double); override; stdcall;
 
-  function NSelected: Integer; override; stdcall;
-  function GetNSelected(n: Integer): Integer; override; stdcall;
+  function NumSelected: Integer; override; stdcall;
+  function GetSelectedID(n: Integer): Integer; override; stdcall;
   procedure SetViewPort(x,y,w,h: Integer); override; stdcall;
   procedure SetColor(what,r,g,b:byte); override; stdcall;
   procedure SetPointSize(size: Double); override; stdcall;
@@ -2335,12 +2341,12 @@ begin
   end;
 end;
 
-function TCOMWFRenderer.NSelected: Integer;
+function TCOMWFRenderer.NumSelected: Integer;
 begin
   Result := Rend.Selected.Count;
 end;
 
-function TCOMWFRenderer.GetNSelected(n: Integer): Integer;
+function TCOMWFRenderer.GetSelectedID(n: Integer): Integer;
 begin
   Result := Rend.Selected[n];
 end;

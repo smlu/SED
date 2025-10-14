@@ -339,11 +339,13 @@ ISedWFRenderer = class
   procedure GetRendererVector(what: Integer; var x,y,z: Double); virtual; stdcall; abstract;
   procedure SetRendererVector(what: Integer; x,y,z: Double); virtual; stdcall; abstract;
 
-  function NSelected: Integer; virtual; stdcall; abstract;
-  function GetNSelected(n: Integer): Integer; virtual; stdcall; abstract;
+  function NumSelected: Integer; virtual; stdcall; abstract;
+  function GetSelectedID(n: Integer): Integer; virtual; stdcall; abstract;
+
   procedure SetViewPort(x,y,w,h: Integer); virtual; stdcall; abstract;
   procedure SetColor(what,r,g,b: Byte); virtual; stdcall; abstract;
   procedure SetPointSize(size: Double); virtual; stdcall; abstract;
+
   procedure BeginScene; virtual; stdcall; abstract;
   procedure EndScene; virtual; stdcall; abstract;
   procedure SetCulling(how: Integer); virtual; stdcall; abstract;
@@ -366,6 +368,7 @@ ISedWFRenderer = class
 
   procedure BeginRectPick(x1,y1,x2,y2: Integer); virtual; stdcall; abstract;
   procedure EndRectPick; virtual; stdcall; abstract;
+
   function IsSectorInRect(sc: Integer): Boolean; virtual; stdcall; abstract;
   function IsSurfaceInRect(sc,sf: Integer): Boolean; virtual; stdcall; abstract;
   function IsLineInRect(x1,y1,z1, x2,y2,z2: Double): Boolean; virtual; stdcall; abstract;
@@ -374,6 +377,7 @@ ISedWFRenderer = class
   function GetXYZonPlaneAt(scX,scY: Integer; const pnormal:TSedVector3; pX,pY,pZ: Double; var X,Y,Z: Double): Boolean; virtual; stdcall; abstract;
   function GetGridAt(scX,scY: Integer; var X,Y,Z: Double): Boolean; virtual; stdcall; abstract;
   procedure GetNearestGridNode(iX,iY,iZ: Double; Var X,Y,Z: Double); virtual; stdcall; abstract;
+
   procedure ProjectPoint(x,y,z: Double; Var winX,winY: Integer); virtual; stdcall; abstract;
   procedure UnProjectPoint(winX,winY: Integer; WinZ: Double; var x,y,z: Double); virtual; stdcall; abstract;
   function IsSurfaceFacing(sc,sf: Integer): Boolean; virtual; stdcall; abstract;
@@ -440,18 +444,6 @@ ISedLevel = class
   procedure ThingSet(th: Integer; const rec: TSedThingRec; flags: Integer); virtual; stdcall; abstract;
   procedure ThingUpdate(th: Integer); virtual; stdcall; abstract;
 
-  {Lights}
-  function LightAdd:Integer; virtual; stdcall; abstract;
-  procedure LightDelete(lt: Integer); virtual; stdcall; abstract;
-  procedure LightGet(lt: Integer; var rec: TSedLightRec; flags: Integer); virtual; stdcall; abstract;
-  procedure LightSet(lt: Integer; const rec: TSedLightRec; flags: Integer); virtual; stdcall; abstract;
-  procedure LightUpdate(lt: Integer); virtual; stdcall; abstract;
-
-  {Layers}
-  function NumLayers: Integer; virtual; stdcall; abstract;
-  function LayerGetName(n: Integer): PChar; virtual; stdcall; abstract;
-  function LayerAdd(const name: PChar): Integer; virtual; stdcall; abstract;
-
   {JED 0.92}
   function ThingNumValues(th: Integer): Integer; virtual; stdcall; abstract;
   function ThingValueGetName(th, n: Integer): PChar; virtual; stdcall; abstract;
@@ -464,6 +456,18 @@ ISedLevel = class
 
   procedure ThingFrameGet(th,n: Integer; var pos, pyr: TSedVector3); virtual; stdcall; abstract;
   procedure ThingFrameSet(th,n: Integer; const pos, pyr: TSedVector3); virtual; stdcall; abstract;
+
+  {Lights}
+  function LightAdd:Integer; virtual; stdcall; abstract;
+  procedure LightDelete(lt: Integer); virtual; stdcall; abstract;
+  procedure LightGet(lt: Integer; var rec: TSedLightRec; flags: Integer); virtual; stdcall; abstract;
+  procedure LightSet(lt: Integer; const rec: TSedLightRec; flags: Integer); virtual; stdcall; abstract;
+  procedure LightUpdate(lt: Integer); virtual; stdcall; abstract;
+
+  {Layers}
+  function NumLayers: Integer; virtual; stdcall; abstract;
+  function LayerGetName(n: Integer): PChar; virtual; stdcall; abstract;
+  function LayerAdd(const name: PChar): Integer; virtual; stdcall; abstract;
 
   {COGs}
   function CogAdd(const name: PChar): Integer; virtual; stdcall; abstract;
@@ -493,18 +497,25 @@ ISed = class
 
   function GetMapMode: Integer; virtual; stdcall; abstract;
   procedure SetMapMode(mode: Integer); virtual; stdcall; abstract;
+
   function GetCurrentSector: Integer; virtual; stdcall; abstract;
   procedure SetCurrentSector(sc: Integer); virtual; stdcall; abstract;
+
   function GetCurrentThing: Integer; virtual; stdcall; abstract;
   procedure SetCurrentThing(th: Integer); virtual; stdcall; abstract;
+
   function GetCurrentLight: Integer; virtual; stdcall; abstract;
   procedure SetCurrentLight(lt: Integer); virtual; stdcall; abstract;
+
   procedure GetCurrentVertex(var sec,vn: Integer); virtual; stdcall; abstract;
   procedure SetCurrentVertex(sec,vn: Integer); virtual; stdcall; abstract;
+
   procedure GetCurrentSurface(var sec,surf: Integer); virtual; stdcall; abstract;
   procedure SetCurrentSurface(sec,surf: Integer); virtual; stdcall; abstract;
+
   procedure GetCurrentEdge(var sec,surf,ed: Integer); virtual; stdcall; abstract;
   procedure SetCurrentEdge(sec,surf,ed: Integer); virtual; stdcall; abstract;
+
   procedure GetCurrentFrame(var th,fr: Integer); virtual; stdcall; abstract;
   procedure SetCurrentFrame(th,fr: Integer); virtual; stdcall; abstract;
 
@@ -519,9 +530,11 @@ ISed = class
   function MergeSectors(sec1, sec2: Integer): Integer; virtual; stdcall; abstract;
   function CleaveSector(sec: Integer; const cnormal: TSedVector3; const cp: TSedVector3): Integer; virtual; stdcall; abstract;
   function CreateCubicSector(const pos: TSedVector3; const pnormal, edge: TSedVector3): Integer; virtual; stdcall; abstract;
+
   function IsSectorConvex(sec: Integer): Boolean; virtual; stdcall; abstract;
   function IsInSector(sec: Integer; const point: TSedVector3): Boolean; virtual; stdcall; abstract;
   function DoSectorsOverlap(sec1, sec2: Integer): Boolean; virtual; stdcall; abstract;
+
   procedure FindBoundingBox(sec: Integer; var box: TSedBox); virtual; stdcall; abstract;
   procedure FindBoundingSphere(sec: Integer; var center: TSedVector3; radius: Double); virtual; stdcall; abstract;
   function FindCollideBox(sec: Integer; const bbox: TSedBox; const center: TSedVector3; var cbox: TSedBox): Boolean; virtual; stdcall; abstract;
@@ -549,6 +562,7 @@ ISed = class
 
   procedure RemoveSurfaceReferences(sec, surf: Integer); virtual; stdcall; abstract;
   procedure RemoveSectorReferences(sec: Integer; surfs: Boolean); virtual; stdcall; abstract;
+
   function FindCommonEdges(sc1, sf1, sc2, sf2: Integer; var v11, v12, v21, v22: Integer): Boolean; virtual; stdcall; abstract;
   function DoSurfacesOverlap(sc1, sf1, sc2, sf2: Integer): Boolean; virtual; stdcall; abstract;
 
