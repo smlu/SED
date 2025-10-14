@@ -6,10 +6,14 @@
 - Fixed calculating intensity from RGBA color
 - Fixed assigning blue channel in ``SurfaceSetVertexLight` JED plugin API function
 - Updated C/C++ SED plugin SDK
-- Fixed plugin code
+- Fixed plugins code
 - Added missing definition for `TCOMWFRenderer.DrawThing`
 - Changed `TSedPluginLoad` calling convention to `cdecl`
-- Fixed 
+- Changed default data structure alignment to 8 bytes (quad word)
+- Fixed calculating intensity from RGBA color
+- Added plugin developer mode
+- Unify procedure for showing options dialog  
+  This resolves issues where not all parts of editor were refreshed after new changes were made to the editor settings.
 
 - Map Editor:
   * Fixed DPI scaling
