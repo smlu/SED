@@ -358,7 +358,6 @@ typedef struct
     __pragma(comment(linker, "/EXPORT:SEDPluginLoadStdCall=_" #funcName "@4")) \
     extern "C" __declspec(dllexport) bool __stdcall funcName(ISed* varName)
 
-
 typedef interface ISed ISed;
 typedef interface ISedLevel ISedLevel;
 typedef interface ISedWFRenderer ISedWFRenderer;
@@ -381,38 +380,50 @@ DECLARE_INTERFACE_(ISedWFRenderer, IUnknown)
     STDMETHOD_(void, SetRendererDouble)(THIS_ int what, double val) PURE;
     STDMETHOD_(void, GetRendererVector)(THIS_ int what, double* x, double* y, double* z) PURE;
     STDMETHOD_(void, SetRendererVector)(THIS_ int what, double x, double y, double z) PURE;
-    STDMETHOD_(int, NSelected)(THIS) PURE;
-    STDMETHOD_(int, GetNSelected)(THIS_ int n) PURE;
+   
+    STDMETHOD_(int, NumSelected)(THIS) PURE;
+    STDMETHOD_(int, GetSelectedID)(THIS_ int n) PURE;
+    
     STDMETHOD_(void, SetViewPort)(THIS_ int x, int y, int w, int h) PURE;
     STDMETHOD_(void, SetColor)(THIS_ int what, unsigned char r, unsigned char g, unsigned char b) PURE;
     STDMETHOD_(void, SetPointSize)(THIS_ double size) PURE;
+
     STDMETHOD_(void, BeginScene)(THIS) PURE;
     STDMETHOD_(void, EndScene)(THIS) PURE;
     STDMETHOD_(void, SetCulling)(THIS_ int how) PURE;
+
     STDMETHOD_(void, DrawSector)(THIS_ int sc) PURE;
     STDMETHOD_(void, DrawSurface)(THIS_ int sc, int sf) PURE;
     STDMETHOD_(void, DrawThing)(THIS_ int th) PURE;
+
     STDMETHOD_(void, DrawLine)(THIS_ double x1, double y1, double z1, double x2, double y2, double z2) PURE;
     STDMETHOD_(void, DrawVertex)(THIS_ double X, double Y, double Z) PURE;
     STDMETHOD_(void, DrawGrid)(THIS) PURE;
+
     STDMETHOD_(void, BeginPick)(THIS_ int x, int y) PURE;
     STDMETHOD_(void, EndPick)(THIS) PURE;
+
     STDMETHOD_(void, PickSector)(THIS_ int sc, int id) PURE;
     STDMETHOD_(void, PickSurface)(THIS_ int sc, int sf, int id) PURE;
     STDMETHOD_(void, PickLine)(THIS_ double x1, double y1, double z1, double x2, double y2, double z2, int id) PURE;
     STDMETHOD_(void, PickVertex)(THIS_ double X, double Y, double Z, int id) PURE;
+
     STDMETHOD_(void, BeginRectPick)(THIS_ int x1, int y1, int x2, int y2) PURE;
     STDMETHOD_(void, EndRectPick)(THIS) PURE;
+
     STDMETHOD_(int, IsSectorInRect)(THIS_ int sc) PURE;
     STDMETHOD_(int, IsSurfaceInRect)(THIS_ int sc, int sf) PURE;
     STDMETHOD_(int, IsLineInRect)(THIS_ double x1, double y1, double z1, double x2, double y2, double z2) PURE;
     STDMETHOD_(int, IsVertexInRect)(THIS_ double X, double Y, double Z) PURE;
+    
     STDMETHOD_(int, GetXYZonPlaneAt)(THIS_ int scX, int scY, const double* pnormal, double pX, double pY, double pZ, double* X, double* Y, double* Z) PURE;
     STDMETHOD_(int, GetGridAt)(THIS_ int scX, int scY, double* X, double* Y, double* Z) PURE;
     STDMETHOD_(void, GetNearestGridNode)(THIS_ double iX, double iY, double iZ, double* X, double* Y, double* Z) PURE;
+    
     STDMETHOD_(void, ProjectPoint)(THIS_ double x, double y, double z, int* WinX, int* WinY) PURE;
     STDMETHOD_(void, UnProjectPoint)(THIS_ int WinX, int WinY, double WinZ, double* x, double* y, double* z) PURE;
     STDMETHOD_(int, IsSurfaceFacing)(THIS_ int sc, int sf) PURE;
+    
     STDMETHOD_(int, HandleWMQueryPal)(THIS) PURE;
     STDMETHOD_(int, HandleWMChangePal)(THIS) PURE;
 
@@ -427,8 +438,8 @@ DECLARE_INTERFACE_(ISedWFRenderer, IUnknown)
 #define ISedWFRenderer_SetRendererDouble(This, what, val) (This)->lpVtbl->SetRendererDouble(This, what, val)
 #define ISedWFRenderer_GetRendererVector(This, what, x, y, z) (This)->lpVtbl->GetRendererVector(This, what, x, y, z)
 #define ISedWFRenderer_SetRendererVector(This, what, x, y, z) (This)->lpVtbl->SetRendererVector(This, what, x, y, z)
-#define ISedWFRenderer_NSelected(This) (This)->lpVtbl->NSelected(This)
-#define ISedWFRenderer_GetNSelected(This, n) (This)->lpVtbl->GetNSelected(This, n)
+#define ISedWFRenderer_NSelected(This) (This)->lpVtbl->NumSelected(This)
+#define ISedWFRenderer_GetNSelected(This, n) (This)->lpVtbl->GetSelectedID(This, n)
 #define ISedWFRenderer_SetViewPort(This, x, y, w, h) (This)->lpVtbl->SetViewPort(This, x, y, w, h)
 #define ISedWFRenderer_SetColor(This, what, r, g, b) (This)->lpVtbl->SetColor(This, what, r, g, b)
 #define ISedWFRenderer_SetPointSize(This, size) (This)->lpVtbl->SetPointSize(This, size)
@@ -518,16 +529,22 @@ DECLARE_INTERFACE_(ISedLevel, IUnknown)
     /* Things */
     STDMETHOD_(int, ThingAdd)(THIS) PURE;
     STDMETHOD_(void, ThingDelete)(THIS_ int th) PURE;
+
     STDMETHOD_(void, ThingGet)(THIS_ int th, TSedThingRec* rec, int flags) PURE;
     STDMETHOD_(void, ThingSet)(THIS_ int th, const TSedThingRec* rec, int flags) PURE;
+    
     STDMETHOD_(void, ThingUpdate)(THIS_ int th) PURE;
+    
     STDMETHOD_(int, ThingNumValues)(THIS_ int th) PURE;
     STDMETHOD_(const wchar_t*, ThingValueGetName)(THIS_ int th, int n) PURE;
+
     STDMETHOD_(const wchar_t*, ThingValueGetData)(THIS_ int th, int n) PURE;
     STDMETHOD_(void, ThingValueSetData)(THIS_ int th, int n, const wchar_t* val) PURE;
+    
     STDMETHOD_(int, ThingValueAdd)(THIS_ int th, const wchar_t* name, const wchar_t* val) PURE;
     STDMETHOD_(void, ThingValueInsert)(THIS_ int th, int n, const wchar_t* name, const wchar_t* val) PURE;
     STDMETHOD_(void, ThingValueDelete)(THIS_ int th, int n) PURE;
+    
     STDMETHOD_(void, ThingFrameGet)(THIS_ int th, int n, TSedVector3* pos, TSedVector3* pyr) PURE;
     STDMETHOD_(void, ThingFrameSet)(THIS_ int th, int n, const TSedVector3* pos, const TSedVector3* pyr) PURE;
 
@@ -548,11 +565,14 @@ DECLARE_INTERFACE_(ISedLevel, IUnknown)
     STDMETHOD_(void, CogDelete)(THIS_ int n) PURE;
     STDMETHOD_(void, CogUpdate)(THIS_ int cg) PURE;
     STDMETHOD_(const wchar_t*, CogGetFilename)(THIS_ int cg) PURE;
+
     STDMETHOD_(int, CogNumValues)(THIS_ int cg) PURE;
     STDMETHOD_(const wchar_t*, CogValueGetName)(THIS_ int cg, int n) PURE;
     STDMETHOD_(int, CogValueGetType)(THIS_ int cg, int n) PURE;
+    
     STDMETHOD_(const wchar_t*, CogValueGet)(THIS_ int cg, int n) PURE;
     STDMETHOD_(int, CogValueSet)(THIS_ int cg, int n, const wchar_t* val) PURE;
+    
     STDMETHOD_(int, CogValueAdd)(THIS_ int cg, const wchar_t* name, const wchar_t* val, int vtype) PURE;
     STDMETHOD_(void, CogValueInsert)(THIS_ int cg, int n, const wchar_t* name, const wchar_t* val, int vtype) PURE;
     STDMETHOD_(void, CogValueDelete)(THIS_ int cg, int n) PURE;
@@ -650,89 +670,99 @@ DECLARE_INTERFACE_(ISed, IUnknown)
     STDMETHOD_(ISedLevel*, GetLevel)(THIS) PURE;
 
     STDMETHOD_(int, GetMapMode)(THIS) PURE;
-    STDMETHOD(SetMapMode)(THIS_ int mode) PURE;
+    STDMETHOD_(void, SetMapMode)(THIS_ int mode) PURE;
+
     STDMETHOD_(int, GetCurrentSector)(THIS) PURE;
-    STDMETHOD(SetCurrentSector)(THIS_ int sc) PURE;
+    STDMETHOD_(void, SetCurrentSector)(THIS_ int sc) PURE;
+
     STDMETHOD_(int, GetCurrentThing)(THIS) PURE;
-    STDMETHOD(SetCurrentThing)(THIS_ int th) PURE;
+    STDMETHOD_(void, SetCurrentThing)(THIS_ int th) PURE;
+
     STDMETHOD_(int, GetCurrentLight)(THIS) PURE;
-    STDMETHOD(SetCurrentLight)(THIS_ int lt) PURE;
-    STDMETHOD(GetCurrentVertex)(THIS_ int* sec, int* vn) PURE;
-    STDMETHOD(SetCurrentVertex)(THIS_ int sec, int vn) PURE;
-    STDMETHOD(GetCurrentSurface)(THIS_ int* sec, int* surf) PURE;
-    STDMETHOD(SetCurrentSurface)(THIS_ int sec, int surf) PURE;
-    STDMETHOD(GetCurrentEdge)(THIS_ int* sec, int* surf, int* ed) PURE;
-    STDMETHOD(SetCurrentEdge)(THIS_ int sec, int surf, int ed) PURE;
-    STDMETHOD(GetCurrentFrame)(THIS_ int* th, int* fr) PURE;
-    STDMETHOD(SetCurrentFrame)(THIS_ int th, int fr) PURE;
+    STDMETHOD_(void, SetCurrentLight)(THIS_ int lt) PURE;
 
-    STDMETHOD(NewLevel)(THIS_ int kind) PURE;
-    STDMETHOD(LoadLevel)(THIS_ const wchar_t* name) PURE;
+    STDMETHOD_(void, GetCurrentVertex)(THIS_ int* sec, int* vn) PURE;
+    STDMETHOD_(void, SetCurrentVertex)(THIS_ int sec, int vn) PURE;
 
-    STDMETHOD(RotateVector)(THIS_ TSedVector3* vec, const TSedVector3* pyr) PURE;
-    STDMETHOD(RotatePoint)(THIS_ const TSedVector3* point, const TSedVector3* pivot, double angle, TSedVector3* point2) PURE;
-    STDMETHOD(GetPYR)(THIS_ const TSedVector3* x, const TSedVector3* y, const TSedVector3* z, TSedVector3* pyr) PURE;
+    STDMETHOD_(void, GetCurrentSurface)(THIS_ int* sec, int* surf) PURE;
+    STDMETHOD_(void, SetCurrentSurface)(THIS_ int sec, int surf) PURE;
+
+    STDMETHOD_(void, GetCurrentEdge)(THIS_ int* sec, int* surf, int* ed) PURE;
+    STDMETHOD_(void, SetCurrentEdge)(THIS_ int sec, int surf, int ed) PURE;
+
+    STDMETHOD_(void, GetCurrentFrame)(THIS_ int* th, int* fr) PURE;
+    STDMETHOD_(void, SetCurrentFrame)(THIS_ int th, int fr) PURE;
+
+    STDMETHOD_(void, NewLevel)(THIS_ int kind) PURE;
+    STDMETHOD_(void, LoadLevel)(THIS_ const wchar_t* name) PURE;
+
+    STDMETHOD_(void, RotateVector)(THIS_ TSedVector3* vec, const TSedVector3* pyr) PURE;
+    STDMETHOD_(void, RotatePoint)(THIS_ const TSedVector3* point, const TSedVector3* pivot, double angle, TSedVector3* point2) PURE;
+    STDMETHOD_(void, GetPYR)(THIS_ const TSedVector3* x, const TSedVector3* y, const TSedVector3* z, TSedVector3* pyr) PURE;
 
     STDMETHOD_(int, MergeSectors)(THIS_ int sec1, int sec2) PURE;
     STDMETHOD_(int, CleaveSector)(THIS_ int sec, const TSedVector3* cnormal, const TSedVector3* cp) PURE;
     STDMETHOD_(int, CreateCubicSector)(THIS_ const TSedVector3* pos, const TSedVector3* pnormal, const TSedVector3* edge) PURE;
-    STDMETHOD_(BOOL, IsSectorConvex)(THIS_ int sec) PURE;
-    STDMETHOD_(BOOL, IsInSector)(THIS_ int sec, const TSedVector3* point) PURE;
-    STDMETHOD_(BOOL, DoSectorsOverlap)(THIS_ int sec1, int sec2) PURE;
-    STDMETHOD(FindBoundingBox)(THIS_ int sec, TSedBox* box) PURE;
-    STDMETHOD(FindBoundingSphere)(THIS_ int sec, TSedVector3* center, double* radius) PURE;
-    STDMETHOD_(BOOL, FindCollideBox)(THIS_ int sec, const TSedBox* bbox, const TSedVector3* center, TSedBox* cbox) PURE;
+    
+    STDMETHOD_(bool, IsSectorConvex)(THIS_ int sec) PURE;
+    STDMETHOD_(bool, IsInSector)(THIS_ int sec, const TSedVector3* point) PURE;
+    STDMETHOD_(bool, DoSectorsOverlap)(THIS_ int sec1, int sec2) PURE;
+    
+    STDMETHOD_(void, FindBoundingBox)(THIS_ int sec, TSedBox* box) PURE;
+    STDMETHOD_(void, FindBoundingSphere)(THIS_ int sec, TSedVector3* center, double* radius) PURE;
+    STDMETHOD_(bool, FindCollideBox)(THIS_ int sec, const TSedBox* bbox, const TSedVector3* center, TSedBox* cbox) PURE;
     STDMETHOD_(int, FindSectorForThing)(THIS_ int th) PURE;
     STDMETHOD_(int, FindSectorForXYZ)(THIS_ double X, double Y, double Z) PURE;
 
-    STDMETHOD(FindSurfaceCenter)(THIS_ int sec, int surf, TSedVector3* center) PURE;
-    STDMETHOD_(BOOL, IsSurfaceConvex)(THIS_ int sec, int surf) PURE;
-    STDMETHOD_(BOOL, IsSurfacePlanar)(THIS_ int sec, int surf) PURE;
-    STDMETHOD_(BOOL, IsPointOnSurface)(THIS_ int sec, int surf, const TSedVector3* point) PURE;
+    STDMETHOD_(void, FindSurfaceCenter)(THIS_ int sec, int surf, TSedVector3* center) PURE;
+    STDMETHOD_(bool, IsSurfaceConvex)(THIS_ int sec, int surf) PURE;
+    STDMETHOD_(bool, IsSurfacePlanar)(THIS_ int sec, int surf) PURE;
+    STDMETHOD_(bool, IsPointOnSurface)(THIS_ int sec, int surf, const TSedVector3* point) PURE;
 
     STDMETHOD_(int, CleaveSurface)(THIS_ int sec, int surf, const TSedVector3* cnormal, const TSedVector3* cp) PURE;
-    STDMETHOD_(BOOL, CleaveEdge)(THIS_ int sec, int surf, int ed, const TSedVector3* cnormal, const TSedVector3* cp) PURE;
+    STDMETHOD_(bool, CleaveEdge)(THIS_ int sec, int surf, int ed, const TSedVector3* cnormal, const TSedVector3* cp) PURE;
     STDMETHOD_(int, ExtrudeSurface)(THIS_ int sec, int surf, double by) PURE;
-    STDMETHOD_(BOOL, JoinSurfaces)(THIS_ int sec1, int surf1, int sec2, int surf2) PURE;
+    STDMETHOD_(bool, JoinSurfaces)(THIS_ int sec1, int surf1, int sec2, int surf2) PURE;
     STDMETHOD_(int, MergeSurfaces)(THIS_ int sec, int surf1, int surf2) PURE;
-    STDMETHOD_(BOOL, PlanarizeSurface)(THIS_ int sec, int surf) PURE;
+    STDMETHOD_(bool, PlanarizeSurface)(THIS_ int sec, int surf) PURE;
 
-    STDMETHOD(CalculateDefaultUVNormals)(THIS_ int sec, int surf, int orgvx, TSedVector3* un, TSedVector3* vn) PURE;
-    STDMETHOD(CalculateUVNormals)(THIS_ int sec, int surf, TSedVector3* un, TSedVector3* vn) PURE;
-    STDMETHOD(ArrangeTexture)(THIS_ int sec, int surf, int orgvx, const TSedVector3* un, const TSedVector3* vn) PURE;
-    STDMETHOD(ArrangeTextureBy)(THIS_ int sec, int surf, const TSedVector3* un, const TSedVector3* vn, const TSedVector3* refp, double refu, double refv) PURE;
-    STDMETHOD_(BOOL, IsTextureFlipped)(THIS_ int sec, int surf) PURE;
-    STDMETHOD_(BOOL, StitchSurfaces)(THIS_ int sc1, int sf1, int sc2, int sf2) PURE;
+    STDMETHOD_(void, CalculateDefaultUVNormals)(THIS_ int sec, int surf, int orgvx, TSedVector3* un, TSedVector3* vn) PURE;
+    STDMETHOD_(void, CalculateUVNormals)(THIS_ int sec, int surf, TSedVector3* un, TSedVector3* vn) PURE;
+    STDMETHOD_(void, ArrangeTexture)(THIS_ int sec, int surf, int orgvx, const TSedVector3* un, const TSedVector3* vn) PURE;
+    STDMETHOD_(void, ArrangeTextureBy)(THIS_ int sec, int surf, const TSedVector3* un, const TSedVector3* vn, const TSedVector3* refp, double refu, double refv) PURE;
+    STDMETHOD_(bool, IsTextureFlipped)(THIS_ int sec, int surf) PURE;
+    STDMETHOD_(bool, StitchSurfaces)(THIS_ int sc1, int sf1, int sc2, int sf2) PURE;
 
-    STDMETHOD(RemoveSurfaceReferences)(THIS_ int sec, int surf) PURE;
-    STDMETHOD(RemoveSectorReferences)(THIS_ int sec, BOOL surfs) PURE;
-    STDMETHOD_(BOOL, FindCommonEdges)(THIS_ int sc1, int sf1, int sc2, int sf2, int* v11, int* v12, int* v21, int* v22) PURE;
-    STDMETHOD_(BOOL, DoSurfacesOverlap)(THIS_ int sc1, int sf1, int sc2, int sf2) PURE;
+    STDMETHOD_(void, RemoveSurfaceReferences)(THIS_ int sec, int surf) PURE;
+    STDMETHOD_(void, RemoveSectorReferences)(THIS_ int sec, bool surfs) PURE;
+    
+    STDMETHOD_(bool, FindCommonEdges)(THIS_ int sc1, int sf1, int sc2, int sf2, int* v11, int* v12, int* v21, int* v22) PURE;
+    STDMETHOD_(bool, DoSurfacesOverlap)(THIS_ int sc1, int sf1, int sc2, int sf2) PURE;
 
-    STDMETHOD_(BOOL, MakeAdjoin)(THIS_ int sec, int surf) PURE;
-    STDMETHOD_(BOOL, MakeAdjoinFromSectorUp)(THIS_ int sec, int surf, int firstSec) PURE;
-    STDMETHOD_(BOOL, UnAdjoin)(THIS_ int sec, int surf) PURE;
+    STDMETHOD_(bool, MakeAdjoin)(THIS_ int sec, int surf) PURE;
+    STDMETHOD_(bool, MakeAdjoinFromSectorUp)(THIS_ int sec, int surf, int firstSec) PURE;
+    STDMETHOD_(bool, UnAdjoin)(THIS_ int sec, int surf) PURE;
 
-    STDMETHOD(StartUndo)(THIS_ const wchar_t* name) PURE;
-    STDMETHOD(SaveUndoForThing)(THIS_ int n, int change) PURE;
-    STDMETHOD(SaveUndoForLight)(THIS_ int n, int change) PURE;
-    STDMETHOD(SaveUndoForSector)(THIS_ int n, int change, int whatPart) PURE;
-    STDMETHOD(ClearUndoBuffer)(THIS) PURE;
-    STDMETHOD(ApplyUndo)(THIS) PURE;
+    STDMETHOD_(void, StartUndo)(THIS_ const wchar_t* name) PURE;
+    STDMETHOD_(void, SaveUndoForThing)(THIS_ int n, int change) PURE;
+    STDMETHOD_(void, SaveUndoForLight)(THIS_ int n, int change) PURE;
+    STDMETHOD_(void, SaveUndoForSector)(THIS_ int n, int change, int whatPart) PURE;
+    STDMETHOD_(void, ClearUndoBuffer)(THIS) PURE;
+    STDMETHOD_(void, ApplyUndo)(THIS) PURE;
 
     STDMETHOD_(int, GetApplicationHandle)(THIS) PURE;
-    STDMETHOD_(BOOL, JoinSectors)(THIS_ int sec1, int sec2) PURE;
+    STDMETHOD_(bool, JoinSectors)(THIS_ int sec1, int sec2) PURE;
 
     STDMETHOD_(int, GetNumMultiselected)(THIS_ int what) PURE;
-    STDMETHOD(ClearMultiselection)(THIS_ int what) PURE;
-    STDMETHOD(RemoveFromMultiselection)(THIS_ int what, int n) PURE;
+    STDMETHOD_(void, ClearMultiselection)(THIS_ int what) PURE;
+    STDMETHOD_(void, RemoveFromMultiselection)(THIS_ int what, int n) PURE;
 
     STDMETHOD_(int, GetSelectedSector)(THIS_ int n) PURE;
-    STDMETHOD(GetSelectedSurface)(THIS_ int n, int* sec, int* surf) PURE;
-    STDMETHOD(GetSelectedEdge)(THIS_ int n, int* sec, int* surf, int* ed) PURE;
-    STDMETHOD(GetSelectedVertex)(THIS_ int n, int* sec, int* vn) PURE;
+    STDMETHOD_(void, GetSelectedSurface)(THIS_ int n, int* sec, int* surf) PURE;
+    STDMETHOD_(void, GetSelectedEdge)(THIS_ int n, int* sec, int* surf, int* ed) PURE;
+    STDMETHOD_(void, GetSelectedVertex)(THIS_ int n, int* sec, int* vn) PURE;
     STDMETHOD_(int, GetSelectedThing)(THIS_ int n) PURE;
-    STDMETHOD(GetSelectedFrame)(THIS_ int n, int* th, int* fr) PURE;
+    STDMETHOD_(void, GetSelectedFrame)(THIS_ int n, int* th, int* fr) PURE;
     STDMETHOD_(int, GetSelectedLight)(THIS_ int n) PURE;
 
     STDMETHOD_(int, SelectSector)(THIS_ int sec) PURE;
@@ -751,22 +781,22 @@ DECLARE_INTERFACE_(ISed, IUnknown)
     STDMETHOD_(int, FindSelectedFrame)(THIS_ int th, int fr) PURE;
     STDMETHOD_(int, FindSelectedLight)(THIS_ int lt) PURE;
 
-    STDMETHOD(Save)(THIS_ const wchar_t* filename) PURE;
-    STDMETHOD(SaveAsSed)(THIS_ const wchar_t* filename) PURE;
-    STDMETHOD(UpdateMap)(THIS) PURE;
-    STDMETHOD(SetPickerCmp)(THIS_ const wchar_t* cmp) PURE;
+    STDMETHOD_(void, Save)(THIS_ const wchar_t* filename) PURE;
+    STDMETHOD_(void, SaveAsSed)(THIS_ const wchar_t* filename) PURE;
+    STDMETHOD_(void, UpdateMap)(THIS) PURE;
+    STDMETHOD_(void, SetPickerCmp)(THIS_ const wchar_t* cmp) PURE;
     STDMETHOD_(const wchar_t*, PickResource)(THIS_ int what, const wchar_t* cur) PURE;
     STDMETHOD_(int, EditFlags)(THIS_ int what, int flags) PURE;
 
-    STDMETHOD(ReloadTemplates)(THIS) PURE;
-    STDMETHOD(PanMessage)(THIS_ int mType, const wchar_t* msg) PURE;
-    STDMETHOD(SendKey)(THIS_ int shift, int key) PURE;
-    STDMETHOD(ExecuteMenu)(THIS_ const wchar_t* itemRef) PURE;
-    STDMETHOD(GetSedSetting)(THIS_ const wchar_t* name) PURE;
-    STDMETHOD_(BOOL, IsLayerVisible)(THIS_ int n) PURE;
+    STDMETHOD_(void, ReloadTemplates)(THIS) PURE;
+    STDMETHOD_(void, PanMessage)(THIS_ int mType, const wchar_t* msg) PURE;
+    STDMETHOD_(void, SendKey)(THIS_ int shift, int key) PURE;
+    STDMETHOD_(bool, ExecuteMenu)(THIS_ const wchar_t* itemRef) PURE;
+    STDMETHOD_(void *, GetSedSetting)(THIS_ const wchar_t* name) PURE;
+    STDMETHOD_(bool, IsLayerVisible)(THIS_ int n) PURE;
 
-    STDMETHOD(CheckConsistencyErrors)(THIS) PURE;
-    STDMETHOD(CheckResources)(THIS) PURE;
+    STDMETHOD_(void, CheckConsistencyErrors)(THIS) PURE;
+    STDMETHOD_(void, CheckResources)(THIS) PURE;
     STDMETHOD_(int, GetNumConsistencyErrors)(THIS) PURE;
     STDMETHOD_(const wchar_t*, GetConsistencyErrorString)(THIS_ int n) PURE;
     STDMETHOD_(int, GetConsistencyErrorType)(THIS_ int n) PURE;
@@ -775,10 +805,10 @@ DECLARE_INTERFACE_(ISed, IUnknown)
     STDMETHOD_(int, GetConsistencyErrorSurface)(THIS_ int n) PURE;
     STDMETHOD_(int, GetConsistencyErrorThing)(THIS_ int n) PURE;
     STDMETHOD_(int, GetConsistencyErrorCOG)(THIS_ int n) PURE;
-    STDMETHOD_(BOOL, IsPreviewActive)(THIS) PURE;
+    STDMETHOD_(bool, IsPreviewActive)(THIS) PURE;
     STDMETHOD_(const wchar_t*, GetSedString)(THIS_ int what) PURE;
     STDMETHOD_(int, GetProjectType)(THIS) PURE;
-    STDMETHOD(SetProjectType)(THIS_ int kind) PURE;
+    STDMETHOD_(void, SetProjectType)(THIS_ int kind) PURE;
 
     STDMETHOD_(int, GetSedWindow)(THIS_ int whichOne) PURE;
 
@@ -786,27 +816,27 @@ DECLARE_INTERFACE_(ISed, IUnknown)
     STDMETHOD_(const wchar_t*, FileExtractPath)(THIS_ const wchar_t* filename) PURE;
     STDMETHOD_(const wchar_t*, FileExtractName)(THIS_ const wchar_t* filename) PURE;
     STDMETHOD_(const wchar_t*, FindProjectDirFile)(THIS_ const wchar_t* filename) PURE;
-    STDMETHOD_(BOOL, IsFileContainer)(THIS_ const wchar_t* filename) PURE;
-    STDMETHOD_(BOOL, IsFileInContainer)(THIS_ const wchar_t* filename) PURE;
+    STDMETHOD_(bool, IsFileContainer)(THIS_ const wchar_t* filename) PURE;
+    STDMETHOD_(bool, IsFileInContainer)(THIS_ const wchar_t* filename) PURE;
 
     STDMETHOD_(const wchar_t*, FileOpenDialog)(THIS_ const wchar_t* name, const wchar_t* filter) PURE;
 
     STDMETHOD_(int, OpenFile)(THIS_ const wchar_t* filename) PURE;
     STDMETHOD_(int, OpenGameFile)(THIS_ const wchar_t* filename) PURE;
-    STDMETHOD(ReadFile)(THIS_ int handle, void* buf, int size) PURE;
-    STDMETHOD(SetFilePos)(THIS_ int handle, int pos) PURE;
+    STDMETHOD_(int, ReadFile)(THIS_ int handle, void* buf, int size) PURE;
+    STDMETHOD_(void, SetFilePos)(THIS_ int handle, int pos) PURE;
     STDMETHOD_(int, GetFilePos)(THIS_ int handle) PURE;
     STDMETHOD_(int, GetFileSize)(THIS_ int handle) PURE;
     STDMETHOD_(const wchar_t*, GetFileName)(THIS_ int handle) PURE;
-    STDMETHOD(CloseFile)(THIS_ int handle) PURE;
+    STDMETHOD_(void, CloseFile)(THIS_ int handle) PURE;
 
     STDMETHOD_(int, OpenTextFile)(THIS_ const wchar_t* filename) PURE;
     STDMETHOD_(int, OpenGameTextFile)(THIS_ const wchar_t* filename) PURE;
     STDMETHOD_(const wchar_t*, GetTextFileName)(THIS_ int handle) PURE;
     STDMETHOD_(const wchar_t*, ReadTextFileString)(THIS_ int handle) PURE;
-    STDMETHOD_(BOOL, TextFileEOF)(THIS_ int handle) PURE;
+    STDMETHOD_(bool, TextFileEOF)(THIS_ int handle) PURE;
     STDMETHOD_(int, TextFileCurrentLine)(THIS_ int handle) PURE;
-    STDMETHOD(CloseTextFile)(THIS_ int handle) PURE;
+    STDMETHOD_(void, CloseTextFile)(THIS_ int handle) PURE;
 
     STDMETHOD_(int, GobOpen)(THIS_ const wchar_t* filename) PURE;
     STDMETHOD_(int, GobNumFiles)(THIS_ int handle) PURE;
@@ -814,9 +844,9 @@ DECLARE_INTERFACE_(ISed, IUnknown)
     STDMETHOD_(const wchar_t*, GobGetFullFilename)(THIS_ int handle, int n) PURE;
     STDMETHOD_(int, GobGetFileSize)(THIS_ int handle, int n) PURE;
     STDMETHOD_(int, GobGetFileOffset)(THIS_ int handle, int n) PURE;
-    STDMETHOD(GobClose)(THIS_ int handle) PURE;
+    STDMETHOD_(void, GobClose)(THIS_ int handle) PURE;
 
-    STDMETHOD(CreateWFRenderer)(THIS_ int wnd, int whichOne, ISedWFRenderer** ppRenderer) PURE;
+    STDMETHOD_(ISedWFRenderer*, CreateWFRenderer)(THIS_ int wnd, int whichOne) PURE;
 
     END_INTERFACE
 };
@@ -914,6 +944,7 @@ DECLARE_INTERFACE_(ISed, IUnknown)
 #define ISed_FindSelectedThing(This, th) (This)->lpVtbl->Fin
 #else
 #endif
+
 
 /* Sets vector components */
 inline void Sed_SetVector(TSedVector3* vec, double x, double y, double z)
