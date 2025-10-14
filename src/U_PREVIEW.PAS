@@ -333,11 +333,14 @@ end;
 
 Procedure TPreview3D.Refresh;
 begin
-    var cpos: TCamPos;
-    SaveCamPos(cpos);
-    self.Hide;
-    ShowPreview;
-    RestoreCamPos(cpos);
+  if not IsActive then
+    exit;
+
+  var cpos: TCamPos;
+  SaveCamPos(cpos);
+  self.Hide;
+  ShowPreview;
+  RestoreCamPos(cpos);
 end;
 
 procedure TPreview3D.FormShow(Sender: TObject);
