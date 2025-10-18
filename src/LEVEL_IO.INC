@@ -657,7 +657,7 @@ begin
 end;
 
 Procedure LoadLights;
-var i,n:integer;
+var i,n, l:integer;
     lt:TSEDLight;
 begin
  CurSection:='';
@@ -676,8 +676,8 @@ begin
         [@w1, @flags, @Layer, @position.x,@position.y,@position.z, @range, @intensity, @color.r,@color.g,@color.b]) then
           begin
             {fallback to jkdf2}
-            if not SScanf(s,'%s %x %d %f %f %f %f %f', 
-              [@w1, @flags, @Layer, @position.x,@position.y,@position.z, @range, @intensity]) then
+            if not SScanf(s,'%s %d %f %f %f %f %f',
+              [@w1, @l, @position.x,@position.y,@position.z, @intensity, @range]) then
               PanMessageFmt(mt_warning, 'Corrupted entry in light section at line %d', [t.curline]);
             lt.color := ColorWhite;
           end;
