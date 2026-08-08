@@ -344,7 +344,6 @@ typedef struct
     TSedVector3 position;
 } TSedLightRec;
 
-#pragma pack(pop)
 
 /**
  * Defines a SED plugin entry point
@@ -438,8 +437,8 @@ DECLARE_INTERFACE_(ISedWFRenderer, IUnknown)
 #define ISedWFRenderer_SetRendererDouble(This, what, val) (This)->lpVtbl->SetRendererDouble(This, what, val)
 #define ISedWFRenderer_GetRendererVector(This, what, x, y, z) (This)->lpVtbl->GetRendererVector(This, what, x, y, z)
 #define ISedWFRenderer_SetRendererVector(This, what, x, y, z) (This)->lpVtbl->SetRendererVector(This, what, x, y, z)
-#define ISedWFRenderer_NSelected(This) (This)->lpVtbl->NumSelected(This)
-#define ISedWFRenderer_GetNSelected(This, n) (This)->lpVtbl->GetSelectedID(This, n)
+#define ISedWFRenderer_NSelected(This) (This)->lpVtbl->NSelected(This)
+#define ISedWFRenderer_GetNSelected(This, n) (This)->lpVtbl->GetNSelected(This, n)
 #define ISedWFRenderer_SetViewPort(This, x, y, w, h) (This)->lpVtbl->SetViewPort(This, x, y, w, h)
 #define ISedWFRenderer_SetColor(This, what, r, g, b) (This)->lpVtbl->SetColor(This, what, r, g, b)
 #define ISedWFRenderer_SetPointSize(This, size) (This)->lpVtbl->SetPointSize(This, size)
@@ -945,6 +944,7 @@ DECLARE_INTERFACE_(ISed, IUnknown)
 #else
 #endif
 
+#pragma pack(pop)
 
 /* Sets vector components */
 inline void Sed_SetVector(TSedVector3* vec, double x, double y, double z)
