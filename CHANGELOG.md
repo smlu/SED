@@ -1,4 +1,54 @@
 # Change Log
+
+## 0.4.0
+
+Version 0.4.0 is a ground-up C++ rebuild of SED using Qt and OpenGL. It carries forward the Sith/JED level-design
+model in a modern editor, with geometry authoring, resource tools, project recovery, and a redesigned viewport workflow.
+
+### Highlights
+
+- **Native projects and engine export:** **Save** and **Save As** create the editable `.sed` project, which retains the
+  level and supported editing-session state. **Export** and **Export As** write game formats separately: `.jkl` for
+  JKDF2/MotS and `.ndy` for IJIM. Optional legacy `.jed` export remains available for JKDF2/MotS. See the
+  [save and export guide](docs/user_guide.md#15-save-save-as-and-engine-export).
+- **One editing viewport:** Editor mode brings level authoring into a WYSIWYG 3D view, with selectable edit modes,
+  multi-selection, configurable camera and input controls, transformed grids, and project-aware snapping. Game Preview
+  provides a separate read-only rendering and inspection view.
+- **Geometry and UV authoring:** Rebuilt sector and surface editing with staged Multi-cut, editable rectangle, N-Gon,
+  arch, and star shapes, plus Join, Merge, and surface extrusion workflows. The docked UV editor adds multi-island
+  transforms, Smart UV tools, alignment, stitching, packing, and snapping. Accepted edits preserve history and reject
+  invalid previews without partially changing the level.
+- **Lighting:** Author baked lights and recalculate their affected regions asynchronously. Inspect frame-local Thing
+  lights and headlights, IJIM Sector point lights, and MotS Arch model-vertex lighting in the viewport.
+- **Scripts and resources:** The COG Script Editor adds multi-file editing, diagnostics, completion, formatting,
+  outlines, and resource helpers. Separate SPR, SND, and UNI editors provide project-aware controls and previews, with
+  docked or detached files, local history, and Save All. Template editing and resource discovery are also rebuilt.
+- **Session saving and recovery:** Native projects retain workspace and selection, open COG and resource-editor drafts,
+  pending Multi-cut work, and optional Level Undo/Redo history. Autosave history, live crash-recovery checkpoints, and
+  parity-assisted repair can recover some damaged files. Repair has bounded limits and is not a backup.
+- **Reliability and performance:** File and resource readers validate input sizes, structure, and numeric values.
+  JKL/NDY imports reject malformed records before a level is published. JKL/NDY exports stage and atomically replace complete
+  output. Geometry previews validate before commit, accepted edits remain undoable, and rejected previews leave the
+  level unchanged. Asynchronous lighting and asset preparation, targeted viewport updates, and bounded rendering and
+  resource caches reduce repeated work.
+
+### Known limitations
+
+- The Pascal DLL plugin system has no source-compatible C++ API, Plugins menu, or Plugin Developer Mode. See the
+  [verified Pascal compatibility gaps](docs/porting_guide.md#verified-live-pascal-gaps).
+- Game Preview renders and inspects a level. It does not run an executable gameplay simulation. The shaded viewport
+  also does not reproduce MotS special shading for 3DO hierarchy nodes marked `0x2`.
+- Clipboard workflows have no **Paste in Place** or Insert-style duplication of the selected Sector/Thing/light set.
+  Standalone Surface, Edge, and Vertex copy/paste is also unavailable. Copy/paste for Sectors, Things, and baked lights
+  is supported.
+- JED remains available for import and migration, but `.jed` export is limited to JKDF2/MotS. IJIM exports NDY
+  instead. LEV and ASC can be imported, but have no export paths. General 3DO hierarchy authoring, GOB/GOO project
+  creation, and launching the game from SED are also unavailable.
+- Native recovery repairs only corruption within its checked limits and cannot replace independent backups. SED has no
+  **Revert to Saved** or **Make a Backup Copy** command and does not create an automatic `.bak` before overwriting a
+  level. Explicit UV pivot choices and unaccepted Template Editor modal drafts are not restored. See the
+  [editor-state inventory](docs/editor_state.md).
+
 ## Version 0.3
 - Fixed the flag editor to allow simultaneous selection of water and lava surface flags, enabling the creation of 'cold water' surface types.
 - Changed keyboard shortcut for View-To-Grid command in the Map Editor [PR #36](https://github.com/smlu/SED/pull/36) 

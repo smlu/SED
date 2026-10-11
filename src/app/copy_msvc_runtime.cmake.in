@@ -1,0 +1,38 @@
+# Copy the Release MSVC runtime files from the selected toolchain's official
+# redist directory beside the executable. The generated file contains only
+# paths discovered during configuration; no developer-machine path is kept in
+# the source tree.
+
+if(NOT DEFINED SED_MSVC_RUNTIME_CONFIG
+    OR SED_MSVC_RUNTIME_CONFIG STREQUAL ""
+    OR SED_MSVC_RUNTIME_CONFIG STREQUAL "Debug")
+  return()
+endif()
+
+if(NOT DEFINED SED_MSVC_RUNTIME_OUTPUT_DIR
+    OR SED_MSVC_RUNTIME_OUTPUT_DIR STREQUAL "")
+  message(FATAL_ERROR "SED_MSVC_RUNTIME_OUTPUT_DIR was not provided")
+endif()
+
+set(SED_MSVC_RUNTIME_FILES_SERIALIZED "@SED_MSVC_RUNTIME_FILES_SERIALIZED@")
+if(SED_MSVC_RUNTIME_FILES_SERIALIZED STREQUAL "")
+  message(FATAL_ERROR "No Release MSVC runtime files were discovered")
+endif()
+
+string(REPLACE "|" ";" SED_MSVC_RUNTIME_FILES
+  "${SED_MSVC_RUNTIME_FILES_SERIALIZED}")
+file(MAKE_DIRECTORY "${SED_MSVC_RUNTIME_OUTPUT_DIR}")
+
+foreach(SED_MSVC_RUNTIME_FILE IN LISTS SED_MSVC_RUNTIME_FILES)
+  if(NOT EXISTS "${SED_MSVC_RUNTIME_FILE}"
+      OR IS_DIRECTORY "${SED_MSVC_RUNTIME_FILE}")
+    message(FATAL_ERROR
+      "Selected MSVC runtime file is unavailable: ${SED_MSVC_RUNTIME_FILE}")
+  endif()
+  get_filename_component(SED_MSVC_RUNTIME_NAME
+    "${SED_MSVC_RUNTIME_FILE}" NAME)
+  file(COPY_FILE
+    "${SED_MSVC_RUNTIME_FILE}"
+    "${SED_MSVC_RUNTIME_OUTPUT_DIR}/${SED_MSVC_RUNTIME_NAME}"
+    ONLY_IF_DIFFERENT)
+endforeach()

@@ -1,0 +1,50 @@
+{
+  "version": 6,
+  "cmakeMinimumRequired": { "major": 3, "minor": 25, "patch": 0 },
+  "configurePresets": [
+    {
+      "name": "msvc-ninja",
+      "displayName": "MSVC + Ninja Multi-Config",
+      "generator": "Ninja Multi-Config",
+      "binaryDir": "${sourceDir}/build/ninja",
+      "cacheVariables": {
+        "SED_CPP_STANDARD": "26",
+        "SED_QT_ROOT": "$env{QTDIR}"
+      }
+    },
+    {
+      "name": "msvc-ninja-cpp23",
+      "displayName": "MSVC + Ninja Multi-Config (C++23)",
+      "inherits": "msvc-ninja",
+      "cacheVariables": {
+        "SED_CPP_STANDARD": "23"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "msvc-ninja-debug",
+      "configurePreset": "msvc-ninja",
+      "configuration": "Debug"
+    },
+    {
+      "name": "msvc-ninja-release",
+      "configurePreset": "msvc-ninja",
+      "configuration": "Release"
+    }
+  ],
+  "testPresets": [
+    {
+      "name": "msvc-ninja-debug",
+      "configurePreset": "msvc-ninja",
+      "configuration": "Debug",
+      "output": { "outputOnFailure": true }
+    },
+    {
+      "name": "msvc-ninja-release",
+      "configurePreset": "msvc-ninja",
+      "configuration": "Release",
+      "output": { "outputOnFailure": true }
+    }
+  ]
+}

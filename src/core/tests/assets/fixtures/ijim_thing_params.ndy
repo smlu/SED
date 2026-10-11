@@ -1,0 +1,15 @@
+SECTION: HEADER
+VERSION 3
+WORLD GRAVITY 4
+END
+
+SECTION: TEMPLATES
+WORLD TEMPLATES 2
+fixture_base none type=actor thingflags=0x1 typeflags=0x5 damageclass=20 light=(0.1/0.2/0.3/4) lightintensity=(0.4/0.5/0.6) lightoffset=(0/.07/.04) eyeoffset=(0/.01/.0735) voicecolor=(1/2/3/4/5/6/7/8/9/10/11/12/13/14/15/16)
+fixture_child fixture_base material=folder/1/2/test.mat
+END
+
+SECTION: THINGS
+WORLD THINGS 1
+0: fixture_child fixture_actor 1 2 3 0 0 0 -1 light=(0.25/0.5/0.75/8) lightintensity=(1/0.5/0.25) lightoffset=(1/2/3) vel=(0/4/0) frame=(4/5/6:10/20/30) frame=(7/8/9)
+END

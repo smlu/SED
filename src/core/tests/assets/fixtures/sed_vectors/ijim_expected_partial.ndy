@@ -1,0 +1,126 @@
+SECTION: COPYRIGHT
+................................
+................@...@...@...@...
+.............@...@..@..@...@....
+................@.@.@.@.@.@.....
+@@@@@@@@......@...........@.....
+@@@@@@@@....@@......@@@....@....
+@@.....@.....@......@@@.....@@..
+@@.@@@@@......@.....@@@......@@.
+@@@@@@@@.......@....@@.....@@...
+@@@@@@@@.........@@@@@@@@@@.....
+@@@@@@@@..........@@@@@@........
+@@.....@..........@@@@@.........
+@@.@@@@@.........@@@@@@.........
+@@.....@.........@@@@@@.........
+@@@@@@@@.........@@@@@@.........
+@@@@@@@@.........@@@@@@@........
+@@@...@@.........@@@@@@@........
+@@.@@@.@.........@.....@........
+@@..@..@........@.......@.......
+@@@@@@@@........@.......@.......
+@@@@@@@@.......@........@.......
+@@..@@@@.......@........@.......
+@@@@..@@......@.........@.......
+@@@@.@.@......@.........@.......
+@@....@@........................
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+@@@@@@@@@@@@@.@@@@@@@@@@@@@@@@@@
+@@.@@..@@@@@..@@@@@@@@@@.@@@@@@@
+@@.@.@.@@@@.@.@@@.@..@@...@@@..@
+@@..@@@@@@....@@@..@@@@@.@@@@.@@
+@@@@@@@@...@@.@@@.@@@@@..@@...@@
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+@.(c).lucasarts.entertainment..@
+@.........company.llc..........@
+@....(c).lucasfilm.ltd.&.tm....@
+@.....all.rights.reserved......@
+@...used.under.authorization...@
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+SECTION: HEADER
+VERSION 3
+WORLD GRAVITY 6.00000000
+CEILING SKY Z 15.00000000
+HORIZON DISTANCE 100.00000000
+HORIZON PIXELS PER REV 768.00000000
+HORIZON SKY OFFSET 0.00000000 0.00000000
+CEILING SKY OFFSET 0.00000000 0.00000000
+LOD DISTANCES 0.30000000 0.60000000 0.90000000 1.20000000
+FOG 0 1.00000000 1.00000000 1.00000000 1.00000000 0.00000000 250.00000000
+END
+
+SECTION: SOUNDS
+WORLD SOUNDS 0
+END
+
+SECTION: MATERIALS
+WORLD MATERIALS 0
+END
+
+SECTION: GEORESOURCE
+WORLD VERTICES 0
+
+WORLD TEXTURE VERTICES 0
+
+WORLD ADJOINS 0
+
+WORLD SURFACES 0
+END
+
+Section: SECTORS
+WORLD SECTORS 0
+END
+
+Section: AICLASS
+World AIClasses 0
+END
+
+Section: MODELS
+World models 1
+0: ijim.3do
+END
+
+Section: SPRITES
+World sprites 0
+END
+
+Section: KEYFRAMES
+World keyframes 0
+END
+
+Section: ANIMCLASS
+World puppets 0
+END
+
+Section: Soundclass
+World soundclasses 0
+END
+
+Section: cogscripts
+World scripts 0
+END
+
+Section: cogs
+World cogs	0
+#Num	Script	Symbol values
+END
+
+Section: TEMPLATES
+World templates 1
+#Name:	Based On:	Params:
+ijim_vector       none              type=actor model3d=ijim.3do unknown_param=ijim_string light=(0.1/0.2/0.3/4)
+END
+
+Section: Things
+World things 1
+0: ijim_vector ijim_actor 7.00000000 8.00000000 9.00000000 10.00000000 20.00000000 30.00000000 0 light=(0.4/0.5/0.6/8)
+END
+
+Section: Lights
+EDITOR LIGHTS 0
+END
+
+Section: Layers
+EDITOR LAYERS 0
+END

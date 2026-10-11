@@ -1,0 +1,30 @@
+# Synthetic rail-track connector fixture for application tests
+SECTION: HEADER
+
+3DO 2.3
+
+SECTION: GEOMETRYDEF
+
+RADIUS 1.0
+INSERT OFFSET 0 0 0
+GEOSETS 1
+GEOSET 0
+MESHES 1
+
+MESH 0
+NAME synthetic_rail_track
+VERTICES 8
+0: 0 -0.04 -0.01
+1: 0 -0.04 0.01
+2: 0 0.04 -0.01
+3: 0 0.04 0.01
+4: 1 -0.04 -0.01
+5: 1 -0.04 0.01
+6: 1 0.04 -0.01
+7: 1 0.04 0.01
+FACES 0
+
+SECTION: HIERARCHYDEF
+
+HIERARCHY NODES 1
+0: 0x0 0x1 0 -1 -1 -1 0 0 0 0 0 0 0 0 0 0 synthetic_rail_track

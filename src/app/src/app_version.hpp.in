@@ -1,0 +1,11 @@
+#pragma once
+
+namespace sed::app
+{
+
+inline constexpr char kVersion[] = "@PROJECT_VERSION@";
+inline constexpr char kHomepageUrl[] = "@PROJECT_HOMEPAGE_URL@";
+inline constexpr char kVersionSuffix[] = "@SED_VERSION_SUFFIX@";
+inline constexpr char kDisplayVersion[] = "@SED_DISPLAY_VERSION@";
+
+} // namespace sed::app

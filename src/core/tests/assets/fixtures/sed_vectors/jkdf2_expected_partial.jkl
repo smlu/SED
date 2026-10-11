@@ -1,0 +1,128 @@
+SECTION: JK
+
+SECTION: COPYRIGHT
+................................
+................@...@...@...@...
+.............@...@..@..@...@....
+................@.@.@.@.@.@.....
+@@@@@@@@......@...........@.....
+@@@@@@@@....@@......@@@....@....
+@@.....@.....@......@@@.....@@..
+@@.@@@@@......@.....@@@......@@.
+@@@@@@@@.......@....@@.....@@...
+@@@@@@@@.........@@@@@@@@@@.....
+@@@@@@@@..........@@@@@@........
+@@.....@..........@@@@@.........
+@@.@@@@@.........@@@@@@.........
+@@.....@.........@@@@@@.........
+@@@@@@@@.........@@@@@@.........
+@@@@@@@@.........@@@@@@@........
+@@@...@@.........@@@@@@@........
+@@.@@@.@.........@.....@........
+@@..@..@........@.......@.......
+@@@@@@@@........@.......@.......
+@@@@@@@@.......@........@.......
+@@..@@@@.......@........@.......
+@@@@..@@......@.........@.......
+@@@@.@.@......@.........@.......
+@@....@@........................
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+@@@@@@@@@@@@@.@@@@@@@@@@@@@@@@@@
+@@.@@..@@@@@..@@@@@@@@@@.@@@@@@@
+@@.@.@.@@@@.@.@@@.@..@@...@@@..@
+@@..@@@@@@....@@@..@@@@@.@@@@.@@
+@@@@@@@@...@@.@@@.@@@@@..@@...@@
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+@.copyright.(c).1997.lucasarts.@
+@@@@@@..entertainment.co..@@@@@@
+
+SECTION: HEADER
+VERSION 1
+WORLD GRAVITY 4.00000000
+CEILING SKY Z 15.00000000
+HORIZON DISTANCE 100.00000000
+HORIZON PIXELS PER REV 768.00000000
+HORIZON SKY OFFSET 0.00000000 0.00000000
+CEILING SKY OFFSET 0.00000000 0.00000000
+MIPMAP DISTANCES 1.00000000 2.00000000 3.00000000 4.00000000
+LOD DISTANCES 0.30000000 0.60000000 0.90000000 1.20000000
+PERSPECTIVE DISTANCE 2.00000000
+GOURAUD DISTANCE 2.00000000
+END
+
+SECTION: SOUNDS
+WORLD SOUNDS 0
+END
+
+SECTION: MATERIALS
+WORLD MATERIALS 0
+END
+
+SECTION: GEORESOURCE
+WORLD COLORMAPS 0
+
+WORLD VERTICES 0
+
+WORLD TEXTURE VERTICES 0
+
+WORLD ADJOINS 0
+
+WORLD SURFACES 0
+END
+
+Section: SECTORS
+WORLD SECTORS 0
+END
+
+Section: AICLASS
+World AIClasses 0
+END
+
+Section: MODELS
+World models 1
+0: vector.3do
+END
+
+Section: SPRITES
+World sprites 0
+END
+
+Section: KEYFRAMES
+World keyframes 0
+END
+
+Section: ANIMCLASS
+World puppets 0
+END
+
+Section: Soundclass
+World soundclasses 0
+END
+
+Section: cogscripts
+World scripts 0
+END
+
+Section: cogs
+World cogs	0
+#Num	Script	Symbol values
+END
+
+Section: TEMPLATES
+World templates 1
+#Name:	Based On:	Params:
+vector_template   none              type=actor model3d=vector.3do unknown_param=some_string
+END
+
+Section: Things
+World things 1
+0: vector_template vector_actor 1.00000000 2.00000000 3.00000000 0.00000000 0.00000000 0.00000000 0 health=100
+END
+
+Section: Lights
+EDITOR LIGHTS 0
+END
+
+Section: Layers
+EDITOR LAYERS 0
+END

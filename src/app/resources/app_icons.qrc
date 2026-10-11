@@ -1,0 +1,23 @@
+<RCC>
+  <qresource prefix="/sed/icons">
+    <file>app_window_16.png</file>
+    <file>app_window_24.png</file>
+    <file>app_window_32.png</file>
+    <file>app_window_48.png</file>
+    <file>app_window_64.png</file>
+    <file>app_window_128.png</file>
+    <file>app_window_256.png</file>
+    <file alias="app_shell_16.png">app_flat_red_circle_16.png</file>
+    <file alias="app_shell_24.png">app_flat_red_circle_24.png</file>
+    <file alias="app_shell_32.png">app_flat_red_circle_32.png</file>
+    <file alias="app_shell_48.png">app_flat_red_circle_48.png</file>
+    <file alias="app_shell_64.png">app_flat_red_circle_64.png</file>
+    <file alias="app_shell_128.png">app_flat_red_circle_128.png</file>
+    <file alias="app_shell_256.png">app_flat_red_circle_256.png</file>
+    <file>ui_chevron_down.png</file>
+    <file>ui_chevron_up.png</file>
+  </qresource>
+  <qresource prefix="/sed/cursors">
+    <file>eye.cur</file>
+  </qresource>
+</RCC>

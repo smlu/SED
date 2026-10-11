@@ -1,0 +1,49 @@
+root = true
+
+[*]
+charset = utf-8
+indent_style = space
+indent_size = 4
+tab_width = 4
+trim_trailing_whitespace = true
+insert_final_newline = true
+
+[*.{cpp,hpp,h}]
+indent_style = space
+indent_size = 4
+tab_width = 4
+
+# Visual Studio C++ formatting properties; other EditorConfig clients may ignore unsupported keys.
+cpp_indent_braces = false
+cpp_indent_case_contents = true
+cpp_indent_case_labels = false
+cpp_indent_namespace_contents = false
+
+cpp_new_line_before_open_brace_namespace = new_line
+cpp_new_line_before_open_brace_type = new_line
+cpp_new_line_before_open_brace_function = new_line
+cpp_new_line_before_open_brace_block = new_line
+cpp_new_line_before_open_brace_lambda = new_line
+cpp_new_line_before_catch = true
+cpp_new_line_before_else = true
+cpp_new_line_before_while_in_do_while = true
+cpp_new_line_close_brace_same_line_empty_type = false
+cpp_new_line_close_brace_same_line_empty_function = false
+
+cpp_space_before_function_open_parenthesis = remove
+cpp_space_within_parameter_list_parentheses = false
+cpp_space_between_empty_parameter_list_parentheses = false
+cpp_space_after_keywords_in_control_flow_statements = true
+cpp_space_within_control_flow_statement_parentheses = true
+cpp_space_within_expression_parentheses = false
+cpp_space_before_block_open_brace = true
+cpp_space_before_comma = false
+cpp_space_after_comma = true
+cpp_space_remove_before_semicolon = true
+cpp_space_after_semicolon = true
+cpp_space_around_binary_operator = insert
+cpp_space_around_assignment_operator = insert
+cpp_space_around_ternary_operator = insert
+cpp_space_pointer_reference_alignment = left
+
+cpp_wrap_preserve_blocks = never

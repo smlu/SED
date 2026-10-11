@@ -1,0 +1,190 @@
+cmake_minimum_required(VERSION 3.21)
+
+if(NOT DEFINED SED_PACKAGE_EXECUTABLE OR SED_PACKAGE_EXECUTABLE STREQUAL "")
+  message(FATAL_ERROR "SED_PACKAGE_EXECUTABLE was not provided")
+endif()
+
+if(NOT DEFINED SED_PACKAGE_RUNTIME_DATA OR SED_PACKAGE_RUNTIME_DATA STREQUAL "")
+  message(FATAL_ERROR "SED_PACKAGE_RUNTIME_DATA was not provided")
+endif()
+
+if(NOT DEFINED SED_PACKAGE_PLATFORM OR SED_PACKAGE_PLATFORM STREQUAL "")
+  message(FATAL_ERROR "SED_PACKAGE_PLATFORM was not provided")
+endif()
+
+if(NOT DEFINED SED_PACKAGE_MSVC)
+  set(SED_PACKAGE_MSVC FALSE)
+else()
+  string(TOUPPER "${SED_PACKAGE_MSVC}" SED_PACKAGE_MSVC_NORMALIZED)
+  if(NOT SED_PACKAGE_MSVC_NORMALIZED MATCHES
+      "^(0|1|ON|OFF|TRUE|FALSE|YES|NO|Y|N)$")
+    message(FATAL_ERROR "SED_PACKAGE_MSVC must be a Boolean value")
+  endif()
+endif()
+
+if(NOT DEFINED SED_PACKAGE_QT_MAJOR OR SED_PACKAGE_QT_MAJOR STREQUAL "")
+  message(FATAL_ERROR "SED_PACKAGE_QT_MAJOR was not provided")
+endif()
+if(NOT SED_PACKAGE_QT_MAJOR MATCHES "^[56]$")
+  message(FATAL_ERROR
+    "SED_PACKAGE_QT_MAJOR must identify a supported Qt 5 or Qt 6 kit")
+endif()
+
+if(NOT DEFINED SED_PACKAGE_DEBUG OR SED_PACKAGE_DEBUG STREQUAL "")
+  message(FATAL_ERROR "SED_PACKAGE_DEBUG was not provided")
+endif()
+string(TOUPPER "${SED_PACKAGE_DEBUG}" SED_PACKAGE_DEBUG_NORMALIZED)
+if(NOT SED_PACKAGE_DEBUG_NORMALIZED MATCHES
+    "^(0|1|ON|OFF|TRUE|FALSE|YES|NO|Y|N)$")
+  message(FATAL_ERROR "SED_PACKAGE_DEBUG must be a Boolean value")
+endif()
+
+if(NOT EXISTS "${SED_PACKAGE_EXECUTABLE}" OR IS_DIRECTORY "${SED_PACKAGE_EXECUTABLE}")
+  message(FATAL_ERROR "Packaged SED executable is missing: ${SED_PACKAGE_EXECUTABLE}")
+endif()
+
+file(SIZE "${SED_PACKAGE_EXECUTABLE}" SED_PACKAGE_EXECUTABLE_SIZE)
+if(SED_PACKAGE_EXECUTABLE_SIZE EQUAL 0)
+  message(FATAL_ERROR "Packaged SED executable is empty: ${SED_PACKAGE_EXECUTABLE}")
+endif()
+
+get_filename_component(SED_PACKAGE_DIRECTORY "${SED_PACKAGE_EXECUTABLE}" DIRECTORY)
+get_filename_component(SED_PACKAGE_EXECUTABLE_NAME "${SED_PACKAGE_EXECUTABLE}" NAME)
+
+if(SED_PACKAGE_PLATFORM STREQUAL "Windows" AND NOT SED_PACKAGE_EXECUTABLE_NAME STREQUAL "sed.exe")
+  message(FATAL_ERROR
+    "The Windows package must contain sed.exe, got ${SED_PACKAGE_EXECUTABLE_NAME}")
+endif()
+
+if(SED_PACKAGE_PLATFORM STREQUAL "Windows"
+    AND SED_PACKAGE_MSVC
+    AND NOT SED_PACKAGE_DEBUG)
+  # Release builds use the app-local MSVC runtime selected by the compiler
+  # toolchain. Keep the prerequisite explicit so a package cannot pass with
+  # Qt and editor data present while still requiring a machine-wide VC++
+  # redistributable at launch.
+  set(SED_PACKAGE_MSVC_RUNTIME_DLLS
+    MSVCP140.dll
+    MSVCP140_2.dll
+    VCRUNTIME140.dll
+    VCRUNTIME140_1.dll)
+  foreach(SED_PACKAGE_MSVC_RUNTIME_DLL IN LISTS SED_PACKAGE_MSVC_RUNTIME_DLLS)
+    set(SED_PACKAGE_MSVC_RUNTIME_PATH
+      "${SED_PACKAGE_DIRECTORY}/${SED_PACKAGE_MSVC_RUNTIME_DLL}")
+    if(NOT EXISTS "${SED_PACKAGE_MSVC_RUNTIME_PATH}")
+      message(FATAL_ERROR
+        "Required packaged MSVC runtime is missing: ${SED_PACKAGE_MSVC_RUNTIME_PATH}")
+    endif()
+    if(IS_DIRECTORY "${SED_PACKAGE_MSVC_RUNTIME_PATH}")
+      message(FATAL_ERROR
+        "Required packaged MSVC runtime is a directory: ${SED_PACKAGE_MSVC_RUNTIME_PATH}")
+    endif()
+
+    file(SIZE "${SED_PACKAGE_MSVC_RUNTIME_PATH}" SED_PACKAGE_MSVC_RUNTIME_SIZE)
+    if(SED_PACKAGE_MSVC_RUNTIME_SIZE EQUAL 0)
+      message(FATAL_ERROR
+        "Required packaged MSVC runtime is empty: ${SED_PACKAGE_MSVC_RUNTIME_PATH}")
+    endif()
+  endforeach()
+endif()
+
+string(REPLACE "|" ";" SED_PACKAGE_RUNTIME_DATA_LIST "${SED_PACKAGE_RUNTIME_DATA}")
+set(SED_PACKAGE_TEMPLATE_DATABASES
+  master.tpl
+  mots.tpl
+  ijim.tpl
+  shapes.tpl)
+foreach(SED_PACKAGE_TEMPLATE_DATABASE IN LISTS SED_PACKAGE_TEMPLATE_DATABASES)
+  set(SED_PACKAGE_TEMPLATE_DATABASE_PATH
+    "${SED_PACKAGE_DIRECTORY}/data/${SED_PACKAGE_TEMPLATE_DATABASE}")
+  if(NOT EXISTS "${SED_PACKAGE_TEMPLATE_DATABASE_PATH}"
+      OR IS_DIRECTORY "${SED_PACKAGE_TEMPLATE_DATABASE_PATH}")
+    message(FATAL_ERROR
+      "Required packaged template database is missing: ${SED_PACKAGE_TEMPLATE_DATABASE_PATH}")
+  endif()
+
+  file(SIZE
+    "${SED_PACKAGE_TEMPLATE_DATABASE_PATH}"
+    SED_PACKAGE_TEMPLATE_DATABASE_SIZE)
+  if(SED_PACKAGE_TEMPLATE_DATABASE_SIZE EQUAL 0)
+    message(FATAL_ERROR
+      "Required packaged template database is empty: ${SED_PACKAGE_TEMPLATE_DATABASE_PATH}")
+  endif()
+endforeach()
+
+foreach(SED_PACKAGE_RUNTIME_FILE IN LISTS SED_PACKAGE_RUNTIME_DATA_LIST)
+  set(SED_PACKAGE_RUNTIME_PATH
+    "${SED_PACKAGE_DIRECTORY}/data/${SED_PACKAGE_RUNTIME_FILE}")
+  if(NOT EXISTS "${SED_PACKAGE_RUNTIME_PATH}" OR IS_DIRECTORY "${SED_PACKAGE_RUNTIME_PATH}")
+    message(FATAL_ERROR
+      "Required packaged editor data is missing: ${SED_PACKAGE_RUNTIME_PATH}")
+  endif()
+
+endforeach()
+
+if(SED_PACKAGE_PLATFORM STREQUAL "Windows" AND SED_PACKAGE_QT_MAJOR EQUAL 6)
+  set(SED_PACKAGE_QT_DEBUG_SUFFIX "")
+  if(SED_PACKAGE_DEBUG)
+    set(SED_PACKAGE_QT_DEBUG_SUFFIX "d")
+  endif()
+
+  foreach(SED_PACKAGE_QT_RUNTIME_BASE IN ITEMS
+      Qt6Core
+      Qt6Gui
+      Qt6Widgets
+      Qt6OpenGL
+      Qt6OpenGLWidgets
+      Qt6Multimedia
+      Qt6Network)
+    set(SED_PACKAGE_QT_RUNTIME_PATH
+      "${SED_PACKAGE_DIRECTORY}/${SED_PACKAGE_QT_RUNTIME_BASE}${SED_PACKAGE_QT_DEBUG_SUFFIX}.dll")
+    if(NOT EXISTS "${SED_PACKAGE_QT_RUNTIME_PATH}"
+        OR IS_DIRECTORY "${SED_PACKAGE_QT_RUNTIME_PATH}")
+      message(FATAL_ERROR
+        "Required packaged Qt runtime is missing: ${SED_PACKAGE_QT_RUNTIME_PATH}")
+    endif()
+
+    file(SIZE "${SED_PACKAGE_QT_RUNTIME_PATH}" SED_PACKAGE_QT_RUNTIME_SIZE)
+    if(SED_PACKAGE_QT_RUNTIME_SIZE EQUAL 0)
+      message(FATAL_ERROR
+        "Required packaged Qt runtime is empty: ${SED_PACKAGE_QT_RUNTIME_PATH}")
+    endif()
+  endforeach()
+
+  set(SED_PACKAGE_PLATFORM_PLUGIN
+    "${SED_PACKAGE_DIRECTORY}/platforms/qwindows${SED_PACKAGE_QT_DEBUG_SUFFIX}.dll")
+  if(NOT EXISTS "${SED_PACKAGE_PLATFORM_PLUGIN}"
+      OR IS_DIRECTORY "${SED_PACKAGE_PLATFORM_PLUGIN}")
+    message(FATAL_ERROR
+      "Required packaged Qt platform plugin is missing: ${SED_PACKAGE_PLATFORM_PLUGIN}")
+  endif()
+  file(SIZE "${SED_PACKAGE_PLATFORM_PLUGIN}" SED_PACKAGE_PLATFORM_PLUGIN_SIZE)
+  if(SED_PACKAGE_PLATFORM_PLUGIN_SIZE EQUAL 0)
+    message(FATAL_ERROR
+      "Required packaged Qt platform plugin is empty: ${SED_PACKAGE_PLATFORM_PLUGIN}")
+  endif()
+
+  set(SED_PACKAGE_MULTIMEDIA_PLUGIN_FOUND FALSE)
+  foreach(SED_PACKAGE_MULTIMEDIA_PLUGIN_BASE IN ITEMS
+      ffmpegmediaplugin
+      windowsmediaplugin)
+    set(SED_PACKAGE_MULTIMEDIA_PLUGIN
+      "${SED_PACKAGE_DIRECTORY}/multimedia/${SED_PACKAGE_MULTIMEDIA_PLUGIN_BASE}${SED_PACKAGE_QT_DEBUG_SUFFIX}.dll")
+    if(EXISTS "${SED_PACKAGE_MULTIMEDIA_PLUGIN}"
+        AND NOT IS_DIRECTORY "${SED_PACKAGE_MULTIMEDIA_PLUGIN}")
+      file(SIZE
+        "${SED_PACKAGE_MULTIMEDIA_PLUGIN}"
+        SED_PACKAGE_MULTIMEDIA_PLUGIN_SIZE)
+      if(SED_PACKAGE_MULTIMEDIA_PLUGIN_SIZE GREATER 0)
+        set(SED_PACKAGE_MULTIMEDIA_PLUGIN_FOUND TRUE)
+      endif()
+    endif()
+  endforeach()
+
+  if(NOT SED_PACKAGE_MULTIMEDIA_PLUGIN_FOUND)
+    message(FATAL_ERROR
+      "The Windows Qt 6 package has no usable multimedia backend plugin")
+  endif()
+endif()
+
+message(STATUS "Verified SED package layout at ${SED_PACKAGE_DIRECTORY}")
