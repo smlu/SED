@@ -45,6 +45,8 @@ Related docs:
   - [Sector property ownership](#sector-property-ownership)
   - [Branding and icon assets](#branding-and-icon-assets)
 
+- [Legacy JED plug-in host](#legacy-jed-plug-in-host)
+
 ## Repository layout
 
 - `src/core/` (portable library)
@@ -2139,3 +2141,16 @@ Behavior:
   dialog inherits it from the main window, covering every in-app title bar as well as the taskbar.
 - `app_window.svg` and `app_flat_red_circle.svg` are the editable masters for the in-app and native-shell icon families.
   Superseded experiments do not belong in the compiled resource directory.
+
+
+## Legacy JED plug-in host
+
+`src/core/include/sed/plugins/jed_plugin_abi.hpp` describes the Pascal SDK's IJED vtable and fixed-width records.
+`JedPluginHost` adapts the callbacks to level, selection and host services. Unsupported callbacks return their SDK
+failure value. Qt owns discovery, menu commands and commits through the editor's ordinary document history.
+
+The architecture-specific `sed-jed-plugin-bridge` helper loads a library against a private level snapshot. Its
+versioned pipe protocol transports bounded native SED data, selections and explicit host service requests.
+The editor owns Undo and checks the originating document epoch and undo signature before applying a snapshot.
+Only the matching helper from the same SED build should be installed. Process isolation protects the editor from
+a helper crash. It provides no operating-system sandbox. See the [installation guide](user_guide.md#legacy-jed-plug-ins).

@@ -1,6 +1,9 @@
 add_library(sed_core
   src/math_utils.cpp
   src/geometry.cpp
+  src/plugins/jed_plugin_host.cpp
+  src/plugins/jed_plugin_bridge.cpp
+  src/plugins/plugin_binary.cpp
   src/level/build.cpp
   src/level/cleave.cpp
   src/level/clipboard.cpp
@@ -62,6 +65,8 @@ endif()
 add_executable(sed_core_tests
   tests/test_main.cpp
   tests/geometry/geometry_math_tests.cpp
+  tests/plugins/jed_plugin_host_tests.cpp
+  tests/plugins/jed_plugin_bridge_tests.cpp
   tests/level/level_tests.cpp
   tests/level/level_geometry_tests.cpp
   tests/level/level_lighting_tests.cpp

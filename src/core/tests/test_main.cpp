@@ -36,6 +36,8 @@ void runLevelUvTests();
 void runLevelLayerTests();
 void runEditorTests();
 void runPendingCogImportTests();
+void runJedPluginHostTests();
+void runJedPluginBridgeTests();
 void runTextTests();
 void runBinaryReaderTests();
 
@@ -210,6 +212,8 @@ int main(const int argc, char** argv)
     runGroup("level-layer", sed::tests::runLevelLayerTests);
     runGroup("editor", sed::tests::runEditorTests);
     runGroup("pending-cog-import", sed::tests::runPendingCogImportTests);
+    runGroup("jed-plugin-host", sed::tests::runJedPluginHostTests);
+    runGroup("jed-plugin-bridge", sed::tests::runJedPluginBridgeTests);
     runGroup("text", sed::tests::runTextTests);
     runGroup("binary-reader", sed::tests::runBinaryReaderTests);
 

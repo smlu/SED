@@ -2776,3 +2776,35 @@ incomplete layouts and shared roots containing resources from multiple supported
 8. Save the native SED project.
 9. Export JKL/NDY and test it in the target game.
 10. Keep autosave history enabled and retain external backups for important milestones.
+
+## Legacy JED plug-ins
+
+Choose **Plugins > Open Plug-ins Folder** and place a trusted JED DLL there. Select **Rescan Plug-ins**, then choose the
+DLL from the menu. Subfolders become submenus. An optional text file beside `Tool.dll`, named `Tool.dll.dsc`, can
+set a caption with `name=Tool` and a shortcut with `key=Ctrl+Shift+L`. Scanning reads the filenames and descriptions.
+SED loads a library when you choose it.
+
+The standard JED entry point is `JEDPluginLoadStdCall`. An x86 DLL needs a 32-bit host or helper. For a 64-bit
+Windows editor, put `sed-jed-plugin-bridge-x86.exe` beside `sed.exe`. A missing helper produces a message naming
+the expected file. Choose **Run Plug-ins in a Separate Process** to use a matching helper for same-architecture DLLs
+as well. If a helper exits early, completed edits remain available in Undo and its pending edit is discarded.
+Native plug-ins run with your account's permissions.
+
+The x86 entry `JEDPluginLoad` uses Delphi's register calling convention. A plug-in exposing only that entry
+needs a rebuild exporting the standard undecorated `JEDPluginLoadStdCall` before use with the x86 helper.
+The separate ISED interface, renderer and file-picker callbacks are unsupported. A request to write a separate
+RGB light intensity or range is rejected before changing the light, because this editor stores one intensity and range.
+
+### Build the 32-bit Windows helper
+
+With Visual Studio's x86 C++ tools installed, configure a separate build directory and use the helper target.
+The helper links the portable core and needs no Qt installation.
+
+```powershell
+cmake -S . -B build-bridge-x86 -A Win32 -DSED_BUILD_APP=OFF
+cmake --build build-bridge-x86 --config Release --target sed_jed_plugin_bridge
+```
+
+Copy `build-bridge-x86/tools/sed-jed-plugin-bridge/Release/sed-jed-plugin-bridge-x86.exe` beside the editor.
+Install plug-ins from their authors. For example, LadyEebs' JED Light Baker declares the standard stdcall export.
+Its rendering and lighting results still require a check inside the editor with the actual DLL.

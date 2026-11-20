@@ -1,5 +1,10 @@
 # Change Log
 
+## Unreleased
+
+- Run trusted legacy JED plug-ins from the Plugins menu, with Undo support and an optional helper for 32-bit
+  Windows DLLs. See [Legacy JED plug-ins](docs/user_guide.md#legacy-jed-plug-ins) for installation and supported callbacks.
+
 ## 0.4.0
 
 Version 0.4.0 is a ground-up C++ rebuild of SED using Qt and OpenGL. It carries forward the Sith/JED level-design
