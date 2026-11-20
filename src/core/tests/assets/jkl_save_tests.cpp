@@ -801,6 +801,37 @@ bool sameWeldSourceGeometry(const sed::Level& left, const sed::Level& right)
 void runJklSaveTests()
 {
     {
+        // A computed corner must survive a save: eight decimals would move it, so a
+        // later cut through it would miss. Corners eight decimals hold stay as JED writes.
+        sed::Level source = makeExtraLightExportLevel(sed::ProjectType::JKDF2);
+        for ( sed::Vertex& vertex : source.sectors[0].vertices )
+        {
+            vertex.x += 1.0 / 3.0;
+            vertex.y += 0.1 + 0.2;
+        }
+        source.sectors[0].vertices[0].z += 1e-20;
+        std::ostringstream output;
+        sed::assets::saveToJKL(source, output);
+        const std::string text = output.str();
+        std::istringstream input(text);
+        sed::assets::JklLoadOptions loadOptions{};
+        loadOptions.projectType = sed::ProjectType::JKDF2;
+        const sed::Level roundTrip = sed::assets::loadFromJKL(input, loadOptions);
+        bool exact = roundTrip.sectors.size() == 1
+            && roundTrip.sectors[0].vertices.size() == source.sectors[0].vertices.size();
+        for ( std::size_t i = 0; exact && i < source.sectors[0].vertices.size(); ++i )
+        {
+            const sed::Vertex& a = source.sectors[0].vertices[i];
+            const sed::Vertex& b = roundTrip.sectors[0].vertices[i];
+            exact = a.x == b.x && a.y == b.y && a.z == b.z;
+        }
+        check(exact, "JKL save: computed corners read back bit for bit");
+        const auto vertices = text.find("WORLD VERTICES");
+        const std::string section = text.substr(vertices, text.find("WORLD TEXTURE VERTICES") - vertices);
+        check(section.find("e-") == std::string::npos && section.find(" 0.00000000") != std::string::npos,
+            "JKL save: world corners use fixed notation, and corners eight decimals hold keep eight decimals");
+    }
+    {
         const std::string unique = std::to_string(
             std::chrono::steady_clock::now().time_since_epoch().count());
         const std::filesystem::path root =
