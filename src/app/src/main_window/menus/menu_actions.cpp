@@ -1,5 +1,9 @@
+#include <QOpenGLTexture>
+
 #include "main_window/common.hpp"
 
+#include "plugins/jed_plugin_manager.hpp"
+#include "sed/plugins/jed_plugin_abi.hpp"
 #include "ui/components/about_dialog.hpp"
 #include "ui/resources/resource_authoring_editor.hpp"
 #include "ui/shortcuts/key_sequence_display.hpp"
@@ -14,6 +18,8 @@ void MainWindow::setupMenus()
     auto* mapMenu = ui::shortcuts::addKeySequenceDisplayMenu(menuBar(), "&Map");
     auto* viewMenu = ui::shortcuts::addKeySequenceDisplayMenu(menuBar(), "&View");
     auto* toolsMenu = ui::shortcuts::addKeySequenceDisplayMenu(menuBar(), "&Tools");
+    auto* pluginsMenu = ui::shortcuts::addKeySequenceDisplayMenu(menuBar(), "&Plugins");
+    pluginsMenu->setObjectName(QStringLiteral("plugins"));
     auto* helpMenu = ui::shortcuts::addKeySequenceDisplayMenu(menuBar(), "&Help");
 
     // Step 1: the File menu owns project/open/save/resource-root workflows.
@@ -111,6 +117,226 @@ void MainWindow::setupMenus()
             ui::AboutDialog dialog(this);
             dialog.exec();
         });
+
+    // Step 7: the Plugins menu runs legacy JED plug-ins from <SED folder>/plugins.
+    namespace jed = plugins::jed;
+    app_plugins::PluginEditorServices pluginServices{};
+    pluginServices.level = [this]() -> const Level& { return document_.level(); };
+    pluginServices.selection = [this]() -> const editor::Selection& { return document_.selection(); };
+    pluginServices.liveSelection = [this]() -> editor::Selection& { return document_.selection(); };
+    pluginServices.selectionChanged = [this]()
+    {
+        if ( glView_ )
+        {
+            glView_->setHighlightedSelection(document_.selection());
+        }
+        rebuildOutliner();
+        rebuildProperties();
+        updateEditActions();
+    };
+    pluginServices.documentRevision = [this]() {
+        return app_plugins::PluginDocumentRevision{recoveryDocumentEpoch_, document_.undoSignature()};
+    };
+    pluginServices.commit = [this](const std::string& label, editor::DocumentState&& next) -> bool
+    {
+        if ( !documentEditingAllowed() )
+        {
+            logMessage(MessageSeverity::warning,
+                QStringLiteral("A plug-in edit was discarded because the level can't be edited right now."));
+            return false;
+        }
+        const bool applied = document_.applyUndoable(label, editor::DocumentDirty::All,
+            [&](editor::DocumentState& state) -> bool
+            {
+                state = std::move(next);
+                return true;
+            });
+        if ( !applied )
+        {
+            return false;
+        }
+        invalidateSurfaceSelectionContextForTopologyEdit();
+        normalizeLayerVisualState();
+        refreshThingPlacementLayerControl();
+        if ( glView_ )
+        {
+            glView_->cancelAllStagedCleaveWorkspaces();
+            glView_->notifyLevelGeometryChanged();
+            glView_->notifyThingsChanged();
+            glView_->notifyLightsChanged();
+            glView_->setHighlightedSelection(document_.selection());
+        }
+        syncCogScriptWatches();
+        rebuildOutliner();
+        rebuildProperties();
+        updateEditActions();
+        scheduleRebuildChecks(editor::DocumentDirty::All);
+        return true;
+    };
+    pluginServices.mapMode = [this]() -> std::int32_t
+    {
+        switch ( editMode_ )
+        {
+        case EditMode::surface:
+            if ( surfaceSelectionMode_ == SurfaceSelectionMode::vertex )
+            {
+                return jed::MM_VX;
+            }
+            return surfaceSelectionMode_ == SurfaceSelectionMode::edge ? jed::MM_ED : jed::MM_SF;
+        case EditMode::thing:
+            return jed::MM_TH;
+        case EditMode::light:
+            return jed::MM_LT;
+        case EditMode::frame:
+            return jed::MM_FR;
+        case EditMode::none:
+        case EditMode::sector:
+            break;
+        }
+        return jed::MM_SC;
+    };
+    pluginServices.setMapMode = [this](const std::int32_t mode)
+    {
+        switch ( mode )
+        {
+        case jed::MM_SC:
+            setEditMode(EditMode::sector);
+            break;
+        case jed::MM_SF:
+        case jed::MM_VX:
+        case jed::MM_ED:
+            setEditMode(EditMode::surface);
+            setSurfaceSelectionMode(mode == jed::MM_VX ? SurfaceSelectionMode::vertex
+                : mode == jed::MM_ED ? SurfaceSelectionMode::edge : SurfaceSelectionMode::face);
+            break;
+        case jed::MM_TH:
+            setEditMode(EditMode::thing);
+            break;
+        case jed::MM_LT:
+            setEditMode(EditMode::light);
+            break;
+        case jed::MM_FR:
+            setEditMode(EditMode::frame);
+            break;
+        default:
+            break;
+        }
+    };
+    pluginServices.cursor = [this]() -> plugins::JedCursor
+    {
+        plugins::JedCursor cursor{};
+        if ( glView_ )
+        {
+            cursor.sector = glView_->activeSurfaceSectorIndex() >= 0 && editMode_ == EditMode::surface
+                ? glView_->activeSurfaceSectorIndex() : glView_->activeSectorIndex();
+            cursor.surface = glView_->activeSurfaceIndex();
+            cursor.thing = glView_->activeThingIndex();
+            cursor.light = glView_->activeLightIndex();
+        }
+        return cursor;
+    };
+    pluginServices.setCursor = [this](const plugins::JedCursor& cursor)
+    {
+        if ( !glView_ )
+        {
+            return;
+        }
+        const Level& level = document_.level();
+        const auto inRange = [](const std::int32_t index, const std::size_t size)
+        {
+            return index >= 0 && static_cast<std::size_t>(index) < size;
+        };
+        switch ( editMode_ )
+        {
+        case EditMode::sector:
+            if ( inRange(cursor.sector, level.sectors.size()) )
+            {
+                glView_->setSelectedSector(cursor.sector);
+            }
+            break;
+        case EditMode::surface:
+            if ( inRange(cursor.sector, level.sectors.size())
+                && inRange(cursor.surface, level.sectors[static_cast<std::size_t>(cursor.sector)].surfaces.size()) )
+            {
+                glView_->setSelectedSurface(cursor.sector, cursor.surface);
+            }
+            break;
+        case EditMode::thing:
+            if ( inRange(cursor.thing, level.things.size()) )
+            {
+                glView_->setSelectedThing(cursor.thing);
+            }
+            break;
+        case EditMode::light:
+            if ( inRange(cursor.light, level.lights.size()) )
+            {
+                glView_->setSelectedLight(cursor.light);
+            }
+            break;
+        case EditMode::none:
+        case EditMode::frame:
+            break;
+        }
+        rebuildProperties();
+        updateEditActions();
+    };
+    pluginServices.message = [this](const plugins::JedMessageType type, const QString& text)
+    {
+        const MessageSeverity severity = type == plugins::JedMessageType::Error ? MessageSeverity::error
+            : type == plugins::JedMessageType::Warning ? MessageSeverity::warning : MessageSeverity::info;
+        logMessage(severity, text);
+    };
+    pluginServices.readGameFile = [this](const std::string& name)
+    {
+        return resources_.tryReadBinary(name, app_plugins::JedPluginManager::kMaximumPluginFileBytes);
+    };
+    pluginServices.cogScriptSymbols = [this](const std::string& name) -> std::optional<std::vector<CogValue>>
+    {
+        assets::CogSymbolLoadResult script = assets::loadCogSymbolsWithDefaultsResult(resources_, name, false);
+        if ( !script.loaded() )
+        {
+            return std::nullopt;
+        }
+        return std::move(script.symbols);
+    };
+    pluginServices.jedString = [this](const std::int32_t what) -> QString
+    {
+        const auto directory = [](const QString& path)
+        {
+            return path.isEmpty() ? path : QDir::toNativeSeparators(QDir::cleanPath(path) + QLatin1Char('/'));
+        };
+        switch ( what )
+        {
+        case jed::js_ProjectDir:
+            return currentPath_.empty() ? QString{}
+                : directory(QString::fromStdWString(currentPath_.parent_path().wstring()));
+        case jed::js_JEDDir:
+            return directory(QCoreApplication::applicationDirPath());
+        case jed::js_GameDir:
+            return resources_.roots().empty() ? QString{}
+                : directory(QString::fromStdWString(resources_.roots().front().wstring()));
+        case jed::js_LevelFile:
+            return QDir::toNativeSeparators(QString::fromStdWString(currentPath_.wstring()));
+        default:
+            return QString{};
+        }
+    };
+    pluginServices.windowHandle = [this](const std::int32_t which) -> std::intptr_t
+    {
+        return which == jed::jw_Main ? static_cast<std::intptr_t>(winId()) : 0;
+    };
+    pluginServices.isLayerVisible = [this](const std::int32_t layer)
+    {
+        return layer < 0 || static_cast<std::size_t>(layer) >= layerVisible_.size()
+            || layerVisible_[static_cast<std::size_t>(layer)];
+    };
+    auto* pluginManager = new app_plugins::JedPluginManager(std::move(pluginServices), this);
+    pluginManager->setPluginDirectory(QDir(QCoreApplication::applicationDirPath()).filePath(QStringLiteral("plugins")));
+    {
+        QSettings settings = settingsStore();
+        pluginManager->setRunOutOfProcess(settings.value(QStringLiteral("plugins/run_out_of_process"), false).toBool());
+    }
+    pluginManager->populateMenu(pluginsMenu);
 }
 
 } // namespace sed

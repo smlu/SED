@@ -110,6 +110,7 @@ void runSurfaceActivePropertyTests();
 void runSurfaceSelectionHistoryTests();
 void runThingSectorPropertyNavigationTests();
 void runThingFindLightingMenuTests();
+void runJedPluginTests();
 void runViewportShortcutTests();
 void runNavigationPreferencesTests();
 void runNavigationShortcutDisplayTests();
@@ -548,6 +549,14 @@ int main(int argc, char** argv)
     if (app.arguments().contains(QStringLiteral("--thing-find-lighting-menu")))
     {
         sed::app_tests::runThingFindLightingMenuTests();
+        sed::ui::detail::previewWorkerPool().waitForDone();
+        QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
+        QCoreApplication::processEvents(QEventLoop::AllEvents);
+        return sed::app_tests::failures == 0 ? 0 : 1;
+    }
+    if (app.arguments().contains(QStringLiteral("--jed-plugins")))
+    {
+        sed::app_tests::runJedPluginTests();
         sed::ui::detail::previewWorkerPool().waitForDone();
         QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
         QCoreApplication::processEvents(QEventLoop::AllEvents);

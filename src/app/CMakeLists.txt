@@ -81,6 +81,8 @@ add_executable(sed_app
   src/main_window/preferences/panel.cpp
   src/main_window/properties/panel.cpp
   src/main_window/properties/light_parameter_dialogs.cpp
+  src/plugins/jed_plugin_manager.cpp
+  src/plugins/jed_plugin_manager.hpp
   src/main_window/menus/menu_actions.cpp
   src/main_window/menus/edit_core_actions.cpp
   src/main_window/menus/edit_delete_action.cpp
@@ -397,6 +399,7 @@ if(QT_VERSION_MAJOR EQUAL 6)
     src/main_window/main_window.hpp
     src/ui/components/scrub_float_edit.hpp
     src/ui/components/ui_decimal_policy.hpp
+    src/plugins/jed_plugin_manager.hpp
   )
 else()
   qt5_wrap_cpp(sed_app_moc_srcs
@@ -404,6 +407,7 @@ else()
     src/main_window/main_window.hpp
     src/ui/components/scrub_float_edit.hpp
     src/ui/components/ui_decimal_policy.hpp
+    src/plugins/jed_plugin_manager.hpp
   )
 endif()
 
@@ -818,6 +822,27 @@ set_tests_properties(
 )
 
 
+# Synthetic JED plug-ins loaded by the --jed-plugins tests.
+set(SED_APP_TEST_JED_PLUGIN_MODES EDIT FAIL NO_ENTRY SELECT SED_ONLY CRASH)
+set(SED_APP_TEST_JED_PLUGIN_DEFINITIONS)
+set(SED_APP_TEST_JED_PLUGIN_TARGETS)
+set(SED_APP_TEST_JED_PLUGIN_MODE_NUMBER 1)
+foreach(mode IN LISTS SED_APP_TEST_JED_PLUGIN_MODES)
+  string(TOLOWER "${mode}" mode_lower)
+  set(plugin_target "sed_test_jed_plugin_${mode_lower}")
+  add_library(${plugin_target} MODULE tests/plugins/test_jed_plugin.cpp)
+  if(MINGW AND CMAKE_SIZEOF_VOID_P EQUAL 4)
+    target_link_options(${plugin_target} PRIVATE -Wl,--kill-at)
+  endif()
+  target_compile_definitions(${plugin_target} PRIVATE SED_TEST_JED_PLUGIN_MODE=${SED_APP_TEST_JED_PLUGIN_MODE_NUMBER})
+  target_include_directories(${plugin_target} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../core/include")
+  set_target_properties(${plugin_target} PROPERTIES PREFIX "" CXX_VISIBILITY_PRESET hidden)
+  list(APPEND SED_APP_TEST_JED_PLUGIN_TARGETS ${plugin_target})
+  list(APPEND SED_APP_TEST_JED_PLUGIN_DEFINITIONS
+    "SED_TEST_JED_PLUGIN_${mode}_PATH=\"$<TARGET_FILE:${plugin_target}>\"")
+  math(EXPR SED_APP_TEST_JED_PLUGIN_MODE_NUMBER "${SED_APP_TEST_JED_PLUGIN_MODE_NUMBER} + 1")
+endforeach()
+
 get_target_property(SED_APP_MAIN_WINDOW_TEST_SOURCES sed_app SOURCES)
 list(FILTER SED_APP_MAIN_WINDOW_TEST_SOURCES EXCLUDE REGEX "src/main\\.cpp$")
 
@@ -839,6 +864,7 @@ add_executable(sed_app_main_window_tests
   tests/mots_arch_lighting_workspace_recovery_tests.cpp
   tests/translate_menu_contract_tests.cpp
   tests/thing_find_lighting_menu_tests.cpp
+  tests/jed_plugin_tests.cpp
   tests/viewport_shortcut_tests.cpp
   tests/navigation_preferences_tests.cpp
   tests/viewport_thing_overlay_state_tests.cpp
@@ -931,6 +957,14 @@ target_compile_definitions(sed_app_main_window_tests PRIVATE
   SED_APP_RECOVERY_TEST_ACCESS
   SED_APP_THEME_STORAGE_TEST_ACCESS
 )
+target_compile_definitions(sed_app_main_window_tests PRIVATE ${SED_APP_TEST_JED_PLUGIN_DEFINITIONS})
+add_dependencies(sed_app_main_window_tests ${SED_APP_TEST_JED_PLUGIN_TARGETS})
+if(TARGET sed_jed_plugin_bridge)
+  add_dependencies(sed_app sed_jed_plugin_bridge)
+  target_compile_definitions(sed_app_main_window_tests PRIVATE
+    "SED_TEST_JED_PLUGIN_BRIDGE_DIR=\"$<TARGET_FILE_DIR:sed_jed_plugin_bridge>\"")
+  add_dependencies(sed_app_main_window_tests sed_jed_plugin_bridge)
+endif()
 
 if (MSVC)
   target_compile_options(sed_app_main_window_tests PRIVATE /bigobj /FS)
@@ -1068,6 +1102,8 @@ set_tests_properties(sed_app_viewport_window_mouse_release PROPERTIES
   ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
   TIMEOUT 30
   LABELS "module;integration;ui;offscreen")
+add_test(NAME sed_app_jed_plugins
+  COMMAND sed_app_main_window_tests --jed-plugins)
 add_test(NAME sed_app_viewport_shortcuts
   COMMAND sed_app_main_window_tests --viewport-shortcuts)
 add_test(NAME sed_app_light_mode_shortcuts
@@ -1181,6 +1217,7 @@ set_tests_properties(
   sed_app_frame_render_performance
   sed_app_thing_collision_cache
   sed_app_toast_expiry_timer
+  sed_app_jed_plugins
   sed_app_viewport_shortcuts
   sed_app_light_mode_shortcuts
   sed_app_navigation_preferences

@@ -54,7 +54,7 @@ security architecture.
 
 | Original capability | Current C++ status |
 | --- | --- |
-| External editor plugins | Not ported. The live Pascal DLL plugin menu and plugin developer mode have no source-compatible C++ replacement. `src/JED_OLE.PAS` is excluded because it is not linked into the original application. A future extension system needs a new, safe C++ design. |
+| External editor plugins | The [IJED host and architecture-specific bridge](user_guide.md#legacy-jed-plug-ins) run trusted JED DLLs. ISED, OLE automation, and Pascal Plugin Developer Mode remain open. |
 | Revert and backup commands | Modern autosave and recovery are implemented, but **Revert to Saved**, numbered **Backup Copy**, and `.bak` rotation are not. |
 | Full clipboard duplication | Viewport entity copy/paste, including cross-instance system clipboard transport, exists, but **Paste in Place** and the original Insert-key duplication of selected Sectors, Things, and editor lights are not exposed. |
 | Keyboard step movement | Gizmo movement, exact numeric translation, and snapping are implemented, but the original selection nudge along the construction-grid normal and fixed-step Thing movement commands are not exposed as keyboard actions. |

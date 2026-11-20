@@ -23,6 +23,7 @@ set(SED_CPP_STANDARD "${_sed_default_cpp_standard}" CACHE STRING "Preferred C++ 
 set_property(CACHE SED_CPP_STANDARD PROPERTY STRINGS 26 23 20)
 option(SED_CPP_USE_CPP23 "Legacy option: build sed_cpp with at least C++23" OFF)
 option(SED_BUILD_APP "Build Qt editor app" ON)
+option(SED_BUILD_PLUGIN_BRIDGE "Build the out-of-process JED plug-in helper" ON)
 option(SED_BUILD_FUZZERS "Build Clang libFuzzer targets for untrusted binary inputs" OFF)
 
 set(_sed_suppress_regen_default OFF)
@@ -87,6 +88,9 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 enable_testing()
 
 add_subdirectory(src/core)
+if(SED_BUILD_PLUGIN_BRIDGE)
+  add_subdirectory(tools/sed-jed-plugin-bridge)
+endif()
 if(SED_BUILD_APP)
   add_subdirectory(src/app)
 endif()
