@@ -28,6 +28,8 @@ struct KeyNode
 {
     std::string meshName;
     std::vector<KeyEntry> entries;
+    // The NODE number identifies the model joint, even when tracks are sparse.
+    std::int32_t nodeIndex{ -1 };
 };
 
 struct KeyFile
@@ -36,6 +38,9 @@ struct KeyFile
     std::int32_t frames{};
     std::int32_t fps{};
     std::vector<KeyNode> nodes;
+    std::uint32_t type{};
+    // JOINTS includes joints without tracks. A missing count is distinct from zero.
+    std::int32_t joints{ -1 };
 };
 
 KeyFile loadFromKEY(std::istream& in);

@@ -84,6 +84,10 @@ KeyFile loadFromKEY(std::istream& in)
             {
                 out.flags = parseHex(tokens[1]).value_or(0);
             }
+            else if (key == "TYPE")
+            {
+                out.type = parseHex(tokens[1]).value_or(0);
+            }
             else if (key == "FRAMES")
             {
                 out.frames = parseInt<std::int32_t>(tokens[1]).value_or(0);
@@ -91,6 +95,10 @@ KeyFile loadFromKEY(std::istream& in)
             else if (key == "FPS")
             {
                 out.fps = parseInt<std::int32_t>(tokens[1]).value_or(0);
+            }
+            else if (key == "JOINTS")
+            {
+                out.joints = std::max<std::int32_t>(-1, parseInt<std::int32_t>(tokens[1]).value_or(-1));
             }
         }
     }
@@ -121,6 +129,10 @@ KeyFile loadFromKEY(std::istream& in)
             const auto nodeTokens = splitWords(lines[idx]);
             if (!nodeTokens.empty() && iequalsAscii(nodeTokens[0], "NODE"))
             {
+                if (nodeTokens.size() >= 2)
+                {
+                    node.nodeIndex = std::max<std::int32_t>(-1, parseInt<std::int32_t>(nodeTokens[1]).value_or(-1));
+                }
                 ++idx;
             }
 

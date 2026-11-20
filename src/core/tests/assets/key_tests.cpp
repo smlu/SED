@@ -32,8 +32,10 @@ void runKeyTests()
     check(kf.flags == 0x10u, "KEY: flags");
     check(kf.frames == 100, "KEY: frames");
     check(kf.fps == 30, "KEY: fps");
+    check(kf.type == 0 && kf.joints == -1, "KEY: omitted type and joint count retain defaults");
     check(kf.nodes.size() == 1, "KEY: nodes");
     check(kf.nodes.size() == 1 && kf.nodes[0].meshName == "mesh0", "KEY: mesh name");
+    check(kf.nodes.size() == 1 && kf.nodes[0].nodeIndex == 0, "KEY: explicit joint zero");
     check(kf.nodes.size() == 1 && kf.nodes[0].entries.size() == 1, "KEY: entries");
 
     if (!kf.nodes.empty() && !kf.nodes[0].entries.empty())
@@ -46,6 +48,31 @@ void runKeyTests()
         check(closeVec(entry.rotation, sed::TVector{ 10.0, 20.0, 30.0 }), "KEY: entry rotation");
         check(closeVec(entry.dPosition, sed::TVector{ 0.1, 0.2, 0.3 }, kRotationEpsilon), "KEY: entry dPosition");
         check(closeVec(entry.dRotation, sed::TVector{ 1.0, 2.0, 3.0 }), "KEY: entry dRotation");
+    }
+
+    {
+        std::istringstream sparseInput(R"KEY(
+            SECTION: HEADER
+            FLAGS 0
+            TYPE A
+            FRAMES 16
+            FPS 30
+            JOINTS 12
+            SECTION: KEYFRAME NODES
+            NODES 2
+            NODE 3
+            MESH NAME shoulder
+            ENTRIES 0
+            NODE 9
+            MESH NAME wrist
+            ENTRIES 0
+        )KEY");
+        const auto sparse = sed::assets::loadFromKEY(sparseInput);
+        check(sparse.type == 0xAu && sparse.joints == 12, "KEY: hexadecimal type and declared joint count");
+        check(sparse.nodes.size() == 2
+                && sparse.nodes[0].nodeIndex == 3 && sparse.nodes[0].meshName == "shoulder"
+                && sparse.nodes[1].nodeIndex == 9 && sparse.nodes[1].meshName == "wrist",
+            "KEY: sparse tracks retain their declared joint numbers in file order");
     }
 
     {
